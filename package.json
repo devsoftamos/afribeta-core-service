@@ -1,0 +1,120 @@
+{
+    "name": "nestjs-prisma-webpack-starter-template",
+    "version": "1.0.0",
+    "description": "Nestjs Prisma Webpack Starter Template",
+    "author": "Chinedum Nwankwo <calculusky@gmail.com> ",
+    "private": true,
+    "license": "MIT",
+    "engines": {
+        "node": ">=16.15.0"
+    },
+    "scripts": {
+        "prebuild": "rimraf dist",
+        "build": "NODE_ENV=production webpack",
+        "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
+        "start:dev": "NODE_ENV=development webpack --watch",
+        "start:prod": "node dist/server",
+        "start:debug": "nest start --watch",
+        "lint": "eslint \"{src,test}/**/*.ts\" --fix",
+        "test": "jest",
+        "test:watch": "jest --watch",
+        "test:cov": "jest --coverage",
+        "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
+        "test:e2e": "jest --config ./jest.config.js",
+        "husky:install": "husky install",
+        "prisma:init": "pnpm prisma init",
+        "prisma:generate": "pnpm prisma generate",
+        "migration:generate": "pnpm prisma migrate dev --create-only --name",
+        "db:migrate:dev": "pnpm prisma migrate dev",
+        "db:migrate:prod": "pnpm prisma migrate deploy",
+        "postinstall": "pnpm prisma:generate"
+    },
+    "dependencies": {
+        "@boxpositron/vre": "^1.0.0",
+        "@calculusky/transactional-email": "^1.0.4",
+        "@nestjs/common": "^9.0.0",
+        "@nestjs/core": "^9.0.0",
+        "@nestjs/jwt": "^10.0.3",
+        "@nestjs/platform-express": "^9.0.0",
+        "@prisma/client": "^4.13.0",
+        "axios": "^1.4.0",
+        "bcryptjs": "^2.4.3",
+        "class-transformer": "^0.5.1",
+        "class-validator": "^0.14.0",
+        "dotenv": "^16.0.3",
+        "helmet": "^6.0.1",
+        "moment-logger": "1.0.5-12",
+        "morgan": "^1.10.0",
+        "nanoid": "^3.3.4",
+        "reflect-metadata": "^0.1.13",
+        "rimraf": "^3.0.2",
+        "rxjs": "^7.2.0"
+    },
+    "devDependencies": {
+        "@commitlint/cli": "^17.6.1",
+        "@commitlint/config-conventional": "^17.6.1",
+        "@nestjs/cli": "^9.0.0",
+        "@nestjs/schematics": "^9.0.0",
+        "@nestjs/testing": "^9.0.0",
+        "@types/bcryptjs": "^2.4.2",
+        "@types/express": "^4.17.13",
+        "@types/jest": "28.1.4",
+        "@types/morgan": "^1.9.4",
+        "@types/node": "^16.0.0",
+        "@types/supertest": "^2.0.11",
+        "@typescript-eslint/eslint-plugin": "^5.0.0",
+        "@typescript-eslint/parser": "^5.0.0",
+        "eslint": "^8.0.1",
+        "eslint-config-prettier": "^8.3.0",
+        "eslint-plugin-prettier": "^4.0.0",
+        "husky": "^8.0.3",
+        "jest": "28.1.2",
+        "nodemon-webpack-plugin": "^4.8.1",
+        "prettier": "^2.3.2",
+        "prisma": "^4.13.0",
+        "source-map-support": "^0.5.20",
+        "supertest": "^6.1.3",
+        "terser-webpack-plugin": "^5.3.7",
+        "ts-jest": "28.0.5",
+        "ts-loader": "^9.2.3",
+        "ts-node": "^10.0.0",
+        "tsconfig-paths": "4.0.0",
+        "tsconfig-paths-webpack-plugin": "^4.0.1",
+        "typescript": "^4.3.5",
+        "uglify-js": "^3.17.4",
+        "webpack": "^5.81.0",
+        "webpack-cli": "^5.0.2",
+        "webpack-node-externals": "^3.0.0"
+    },
+    "jest": {
+        "moduleFileExtensions": [
+            "js",
+            "json",
+            "ts"
+        ],
+        "rootDir": "src",
+        "testRegex": ".*\\.spec\\.ts$",
+        "transform": {
+            "^.+\\.(t|j)s$": "ts-jest"
+        },
+        "collectCoverageFrom": [
+            "**/*.(t|j)s"
+        ],
+        "coverageDirectory": "../coverage",
+        "testEnvironment": "node"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/calculusky/nestjs-prisma-webpack-starter-template"
+    },
+    "keywords": [
+        "node",
+        "nest",
+        "prisma",
+        "pnpm"
+    ],
+    "bugs": {
+        "url": "https://github.com/calculusky/nestjs-prisma-webpack-starter-template/issues"
+    },
+    "homepage": "https://github.comcalculusky/nestjs-prisma-webpack-starter-template#readme"
+}

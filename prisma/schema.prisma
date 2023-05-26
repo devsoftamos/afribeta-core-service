@@ -1,0 +1,151 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserType {
+  super_admin
+  admin
+  merchant
+  agent
+  customer
+}
+
+enum Status {
+  enabled
+  disabled
+  blocked
+}
+
+enum MerchantUpgradeStatus {
+  pending
+  toBeUpgraded
+  upgraded
+  declined
+}
+
+model User {
+  id                    Int                    @id @default(autoincrement())
+  identifier            String                 @unique
+  firstName             String
+  lastName              String
+  email                 String                 @unique
+  phone                 String
+  password              String
+  userType              UserType
+  profilePhoto          String?
+  status                Status                 @default(enabled)
+  activated             Boolean?
+  state                 String?
+  localGovernmentArea   String?
+  createdById           Int?
+  isMerchantUpgradable  Boolean                @default(false)
+  merchantUpgradeStatus MerchantUpgradeStatus?
+  transactionPin        String?
+  roleId                Int
+  ipAddress             String
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  bank                  Bank?
+  createdUsers          User[]                 @relation(name: "creatorAndCreatedUser")
+  creator               User?                  @relation(name: "creatorAndCreatedUser", fields: [createdById], references: [id])
+  role                  Role                   @relation(fields: [roleId], references: [id])
+  wallet                Wallet?
+
+  @@map("Users")
+}
+
+model Bank {
+  id                     Int      @id @default(autoincrement())
+  userId                 Int      @unique
+  bankName               String
+  accountName            String
+  accountNumber          String
+  bankVerificationNumber String
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+  user                   User     @relation(fields: [userId], references: [id])
+
+  @@map("Banks")
+}
+
+model AccountVerificationRequest {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  code      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("AccountVerificationRequests")
+}
+
+model Role {
+  id          Int              @id @default(autoincrement())
+  name        String           @unique
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  users       User[]
+  permissions RolePermission[]
+
+  @@map("Roles")
+}
+
+model Permission {
+  id        Int              @id @default(autoincrement())
+  name      String
+  domain    String
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  roles     RolePermission[]
+
+  @@map("Permissions")
+}
+
+model RolePermission {
+  roleId       Int
+  permissionId Int
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  role         Role       @relation(fields: [roleId], references: [id])
+  permission   Permission @relation(fields: [permissionId], references: [id])
+
+  @@id([roleId, permissionId])
+  @@map("RolePermissions")
+}
+
+model Wallet {
+  id                Int      @id @default(autoincrement())
+  userId            Int      @unique
+  mainBalance       Float    @default(0)
+  commissionBalance Float    @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  user              User     @relation(fields: [userId], references: [id])
+
+  @@map("Wallets")
+}
+
+enum NotificationType {
+  WALLET_FUND_REQUEST
+}
+
+model Notification {
+  id            Int              @id @default(autoincrement())
+  title         String
+  description   String?
+  transactionId Int?
+  userId        Int
+  isRead        Boolean          @default(false)
+  type          NotificationType
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  @@map("Notifications")
+}

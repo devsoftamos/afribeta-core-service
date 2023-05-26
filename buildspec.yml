@@ -1,0 +1,17 @@
+version: 0.2
+
+phases:
+  pre_build:
+    commands:
+      - npm install -g pnpm
+      - pnpm install
+  build:
+    commands:
+      - pnpm build
+
+artifacts:
+  files:
+    - '**/*'
+  discard-paths: no
+  base-directory: ./
+
