@@ -17,7 +17,7 @@ export class InvalidCredentialException extends HttpException {
 }
 
 export class SendVerificationEmailException extends HttpException {
-    name: string = "SendVerificationEmailException";
+    name = "SendVerificationEmailException";
 }
 
 export class InvalidEmailVerificationCodeException extends HttpException {

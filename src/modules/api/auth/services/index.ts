@@ -2,7 +2,7 @@ import { HttpStatus, Injectable } from "@nestjs/common";
 import { UserService } from "@/modules/api/user/services";
 import { JwtService } from "@nestjs/jwt";
 import { SignUpDto, SignInDto, SendVerificationCodeDto } from "../dtos";
-import { DuplicateUserException, UserExistException } from "@/modules/api/user";
+import { DuplicateUserException } from "@/modules/api/user";
 import * as bcrypt from "bcryptjs";
 import { Prisma } from "@prisma/client";
 import { customAlphabet, urlAlphabet } from "nanoid";
