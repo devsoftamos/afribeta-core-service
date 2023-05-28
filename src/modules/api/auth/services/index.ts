@@ -246,15 +246,17 @@ export class AuthService {
             },
         });
 
-        const emailResp = await this.emailService.brevo.send({
-            to: [{ email: options.email }],
-            subject: "Reset Your Password",
-            templateId: passwordResetTemplate,
-            params: {
-                code: resetCode,
-                firstName: user.firstName,
-            },
-        });
+        await this.emailService.brevo
+            .send({
+                to: [{ email: options.email }],
+                subject: "Reset Your Password",
+                templateId: passwordResetTemplate,
+                params: {
+                    code: resetCode,
+                    firstName: user.firstName,
+                },
+            })
+            .catch(() => false);
 
         return buildResponse({
             message: `Password reset code successfully sent to your email, ${options.email}`,
