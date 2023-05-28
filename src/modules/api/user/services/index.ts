@@ -22,6 +22,11 @@ export class UserService {
     async findUserByEmail(email: string) {
         return await this.prisma.user.findUnique({ where: { email } });
     }
+    async findUserById(id: number) {
+        return await this.prisma.user.findUnique({
+            where: { id: id },
+        });
+    }
 
     async getProfile(identifier: string): Promise<ApiResponse> {
         const user = await this.prisma.user.findUnique({

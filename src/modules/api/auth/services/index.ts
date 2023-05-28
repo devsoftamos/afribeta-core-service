@@ -6,6 +6,7 @@ import {
     SignInDto,
     SendVerificationCodeDto,
     PasswordResetRequestDto,
+    UpdatePasswordDto,
 } from "../dtos";
 import {
     DuplicateUserException,
@@ -17,6 +18,8 @@ import { customAlphabet, urlAlphabet } from "nanoid";
 import {
     InvalidCredentialException,
     InvalidEmailVerificationCodeException,
+    InvalidPasswordResetToken,
+    PasswordResetCodeExpiredException,
     SendVerificationEmailException,
     VerificationCodeExpiredException,
 } from "../errors";
@@ -232,7 +235,7 @@ export class AuthService {
             );
         }
 
-        const resetCode = customAlphabet("1234567890", 5)();
+        const resetCode = customAlphabet("1234567890", 4)();
         await this.prisma.passwordResetRequest.upsert({
             where: {
                 userId: user.id,
@@ -260,6 +263,46 @@ export class AuthService {
 
         return buildResponse({
             message: `Password reset code successfully sent to your email, ${options.email}`,
+        });
+    }
+
+    async updatePassword(options: UpdatePasswordDto): Promise<ApiResponse> {
+        const resetData = await this.prisma.passwordResetRequest.findUnique({
+            where: { code: options.resetCode },
+        });
+        if (!resetData) {
+            throw new InvalidPasswordResetToken(
+                "Invalid password reset code. Kindly request for a new one",
+                HttpStatus.BAD_REQUEST
+            );
+        }
+        //check verification expiration
+        const timeDifference = Date.now() - resetData.createdAt.getTime();
+        const timeDiffInMin = timeDifference / (1000 * 60);
+        if (timeDiffInMin > 30) {
+            throw new PasswordResetCodeExpiredException(
+                "Your reset code has expired. Kindly request for new one",
+                HttpStatus.BAD_REQUEST
+            );
+        }
+        const user = await this.userService.findUserById(resetData.userId);
+        if (!user) {
+            throw new UserNotFoundException(
+                "Account not found",
+                HttpStatus.NOT_FOUND
+            );
+        }
+        const newHarshedPassword = await this.hashPassword(options.newPassword);
+        await this.prisma.user.update({
+            where: { id: user.id },
+            data: { password: newHarshedPassword },
+        });
+        await this.prisma.passwordResetRequest.delete({
+            where: { code: resetData.code },
+        });
+
+        return buildResponse({
+            message: `Password successfully updated. Kindly login`,
         });
     }
 }

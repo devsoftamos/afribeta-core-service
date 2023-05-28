@@ -27,3 +27,12 @@ export class InvalidEmailVerificationCodeException extends HttpException {
 export class VerificationCodeExpiredException extends HttpException {
     name = "VerificationCodeExpiredException";
 }
+
+
+export class InvalidPasswordResetToken extends HttpException {
+    name = "InvalidPasswordResetToken";
+}
+
+export class PasswordResetCodeExpiredException extends HttpException {
+    name = "PasswordResetCodeExpiredException";
+}

@@ -4,6 +4,7 @@ import {
     Controller,
     HttpCode,
     HttpStatus,
+    Patch,
     Post,
     Req,
     ValidationPipe,
@@ -14,6 +15,7 @@ import {
     SendVerificationCodeDto,
     SignInDto,
     SignUpDto,
+    UpdatePasswordDto,
 } from "../../dtos";
 import { AuthService } from "../../services";
 
@@ -57,5 +59,12 @@ export class AuthController {
         return await this.authService.passwordResetRequest(
             passwordResetRequestDto
         );
+    }
+
+    @Patch("update-password")
+    async updatePassword(
+        @Body(ValidationPipe) updatePasswordDto: UpdatePasswordDto
+    ) {
+        return await this.authService.updatePassword(updatePasswordDto);
     }
 }
