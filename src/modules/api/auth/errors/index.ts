@@ -28,7 +28,6 @@ export class VerificationCodeExpiredException extends HttpException {
     name = "VerificationCodeExpiredException";
 }
 
-
 export class InvalidPasswordResetToken extends HttpException {
     name = "InvalidPasswordResetToken";
 }
