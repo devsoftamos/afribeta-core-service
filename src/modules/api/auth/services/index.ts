@@ -1,8 +1,16 @@
 import { HttpStatus, Injectable } from "@nestjs/common";
 import { UserService } from "@/modules/api/user/services";
 import { JwtService } from "@nestjs/jwt";
-import { SignUpDto, SignInDto, SendVerificationCodeDto } from "../dtos";
-import { DuplicateUserException } from "@/modules/api/user";
+import {
+    SignUpDto,
+    SignInDto,
+    SendVerificationCodeDto,
+    PasswordResetRequestDto,
+} from "../dtos";
+import {
+    DuplicateUserException,
+    UserNotFoundException,
+} from "@/modules/api/user";
 import * as bcrypt from "bcryptjs";
 import { Prisma } from "@prisma/client";
 import { customAlphabet, urlAlphabet } from "nanoid";
@@ -16,7 +24,7 @@ import { ApiResponse, buildResponse } from "@/utils/api-response-util";
 import { SmsService } from "@/modules/core/sms/services";
 import { PrismaService } from "@/modules/core/prisma/services";
 import { EmailService } from "@/modules/core/email/services";
-import { verifyEmailTemplate } from "@/config";
+import { passwordResetTemplate, verifyEmailTemplate } from "@/config";
 import { SendinblueEmailException } from "@calculusky/transactional-email";
 import logger from "moment-logger";
 
@@ -151,7 +159,7 @@ export class AuthService {
         const createUserOptions: Prisma.UserCreateInput = {
             firstName: options.firstName,
             lastName: options.lastName,
-            email: options.email,
+            email: verificationData.email,
             phone: options.phone.trim(),
             userType: options.userType,
             identifier: customAlphabet(urlAlphabet, 16)(),
@@ -212,6 +220,44 @@ export class AuthService {
         return buildResponse({
             message: "Login successful",
             data: { accessToken },
+        });
+    }
+
+    async passwordResetRequest(options: PasswordResetRequestDto) {
+        const user = await this.userService.findUserByEmail(options.email);
+        if (!user) {
+            throw new UserNotFoundException(
+                "There is no account registered with this email address. Please Sign Up",
+                HttpStatus.NOT_FOUND
+            );
+        }
+
+        const resetCode = customAlphabet("1234567890", 5)();
+        await this.prisma.passwordResetRequest.upsert({
+            where: {
+                userId: user.id,
+            },
+            create: {
+                code: resetCode,
+                userId: user.id,
+            },
+            update: {
+                code: resetCode,
+            },
+        });
+
+        const emailResp = await this.emailService.brevo.send({
+            to: [{ email: options.email }],
+            subject: "Reset Your Password",
+            templateId: passwordResetTemplate,
+            params: {
+                code: resetCode,
+                firstName: user.firstName,
+            },
+        });
+
+        return buildResponse({
+            message: `Password reset code successfully sent to your email, ${options.email}`,
         });
     }
 }

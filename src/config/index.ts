@@ -34,6 +34,10 @@ const runtimeEnvironment: RequiredEnvironment[] = [
         name: "VERIFY_EMAIL_TEMPLATE",
         type: RequiredEnvironmentTypes.Number,
     },
+    {
+        name: "PASSWORD_RESET_TEMPLATE",
+        type: RequiredEnvironmentTypes.Number,
+    },
 ];
 
 validate(runtimeEnvironment);
@@ -55,3 +59,4 @@ export const jwtSecret: string = process.env.JWT_SECRET;
 
 //email templates
 export const verifyEmailTemplate: number = +process.env.VERIFY_EMAIL_TEMPLATE;
+export const passwordResetTemplate = +process.env.PASSWORD_RESET_TEMPLATE;
