@@ -47,7 +47,7 @@ export class AuthService {
 
             const user = await this.userService.findUserByEmail(email);
             if (user) {
-                throw new UserExistException(
+                throw new DuplicateUserException(
                     "Account already verified. Kindly login",
                     HttpStatus.BAD_REQUEST
                 );
@@ -93,7 +93,7 @@ export class AuthService {
         } catch (error) {
             logger.error(error);
             switch (true) {
-                case error instanceof UserExistException: {
+                case error instanceof DuplicateUserException: {
                     throw error;
                 }
 

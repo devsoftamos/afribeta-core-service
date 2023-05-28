@@ -4,6 +4,7 @@ import {
     IsOptional,
     IsPhoneNumber,
     IsString,
+    Length,
 } from "class-validator";
 
 enum UserType {
@@ -22,6 +23,7 @@ export class SignUpDto {
     email: string;
 
     @IsPhoneNumber("NG")
+    @Length(11, 11, { message: "Phone number must be 11 digits" })
     phone: string;
 
     @IsOptional()
@@ -55,6 +57,7 @@ export class SendVerificationCodeDto {
     email: string;
 
     @IsPhoneNumber("NG")
+    @Length(11, 11, { message: "Phone number must be 11 digits" })
     phone: string;
 
     @IsString()
