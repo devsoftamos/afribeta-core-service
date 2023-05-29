@@ -36,11 +36,12 @@ export class UserService {
                 lastName: true,
                 email: true,
                 identifier: true,
+                phone: true,
             },
         });
         return buildResponse({
             message: "Profile successfully retrieved",
-            data: { user },
+            data: user,
         });
     }
 }
