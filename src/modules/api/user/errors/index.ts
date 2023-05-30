@@ -9,5 +9,5 @@ export class UserNotFoundException extends HttpException {
 }
 
 export class IncorrectPasswordException extends HttpException {
-    name: string = "IncorrectPasswordException";
+    name = "IncorrectPasswordException";
 }
