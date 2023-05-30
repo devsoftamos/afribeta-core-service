@@ -10,6 +10,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+//User
 enum UserType {
   super_admin
   admin
@@ -42,7 +43,6 @@ model User {
   userType              UserType
   profilePhoto          String?
   status                Status                 @default(enabled)
-  activated             Boolean?
   state                 String?
   localGovernmentArea   String?
   createdById           Int?
@@ -52,6 +52,8 @@ model User {
   roleId                Int
   ipAddress             String
   notificationToken     String?
+  cacNumber             String?
+  utilityDocumentUrl    String?
   createdAt             DateTime               @default(now())
   updatedAt             DateTime               @updatedAt
   bank                  Bank?
@@ -60,24 +62,51 @@ model User {
   role                  Role                   @relation(fields: [roleId], references: [id])
   wallet                Wallet?
   passwordResetRequest  PasswordResetRequest?
+  transactions          Transaction[]          @relation(name: "userToTransaction")
+  senderTransactions    Transaction[]          @relation(name: "senderToTransaction")
+  receiverTransactions  Transaction[]          @relation(name: "receiverToTransaction")
+  virtualBankAccount    VirtualBankAccount?
 
   @@map("Users")
 }
 
+//Bank
 model Bank {
-  id                     Int      @id @default(autoincrement())
-  userId                 Int      @unique
-  bankName               String
-  accountName            String
-  accountNumber          String
-  bankVerificationNumber String
-  createdAt              DateTime @default(now())
-  updatedAt              DateTime @updatedAt
-  user                   User     @relation(fields: [userId], references: [id])
+  id            Int      @id @default(autoincrement())
+  userId        Int      @unique
+  bankName      String
+  accountName   String
+  accountNumber String
+  bankCode      String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  user          User     @relation(fields: [userId], references: [id])
 
   @@map("Banks")
 }
 
+//Virtual Bank Account
+enum VirtualAccountProviders {
+  paystack
+  providus_bank
+}
+
+model VirtualBankAccount {
+  id                     Int                     @id @default(autoincrement())
+  userId                 Int                     @unique
+  bankVerificationNumber String
+  bankName               String
+  accountName            String
+  accountNumber          String
+  provider               VirtualAccountProviders
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+  user                   User                    @relation(fields: [userId], references: [id])
+
+  @@map("VirtualBankAccounts")
+}
+
+//Account Verification
 model AccountVerificationRequest {
   id        Int      @id @default(autoincrement())
   email     String   @unique
@@ -88,6 +117,7 @@ model AccountVerificationRequest {
   @@map("AccountVerificationRequests")
 }
 
+//Roles
 model Role {
   id          Int              @id @default(autoincrement())
   name        String           @unique
@@ -99,6 +129,7 @@ model Role {
   @@map("Roles")
 }
 
+//Permission
 model Permission {
   id        Int              @id @default(autoincrement())
   name      String
@@ -110,6 +141,7 @@ model Permission {
   @@map("Permissions")
 }
 
+//RolePermission
 model RolePermission {
   roleId       Int
   permissionId Int
@@ -122,6 +154,7 @@ model RolePermission {
   @@map("RolePermissions")
 }
 
+//Wallet
 model Wallet {
   id                Int      @id @default(autoincrement())
   userId            Int      @unique
@@ -134,8 +167,9 @@ model Wallet {
   @@map("Wallets")
 }
 
+//Notification
 enum NotificationType {
-  WALLET_FUND_REQUEST
+  wallet_fund_request
 }
 
 model Notification {
@@ -152,6 +186,7 @@ model Notification {
   @@map("Notifications")
 }
 
+//Password Reset
 model PasswordResetRequest {
   id        Int      @id @default(autoincrement())
   userId    Int      @unique
@@ -161,4 +196,87 @@ model PasswordResetRequest {
   user      User     @relation(fields: [userId], references: [id])
 
   @@map("PasswordResetRequests")
+}
+
+//Transactions logs
+enum TransactionType {
+  airtime_to_cash
+  data_purchase
+  transfer
+  wallet_fund
+  electricity_bill
+  internet_bill
+  cableTv_bill
+}
+
+enum TransactionFlow {
+  IN
+  OUT
+}
+
+enum TransactionStatus {
+  pending
+  success
+  approved
+  failed
+  declined
+}
+
+enum PaymentMethod {
+  wallet
+  paystack
+  providus_transfer
+}
+
+enum WalletFundTransactionFlow {
+  to_agent
+  to_beneficiary
+  from_merchant
+  from_benefactor
+  self_fund
+  from_paid_commission
+}
+
+enum PaymentStatus {
+  pending
+  success
+  failed
+}
+
+model Transaction {
+  id                           Int                        @id @default(autoincrement())
+  type                         TransactionType
+  flow                         TransactionFlow
+  amount                       Float
+  serviceCharge                Float?
+  totalAmount                  Float
+  status                       TransactionStatus
+  paymentStatus                PaymentStatus?
+  userId                       Int
+  senderId                     Int
+  receiverId                   Int
+  destinationBankName          String?
+  destinationBankAccountNumber String?
+  destinationBankAccountName   String?
+  description                  String?                    @db.VarChar(255)
+  transactionId                String
+  provider                     String?
+  providerLogo                 String?
+  accountId                    String?
+  packageType                  String?
+  meterType                    String?
+  phone1                       String?
+  phone2                       String?
+  paymentMethod                PaymentMethod?
+  token                        String?
+  commission                   Float?
+  merchantCommission           Float?
+  walletFundTransactionFlow    WalletFundTransactionFlow?
+  createdAt                    DateTime                   @default(now())
+  updatedAt                    DateTime                   @updatedAt
+  user                         User                       @relation(name: "userToTransaction", fields: [userId], references: [id])
+  sender                       User                       @relation(name: "senderToTransaction", fields: [senderId], references: [id])
+  receiver                     User                       @relation(name: "receiverToTransaction", fields: [receiverId], references: [id])
+
+  @@map("Transactions")
 }
