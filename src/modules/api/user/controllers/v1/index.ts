@@ -9,22 +9,24 @@ import {
     UseGuards,
     ValidationPipe,
 } from "@nestjs/common";
-import { UpdateProfilePasswordDto } from "../../dtos";
+import { User as UserEntity } from "@prisma/client";
+import { User } from "../../decorator";
+import { UpdateProfilePasswordDto, UpsertTransactionPinDto } from "../../dtos";
 import { UserService } from "../../services";
 
 @UseGuards(AuthGuard)
 @Controller({
-    path: "users",
+    path: "user",
 })
 export class UserController {
     constructor(private readonly userService: UserService) {}
 
-    @Get("profiles")
+    @Get("profile")
     async getProfile(@Req() req: RequestWithUser) {
         return await this.userService.getProfile(req.user.identifier);
     }
 
-    @Patch("profiles/update-password")
+    @Patch("profile/update-password")
     async updateProfilePassword(
         @Body(ValidationPipe)
         updateProfilePasswordDto: UpdateProfilePasswordDto,
@@ -33,6 +35,16 @@ export class UserController {
         return await this.userService.updateProfilePassword(
             updateProfilePasswordDto,
             req.user
+        );
+    }
+    @Patch("profile/save-transaction-pin")
+    async upsertTransactionPin(
+        @Body(ValidationPipe) upsertTransactionPinDto: UpsertTransactionPinDto,
+        @User() user: UserEntity
+    ) {
+        return await this.userService.upsertTransactionPin(
+            upsertTransactionPinDto,
+            user
         );
     }
 }

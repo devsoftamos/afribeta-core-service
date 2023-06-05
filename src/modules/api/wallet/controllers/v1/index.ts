@@ -15,13 +15,13 @@ import { WalletService } from "../../services";
 
 @UseGuards(AuthGuard)
 @Controller({
-    path: "wallets",
+    path: "wallet",
 })
 export class WalletController {
     constructor(private readonly walletService: WalletService) {}
 
     @HttpCode(HttpStatus.OK)
-    @Post("customers")
+    @Post("customer")
     async initiateWalletCreation(
         @Body(ValidationPipe)
         initiateWalletCreationDto: InitiateWalletCreationDto,

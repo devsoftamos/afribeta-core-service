@@ -3,8 +3,12 @@ import { ApiResponse, buildResponse } from "@/utils/api-response-util";
 import { forwardRef, HttpStatus, Inject, Injectable } from "@nestjs/common";
 import { Prisma, User } from "@prisma/client";
 import { AuthService } from "../../auth/services";
-import { UpdateProfilePasswordDto } from "../dtos";
-import { IncorrectPasswordException, UserNotFoundException } from "../errors";
+import { UpdateProfilePasswordDto, UpsertTransactionPinDto } from "../dtos";
+import {
+    DuplicateTransactionPinException,
+    IncorrectPasswordException,
+    UserNotFoundException,
+} from "../errors";
 
 @Injectable()
 export class UserService {
@@ -89,6 +93,45 @@ export class UserService {
 
         return buildResponse({
             message: "Password successfully updated",
+        });
+    }
+
+    async upsertTransactionPin(options: UpsertTransactionPinDto, user: User) {
+        const userData = await this.prisma.user.findUnique({
+            where: { id: user.id },
+        });
+
+        if (!userData) {
+            throw new UserNotFoundException(
+                "Failed to retrieve account",
+                HttpStatus.NOT_FOUND
+            );
+        }
+
+        const isMatched = await this.authService.comparePassword(
+            options.password,
+            user.password
+        );
+
+        if (!isMatched) {
+            throw new IncorrectPasswordException(
+                "The password you entered is incorrect",
+                HttpStatus.BAD_REQUEST
+            );
+        }
+
+        const hashedPin = await this.authService.hashPassword(options.pin);
+        await this.prisma.user.update({
+            where: {
+                id: user.id,
+            },
+            data: {
+                transactionPin: hashedPin,
+            },
+        });
+
+        return buildResponse({
+            message: "Transaction pin successfully saved",
         });
     }
 }
