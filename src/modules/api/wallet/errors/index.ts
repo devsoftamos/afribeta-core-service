@@ -1,13 +1,13 @@
 import { HttpException } from "@nestjs/common";
 
 export class WalletCreationException extends HttpException {
-    name: string = "WalletCreationException";
+    name = "WalletCreationException";
 }
 
 export class DuplicateWalletException extends HttpException {
-    name: string = "DuplicateWalletException";
+    name = "DuplicateWalletException";
 }
 
 export class WalletCreationPaystackException extends HttpException {
-    name: string = "WalletCreationPaystackException";
+    name = "WalletCreationPaystackException";
 }
