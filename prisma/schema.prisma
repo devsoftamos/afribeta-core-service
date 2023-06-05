@@ -52,6 +52,7 @@ model User {
   roleId                Int
   ipAddress             String
   notificationToken     String?
+  customerCode          String?
   cacNumber             String?
   utilityDocumentUrl    String?
   createdAt             DateTime               @default(now())
@@ -71,16 +72,22 @@ model User {
 }
 
 //Bank
+enum BankCodeprovider {
+  paystack
+  providus_bank
+}
+
 model Bank {
-  id            Int      @id @default(autoincrement())
-  userId        Int      @unique
-  bankName      String
-  accountName   String
-  accountNumber String
-  bankCode      String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  user          User     @relation(fields: [userId], references: [id])
+  id               Int              @id @default(autoincrement())
+  userId           Int              @unique
+  bankName         String
+  accountName      String
+  accountNumber    String
+  bankCode         String?
+  bankCodeProvider BankCodeprovider @default(providus_bank)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  user             User             @relation(fields: [userId], references: [id])
 
   @@map("Banks")
 }
@@ -92,16 +99,15 @@ enum VirtualAccountProviders {
 }
 
 model VirtualBankAccount {
-  id                     Int                     @id @default(autoincrement())
-  userId                 Int                     @unique
-  bankVerificationNumber String
-  bankName               String
-  accountName            String
-  accountNumber          String
-  provider               VirtualAccountProviders
-  createdAt              DateTime                @default(now())
-  updatedAt              DateTime                @updatedAt
-  user                   User                    @relation(fields: [userId], references: [id])
+  id            Int                     @id @default(autoincrement())
+  userId        Int                     @unique
+  bankName      String
+  accountName   String
+  accountNumber String
+  provider      VirtualAccountProviders
+  createdAt     DateTime                @default(now())
+  updatedAt     DateTime                @updatedAt
+  user          User                    @relation(fields: [userId], references: [id])
 
   @@map("VirtualBankAccounts")
 }

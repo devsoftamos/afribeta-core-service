@@ -4,6 +4,7 @@ import validate, {
     RequiredEnvironment,
     RequiredEnvironmentTypes,
 } from "@boxpositron/vre";
+import { PaystackOptions } from "@/libs/paystack";
 
 export * from "./constants";
 
@@ -38,6 +39,14 @@ const runtimeEnvironment: RequiredEnvironment[] = [
         name: "PASSWORD_RESET_TEMPLATE",
         type: RequiredEnvironmentTypes.Number,
     },
+    {
+        name: "PAYSTACK_SECRET_KEY",
+        type: RequiredEnvironmentTypes.String,
+    },
+    {
+        name: "PAYSTACK_BASE_URL",
+        type: RequiredEnvironmentTypes.String,
+    },
 ];
 
 validate(runtimeEnvironment);
@@ -60,3 +69,11 @@ export const jwtSecret: string = process.env.JWT_SECRET;
 //email templates
 export const verifyEmailTemplate: number = +process.env.VERIFY_EMAIL_TEMPLATE;
 export const passwordResetTemplate = +process.env.PASSWORD_RESET_TEMPLATE;
+
+//payment
+export const paystackSecretKey: string = process.env.PAYSTACK_SECRET_KEY;
+
+export const paystackConfiguration: PaystackOptions = {
+    baseUrl: process.env.PAYSTACK_BASE_URL,
+    secretKey: process.env.PAYSTACK_SECRET_KEY,
+};
