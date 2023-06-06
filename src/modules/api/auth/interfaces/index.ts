@@ -8,3 +8,9 @@ export interface RequestWithUser extends Request {
 export interface DataStoredInToken {
     sub: string;
 }
+
+interface PaystackHeader {
+    ["x-paystack-signature"]: string;
+}
+
+export type RequestFromPaystack = Request & { headers: PaystackHeader };

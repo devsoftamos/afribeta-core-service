@@ -1,4 +1,4 @@
-import { jwtSecret } from "@/config";
+import { jwtSecret, paystackSecretKey } from "@/config";
 import {
     CanActivate,
     ExecutionContext,
@@ -13,7 +13,13 @@ import {
     AuthTokenValidationException,
     InvalidAuthTokenException,
 } from "../errors";
-import { DataStoredInToken, RequestWithUser } from "../interfaces";
+import {
+    DataStoredInToken,
+    RequestFromPaystack,
+    RequestWithUser,
+} from "../interfaces";
+import { Observable } from "rxjs";
+import { createHmac } from "crypto";
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -53,7 +59,7 @@ export class AuthGuard implements CanActivate {
                 }
                 default: {
                     throw new AuthTokenValidationException(
-                        "Your session is unauthorized",
+                        "Your session is unauthorized or expired",
                         HttpStatus.UNAUTHORIZED
                     );
                 }
@@ -65,5 +71,26 @@ export class AuthGuard implements CanActivate {
     private extractTokenFromHeader(request: Request): string | undefined {
         const [type, token] = request.headers.authorization?.split(" ") ?? [];
         return type === "Bearer" ? token : undefined;
+    }
+}
+
+@Injectable()
+export class PaystackWebhookGuard implements CanActivate {
+    canActivate(
+        context: ExecutionContext
+    ): boolean | Promise<boolean> | Observable<boolean> {
+        const request = context
+            .switchToHttp()
+            .getRequest() as RequestFromPaystack;
+
+        const hash = createHmac("sha512", paystackSecretKey)
+            .update(JSON.stringify(request.body))
+            .digest("hex");
+
+        if (hash == request.headers["x-paystack-signature"]) {
+            return true;
+        } else {
+            return false;
+        }
     }
 }

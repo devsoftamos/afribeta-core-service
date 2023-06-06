@@ -63,3 +63,16 @@ export class SendVerificationCodeDto {
     @IsString()
     firstName: string;
 }
+
+export class PasswordResetRequestDto {
+    @IsEmail()
+    email: string;
+}
+
+export class UpdatePasswordDto {
+    @IsString()
+    newPassword: string;
+
+    @IsString()
+    resetCode: string;
+}

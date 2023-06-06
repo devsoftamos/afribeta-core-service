@@ -1,10 +1,10 @@
 ## Description
 
-This is a nestjs prisma webpack starter template incorporating some useful libraries such as .env variable validator, logger etc with proper linting enforcement. It also contains webhook flow using paystack as an example.
+This is the core service of Afribeta App. The API currently support all the functionalities that powers the app.
 
 ## Install Dependencies
 
-First, clone the repo to your working directory.
+First, clone the repo to your working directory. Make sure you have pnpm globally installed on your system. Run the below command
 
 ```bash
 $ pnpm install
@@ -13,17 +13,14 @@ $ pnpm install
 ## Install husky
 
 ```bash
-$ pnpm prepare
+$ pnpm husky:install
 ```
 
 ## Running the app
 
 ```bash
-# development
-$ pnpm watch
-
-# watch mode
-$ pnpm watch
+# development/watch mode
+$ pnpm start:dev
 
 # production mode
 $ pnpm start:prod
@@ -33,11 +30,11 @@ $ pnpm start:prod
 
 ```bash
 # unit tests
-$ pnpm run test
+$ pnpm test
 
 # e2e tests
-$ pnpm run test:e2e
+$ pnpm test:e2e
 
 # test coverage
-$ pnpm run test:cov
+$ pnpm test:cov
 ```
