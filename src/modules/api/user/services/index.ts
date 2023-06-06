@@ -9,7 +9,6 @@ import {
     VerifyTransactionPinDto,
 } from "../dtos";
 import {
-    DuplicateTransactionPinException,
     IncorrectPasswordException,
     IncorrectTransactionPinException,
     UserNotFoundException,
