@@ -4,7 +4,7 @@ import { UserController } from "./controllers/v1";
 import { UserService } from "./services";
 export * from "./interfaces";
 export * from "./errors";
-export * from "./decorator";
+export * from "./decorators";
 
 @Global()
 @Module({

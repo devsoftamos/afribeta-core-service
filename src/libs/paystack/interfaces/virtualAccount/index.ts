@@ -1,8 +1,3 @@
-export interface PaystackOptions {
-    baseUrl: string;
-    secretKey: string;
-}
-
 export interface AssignDynamicVirtualAccountWithValidationOptions {
     first_name: string;
     last_name: string;
@@ -14,10 +9,4 @@ export interface AssignDynamicVirtualAccountWithValidationOptions {
     account_number: string;
     bank_code: string;
     bvn: string;
-}
-
-export interface PaystackResponse<D = undefined> {
-    status: boolean;
-    message: string;
-    data: D;
 }

@@ -3,8 +3,8 @@ export class PaystackError extends Error {
     status = 500;
 }
 
-export class PaystackGenericError extends PaystackError {
-    name = "PaystackGenericError";
+export class PaystackServerError extends PaystackError {
+    name = "PaystackServerError";
 }
 
 export class PaystackAuthorizationError extends PaystackError {

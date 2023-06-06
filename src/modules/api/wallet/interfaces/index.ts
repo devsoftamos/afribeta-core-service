@@ -5,7 +5,7 @@ export type UserWalletCreation = Prisma.WalletUncheckedCreateInput &
 
 export enum VirtualAccountProviders {
     Paystack = "paystack",
-    ProvidusBank = "providus_bank",
+    ProvidusBank = "providus",
 }
 
 export interface CreateWalletAccount {

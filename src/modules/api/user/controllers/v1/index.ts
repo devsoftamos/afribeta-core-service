@@ -13,7 +13,7 @@ import {
     ValidationPipe,
 } from "@nestjs/common";
 import { User as UserEntity } from "@prisma/client";
-import { User } from "../../decorator";
+import { User } from "../../decorators";
 import {
     UpdateProfilePasswordDto,
     UpsertTransactionPinDto,

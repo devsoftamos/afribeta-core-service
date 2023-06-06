@@ -1,11 +1,14 @@
 import Axios, { AxiosError, AxiosInstance, AxiosRequestConfig } from "axios";
 import {
     PaystackAuthorizationError,
-    PaystackGenericError,
+    PaystackNotFoundError,
+    PaystackServerError,
     PaystackValidationError,
 } from "./errors";
 import {
     AssignDynamicVirtualAccountWithValidationOptions,
+    BankListOptions,
+    BankListResponse,
     PaystackOptions,
     PaystackResponse,
 } from "./interfaces";
@@ -22,6 +25,27 @@ export class Paystack {
         },
     });
     constructor(protected instanceOptions: PaystackOptions) {}
+
+    private handlePaystackError(error: AxiosError<any>) {
+        switch (true) {
+            case error.response?.status == 401: {
+                throw new PaystackAuthorizationError(
+                    error.response.data.message
+                );
+            }
+            case error.response?.status == 400: {
+                throw new PaystackValidationError(error.response.data.message);
+            }
+
+            case error.response?.status == 404: {
+                throw new PaystackNotFoundError(error.response.data.message);
+            }
+
+            default: {
+                throw new PaystackServerError("Something unexpected happened");
+            }
+        }
+    }
 
     /**
      * Note: This method triggers two webhooks events due to the customer validation step.
@@ -66,20 +90,28 @@ export class Paystack {
         }
     }
 
-    private handlePaystackError(error: AxiosError<any>) {
-        switch (true) {
-            case error.response?.status == 401: {
-                throw new PaystackAuthorizationError(
-                    error.response.data.message
-                );
+    /**
+     *
+     * @param options query options
+     * @returns list of banks
+     * @description Get a list of all supported banks and their properties
+     */
+    async getBanks(options?: BankListOptions) {
+        try {
+            const fetchOptions: AxiosRequestConfig = {
+                method: "GET",
+                url: "/bank",
+                params: options,
+            };
+            const { data } = await this.axios<
+                PaystackResponse<BankListResponse[]>
+            >(fetchOptions);
+            return data;
+        } catch (error) {
+            if (!Axios.isAxiosError(error)) {
+                throw error;
             }
-            case error.response?.status == 400: {
-                throw new PaystackValidationError(error.response.data.message);
-            }
-
-            default: {
-                throw new PaystackGenericError("Something unexpected happened");
-            }
+            this.handlePaystackError(error);
         }
     }
 }
