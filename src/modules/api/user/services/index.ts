@@ -3,10 +3,15 @@ import { ApiResponse, buildResponse } from "@/utils/api-response-util";
 import { forwardRef, HttpStatus, Inject, Injectable } from "@nestjs/common";
 import { Prisma, User } from "@prisma/client";
 import { AuthService } from "../../auth/services";
-import { UpdateProfilePasswordDto, UpsertTransactionPinDto } from "../dtos";
+import {
+    UpdateProfilePasswordDto,
+    UpsertTransactionPinDto,
+    VerifyTransactionPinDto,
+} from "../dtos";
 import {
     DuplicateTransactionPinException,
     IncorrectPasswordException,
+    IncorrectTransactionPinException,
     UserNotFoundException,
 } from "../errors";
 
@@ -96,7 +101,10 @@ export class UserService {
         });
     }
 
-    async upsertTransactionPin(options: UpsertTransactionPinDto, user: User) {
+    async upsertTransactionPin(
+        options: UpsertTransactionPinDto,
+        user: User
+    ): Promise<ApiResponse> {
         const userData = await this.prisma.user.findUnique({
             where: { id: user.id },
         });
@@ -120,7 +128,9 @@ export class UserService {
             );
         }
 
-        const hashedPin = await this.authService.hashPassword(options.pin);
+        const hashedPin = await this.authService.hashPassword(
+            options.transactionPin
+        );
         await this.prisma.user.update({
             where: {
                 id: user.id,
@@ -132,6 +142,25 @@ export class UserService {
 
         return buildResponse({
             message: "Transaction pin successfully saved",
+        });
+    }
+
+    async verifyTransactionPin(
+        options: VerifyTransactionPinDto,
+        user: User
+    ): Promise<ApiResponse> {
+        const isMatched = await this.authService.comparePassword(
+            options.transactionPin,
+            user.transactionPin
+        );
+        if (!isMatched) {
+            throw new IncorrectTransactionPinException(
+                "Incorrect transaction pin",
+                HttpStatus.BAD_REQUEST
+            );
+        }
+        return buildResponse({
+            message: "Transaction pin successfully verified",
         });
     }
 }

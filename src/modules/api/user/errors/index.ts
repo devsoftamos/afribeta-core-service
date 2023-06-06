@@ -15,3 +15,7 @@ export class IncorrectPasswordException extends HttpException {
 export class DuplicateTransactionPinException extends HttpException {
     name = "DuplicateTransactionPinException";
 }
+
+export class IncorrectTransactionPinException extends HttpException {
+    name: string = "IncorrectTransactionPinException";
+}

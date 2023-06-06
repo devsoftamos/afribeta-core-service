@@ -4,14 +4,21 @@ import {
     Body,
     Controller,
     Get,
+    HttpCode,
+    HttpStatus,
     Patch,
+    Post,
     Req,
     UseGuards,
     ValidationPipe,
 } from "@nestjs/common";
 import { User as UserEntity } from "@prisma/client";
 import { User } from "../../decorator";
-import { UpdateProfilePasswordDto, UpsertTransactionPinDto } from "../../dtos";
+import {
+    UpdateProfilePasswordDto,
+    UpsertTransactionPinDto,
+    VerifyTransactionPinDto,
+} from "../../dtos";
 import { UserService } from "../../services";
 
 @UseGuards(AuthGuard)
@@ -44,6 +51,18 @@ export class UserController {
     ) {
         return await this.userService.upsertTransactionPin(
             upsertTransactionPinDto,
+            user
+        );
+    }
+
+    @HttpCode(HttpStatus.OK)
+    @Post("profile/verify-transaction-pin")
+    async verifyTransactionPin(
+        @Body(ValidationPipe) verifyTransactionPinDto: VerifyTransactionPinDto,
+        @User() user: UserEntity
+    ) {
+        return await this.userService.verifyTransactionPin(
+            verifyTransactionPinDto,
             user
         );
     }

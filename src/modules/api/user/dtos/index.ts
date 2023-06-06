@@ -1,4 +1,4 @@
-import { IsNumberString, IsString, Length } from "class-validator";
+import { IsNotEmpty, IsNumberString, IsString, Length } from "class-validator";
 
 export class GetUserByIdentifierDto {
     @IsString()
@@ -16,8 +16,14 @@ export class UpdateProfilePasswordDto {
 export class UpsertTransactionPinDto {
     @IsNumberString()
     @Length(4, 4)
-    pin: string;
+    transactionPin: string;
 
     @IsString()
     password: string;
+}
+
+export class VerifyTransactionPinDto {
+    @IsNumberString({}, { message: "Invalid pin format" })
+    @IsNotEmpty({ message: "Pin must not be empty" })
+    transactionPin: string;
 }
