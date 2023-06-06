@@ -4,7 +4,7 @@ This is a nestjs prisma webpack starter template incorporating some useful libra
 
 ## Install Dependencies
 
-First, clone the repo to your working directory.
+First, clone the repo to your working directory. Make sure you have pnpm globally installed in your system. Run the below command
 
 ```bash
 $ pnpm install
@@ -13,17 +13,14 @@ $ pnpm install
 ## Install husky
 
 ```bash
-$ pnpm prepare
+$ pnpm husky:install
 ```
 
 ## Running the app
 
 ```bash
 # development
-$ pnpm watch
-
-# watch mode
-$ pnpm watch
+$ pnpm start:dev
 
 # production mode
 $ pnpm start:prod
