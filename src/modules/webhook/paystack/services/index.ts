@@ -21,7 +21,7 @@ export class PaystackWebhookService implements PaystackWebhook {
             switch (eventBody.event) {
                 case Event.DedicatedAssignSuccessEvent: {
                     await this.dedicatedAccountAssignSuccessHandler(
-                        eventBody.data
+                        eventBody.data as DedicatedAccountAssignSuccessData
                     );
                     break;
                 }
@@ -43,9 +43,10 @@ export class PaystackWebhookService implements PaystackWebhook {
             bankName: eventData.dedicated_account.bank.name,
             email: eventData.customer.email,
             provider: VirtualAccountProviders.Paystack,
+            providerBankSlug: eventData.dedicated_account.bank.slug,
         };
 
-        await this.walletService.createUserWalletAccount(
+        await this.walletService.createUserWalletAndVirtualAccount(
             createWalletAccountOptions
         );
     }

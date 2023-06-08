@@ -52,7 +52,6 @@ model User {
   roleId                Int
   ipAddress             String
   notificationToken     String?
-  customerCode          String?
   cacNumber             String?
   utilityDocumentUrl    String?
   createdAt             DateTime               @default(now())
@@ -67,6 +66,7 @@ model User {
   senderTransactions    Transaction[]          @relation(name: "senderToTransaction")
   receiverTransactions  Transaction[]          @relation(name: "receiverToTransaction")
   virtualBankAccount    VirtualBankAccount?
+  commissions           UserCommission[]
 
   @@map("Users")
 }
@@ -84,6 +84,7 @@ model Bank {
   accountName      String
   accountNumber    String
   bankCode         String
+  slug             String?
   bankCodeProvider BankCodeprovider @default(providus)
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
@@ -104,7 +105,9 @@ model VirtualBankAccount {
   bankName      String
   accountName   String
   accountNumber String
+  slug          String?
   provider      VirtualAccountProviders
+  customerCode  String? //customer code from paystack 
   createdAt     DateTime                @default(now())
   updatedAt     DateTime                @updatedAt
   user          User                    @relation(fields: [userId], references: [id])
@@ -228,10 +231,11 @@ enum TransactionStatus {
   declined
 }
 
-enum PaymentMethod {
+enum PaymentChannel {
   wallet
-  paystack
-  providus_transfer
+  paystack_channel //Any of the paystack channels: card, ussd etc
+  paystack_virtualaccount_transfer
+  providus_virtualaccount_transfer
 }
 
 enum WalletFundTransactionFlow {
@@ -255,9 +259,10 @@ model Transaction {
   flow                         TransactionFlow
   amount                       Float
   serviceCharge                Float?
-  totalAmount                  Float
+  totalAmount                  Float //serviceCharge + amount
   status                       TransactionStatus
   paymentStatus                PaymentStatus?
+  paymentReference             String? //reference for payment
   userId                       Int
   senderId                     Int
   receiverId                   Int
@@ -273,7 +278,7 @@ model Transaction {
   meterType                    String?
   phone1                       String?
   phone2                       String?
-  paymentMethod                PaymentMethod?
+  paymentChannel               PaymentChannel?
   token                        String?
   commission                   Float?
   merchantCommission           Float?
@@ -286,4 +291,30 @@ model Transaction {
   receiver                     User                       @relation(name: "receiverToTransaction", fields: [receiverId], references: [id])
 
   @@map("Transactions")
+}
+
+//Commission
+model Commission {
+  id        Int              @id @default(autoincrement())
+  name      String
+  slug      String           @unique
+  baseRate  Float
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  users     UserCommission[]
+
+  @@map("Commissions")
+}
+
+model UserCommission {
+  userId       Int
+  commissionId Int
+  rate         Float
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  commission   Commission @relation(fields: [commissionId], references: [id])
+  user         User       @relation(fields: [userId], references: [id])
+
+  @@id([userId, commissionId])
+  @@map("UserCommissions")
 }

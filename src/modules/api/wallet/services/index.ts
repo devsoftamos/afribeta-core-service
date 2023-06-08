@@ -30,16 +30,17 @@ export class WalletService {
         private userService: UserService
     ) {}
 
-    async createUserWalletAccount(options: CreateWalletAccount) {
+    async createUserWalletAndVirtualAccount(options: CreateWalletAccount) {
         try {
             const user = await this.userService.findUserByEmail(options.email);
             if (!user) {
                 logger.error(
                     new UserNotFoundException(
-                        "Could not find user to create wallet",
+                        "Could not find user to create wallet and virtual account",
                         HttpStatus.NOT_FOUND
                     )
                 );
+                return false;
             }
             const wallet = await this.prisma.wallet.findUnique({
                 where: { userId: user.id },
@@ -57,15 +58,6 @@ export class WalletService {
 
             //create record
             await this.prisma.$transaction(async (tx) => {
-                await tx.user.update({
-                    where: {
-                        id: user.id,
-                    },
-                    data: {
-                        customerCode: options.customerCode,
-                    },
-                });
-
                 await tx.wallet.create({
                     data: { userId: user.id },
                 });
@@ -77,6 +69,8 @@ export class WalletService {
                         bankName: options.bankName,
                         provider: options.provider,
                         userId: user.id,
+                        customerCode: options.customerCode,
+                        slug: options.providerBankSlug,
                     },
                 });
             });

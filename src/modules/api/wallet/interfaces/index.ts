@@ -15,4 +15,5 @@ export interface CreateWalletAccount {
     accountNumber: string;
     provider: VirtualAccountProviders;
     customerCode: string;
+    providerBankSlug?: string;
 }

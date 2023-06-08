@@ -1,17 +1,19 @@
 version: 0.2
 
 phases:
-  pre_build:
-    commands:
-      - npm install -g pnpm
-      - pnpm install
-  build:
-    commands:
-      - pnpm build
+    pre_build:
+        commands:
+            - npm install -g pnpm
+            - pnpm install
+    build:
+        commands:
+            - pnpm build
+    post_build:
+        commands:
+            - pnpm db:migrate:prod
 
 artifacts:
-  files:
-    - '**/*'
-  discard-paths: no
-  base-directory: ./
-
+    files:
+        - "**/*"
+    discard-paths: no
+    base-directory: ./

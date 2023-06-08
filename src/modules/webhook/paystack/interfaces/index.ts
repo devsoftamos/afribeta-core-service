@@ -2,31 +2,57 @@ export interface PaystackGenericData {
     [key: string]: any;
 }
 
-// type DedicatedAssignSuccessEvent = "dedicatedaccount.assign.success";
-// type CustomerIdentificationEvent = "customeridentification.success";
-// type ChargeSuccessEvent = "charge.success";
-// export type Events =
-//     | DedicatedAssignSuccessEvent
-//     | CustomerIdentificationEvent
-//     | ChargeSuccessEvent;
-
 export enum Event {
     DedicatedAssignSuccessEvent = "dedicatedaccount.assign.success",
-    CustomerIdentificationEvent = "customeridentification.success",
+    CustomerIdentificationSuccessEvent = "customeridentification.success",
     ChargeSuccessEvent = "charge.success",
 }
-//
-export interface EventBody<
-    E extends Event = Event.CustomerIdentificationEvent
-> {
-    event: Event;
-    data: E extends CustomerIdentificationSuccessData
-        ? CustomerIdentificationSuccessData
-        : DedicatedAccountAssignSuccessData;
+
+export interface EventBody<E extends Event = Event> {
+    event: E;
+    data: E extends keyof EventDataMap ? EventDataMap[E] : never;
 }
 
-export interface ChargeSuccessData {
+type EventDataMap = {
+    [Event.DedicatedAssignSuccessEvent]: DedicatedAccountAssignSuccessData;
+    [Event.CustomerIdentificationSuccessEvent]: CustomerIdentificationSuccessData;
+    [Event.ChargeSuccessEvent]: ChargeSuccessData;
+};
+
+//charge.success data (both normal and transfer)
+export interface ChargeSuccessData<Meta = PaystackGenericData> {
+    id: number;
     amount: number;
+    domain: string;
+    status: string;
+    reference: string;
+    channel: string;
+    currency: string;
+    customer: {
+        id: number;
+        first_name: string;
+        last_name: string;
+        email: string;
+        customer_code: string;
+        phone: string;
+        metadata: Meta;
+    };
+    authorization: {
+        authorization_code: string;
+        card_type: string;
+        bank: string;
+        country_code: string;
+        brand: string;
+        account_name?: string;
+        channel?: string;
+        sender_bank?: string;
+        sender_bank_account_number?: string;
+        sender_country?: string;
+        sender_name?: string;
+        narration?: string;
+        receiver_bank_account_number?: string;
+        receiver_bank?: string;
+    };
 }
 
 //customer identification success

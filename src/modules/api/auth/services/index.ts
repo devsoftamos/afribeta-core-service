@@ -169,6 +169,8 @@ export class AuthService {
             password: hashedPassword,
             ipAddress: ip,
             isMerchantUpgradable: options.userType == "agent" ? true : false,
+            merchantUpgradeStatus:
+                options.userType == "agent" ? "toBeUpgraded" : null,
             role: {
                 connectOrCreate: {
                     where: { name: options.userType },
