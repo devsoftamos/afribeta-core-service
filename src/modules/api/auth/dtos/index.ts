@@ -8,8 +8,8 @@ import {
 } from "class-validator";
 
 enum UserType {
-    AGENT = "agent",
-    CUSTOMER = "customer",
+    AGENT = "AGENT",
+    CUSTOMER = "CUSTOMER",
 }
 
 export class SignUpDto {

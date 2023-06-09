@@ -168,9 +168,9 @@ export class AuthService {
             identifier: customAlphabet(urlAlphabet, 16)(),
             password: hashedPassword,
             ipAddress: ip,
-            isMerchantUpgradable: options.userType == "agent" ? true : false,
+            isMerchantUpgradable: options.userType == "AGENT" ? true : false,
             merchantUpgradeStatus:
-                options.userType == "agent" ? "toBeUpgraded" : null,
+                options.userType == "AGENT" ? "TO_BE_UPGRADED" : null,
             role: {
                 connectOrCreate: {
                     where: { name: options.userType },

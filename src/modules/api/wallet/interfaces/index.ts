@@ -1,14 +1,15 @@
-import { Prisma } from "@prisma/client";
+import {
+    PaymentChannel,
+    Prisma,
+    TransactionStatus,
+    VirtualAccountProviders,
+} from "@prisma/client";
+import { WalletFundTransactionFlow, PaymentStatus } from "@prisma/client";
 
 export type UserWalletCreation = Prisma.WalletUncheckedCreateInput &
     Prisma.VirtualBankAccountUncheckedCreateInput;
 
-export enum VirtualAccountProviders {
-    Paystack = "paystack",
-    ProvidusBank = "providus",
-}
-
-export interface CreateWalletAccount {
+export interface CreateWalletAAndVirtualAccount {
     email: string;
     bankName: string;
     accountName: string;
@@ -16,4 +17,17 @@ export interface CreateWalletAccount {
     provider: VirtualAccountProviders;
     customerCode: string;
     providerBankSlug?: string;
+}
+
+export interface WalletFundHandler {
+    userId: number;
+    amount: number;
+    serviceCharge?: number;
+    paymentStatus?: PaymentStatus;
+    walletFundTransactionFlow: WalletFundTransactionFlow;
+    senderId?: number;
+    receiverId?: number;
+    paymentChannel?: PaymentChannel;
+    status: TransactionStatus;
+    paymentReference?: string;
 }

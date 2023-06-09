@@ -1,17 +1,24 @@
+import { PrismaService } from "@/modules/core/prisma/services";
 import { PaystackService } from "@/modules/workflow/payment/services/paystack";
-import { buildResponse } from "@/utils/api-response-util";
+import { ApiResponse, buildResponse } from "@/utils/api-response-util";
 import { HttpStatus, Injectable } from "@nestjs/common";
+import { User } from "@prisma/client";
 import { BankProvider, GetPaymentProviderBanksDto } from "../dtos";
-import { InvalidBankProvider } from "../errors";
+import {
+    InvalidBankProvider,
+    VirtualAccountNotFoundException,
+} from "../errors";
 
 @Injectable()
 export class BankService {
     constructor(
-        //private prisma: PrismaService,
+        private prisma: PrismaService,
         private paystackService: PaystackService
     ) {}
 
-    async getBankList(options: GetPaymentProviderBanksDto) {
+    async getBankList(
+        options: GetPaymentProviderBanksDto
+    ): Promise<ApiResponse> {
         switch (options.provider) {
             case BankProvider.PAYSTACK: {
                 const data = await this.paystackService.getBankList();
@@ -36,5 +43,28 @@ export class BankService {
                 );
             }
         }
+    }
+
+    async getVirtualBankAccount(user: User) {
+        const virtualAccount = await this.prisma.virtualBankAccount.findUnique({
+            where: { userId: user.id },
+            select: {
+                accountName: true,
+                accountNumber: true,
+                bankName: true,
+                slug: true,
+                provider: true,
+            },
+        });
+        if (!virtualAccount) {
+            throw new VirtualAccountNotFoundException(
+                "Virtual account not found",
+                HttpStatus.NOT_FOUND
+            );
+        }
+        return buildResponse({
+            message: "Virtual account successfully retrieved",
+            data: virtualAccount,
+        });
     }
 }

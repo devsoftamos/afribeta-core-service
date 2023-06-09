@@ -12,24 +12,23 @@ datasource db {
 
 //User
 enum UserType {
-  super_admin
-  admin
-  merchant
-  agent
-  customer
+  SUPER_ADMIN
+  ADMIN
+  MERCHANT
+  AGENT
+  CUSTOMER
 }
 
 enum Status {
-  enabled
-  disabled
-  blocked
+  ENABLED
+  DISABLED
 }
 
 enum MerchantUpgradeStatus {
-  pending
-  toBeUpgraded
-  upgraded
-  declined
+  PENDING
+  TO_BE_UPGRADED
+  UPGRADED
+  DECLINED
 }
 
 model User {
@@ -42,7 +41,7 @@ model User {
   password              String
   userType              UserType
   profilePhoto          String?
-  status                Status                 @default(enabled)
+  status                Status                 @default(ENABLED)
   state                 String?
   localGovernmentArea   String?
   createdById           Int?
@@ -73,8 +72,8 @@ model User {
 
 //Bank
 enum BankCodeprovider {
-  paystack
-  providus
+  PAYSTACK
+  PROVIDUS
 }
 
 model Bank {
@@ -85,7 +84,7 @@ model Bank {
   accountNumber    String
   bankCode         String
   slug             String?
-  bankCodeProvider BankCodeprovider @default(providus)
+  bankCodeProvider BankCodeprovider @default(PROVIDUS)
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
   user             User             @relation(fields: [userId], references: [id])
@@ -95,8 +94,8 @@ model Bank {
 
 //Virtual Bank Account
 enum VirtualAccountProviders {
-  paystack
-  providus
+  PAYSTACK
+  PROVIDUS
 }
 
 model VirtualBankAccount {
@@ -178,7 +177,7 @@ model Wallet {
 
 //Notification
 enum NotificationType {
-  wallet_fund_request
+  WALLET_FUND_REQUEST
 }
 
 model Notification {
@@ -209,13 +208,13 @@ model PasswordResetRequest {
 
 //Transactions logs
 enum TransactionType {
-  airtime_to_cash
-  data_purchase
-  transfer
-  wallet_fund
-  electricity_bill
-  internet_bill
-  cableTv_bill
+  AIRTIME_TO_CASH
+  DATA_PURCHASE
+  TRANSFER
+  WALLET_FUND
+  ELECTRICITY_BILL
+  INTERNET_BILL
+  CABLETV_BILL
 }
 
 enum TransactionFlow {
@@ -224,33 +223,33 @@ enum TransactionFlow {
 }
 
 enum TransactionStatus {
-  pending
-  success
-  approved
-  failed
-  declined
+  PENDING
+  SUCCESS
+  APPROVED
+  FAILED
+  DECLINED
 }
 
 enum PaymentChannel {
-  wallet
-  paystack_channel //Any of the paystack channels: card, ussd etc
-  paystack_virtualaccount_transfer
-  providus_virtualaccount_transfer
+  WALLET
+  PAYSTACK_CHANNEL //Any of the paystack channels: card, ussd etc
+  PAYSTACK_VIRTUAL_ACCOUNT_TRANSFER
+  PROVIDUS_VIRTUAL_ACCOUNT_TRANSFER
 }
 
 enum WalletFundTransactionFlow {
-  to_agent
-  to_beneficiary
-  from_merchant
-  from_benefactor
-  self_fund
-  from_paid_commission
+  TO_AGENT
+  TO_BENEFICIARY
+  FROM_MERCHANT
+  FROM_BENEFACTOR
+  SELF_FUND
+  FROM_PAID_COMMISSION
 }
 
 enum PaymentStatus {
-  pending
-  success
-  failed
+  PENDING
+  SUCCESS
+  FAILED
 }
 
 model Transaction {
@@ -258,18 +257,19 @@ model Transaction {
   type                         TransactionType
   flow                         TransactionFlow
   amount                       Float
-  serviceCharge                Float?
+  serviceCharge                Float                      @default(0)
   totalAmount                  Float //serviceCharge + amount
   status                       TransactionStatus
   paymentStatus                PaymentStatus?
-  paymentReference             String? //reference for payment
+  paymentReference             String?                    @unique //reference for payment
   userId                       Int
   senderId                     Int
   receiverId                   Int
   destinationBankName          String?
   destinationBankAccountNumber String?
   destinationBankAccountName   String?
-  description                  String?                    @db.VarChar(255)
+  shortDescription             String?                    @db.VarChar(255)
+  description                  String?                    @db.Text
   transactionId                String
   provider                     String?
   providerLogo                 String?

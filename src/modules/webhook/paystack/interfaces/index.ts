@@ -2,6 +2,10 @@ export interface PaystackGenericData {
     [key: string]: any;
 }
 
+export enum Channel {
+    DEDICATED_NUBAN = "dedicated_nuban",
+}
+
 export enum Event {
     DedicatedAssignSuccessEvent = "dedicatedaccount.assign.success",
     CustomerIdentificationSuccessEvent = "customeridentification.success",
@@ -20,7 +24,7 @@ type EventDataMap = {
 };
 
 //charge.success data (both normal and transfer)
-export interface ChargeSuccessData<Meta = PaystackGenericData> {
+export interface ChargeSuccessData<Meta = ChargeSuccessMetadata> {
     id: number;
     amount: number;
     domain: string;
@@ -28,6 +32,7 @@ export interface ChargeSuccessData<Meta = PaystackGenericData> {
     reference: string;
     channel: string;
     currency: string;
+    metadata: Meta;
     customer: {
         id: number;
         first_name: string;
@@ -35,7 +40,6 @@ export interface ChargeSuccessData<Meta = PaystackGenericData> {
         email: string;
         customer_code: string;
         phone: string;
-        metadata: Meta;
     };
     authorization: {
         authorization_code: string;
@@ -92,6 +96,11 @@ export interface DedicatedAccountAssignSuccessData {
             account_type: string;
         };
     };
+}
+
+//meta data
+export interface ChargeSuccessMetadata {
+    wallet_fund: boolean;
 }
 
 export interface PaystackWebhook {

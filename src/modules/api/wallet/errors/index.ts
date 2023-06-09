@@ -11,3 +11,15 @@ export class DuplicateWalletException extends HttpException {
 export class WalletCreationPaystackException extends HttpException {
     name = "WalletCreationPaystackException";
 }
+
+export class WalletNotFoundException extends HttpException {
+    name = "WalletNotFoundException";
+}
+
+export class InvalidWalletFundTransactionFlow extends HttpException {
+    name = "InvalidWalletFundTransactionFlow";
+}
+
+export class DuplicateSelfFundWalletTransaction extends HttpException {
+    name = "DuplicateSelfFundWalletTransaction";
+}

@@ -9,7 +9,7 @@ import { ProvidusBankWebhookModule } from "./providusBank";
         PaystackWebhookModule,
         RouterModule.register([
             {
-                path: "webhooks",
+                path: "webhook",
                 module: PaystackWebhookModule,
             },
         ]),
