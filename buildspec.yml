@@ -5,6 +5,7 @@ phases:
         commands:
             - npm install -g pnpm
             - pnpm install
+            - npm install --save morgan
     build:
         commands:
             - pnpm build
