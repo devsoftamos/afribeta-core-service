@@ -1,7 +1,7 @@
 import { HttpException } from "@nestjs/common";
 
 export class PaystackWorkflowException extends HttpException {
-    name: string = "PaystackWorkflowException";
+    name = "PaystackWorkflowException";
 }
 
 export class PaystackBankException extends PaystackWorkflowException {

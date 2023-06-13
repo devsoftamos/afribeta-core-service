@@ -29,9 +29,9 @@ export class InvalidWalletWithdrawalPaymentProvider extends HttpException {
 }
 
 export class InsufficientWalletBalanceException extends HttpException {
-    name: string = "InsufficientWalletBalanceException";
+    name = "InsufficientWalletBalanceException";
 }
 
 export class DuplicateWalletWithdrawalTransaction extends HttpException {
-    name: string = "DuplicateWalletWithdrawalTransaction";
+    name = "DuplicateWalletWithdrawalTransaction";
 }
