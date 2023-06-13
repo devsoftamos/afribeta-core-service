@@ -1,4 +1,10 @@
-import { IsNumberString, IsString, Length } from "class-validator";
+import {
+    IsEnum,
+    IsInt,
+    IsNumberString,
+    IsString,
+    Length,
+} from "class-validator";
 
 export class InitiateWalletCreationDto {
     @IsNumberString()
@@ -13,4 +19,50 @@ export class InitiateWalletCreationDto {
 
     @IsString()
     bankCode: string;
+}
+
+enum PaymentChannel {
+    PAYSTACK_CHANNEL = "PAYSTACK_CHANNEL",
+}
+export class InitializeWalletFundingDto {
+    @IsInt()
+    amount: number;
+
+    @IsEnum(PaymentChannel)
+    paymentChannel: PaymentChannel;
+}
+
+export enum PaymentProvider {
+    PAYSTACK = "PAYSTACK",
+    PROVIDUS = "PROVIDUS",
+}
+
+export enum WalletBallanceSource {
+    MAIN = "MAIN",
+    COMMISSION = "COMMISSION",
+}
+export class InitializeWithdrawalDto {
+    @IsEnum(PaymentProvider)
+    paymentProvider: PaymentProvider;
+
+    @IsString()
+    bankName: string;
+
+    @IsString()
+    accountName: string;
+
+    @IsString()
+    accountNumber: string;
+
+    @IsInt()
+    amount: number;
+
+    @IsInt()
+    serviceCharge: number;
+
+    @IsString()
+    bankCode: string;
+
+    // @IsEnum(WalletBallanceSource)
+    // walletBalanceSource: WalletBallanceSource;
 }

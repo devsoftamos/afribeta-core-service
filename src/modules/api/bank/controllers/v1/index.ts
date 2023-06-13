@@ -8,7 +8,7 @@ import {
     ValidationPipe,
 } from "@nestjs/common";
 import { User as UserEntity } from "@prisma/client";
-import { GetPaymentProviderBanksDto } from "../../dtos";
+import { GetPaymentProviderBanksDto, ResolveBankAccountDto } from "../../dtos";
 import { BankService } from "../../services";
 
 @Controller({
@@ -29,5 +29,13 @@ export class BankController {
     @Get("virtual-account")
     async getVirtualBankAccount(@User() user: UserEntity) {
         return await this.bankService.getVirtualBankAccount(user);
+    }
+
+    @Get("resolve")
+    async resolveBankAccount(
+        @Query(ValidationPipe)
+        resolveBankAccountDto: ResolveBankAccountDto
+    ) {
+        return await this.bankService.resolveBankAccount(resolveBankAccountDto);
     }
 }

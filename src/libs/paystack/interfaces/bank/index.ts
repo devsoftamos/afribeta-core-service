@@ -1,7 +1,7 @@
 type Currency = "NGN" | "ZAR" | "USD" | "GHS";
 type Country = "nigeria" | "ghana";
 
-export interface BankListResponse {
+export interface BankListResponseData {
     id: number;
     name: string;
     slug: string;
@@ -25,4 +25,14 @@ export interface BankListOptions {
     gateway?: string;
     currency?: Currency;
     type?: string;
+}
+
+export interface ResolveBankAccountOptions {
+    account_number: string;
+    bank_code: string;
+}
+
+export interface ResolveBankAccountResponse {
+    account_number: string;
+    account_name: string;
 }

@@ -6,11 +6,13 @@ import { PrismaService } from "@/modules/core/prisma/services";
 import { PaystackService } from "@/modules/workflow/payment/services/paystack";
 import { HttpStatus, Injectable } from "@nestjs/common";
 import {
-    Prisma,
+    PaymentStatus,
+    Transaction,
     TransactionFlow,
     TransactionStatus,
     TransactionType,
     User,
+    UserType,
     WalletFundTransactionFlow,
 } from "@prisma/client";
 import {
@@ -18,7 +20,12 @@ import {
     UserNotFoundException,
 } from "@/modules/api/user";
 import { UserService } from "@/modules/api/user/services";
-import { InitiateWalletCreationDto } from "../dto";
+import {
+    InitializeWalletFundingDto,
+    InitializeWithdrawalDto,
+    InitiateWalletCreationDto,
+    PaymentProvider,
+} from "../dto";
 import {
     WalletCreationException,
     WalletCreationPaystackException,
@@ -26,16 +33,23 @@ import {
     WalletNotFoundException,
     InvalidWalletFundTransactionFlow,
     DuplicateSelfFundWalletTransaction,
+    InvalidWalletWithdrawalPaymentProvider,
+    InsufficientWalletBalanceException,
+    DuplicateWalletWithdrawalTransaction,
 } from "../errors";
 import {
     CreateWalletAAndVirtualAccount,
-    WalletFundHandler,
+    ProcessWalletFundOptions,
+    ProcessWalletWithdrawalOptions,
 } from "../interfaces";
 import logger from "moment-logger";
-import { buildResponse } from "@/utils/api-response-util";
+import { ApiResponse, buildResponse } from "@/utils/api-response-util";
 import { isProduction } from "@/config";
 import { TransactionService } from "../../transaction/services";
-import { TransactionShortDescription } from "../../transaction";
+import {
+    TransactionNotFoundException,
+    TransactionShortDescription,
+} from "../../transaction";
 
 @Injectable()
 export class WalletService {
@@ -179,7 +193,8 @@ export class WalletService {
         }
     }
 
-    async walletFundHandler(options: WalletFundHandler) {
+    //Process wallet funding
+    async processWalletFunding(options: ProcessWalletFundOptions) {
         switch (options.walletFundTransactionFlow) {
             //self wallet fund
             case WalletFundTransactionFlow.SELF_FUND: {
@@ -197,14 +212,17 @@ export class WalletService {
     }
 
     //self wallet fund handler
-    async handleSelfWalletFund(options: WalletFundHandler) {
-        const transaction = await this.prisma.transaction.findUnique({
-            where: { paymentReference: options.paymentReference },
+    async handleSelfWalletFund(options: ProcessWalletFundOptions) {
+        const transaction = await this.prisma.transaction.findFirst({
+            where: {
+                paymentReference: options.paymentReference,
+                paymentStatus: PaymentStatus.SUCCESS,
+            },
         });
 
         if (transaction) {
             throw new DuplicateSelfFundWalletTransaction(
-                "Wallet Fund Transaction already created",
+                "Wallet fund transaction already completed",
                 HttpStatus.BAD_REQUEST
             );
         }
@@ -223,17 +241,23 @@ export class WalletService {
         //Handle DB transactions
         await this.prisma.$transaction(async (tx) => {
             //update wallet idf status is success
-            if (options.status == TransactionStatus.SUCCESS) {
-                await tx.wallet.update({
-                    where: { userId: options.userId },
-                    data: {
-                        mainBalance: { increment: options.amount },
-                    },
-                });
-            }
-
-            await tx.transaction.create({
+            await tx.wallet.update({
+                where: { userId: options.userId },
                 data: {
+                    mainBalance: { increment: options.amount },
+                },
+            });
+
+            await tx.transaction.upsert({
+                where: {
+                    paymentReference: options.paymentReference,
+                },
+                update: {
+                    status: TransactionStatus.SUCCESS,
+                    paymentStatus: PaymentStatus.SUCCESS,
+                },
+                create: {
+                    //for virtual account transfer
                     amount: options.amount,
                     userId: options.userId,
                     status: options.status,
@@ -243,11 +267,192 @@ export class WalletService {
                     paymentStatus: options.paymentStatus,
                     paymentChannel: options.paymentChannel,
                     paymentReference: options.paymentReference,
-                    transactionId: this.transactionService.generateId(),
+                    transactionId: this.transactionService.generateId({
+                        type: "transaction",
+                    }),
                     shortDescription: TransactionShortDescription.WALLET_FUNDED,
                     walletFundTransactionFlow:
                         options.walletFundTransactionFlow,
-                } as Prisma.TransactionUncheckedCreateInput,
+                },
+            });
+        });
+    }
+
+    // wallet funding --- currently paystack
+    async initializeWalletFunding(
+        options: InitializeWalletFundingDto,
+        user: User
+    ): Promise<ApiResponse> {
+        const paymentReference = this.transactionService.generateId({
+            type: "reference",
+        });
+        const transactionId = this.transactionService.generateId({
+            type: "transaction",
+        });
+
+        const createdTransaction = await this.prisma.transaction.create({
+            data: {
+                amount: options.amount,
+                totalAmount: options.amount,
+                flow: TransactionFlow.IN,
+                type: TransactionType.WALLET_FUND,
+                userId: user.id,
+                paymentStatus: PaymentStatus.PENDING,
+                status: TransactionStatus.PENDING,
+                paymentChannel: options.paymentChannel,
+                paymentReference: paymentReference,
+                shortDescription: TransactionShortDescription.WALLET_FUNDED,
+                walletFundTransactionFlow: WalletFundTransactionFlow.SELF_FUND,
+                transactionId: transactionId,
+            },
+        });
+
+        return buildResponse({
+            message: "Reference successfully generated",
+            data: {
+                reference: createdTransaction.paymentReference,
+            },
+        });
+    }
+
+    //Withdraw fund from wallet to bank account
+    async initializeWalletWithdrawal(
+        options: InitializeWithdrawalDto,
+        user: User
+    ): Promise<ApiResponse> {
+        const wallet = await this.prisma.wallet.findUnique({
+            where: { userId: user.id },
+        });
+        if (!wallet) {
+            throw new WalletNotFoundException(
+                "Wallet could not be found",
+                HttpStatus.NOT_FOUND
+            );
+        }
+
+        const theUser = await this.userService.findUserById(user.id);
+        if (theUser.userType == UserType.CUSTOMER) {
+            if (options.amount > wallet.mainBalance) {
+                throw new InsufficientWalletBalanceException(
+                    "Insufficient balance",
+                    HttpStatus.BAD_REQUEST
+                );
+            }
+        } else {
+            if (options.amount > wallet.commissionBalance) {
+                throw new InsufficientWalletBalanceException(
+                    "Insufficient commission balance",
+                    HttpStatus.BAD_REQUEST
+                );
+            }
+        }
+
+        switch (options.paymentProvider) {
+            case PaymentProvider.PAYSTACK: {
+                await this.paystackService.initializeTransfer({
+                    accountName: options.accountName,
+                    accountNumber: options.accountNumber,
+                    amount: options.amount,
+                    serviceCharge: options.serviceCharge,
+                    bankCode: options.bankCode,
+                    bankName: options.bankName,
+                    userId: user.id,
+                });
+                return buildResponse({
+                    message: "Transfer successfully initiated",
+                });
+            }
+
+            default: {
+                throw new InvalidWalletWithdrawalPaymentProvider(
+                    "Invalid wallet withdrawal payment provider selected",
+                    HttpStatus.BAD_REQUEST
+                );
+            }
+        }
+    }
+
+    async processWalletWithdrawal(options: ProcessWalletWithdrawalOptions) {
+        const transaction = await this.prisma.transaction.findUnique({
+            where: { paymentReference: options.paymentReference },
+        });
+        if (!transaction) {
+            throw new TransactionNotFoundException(
+                "Failed to update wallet withdrawal status. Transaction Reference not be found",
+                HttpStatus.NOT_FOUND
+            );
+        }
+
+        if (transaction.status == TransactionStatus.SUCCESS) {
+            throw new DuplicateWalletWithdrawalTransaction(
+                "Wallet withdrawal transaction already completed",
+                HttpStatus.BAD_REQUEST
+            );
+        }
+
+        switch (options.paymentStatus) {
+            case PaymentStatus.SUCCESS: {
+                await this.updateWalletWithdrawalSuccessRecords(transaction);
+                break;
+            }
+            case PaymentStatus.FAILED: {
+                await this.prisma.transaction.update({
+                    where: { id: transaction.id },
+                    data: {
+                        paymentStatus: PaymentStatus.FAILED,
+                        status: TransactionStatus.FAILED,
+                    },
+                });
+            }
+
+            default:
+                break;
+        }
+    }
+
+    async updateWalletWithdrawalSuccessRecords(transaction: Transaction) {
+        const user = await this.userService.findUserById(transaction.userId);
+        if (!user) {
+            throw new UserNotFoundException(
+                "Failed to update wallet withdrawal status. User not found",
+                HttpStatus.NOT_FOUND
+            );
+        }
+        const wallet = await this.prisma.wallet.findUnique({
+            where: { userId: user.id },
+        });
+        if (!wallet) {
+            throw new WalletNotFoundException(
+                "Failed to update wallet withdrawal status. User wallet not found",
+                HttpStatus.NOT_FOUND
+            );
+        }
+        await this.prisma.$transaction(async (tx) => {
+            if (user.userType == UserType.CUSTOMER) {
+                await tx.wallet.update({
+                    where: { userId: user.id },
+                    data: {
+                        mainBalance: {
+                            decrement: transaction.amount,
+                        },
+                    },
+                });
+            } else {
+                await tx.wallet.update({
+                    where: { userId: user.id },
+                    data: {
+                        commissionBalance: {
+                            decrement: transaction.amount,
+                        },
+                    },
+                });
+            }
+            await tx.transaction.update({
+                where: { id: transaction.id },
+                data: {
+                    status: TransactionStatus.SUCCESS,
+                    paymentStatus: PaymentStatus.SUCCESS,
+                },
             });
         });
     }

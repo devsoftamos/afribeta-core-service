@@ -8,9 +8,6 @@ phases:
     build:
         commands:
             - pnpm build
-    post_build:
-        commands:
-            - pnpm db:migrate:prod
 
 artifacts:
     files:

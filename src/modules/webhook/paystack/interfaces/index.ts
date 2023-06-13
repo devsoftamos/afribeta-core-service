@@ -10,6 +10,9 @@ export enum Event {
     DedicatedAssignSuccessEvent = "dedicatedaccount.assign.success",
     CustomerIdentificationSuccessEvent = "customeridentification.success",
     ChargeSuccessEvent = "charge.success",
+    TransferSuccessEvent = "transfer.success",
+    TransferFailedEvent = "transfer.failed",
+    TransferReversedEvent = "transfer.reversed",
 }
 
 export interface EventBody<E extends Event = Event> {
@@ -21,6 +24,9 @@ type EventDataMap = {
     [Event.DedicatedAssignSuccessEvent]: DedicatedAccountAssignSuccessData;
     [Event.CustomerIdentificationSuccessEvent]: CustomerIdentificationSuccessData;
     [Event.ChargeSuccessEvent]: ChargeSuccessData;
+    [Event.TransferSuccessEvent]: TransferData;
+    [Event.TransferFailedEvent]: TransferData;
+    [Event.TransferReversedEvent]: TransferData;
 };
 
 //charge.success data (both normal and transfer)
@@ -98,8 +104,28 @@ export interface DedicatedAccountAssignSuccessData {
     };
 }
 
+export interface TransferData {
+    amount: number;
+    currency: string;
+    domain: string;
+    reference: string;
+    source: string;
+    status: string;
+    transfer_code: string;
+    recipient: {
+        recipient_code: string;
+        type: string;
+        details: {
+            account_number: string;
+            account_name: string;
+            bank_code: string;
+            bank_name: string;
+        };
+    };
+}
+
 //meta data
-export interface ChargeSuccessMetadata {
+interface ChargeSuccessMetadata {
     wallet_fund: boolean;
 }
 

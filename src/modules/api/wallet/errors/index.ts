@@ -23,3 +23,15 @@ export class InvalidWalletFundTransactionFlow extends HttpException {
 export class DuplicateSelfFundWalletTransaction extends HttpException {
     name = "DuplicateSelfFundWalletTransaction";
 }
+
+export class InvalidWalletWithdrawalPaymentProvider extends HttpException {
+    name = "InvalidWalletWithdrawalPaymentProvider";
+}
+
+export class InsufficientWalletBalanceException extends HttpException {
+    name: string = "InsufficientWalletBalanceException";
+}
+
+export class DuplicateWalletWithdrawalTransaction extends HttpException {
+    name: string = "DuplicateWalletWithdrawalTransaction";
+}

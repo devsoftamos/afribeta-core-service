@@ -3,7 +3,11 @@ import { PaystackService } from "@/modules/workflow/payment/services/paystack";
 import { ApiResponse, buildResponse } from "@/utils/api-response-util";
 import { HttpStatus, Injectable } from "@nestjs/common";
 import { User } from "@prisma/client";
-import { BankProvider, GetPaymentProviderBanksDto } from "../dtos";
+import {
+    BankProvider,
+    GetPaymentProviderBanksDto,
+    ResolveBankAccountDto,
+} from "../dtos";
 import {
     InvalidBankProvider,
     VirtualAccountNotFoundException,
@@ -66,5 +70,38 @@ export class BankService {
             message: "Virtual account successfully retrieved",
             data: virtualAccount,
         });
+    }
+
+    async resolveBankAccount(
+        options: ResolveBankAccountDto
+    ): Promise<ApiResponse> {
+        switch (options.provider) {
+            case BankProvider.PAYSTACK: {
+                const data = await this.paystackService.resolveAccountNumber(
+                    options
+                );
+                return buildResponse({
+                    message: "Account successfully resolved",
+                    data: data,
+                });
+            }
+            case BankProvider.PROVIDUS: {
+                //TODO: update providus here
+                const data = await this.paystackService.resolveAccountNumber(
+                    options
+                );
+                return buildResponse({
+                    message: "Account successfully resolved",
+                    data: data,
+                });
+            }
+
+            default: {
+                throw new InvalidBankProvider(
+                    "Please select a valid bank provider",
+                    HttpStatus.BAD_REQUEST
+                );
+            }
+        }
     }
 }

@@ -8,10 +8,18 @@ import {
 import {
     AssignDynamicVirtualAccountWithValidationOptions,
     BankListOptions,
-    BankListResponse,
+    BankListResponseData,
     PaystackOptions,
     PaystackResponse,
+    ResolveBankAccountOptions,
+    ResolveBankAccountResponse,
 } from "./interfaces";
+import {
+    InitiateTransferOptions,
+    InitiateTransferResponseData,
+    TransferRecipientOptions,
+    TransferRecipientResponseData,
+} from "./interfaces/transfer";
 
 export * from "./errors";
 export * from "./interfaces";
@@ -61,7 +69,7 @@ export class Paystack {
         options: AssignDynamicVirtualAccountWithValidationOptions
     ) {
         try {
-            const assignDVAOptions: AxiosRequestConfig<AssignDynamicVirtualAccountWithValidationOptions> =
+            const requestOptions: AxiosRequestConfig<AssignDynamicVirtualAccountWithValidationOptions> =
                 {
                     url: "/dedicated_account/assign",
                     method: "POST",
@@ -78,9 +86,7 @@ export class Paystack {
                         middle_name: options.middle_name,
                     },
                 };
-            const { data } = await this.axios<PaystackResponse>(
-                assignDVAOptions
-            );
+            const { data } = await this.axios<PaystackResponse>(requestOptions);
             return data;
         } catch (error) {
             if (!Axios.isAxiosError(error)) {
@@ -98,14 +104,94 @@ export class Paystack {
      */
     async getBanks(options?: BankListOptions) {
         try {
-            const fetchOptions: AxiosRequestConfig = {
+            const requestOptions: AxiosRequestConfig = {
                 method: "GET",
                 url: "/bank",
                 params: options,
             };
             const { data } = await this.axios<
-                PaystackResponse<BankListResponse[]>
-            >(fetchOptions);
+                PaystackResponse<BankListResponseData[]>
+            >(requestOptions);
+            return data;
+        } catch (error) {
+            if (!Axios.isAxiosError(error)) {
+                throw error;
+            }
+            this.handlePaystackError(error);
+        }
+    }
+
+    /**
+     *
+     * @param options query options
+     * @returns Bank account details
+     * @description Resolve a bank account number by retrieving the name of the account
+     */
+    async resolveBankAccount(options: ResolveBankAccountOptions) {
+        try {
+            const requestOptions: AxiosRequestConfig = {
+                method: "GET",
+                url: "/bank/resolve",
+                params: options,
+            };
+            const { data } = await this.axios<
+                PaystackResponse<ResolveBankAccountResponse>
+            >(requestOptions);
+            return data;
+        } catch (error) {
+            if (!Axios.isAxiosError(error)) {
+                throw error;
+            }
+            this.handlePaystackError(error);
+        }
+    }
+
+    /**
+     *
+     * @param options request body options
+     * @returns Created Recipient details
+     * @description Creates a transfer recipient data
+     *  Read more in the [docs](https://paystack.com/docs/transfers/single-transfers).
+     */
+    async createTransferRecipient(options: TransferRecipientOptions) {
+        try {
+            const requestOptions: AxiosRequestConfig<TransferRecipientOptions> =
+                {
+                    method: "POST",
+                    url: "/transferrecipient",
+                    data: options,
+                };
+            const { data } = await this.axios<
+                PaystackResponse<TransferRecipientResponseData>
+            >(requestOptions);
+            return data;
+        } catch (error) {
+            if (!Axios.isAxiosError(error)) {
+                throw error;
+            }
+            this.handlePaystackError(error);
+        }
+    }
+
+    /**
+     *
+     * @param options request body options
+     * @returns Paystack Response data
+     * @description Initiates a transfer request
+     *  Read more in the [docs](https://paystack.com/docs/api/transfer/#initiate).
+     */
+
+    async initiateTransfer(options: InitiateTransferOptions) {
+        try {
+            const requestOptions: AxiosRequestConfig<InitiateTransferOptions> =
+                {
+                    method: "POST",
+                    url: "/transfer",
+                    data: options,
+                };
+            const { data } = await this.axios<
+                PaystackResponse<InitiateTransferResponseData>
+            >(requestOptions);
             return data;
         } catch (error) {
             if (!Axios.isAxiosError(error)) {

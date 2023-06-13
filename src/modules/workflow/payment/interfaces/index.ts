@@ -2,3 +2,23 @@ export interface ListBanks {
     name: string;
     code: string;
 }
+
+export interface ResolveAccountOptions {
+    accountNumber: string;
+    bankCode: string;
+}
+
+export interface ResolveAccountResponse {
+    accountName: string;
+    accountNumber: string;
+}
+
+export interface InitializeTransferOptions {
+    accountNumber: string;
+    bankCode: string;
+    amount: number;
+    accountName: string;
+    serviceCharge: number;
+    bankName: string;
+    userId: number;
+}

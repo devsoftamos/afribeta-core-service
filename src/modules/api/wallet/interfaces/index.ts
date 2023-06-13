@@ -19,15 +19,20 @@ export interface CreateWalletAAndVirtualAccount {
     providerBankSlug?: string;
 }
 
-export interface WalletFundHandler {
-    userId: number;
-    amount: number;
+export interface ProcessWalletFundOptions {
+    userId?: number;
+    amount?: number;
     serviceCharge?: number;
     paymentStatus?: PaymentStatus;
     walletFundTransactionFlow: WalletFundTransactionFlow;
     senderId?: number;
     receiverId?: number;
     paymentChannel?: PaymentChannel;
-    status: TransactionStatus;
+    status?: TransactionStatus;
     paymentReference?: string;
+}
+
+export interface ProcessWalletWithdrawalOptions {
+    paymentReference: string;
+    paymentStatus: PaymentStatus;
 }

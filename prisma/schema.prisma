@@ -53,6 +53,7 @@ model User {
   notificationToken     String?
   cacNumber             String?
   utilityDocumentUrl    String?
+  isDeleted             Boolean?               @default(false)
   createdAt             DateTime               @default(now())
   updatedAt             DateTime               @updatedAt
   bank                  Bank?
@@ -210,7 +211,7 @@ model PasswordResetRequest {
 enum TransactionType {
   AIRTIME_TO_CASH
   DATA_PURCHASE
-  TRANSFER
+  TRANSFER_FUND
   WALLET_FUND
   ELECTRICITY_BILL
   INTERNET_BILL
@@ -263,8 +264,8 @@ model Transaction {
   paymentStatus                PaymentStatus?
   paymentReference             String?                    @unique //reference for payment
   userId                       Int
-  senderId                     Int
-  receiverId                   Int
+  senderId                     Int?
+  receiverId                   Int?
   destinationBankName          String?
   destinationBankAccountNumber String?
   destinationBankAccountName   String?
@@ -287,8 +288,8 @@ model Transaction {
   createdAt                    DateTime                   @default(now())
   updatedAt                    DateTime                   @updatedAt
   user                         User                       @relation(name: "userToTransaction", fields: [userId], references: [id])
-  sender                       User                       @relation(name: "senderToTransaction", fields: [senderId], references: [id])
-  receiver                     User                       @relation(name: "receiverToTransaction", fields: [receiverId], references: [id])
+  sender                       User?                      @relation(name: "senderToTransaction", fields: [senderId], references: [id])
+  receiver                     User?                      @relation(name: "receiverToTransaction", fields: [receiverId], references: [id])
 
   @@map("Transactions")
 }

@@ -8,28 +8,32 @@ import {
     PaystackWebhook,
     ChargeSuccessData,
     Channel,
+    TransferData,
 } from "../interfaces";
 import logger from "moment-logger";
 import {
     PaymentChannel,
     PaymentStatus,
     TransactionStatus,
+    TransactionType,
     VirtualAccountProviders,
     WalletFundTransactionFlow,
 } from "@prisma/client";
 import { UserService } from "@/modules/api/user/services";
 import { UserNotFoundException } from "@/modules/api/user";
+import { TransactionService } from "@/modules/api/transaction/services";
+import { TransactionNotFoundException } from "@/modules/api/transaction";
 
 @Injectable()
 export class PaystackWebhookService implements PaystackWebhook {
     constructor(
         private walletService: WalletService,
-        private userService: UserService
+        private userService: UserService,
+        private transactionService: TransactionService
     ) {}
 
     async processWebhookEvent(eventBody: EventBody) {
         try {
-            console.log(eventBody, "*****************");
             switch (eventBody.event) {
                 case Event.DedicatedAssignSuccessEvent: {
                     await this.dedicatedAccountAssignSuccessHandler(
@@ -41,6 +45,25 @@ export class PaystackWebhookService implements PaystackWebhook {
                     await this.chargeSuccessHandler(
                         eventBody.data as ChargeSuccessData
                     );
+                    break;
+                }
+                case Event.TransferSuccessEvent: {
+                    await this.transferSuccessHandler(
+                        eventBody.data as TransferData
+                    );
+                    break;
+                }
+                case Event.TransferFailedEvent: {
+                    await this.transferFailedHandler(
+                        eventBody.data as TransferData
+                    );
+                    break;
+                }
+                case Event.TransferReversedEvent: {
+                    await this.transferFailedHandler(
+                        eventBody.data as TransferData
+                    );
+                    break;
                 }
 
                 default:
@@ -72,21 +95,18 @@ export class PaystackWebhookService implements PaystackWebhook {
         switch (true) {
             case eventData.channel == Channel.DEDICATED_NUBAN: {
                 //fund wallet via virtual account transfer
-                await this.chargeSuccessWalletFundHandler(eventData);
+                await this.processWalletFunding(eventData);
                 break;
             }
-            case eventData.metadata.wallet_fund: {
-                //fund wallet via any paystack channel
-                await this.chargeSuccessWalletFundHandler(eventData);
+            default: {
+                await this.chargeSuccessProcessor(eventData);
                 break;
             }
-            default:
-                break;
         }
     }
 
     //handle wallet funding from paystack virtual bank account transfer
-    async chargeSuccessWalletFundHandler(eventData: ChargeSuccessData) {
+    async processWalletFunding(eventData: ChargeSuccessData) {
         try {
             const user = await this.userService.findUserByEmail(
                 eventData.customer.email
@@ -98,7 +118,7 @@ export class PaystackWebhookService implements PaystackWebhook {
                 );
             }
             const amount = eventData.amount / 100;
-            await this.walletService.walletFundHandler({
+            await this.walletService.processWalletFunding({
                 amount: amount,
                 status: TransactionStatus.SUCCESS,
                 userId: user.id,
@@ -109,6 +129,49 @@ export class PaystackWebhookService implements PaystackWebhook {
                 paymentReference: eventData.reference,
                 paymentStatus: PaymentStatus.SUCCESS,
                 walletFundTransactionFlow: WalletFundTransactionFlow.SELF_FUND,
+            });
+        } catch (error) {
+            logger.error(error);
+        }
+    }
+
+    async chargeSuccessProcessor(eventData: ChargeSuccessData) {
+        try {
+            const transaction =
+                await this.transactionService.getTransactionByPaymentReference(
+                    eventData.reference
+                );
+            if (!transaction) {
+                throw new TransactionNotFoundException(
+                    "Transaction payment reference not found",
+                    HttpStatus.NOT_FOUND
+                );
+            }
+            //Wallet funding
+            if (transaction.type == TransactionType.WALLET_FUND) {
+                await this.processWalletFunding(eventData);
+            }
+            //Bill payment
+        } catch (error) {
+            logger.error(error);
+        }
+    }
+
+    async transferSuccessHandler(eventData: TransferData) {
+        try {
+            await this.walletService.processWalletWithdrawal({
+                paymentReference: eventData.reference,
+                paymentStatus: PaymentStatus.SUCCESS,
+            });
+        } catch (error) {
+            logger.error(error);
+        }
+    }
+    async transferFailedHandler(eventData: TransferData) {
+        try {
+            await this.walletService.processWalletWithdrawal({
+                paymentReference: eventData.reference,
+                paymentStatus: PaymentStatus.FAILED,
             });
         } catch (error) {
             logger.error(error);
