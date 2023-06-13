@@ -4,8 +4,8 @@ phases:
     pre_build:
         commands:
             - npm install -g pnpm
-            - pnpm install
             - pnpm install --save morgan
+            - pnpm install
     build:
         commands:
             - pnpm build
