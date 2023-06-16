@@ -46,7 +46,6 @@ import {
 } from "../interfaces";
 import logger from "moment-logger";
 import { ApiResponse, buildResponse } from "@/utils/api-response-util";
-import { isProduction } from "@/config";
 import { TransactionService } from "../../transaction/services";
 import {
     TransactionNotFoundException,

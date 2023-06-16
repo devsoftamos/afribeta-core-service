@@ -1,5 +1,3 @@
-import * as morgan from "morgan";
-
 import { HttpAdapterHost, NestFactory } from "@nestjs/core";
 import { AppModule } from "@/modules";
 import { INestApplication, VersioningType } from "@nestjs/common";
@@ -8,6 +6,7 @@ import helmet from "helmet";
 import { AllExceptionsFilter } from "@/core/exception/http";
 import { classValidatorPipeInstance } from "@/core/pipe";
 import { PrismaService } from "@/modules/core/prisma/services";
+import * as morgan from "morgan";
 
 export interface CreateServerOptions {
     port: number;
