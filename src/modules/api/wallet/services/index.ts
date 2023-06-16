@@ -138,16 +138,16 @@ export class WalletService {
                 );
             }
 
-            const testData = {
-                country: "NG",
-                type: "bank_account",
-                account_number: "0111111111",
-                bvn: "22222222222",
-                bank_code: "007",
-                first_name: "Uchenna",
-                last_name: "Okoro",
-                email: "uche@example.com",
-            };
+            // const testData = {
+            //     country: "NG",
+            //     type: "bank_account",
+            //     account_number: "0111111111",
+            //     bvn: "22222222222",
+            //     bank_code: "007",
+            //     first_name: "Uchenna",
+            //     last_name: "Okoro",
+            //     email: "uche@example.com",
+            // };
 
             const paystackDynamicVirtualAccountCreationOptions: AssignDynamicVirtualAccountWithValidationOptions =
                 {
@@ -162,12 +162,8 @@ export class WalletService {
                     preferred_bank: "wema-bank",
                 };
 
-            const data = isProduction
-                ? paystackDynamicVirtualAccountCreationOptions
-                : testData;
-
             await this.paystackService.assignDynamicValidatedVirtualAccount(
-                data as any
+                paystackDynamicVirtualAccountCreationOptions
             );
             return buildResponse({
                 message:
