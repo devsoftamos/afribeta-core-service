@@ -49,7 +49,7 @@
         "dotenv": "^16.0.3",
         "helmet": "^6.0.1",
         "moment-logger": "1.0.5-12",
-        "morgan": "^1.10.0",
+        "morgan": "^1.9.1",
         "nanoid": "^3.3.4",
         "reflect-metadata": "^0.1.13",
         "rimraf": "^3.0.2",
