@@ -25,6 +25,8 @@ import {
     InitializeWithdrawalDto,
     InitiateWalletCreationDto,
     PaymentProvider,
+    TransferToOtherWalletDto,
+    VerifyWalletDto,
 } from "../dto";
 import {
     WalletCreationException,
@@ -50,6 +52,7 @@ import {
     TransactionNotFoundException,
     TransactionShortDescription,
 } from "../../transaction";
+import { customAlphabet } from "nanoid";
 
 @Injectable()
 export class WalletService {
@@ -89,9 +92,10 @@ export class WalletService {
             }
 
             //create record
+            const walletNumber = customAlphabet("1234567890ABCDEFGH", 10)();
             await this.prisma.$transaction(async (tx) => {
                 await tx.wallet.create({
-                    data: { userId: user.id },
+                    data: { userId: user.id, walletNumber: walletNumber },
                 });
 
                 await tx.virtualBankAccount.create({
@@ -454,6 +458,131 @@ export class WalletService {
                     paymentStatus: PaymentStatus.SUCCESS,
                 },
             });
+        });
+    }
+
+    //Wallet transfer (Benefactor to Beneficiary)
+    async transferToOtherWallet(
+        options: TransferToOtherWalletDto,
+        user: User
+    ): Promise<ApiResponse> {
+        const beneficiaryWallet = await this.prisma.wallet.findUnique({
+            where: { walletNumber: options.walletNumber },
+        });
+
+        if (!beneficiaryWallet) {
+            throw new WalletNotFoundException(
+                `The wallet number, ${options.walletNumber} does not exist`,
+                HttpStatus.NOT_FOUND
+            );
+        }
+
+        const benefactorWallet = await this.prisma.wallet.findUnique({
+            where: { userId: user.id },
+        });
+
+        if (!benefactorWallet) {
+            throw new WalletNotFoundException(
+                "Unable to retrieve wallet. Wallet not found",
+                HttpStatus.NOT_FOUND
+            );
+        }
+
+        if (benefactorWallet.mainBalance < options.amount) {
+            throw new InsufficientWalletBalanceException(
+                "Insufficient wallet balance",
+                HttpStatus.BAD_REQUEST
+            );
+        }
+
+        //DB transaction
+        await this.prisma.$transaction(async (tx) => {
+            await tx.wallet.update({
+                where: { userId: user.id },
+                data: {
+                    mainBalance: {
+                        decrement: options.amount,
+                    },
+                },
+            });
+            await tx.wallet.update({
+                where: { walletNumber: beneficiaryWallet.walletNumber },
+                data: {
+                    mainBalance: {
+                        increment: options.amount,
+                    },
+                },
+            });
+
+            //generate transaction log
+            //beneficiary
+            const transactionId = this.transactionService.generateId({
+                type: "transaction",
+            });
+            await tx.transaction.create({
+                data: {
+                    amount: options.amount,
+                    flow: TransactionFlow.IN,
+                    status: TransactionStatus.SUCCESS,
+                    totalAmount: options.amount,
+                    transactionId: transactionId,
+                    type: TransactionType.WALLET_FUND,
+                    receiverId: beneficiaryWallet.userId,
+                    userId: beneficiaryWallet.userId,
+                    senderId: user.id,
+                    walletFundTransactionFlow:
+                        WalletFundTransactionFlow.FROM_BENEFACTOR,
+                    shortDescription: TransactionShortDescription.WALLET_FUNDED,
+                },
+            });
+
+            //benefactor
+            await tx.transaction.create({
+                data: {
+                    amount: options.amount,
+                    flow: TransactionFlow.OUT,
+                    status: TransactionStatus.SUCCESS,
+                    totalAmount: options.amount,
+                    transactionId: transactionId,
+                    type: TransactionType.WALLET_FUND,
+                    receiverId: beneficiaryWallet.userId,
+                    userId: user.id,
+                    senderId: user.id,
+                    walletFundTransactionFlow:
+                        WalletFundTransactionFlow.TO_BENEFICIARY,
+                    shortDescription: TransactionShortDescription.WALLET_FUNDED,
+                },
+            });
+        });
+
+        return buildResponse({
+            message: `You have successfully transferred ${options.amount} to wallet number ${beneficiaryWallet.walletNumber}`,
+        });
+    }
+
+    async verifyWallet(options: VerifyWalletDto) {
+        const wallet = await this.prisma.wallet.findUnique({
+            where: { walletNumber: options.walletNumber },
+            select: {
+                walletNumber: true,
+                user: {
+                    select: {
+                        firstName: true,
+                        lastName: true,
+                    },
+                },
+            },
+        });
+        if (!wallet) {
+            throw new WalletNotFoundException(
+                `Wallet number, ${options.walletNumber} does not exist`,
+                HttpStatus.NOT_FOUND
+            );
+        }
+
+        return buildResponse({
+            message: "Wallet number successfully verified",
+            data: wallet,
         });
     }
 }

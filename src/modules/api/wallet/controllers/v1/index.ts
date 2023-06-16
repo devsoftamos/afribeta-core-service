@@ -3,9 +3,11 @@ import { User } from "@/modules/api/user";
 import {
     Body,
     Controller,
+    Get,
     HttpCode,
     HttpStatus,
     Post,
+    Query,
     UseGuards,
     ValidationPipe,
 } from "@nestjs/common";
@@ -14,6 +16,8 @@ import {
     InitializeWalletFundingDto,
     InitializeWithdrawalDto,
     InitiateWalletCreationDto,
+    TransferToOtherWalletDto,
+    VerifyWalletDto,
 } from "../../dto";
 import { WalletService } from "../../services";
 
@@ -60,5 +64,27 @@ export class WalletController {
             withdrawFundDto,
             user
         );
+    }
+
+    @HttpCode(HttpStatus.OK)
+    @Post("transfer")
+    async transferToOtherWallet(
+        @Body(ValidationPipe)
+        transferToOtherWalletDto: TransferToOtherWalletDto,
+        @User() user: UserEntity
+    ) {
+        return await this.walletService.transferToOtherWallet(
+            transferToOtherWalletDto,
+            user
+        );
+    }
+
+    @HttpCode(HttpStatus.OK)
+    @Get("verify-number")
+    async verifyWallet(
+        @Query(ValidationPipe)
+        verifyWalletDto: VerifyWalletDto
+    ) {
+        return await this.walletService.verifyWallet(verifyWalletDto);
     }
 }

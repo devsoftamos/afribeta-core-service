@@ -66,3 +66,16 @@ export class InitializeWithdrawalDto {
     // @IsEnum(WalletBallanceSource)
     // walletBalanceSource: WalletBallanceSource;
 }
+
+export class TransferToOtherWalletDto {
+    @IsString()
+    walletNumber: string;
+
+    @IsInt()
+    amount: number;
+}
+
+export class VerifyWalletDto {
+    @IsString()
+    walletNumber: string;
+}
