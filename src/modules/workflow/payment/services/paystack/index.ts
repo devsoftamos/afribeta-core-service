@@ -1,4 +1,9 @@
-import { Paystack, PaystackError, PaystackOptions } from "@/libs/paystack";
+import {
+    AssignDynamicVirtualAccountWithValidationOptions,
+    Paystack,
+    PaystackError,
+    PaystackOptions,
+} from "@/libs/paystack";
 import { TransactionShortDescription } from "@/modules/api/transaction";
 import { TransactionService } from "@/modules/api/transaction/services";
 import { PrismaService } from "@/modules/core/prisma/services";
@@ -11,6 +16,7 @@ import {
 import {
     PaystackBankException,
     PaystackTransferException,
+    PaystackVerifyTransactionException,
     PaystackWorkflowException,
 } from "../../errors";
 import {
@@ -18,21 +24,29 @@ import {
     ListBanks,
     ResolveAccountOptions,
     ResolveAccountResponse,
+    VerifyTransactionResponse,
 } from "../../interfaces";
 
 @Injectable()
-export class PaystackService extends Paystack {
+export class PaystackService {
+    private paystack: Paystack = new Paystack(this.instanceOptions);
     constructor(
-        instanceOptions: PaystackOptions,
+        public instanceOptions: PaystackOptions,
         private transactionService: TransactionService,
         private prisma: PrismaService
     ) {
-        super(instanceOptions);
+        //super(instanceOptions);
+    }
+
+    async assignDynamicValidatedVirtualAccount(
+        options: AssignDynamicVirtualAccountWithValidationOptions
+    ) {
+        return this.paystack.assignDynamicValidatedVirtualAccount(options);
     }
 
     async getBankList(): Promise<ListBanks[]> {
         try {
-            const list = await this.getBanks({ country: "nigeria" });
+            const list = await this.paystack.getBanks({ country: "nigeria" });
             return list.data.map((bank) => ({
                 code: bank.code,
                 name: bank.name,
@@ -60,7 +74,7 @@ export class PaystackService extends Paystack {
         options: ResolveAccountOptions
     ): Promise<ResolveAccountResponse> {
         try {
-            const resp = await this.resolveBankAccount({
+            const resp = await this.paystack.resolveBankAccount({
                 account_number: options.accountNumber,
                 bank_code: options.bankCode,
             });
@@ -104,14 +118,15 @@ export class PaystackService extends Paystack {
                 bankCode: options.bankCode,
             });
 
-            const generateRecipient = await this.createTransferRecipient({
-                account_number: options.accountNumber,
-                bank_code: options.bankCode,
-                currency: "NGN",
-                type: "nuban",
-                name: options.accountName,
-            });
-            if (!generateRecipient && !generateRecipient.status) {
+            const generateRecipient =
+                await this.paystack.createTransferRecipient({
+                    account_number: options.accountNumber,
+                    bank_code: options.bankCode,
+                    currency: "NGN",
+                    type: "nuban",
+                    name: options.accountName,
+                });
+            if (!generateRecipient || !generateRecipient.status) {
                 throw new PaystackTransferException(
                     "Failed to generate recipient code.",
                     HttpStatus.INTERNAL_SERVER_ERROR
@@ -145,7 +160,7 @@ export class PaystackService extends Paystack {
                             TransactionShortDescription.TRANSFER_FUND,
                     },
                 });
-                await this.initiateTransfer({
+                await this.paystack.initiateTransfer({
                     amount: options.amount * 100,
                     recipient: generateRecipient.data.recipient_code,
                     source: "balance",
@@ -172,6 +187,68 @@ export class PaystackService extends Paystack {
                         error.message,
                         HttpStatus.INTERNAL_SERVER_ERROR
                     );
+                }
+
+                default: {
+                    throw new PaystackWorkflowException(
+                        "Failed to initialize transfer",
+                        HttpStatus.INTERNAL_SERVER_ERROR
+                    );
+                }
+            }
+        }
+    }
+
+    async verifyTransaction(
+        reference: string
+    ): Promise<VerifyTransactionResponse> {
+        try {
+            const resp = await this.paystack.verifyTransaction(reference);
+
+            if (!resp || !resp.data) {
+                throw new PaystackWorkflowException(
+                    "Unable to verify paystack transaction",
+                    HttpStatus.INTERNAL_SERVER_ERROR
+                );
+            }
+
+            switch (resp.data.status) {
+                case "success": {
+                    return { status: "success" };
+                }
+                case "abandoned": {
+                    return { status: "cancelled" };
+                }
+                case "failed": {
+                    return { status: "failed" };
+                }
+
+                default: {
+                    throw new PaystackWorkflowException(
+                        "Invalid paystack transaction status",
+                        HttpStatus.INTERNAL_SERVER_ERROR
+                    );
+                }
+            }
+        } catch (error) {
+            switch (true) {
+                case error instanceof PaystackWorkflowException: {
+                    throw error;
+                }
+                case error instanceof PaystackError: {
+                    const clientError = [400, 404];
+
+                    if (clientError.includes(error.status)) {
+                        throw new PaystackVerifyTransactionException(
+                            error.message,
+                            error.status
+                        );
+                    } else {
+                        throw new PaystackVerifyTransactionException(
+                            error.message,
+                            HttpStatus.INTERNAL_SERVER_ERROR
+                        );
+                    }
                 }
 
                 default: {

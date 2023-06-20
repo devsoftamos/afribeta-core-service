@@ -9,5 +9,9 @@ export class PaystackBankException extends PaystackWorkflowException {
 }
 
 export class PaystackTransferException extends PaystackWorkflowException {
-    name = "PaystackBankException";
+    name = "PaystackTransferException";
+}
+
+export class PaystackVerifyTransactionException extends PaystackWorkflowException {
+    name: string = "PaystackVerifyTransactionException";
 }

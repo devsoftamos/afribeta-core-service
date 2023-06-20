@@ -14,6 +14,7 @@ import {
     ResolveBankAccountOptions,
     ResolveBankAccountResponse,
 } from "./interfaces";
+import { VerifyTransactionResponseData } from "./interfaces/transaction";
 import {
     InitiateTransferOptions,
     InitiateTransferResponseData,
@@ -191,6 +192,30 @@ export class Paystack {
                 };
             const { data } = await this.axios<
                 PaystackResponse<InitiateTransferResponseData>
+            >(requestOptions);
+            return data;
+        } catch (error) {
+            if (!Axios.isAxiosError(error)) {
+                throw error;
+            }
+            this.handlePaystackError(error);
+        }
+    }
+
+    /**
+     *
+     * @param reference
+     * @returns
+     * @description verifies the status of a transaction
+     */
+    async verifyTransaction(reference: string) {
+        try {
+            const requestOptions: AxiosRequestConfig = {
+                method: "GET",
+                url: `/transaction/verify/${reference}`,
+            };
+            const { data } = await this.axios<
+                PaystackResponse<VerifyTransactionResponseData>
             >(requestOptions);
             return data;
         } catch (error) {

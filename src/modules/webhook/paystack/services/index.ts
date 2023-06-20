@@ -143,7 +143,7 @@ export class PaystackWebhookService implements PaystackWebhook {
                 );
             if (!transaction) {
                 throw new TransactionNotFoundException(
-                    "Transaction payment reference not found",
+                    "Paystack transaction payment reference not found",
                     HttpStatus.NOT_FOUND
                 );
             }

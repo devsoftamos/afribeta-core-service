@@ -6,6 +6,15 @@ export interface PaystackOptions {
     secretKey: string;
 }
 
+export type PaystackPaymentChannel =
+    | "card"
+    | "bank"
+    | "ussd"
+    | "qr"
+    | "mobile_money"
+    | "bank_transfer"
+    | "dedicated_nuban";
+
 export interface PaystackResponse<D = undefined> {
     status: boolean;
     message: string;

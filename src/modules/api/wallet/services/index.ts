@@ -310,6 +310,8 @@ export class WalletService {
             message: "Reference successfully generated",
             data: {
                 reference: createdTransaction.paymentReference,
+                amount: options.amount,
+                email: user.email,
             },
         });
     }
