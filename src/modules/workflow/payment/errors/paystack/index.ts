@@ -13,5 +13,5 @@ export class PaystackTransferException extends PaystackWorkflowException {
 }
 
 export class PaystackVerifyTransactionException extends PaystackWorkflowException {
-    name: string = "PaystackVerifyTransactionException";
+    name = "PaystackVerifyTransactionException";
 }
