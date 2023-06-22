@@ -379,7 +379,7 @@ export class WalletService {
         });
         if (!transaction) {
             throw new TransactionNotFoundException(
-                "Failed to update wallet withdrawal status. Transaction Reference not be found",
+                "Failed to update wallet withdrawal status. Transaction Reference not found",
                 HttpStatus.NOT_FOUND
             );
         }
@@ -393,7 +393,10 @@ export class WalletService {
 
         switch (options.paymentStatus) {
             case PaymentStatus.SUCCESS: {
-                await this.updateWalletWithdrawalSuccessRecords(transaction);
+                await this.updateWalletWithdrawalSuccessRecords(
+                    transaction,
+                    options.transferCode
+                );
                 break;
             }
             case PaymentStatus.FAILED: {
@@ -402,6 +405,7 @@ export class WalletService {
                     data: {
                         paymentStatus: PaymentStatus.FAILED,
                         status: TransactionStatus.FAILED,
+                        transferCode: options.transferCode,
                     },
                 });
             }
@@ -411,7 +415,10 @@ export class WalletService {
         }
     }
 
-    async updateWalletWithdrawalSuccessRecords(transaction: Transaction) {
+    async updateWalletWithdrawalSuccessRecords(
+        transaction: Transaction,
+        transferCode?: string
+    ) {
         const user = await this.userService.findUserById(transaction.userId);
         if (!user) {
             throw new UserNotFoundException(
@@ -453,6 +460,7 @@ export class WalletService {
                 data: {
                     status: TransactionStatus.SUCCESS,
                     paymentStatus: PaymentStatus.SUCCESS,
+                    transferCode: transferCode,
                 },
             });
         });

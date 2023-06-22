@@ -35,4 +35,5 @@ export interface ProcessWalletFundOptions {
 export interface ProcessWalletWithdrawalOptions {
     paymentReference: string;
     paymentStatus: PaymentStatus;
+    transferCode?: string;
 }

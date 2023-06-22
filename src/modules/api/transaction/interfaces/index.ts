@@ -6,3 +6,7 @@ export enum TransactionShortDescription {
 export interface TransactionIdOption {
     type: "transaction" | "reference";
 }
+
+export enum TransferServiceProvider {
+    PAYSTACK = "PAYSTACK",
+}

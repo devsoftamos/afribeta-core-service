@@ -4,7 +4,10 @@ import {
     PaystackError,
     PaystackOptions,
 } from "@/libs/paystack";
-import { TransactionShortDescription } from "@/modules/api/transaction";
+import {
+    TransactionShortDescription,
+    TransferServiceProvider,
+} from "@/modules/api/transaction";
 import { TransactionService } from "@/modules/api/transaction/services";
 import { PrismaService } from "@/modules/core/prisma/services";
 import { HttpStatus, Injectable } from "@nestjs/common";
@@ -145,6 +148,7 @@ export class PaystackService {
                 await tx.transaction.create({
                     data: {
                         amount: options.amount,
+                        provider: TransferServiceProvider.PAYSTACK,
                         flow: TransactionFlow.OUT,
                         status: TransactionStatus.PENDING,
                         totalAmount: options.amount + options.serviceCharge,
