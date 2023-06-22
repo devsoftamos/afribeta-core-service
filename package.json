@@ -25,14 +25,14 @@
         "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
         "test:e2e": "jest --config ./jest.config.js",
         "husky:install": "husky install",
-        "prisma:init": "pnpm prisma init",
-        "prisma:generate": "pnpm prisma generate",
-        "migration:generate": "pnpm prisma migrate dev --create-only --name",
-        "db:migrate:dev": "pnpm prisma migrate dev",
-        "db:push": "pnpm prisma db push",
-        "db:seed": "pnpm prisma db seed",
-        "db:migrate:prod": "pnpm prisma migrate deploy",
-        "postinstall": "pnpm prisma:generate"
+        "prisma:init": "npx prisma init",
+        "prisma:generate": "npx prisma generate",
+        "migration:generate": "npx prisma migrate dev --create-only --name",
+        "db:migrate:dev": "npx prisma migrate dev",
+        "db:push": "npx prisma db push",
+        "db:seed": "npx prisma db seed",
+        "db:migrate:prod": "npx prisma migrate deploy",
+        "postinstall": "npx prisma:generate"
     },
     "dependencies": {
         "@boxpositron/vre": "^1.0.0",

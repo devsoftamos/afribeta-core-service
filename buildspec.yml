@@ -3,11 +3,10 @@ version: 0.2
 phases:
     pre_build:
         commands:
-            - npm install -g pnpm
-            - pnpm install
+            - npm install
     build:
         commands:
-            - pnpm build
+            - npm run build
 
 artifacts:
     files:
