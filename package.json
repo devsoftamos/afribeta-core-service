@@ -32,7 +32,7 @@
         "db:push": "npx prisma db push",
         "db:seed": "npx prisma db seed",
         "db:migrate:prod": "npx prisma migrate deploy",
-        "postinstall": "npx prisma:generate"
+        "postinstall": "npm run prisma:generate"
     },
     "dependencies": {
         "@boxpositron/vre": "^1.0.0",
