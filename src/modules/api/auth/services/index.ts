@@ -279,7 +279,7 @@ export class AuthService {
             );
         }
         //check verification expiration
-        const timeDifference = Date.now() - resetData.createdAt.getTime();
+        const timeDifference = Date.now() - resetData.updatedAt.getTime();
         const timeDiffInMin = timeDifference / (1000 * 60);
         if (timeDiffInMin > 30) {
             throw new PasswordResetCodeExpiredException(
