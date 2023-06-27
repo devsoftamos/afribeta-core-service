@@ -33,6 +33,8 @@ export class PaystackWebhookService implements PaystackWebhook {
     ) {}
 
     async processWebhookEvent(eventBody: EventBody) {
+        //console.log(eventBody, "****DATA****");
+
         try {
             switch (eventBody.event) {
                 case Event.DedicatedAssignSuccessEvent: {

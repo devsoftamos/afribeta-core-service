@@ -1,6 +1,7 @@
 import {
     AssignDynamicVirtualAccountWithValidationOptions,
     PaystackError,
+    SupportedBank,
 } from "@/libs/paystack";
 import { PrismaService } from "@/modules/core/prisma/services";
 import { PaystackService } from "@/modules/workflow/payment/services/paystack";
@@ -52,6 +53,7 @@ import {
     TransactionShortDescription,
 } from "../../transaction";
 import { customAlphabet } from "nanoid";
+import { isProduction } from "@/config";
 
 @Injectable()
 export class WalletService {
@@ -158,7 +160,9 @@ export class WalletService {
                     first_name: user.firstName,
                     last_name: user.lastName,
                     phone: `+234${user.phone.substring(1)}`,
-                    preferred_bank: "wema-bank",
+                    preferred_bank: isProduction
+                        ? SupportedBank.WEMA_BANK
+                        : ("test-bank" as any), // ***********************************************************
                 };
 
             await this.paystackService.assignDynamicValidatedVirtualAccount(

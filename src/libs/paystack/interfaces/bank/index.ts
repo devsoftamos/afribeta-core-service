@@ -36,3 +36,8 @@ export interface ResolveBankAccountResponse {
     account_number: string;
     account_name: string;
 }
+
+export enum SupportedBank {
+    WEMA_BANK = "wema_bank",
+    ACCESS_BANK = "access_bank",
+}
