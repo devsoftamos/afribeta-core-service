@@ -15,9 +15,11 @@ export class TransactionService {
         private paystackService: PaystackService
     ) {}
 
-    generateId(option: TransactionIdOption) {
-        const length = option.type == "reference" ? 20 : 15;
-        return customAlphabet("1234567890ABCDEFGH", length)();
+    generateId(option: TransactionIdOption): string {
+        const alphaNumeric = "1234567890ABCDEFGH";
+        return option.type == "reference"
+            ? customAlphabet(alphaNumeric.toLowerCase(), 30)()
+            : customAlphabet(alphaNumeric, 15)();
     }
 
     async getTransactionByPaymentReference(reference: string) {

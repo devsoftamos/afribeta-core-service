@@ -47,6 +47,18 @@ const runtimeEnvironment: RequiredEnvironment[] = [
         name: "PAYSTACK_BASE_URL",
         type: RequiredEnvironmentTypes.String,
     },
+    {
+        name: "IRECHARGE_PUBLIC_KEY",
+        type: RequiredEnvironmentTypes.String,
+    },
+    {
+        name: "IRECHARGE_PRIVATE_KEY",
+        type: RequiredEnvironmentTypes.String,
+    },
+    {
+        name: "IRECHARGE_VENDOR_CODE",
+        type: RequiredEnvironmentTypes.String,
+    },
 ];
 
 validate(runtimeEnvironment);

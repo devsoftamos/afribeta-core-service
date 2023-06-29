@@ -183,6 +183,7 @@ export class Paystack {
      */
 
     async initiateTransfer(options: InitiateTransferOptions) {
+        console.log(options);
         try {
             const requestOptions: AxiosRequestConfig<InitiateTransferOptions> =
                 {

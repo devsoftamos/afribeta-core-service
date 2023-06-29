@@ -336,15 +336,17 @@ export class WalletService {
         }
 
         const theUser = await this.userService.findUserById(user.id);
+        const totalAmount = options.amount + options.serviceCharge;
+
         if (theUser.userType == UserType.CUSTOMER) {
-            if (options.amount > wallet.mainBalance) {
+            if (totalAmount > wallet.mainBalance) {
                 throw new InsufficientWalletBalanceException(
                     "Insufficient balance",
                     HttpStatus.BAD_REQUEST
                 );
             }
         } else {
-            if (options.amount > wallet.commissionBalance) {
+            if (totalAmount > wallet.commissionBalance) {
                 throw new InsufficientWalletBalanceException(
                     "Insufficient commission balance",
                     HttpStatus.BAD_REQUEST
@@ -445,7 +447,7 @@ export class WalletService {
                     where: { userId: user.id },
                     data: {
                         mainBalance: {
-                            decrement: transaction.amount,
+                            decrement: transaction.totalAmount,
                         },
                     },
                 });
@@ -454,7 +456,7 @@ export class WalletService {
                     where: { userId: user.id },
                     data: {
                         commissionBalance: {
-                            decrement: transaction.amount,
+                            decrement: transaction.totalAmount,
                         },
                     },
                 });
