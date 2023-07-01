@@ -5,6 +5,7 @@ import validate, {
     RequiredEnvironmentTypes,
 } from "@boxpositron/vre";
 import { PaystackOptions } from "@/libs/paystack";
+import { IRechargeOptions } from "@/libs/iRecharge";
 
 export * from "./constants";
 
@@ -59,6 +60,10 @@ const runtimeEnvironment: RequiredEnvironment[] = [
         name: "IRECHARGE_VENDOR_CODE",
         type: RequiredEnvironmentTypes.String,
     },
+    {
+        name: "IRECHARGE_BASE_URL",
+        type: RequiredEnvironmentTypes.String,
+    },
 ];
 
 validate(runtimeEnvironment);
@@ -88,4 +93,12 @@ export const paystackSecretKey: string = process.env.PAYSTACK_SECRET_KEY;
 export const paystackConfiguration: PaystackOptions = {
     baseUrl: process.env.PAYSTACK_BASE_URL,
     secretKey: process.env.PAYSTACK_SECRET_KEY,
+};
+
+//IRecharge
+export const iRechargeOptions: IRechargeOptions = {
+    privateKey: process.env.IRECHARGE_PRIVATE_KEY,
+    publicKey: process.env.IRECHARGE_PUBLIC_KEY,
+    vendorCode: process.env.IRECHARGE_VENDOR_CODE,
+    baseUrl: process.env.IRECHARGE_BASE_URL,
 };
