@@ -596,4 +596,21 @@ export class WalletService {
             data: wallet,
         });
     }
+
+    async getWallet(userId: number) {
+        const wallet = await this.prisma.wallet.findUnique({
+            where: { userId: userId },
+        });
+
+        if (!wallet) {
+            throw new WalletNotFoundException(
+                "Wallet does not be exist. Kindly verify your KYC information",
+                HttpStatus.NOT_FOUND
+            );
+        }
+        return buildResponse({
+            message: "Wallet successfully retrieved",
+            data: wallet,
+        });
+    }
 }

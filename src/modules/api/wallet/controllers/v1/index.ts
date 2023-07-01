@@ -11,7 +11,7 @@ import {
     UseGuards,
     ValidationPipe,
 } from "@nestjs/common";
-import { User as UserEntity } from "@prisma/client";
+import { User as UserModel } from "@prisma/client";
 import {
     InitializeWalletFundingDto,
     InitializeWithdrawalDto,
@@ -33,7 +33,7 @@ export class WalletController {
     async initiateWalletCreation(
         @Body(ValidationPipe)
         initiateWalletCreationDto: InitiateWalletCreationDto,
-        @User() user: UserEntity
+        @User() user: UserModel
     ) {
         return await this.walletService.initiateCustomerWalletCreation(
             initiateWalletCreationDto,
@@ -46,7 +46,7 @@ export class WalletController {
     async initializeWalletFunding(
         @Body(ValidationPipe)
         initializeWalletFundingDto: InitializeWalletFundingDto,
-        @User() user: UserEntity
+        @User() user: UserModel
     ) {
         return await this.walletService.initializeWalletFunding(
             initializeWalletFundingDto,
@@ -58,7 +58,7 @@ export class WalletController {
     @Post("initialize-withdrawal")
     async withdrawFund(
         @Body(ValidationPipe) withdrawFundDto: InitializeWithdrawalDto,
-        @User() user: UserEntity
+        @User() user: UserModel
     ) {
         return await this.walletService.initializeWalletWithdrawal(
             withdrawFundDto,
@@ -71,7 +71,7 @@ export class WalletController {
     async transferToOtherWallet(
         @Body(ValidationPipe)
         transferToOtherWalletDto: TransferToOtherWalletDto,
-        @User() user: UserEntity
+        @User() user: UserModel
     ) {
         return await this.walletService.transferToOtherWallet(
             transferToOtherWalletDto,
@@ -86,5 +86,10 @@ export class WalletController {
         verifyWalletDto: VerifyWalletDto
     ) {
         return await this.walletService.verifyWallet(verifyWalletDto);
+    }
+
+    @Get()
+    async getUserWallet(@User() user: UserModel) {
+        return await this.walletService.getWallet(user.id);
     }
 }
