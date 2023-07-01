@@ -1,9 +1,9 @@
 import { HttpException } from "@nestjs/common";
 
 export class IRechargeWorkflowException extends HttpException {
-    name: string = "IRechargeWorkflowException";
+    name = "IRechargeWorkflowException";
 }
 
 export class IRechargeElectricityException extends HttpException {
-    name: string = "IRechargeElectricityException";
+    name = "IRechargeElectricityException";
 }

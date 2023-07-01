@@ -1,6 +1,6 @@
 import { IRechargeStatusCode } from "../interfaces";
 
 export class IRechargeError extends Error {
-    name: string = "IRechargeError";
+    name = "IRechargeError";
     status: IRechargeStatusCode;
 }
