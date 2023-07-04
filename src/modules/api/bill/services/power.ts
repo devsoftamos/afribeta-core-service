@@ -1,4 +1,3 @@
-import { PrismaService } from "@/modules/core/prisma/services";
 import { IRechargeWorkflowService } from "@/modules/workflow/billPayment/providers/iRecharge/services";
 import { ApiResponse, buildResponse, generateId } from "@/utils";
 import { HttpStatus, Injectable } from "@nestjs/common";
@@ -9,17 +8,12 @@ import {
     TransactionType,
     User,
 } from "@prisma/client";
-import { TransactionService } from "../../transaction/services";
 import { PaymentSource, BuyPowerDto } from "../dtos";
 import { BuyPowerException } from "../errors";
 
 @Injectable()
 export class PowerBillService {
-    constructor(
-        private iRechargeWorkflowService: IRechargeWorkflowService,
-        private prisma: PrismaService,
-        private transactionService: TransactionService
-    ) {}
+    constructor(private iRechargeWorkflowService: IRechargeWorkflowService) {}
 
     async getElectricDiscos(): Promise<ApiResponse> {
         const discos = await this.iRechargeWorkflowService.getElectricDiscos();
@@ -66,5 +60,6 @@ export class PowerBillService {
                 }),
                 // billProvider: options.provider,
             };
+        console.log(transactionCreateOptions);
     }
 }
