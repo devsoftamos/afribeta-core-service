@@ -25,6 +25,7 @@ export class PowerBillService {
     }
 
     async processBuyPowerRequest(options: BuyPowerDto, user: User) {
+        console.log(user);
         switch (options.paymentSource) {
             case PaymentSource.WALLET: {
                 break;
