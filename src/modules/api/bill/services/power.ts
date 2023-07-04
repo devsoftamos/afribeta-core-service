@@ -1,3 +1,5 @@
+import { PrismaService } from "@/modules/core/prisma/services";
+import { FormattedElectricDiscoData } from "@/modules/workflow/billPayment/interfaces";
 import { IRechargeWorkflowService } from "@/modules/workflow/billPayment/providers/iRecharge/services";
 import { ApiResponse, buildResponse, generateId } from "@/utils";
 import { HttpStatus, Injectable } from "@nestjs/common";
@@ -10,13 +12,37 @@ import {
 } from "@prisma/client";
 import { PaymentSource, BuyPowerDto } from "../dtos";
 import { BuyPowerException } from "../errors";
+import { ProviderSlug } from "../interfaces";
 
 @Injectable()
 export class PowerBillService {
-    constructor(private iRechargeWorkflowService: IRechargeWorkflowService) {}
+    constructor(
+        private iRechargeWorkflowService: IRechargeWorkflowService,
+        private prisma: PrismaService
+    ) {}
 
     async getElectricDiscos(): Promise<ApiResponse> {
-        const discos = await this.iRechargeWorkflowService.getElectricDiscos();
+        let discos: FormattedElectricDiscoData[] = [];
+        const providers = await this.prisma.billProvider.findMany({
+            where: { isActive: true },
+        });
+
+        for (let provider of providers) {
+            switch (provider.slug) {
+                case ProviderSlug.IRECHARGE: {
+                    const iRechargeDiscos =
+                        await this.iRechargeWorkflowService.getElectricDiscos(
+                            provider.slug
+                        );
+                    discos = [...discos, ...iRechargeDiscos];
+                    break;
+                }
+
+                default: {
+                    discos = [...discos];
+                }
+            }
+        }
 
         return buildResponse({
             message: "Electric discos successfully retrieved",
@@ -44,6 +70,7 @@ export class PowerBillService {
         }
     }
 
+    //TODO: complete
     async handlePowerPurchaseWithPaystack(options: BuyPowerDto, user: User) {
         const transactionCreateOptions: Prisma.TransactionUncheckedCreateInput =
             {

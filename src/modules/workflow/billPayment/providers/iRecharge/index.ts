@@ -9,16 +9,15 @@ import { PrismaService } from "@/modules/core/prisma/services";
     providers: [
         {
             provide: IRechargeWorkflowService,
-            useFactory(prisma: PrismaService) {
+            useFactory() {
                 const iRecharge = new IRecharge({
                     baseUrl: iRechargeOptions.baseUrl,
                     privateKey: iRechargeOptions.privateKey,
                     publicKey: iRechargeOptions.publicKey,
                     vendorCode: iRechargeOptions.vendorCode,
                 });
-                return new IRechargeWorkflowService(iRecharge, prisma);
+                return new IRechargeWorkflowService(iRecharge);
             },
-            inject: [PrismaService],
         },
     ],
     exports: [IRechargeWorkflowService],

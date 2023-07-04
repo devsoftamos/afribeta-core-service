@@ -11,28 +11,17 @@ import {
 
 @Injectable()
 export class IRechargeWorkflowService {
-    constructor(private iRecharge: IRecharge, private prisma: PrismaService) {}
+    constructor(private iRecharge: IRecharge) {}
 
-    private slug = "irecharge";
     private blackListedDiscos: string[] = [
         "Ikeja_Electric_Bill_Payment",
         "Ikeja_Token_Purchase",
     ];
 
-    private async getProviderStatusInfo() {
-        return await this.prisma.billProvider.findFirst({
-            where: { slug: this.slug, isActive: true },
-        });
-    }
-
-    async getElectricDiscos(): Promise<FormattedElectricDiscoData[]> {
+    async getElectricDiscos(
+        provider: string
+    ): Promise<FormattedElectricDiscoData[]> {
         try {
-            //check if provider is active
-            const providerInfo = await this.getProviderStatusInfo();
-            if (!providerInfo) {
-                return [];
-            }
-
             const resData = await this.iRecharge.getElectricDiscos();
             if (!resData || !resData.bundles) {
                 throw new IRechargeWorkflowException(
@@ -43,7 +32,7 @@ export class IRechargeWorkflowService {
             const bundle = resData.bundles.filter((bundle) => {
                 return !this.blackListedDiscos.includes(bundle.code);
             });
-            const data = this.formatElectricDiscoData(bundle, providerInfo.id);
+            const data = this.formatElectricDiscoData(bundle, provider);
             return data;
         } catch (error) {
             logger.error(error);
@@ -70,7 +59,7 @@ export class IRechargeWorkflowService {
 
     private formatElectricDiscoData(
         bundles: DiscoBundleData[],
-        providerId: number
+        provider: string
     ): FormattedElectricDiscoData[] {
         const formattedBundles: FormattedElectricDiscoData[] = bundles.map(
             (bundle) => {
@@ -84,7 +73,7 @@ export class IRechargeWorkflowService {
                     discoType: discoType,
                     maxValue: +bundle.maximum_value,
                     minValue: +bundle.minimum_value,
-                    providerId: providerId,
+                    billProvider: provider,
                     meterType: MeterType.POSTPAID,
                 };
                 if (

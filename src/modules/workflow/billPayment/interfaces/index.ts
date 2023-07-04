@@ -6,7 +6,7 @@ export enum MeterType {
 export interface FormattedElectricDiscoData {
     discoType: string;
     meterType: MeterType;
-    providerId: number;
+    billProvider: string;
     code: string;
     minValue: number;
     maxValue: number;
