@@ -41,3 +41,38 @@ export interface IRechargeResponse {
 }
 
 export type RequestOptions<T> = Omit<T, "vendor_code" | "response_format">;
+
+//vend status
+export enum IRechargeVendType {
+    POWER = "power",
+    AIRTIME = "airtime",
+    DATA = "data",
+    TV = "tv",
+}
+
+export interface VendStatusOptions {
+    vendor_code: string;
+    access_token: string;
+    hash: string;
+    type: IRechargeVendType;
+    response_format: string;
+}
+
+export type VendStatusCode = "00" | "01" | "02" | "03";
+export interface VendStatusResponse {
+    status: IRechargeStatusCode;
+    vend_status: string;
+    vend_code: VendStatusCode;
+    response_hash: string;
+}
+
+//wallet
+export interface GetWalletBalanceOptions {
+    vendor_code: string;
+    response_format: string;
+}
+
+export interface GetWalletBalanceResponse {
+    status: IRechargeStatusCode;
+    wallet_balance: string;
+}

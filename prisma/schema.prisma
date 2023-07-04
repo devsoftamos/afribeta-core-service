@@ -287,12 +287,15 @@ model Transaction {
   merchantCommission           Float?
   companyCommission            Float?
   transferCode                 String?
+  billProviderId               Int?
+  billPaymentReference         String?
   walletFundTransactionFlow    WalletFundTransactionFlow?
   createdAt                    DateTime                   @default(now())
   updatedAt                    DateTime                   @updatedAt
   user                         User                       @relation(name: "userToTransaction", fields: [userId], references: [id])
   sender                       User?                      @relation(name: "senderToTransaction", fields: [senderId], references: [id])
   receiver                     User?                      @relation(name: "receiverToTransaction", fields: [receiverId], references: [id])
+  billProvider                 BillProvider?              @relation(fields: [billProviderId], references: [id])
 
   @@map("Transactions")
 }
@@ -321,4 +324,16 @@ model UserCommission {
 
   @@id([userId, commissionId])
   @@map("UserCommissions")
+}
+
+model BillProvider {
+  id           Int           @id @default(autoincrement())
+  name         String
+  slug         String        @unique
+  isActive     Boolean?      @default(true)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  transactions Transaction[]
+
+  @@map("BillProviders")
 }

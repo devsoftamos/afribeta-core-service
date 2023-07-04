@@ -54,6 +54,7 @@ import {
 } from "../../transaction";
 import { customAlphabet } from "nanoid";
 import { isProduction } from "@/config";
+import { generateId } from "@/utils";
 
 @Injectable()
 export class WalletService {
@@ -270,7 +271,7 @@ export class WalletService {
                     paymentStatus: options.paymentStatus,
                     paymentChannel: options.paymentChannel,
                     paymentReference: options.paymentReference,
-                    transactionId: this.transactionService.generateId({
+                    transactionId: generateId({
                         type: "transaction",
                     }),
                     shortDescription: TransactionShortDescription.WALLET_FUNDED,
@@ -286,10 +287,10 @@ export class WalletService {
         options: InitializeWalletFundingDto,
         user: User
     ): Promise<ApiResponse> {
-        const paymentReference = this.transactionService.generateId({
+        const paymentReference = generateId({
             type: "reference",
         });
-        const transactionId = this.transactionService.generateId({
+        const transactionId = generateId({
             type: "transaction",
         });
 
@@ -527,7 +528,7 @@ export class WalletService {
 
             //generate transaction log
             //beneficiary
-            const transactionId = this.transactionService.generateId({
+            const transactionId = generateId({
                 type: "transaction",
             });
             await tx.transaction.create({

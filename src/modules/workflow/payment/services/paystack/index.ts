@@ -10,6 +10,7 @@ import {
 } from "@/modules/api/transaction";
 import { TransactionService } from "@/modules/api/transaction/services";
 import { PrismaService } from "@/modules/core/prisma/services";
+import { generateId } from "@/utils";
 import { HttpStatus, Injectable } from "@nestjs/common";
 import {
     TransactionFlow,
@@ -137,10 +138,10 @@ export class PaystackService {
             }
 
             //initiate transfer
-            const reference = this.transactionService.generateId({
+            const reference = generateId({
                 type: "reference",
             });
-            const transactionId = this.transactionService.generateId({
+            const transactionId = generateId({
                 type: "transaction",
             });
 

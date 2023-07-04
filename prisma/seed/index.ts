@@ -1,6 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 import logger from "moment-logger";
+import { billProviders } from "./billProvider";
 import { commissions } from "./commission";
 
 async function main() {
@@ -10,6 +11,14 @@ async function main() {
             update: {},
             create: commission,
         });
+    }
+
+    for (let provider of billProviders) {
+        await prisma.billProvider.upsert({
+            where: { slug: provider.slug },
+            update: {},
+            create: provider
+        })
     }
 }
 

@@ -2,10 +2,8 @@ import { PrismaService } from "@/modules/core/prisma/services";
 import { PaystackService } from "@/modules/workflow/payment/services/paystack";
 import { ApiResponse, buildResponse } from "@/utils/api-response-util";
 import { forwardRef, HttpStatus, Inject, Injectable } from "@nestjs/common";
-import { customAlphabet } from "nanoid";
 import { VerifyTransactionDto, VerifyTransactionProvider } from "../dtos";
 import { InvalidTransactionVerificationProvider } from "../errors";
-import { TransactionIdOption } from "../interfaces";
 
 @Injectable()
 export class TransactionService {
@@ -14,13 +12,6 @@ export class TransactionService {
         @Inject(forwardRef(() => PaystackService))
         private paystackService: PaystackService
     ) {}
-
-    generateId(option: TransactionIdOption): string {
-        const alphaNumeric = "1234567890ABCDEFGH";
-        return option.type == "reference"
-            ? customAlphabet(alphaNumeric.toLowerCase(), 30)()
-            : customAlphabet(alphaNumeric, 15)();
-    }
 
     async getTransactionByPaymentReference(reference: string) {
         return await this.prisma.transaction.findFirst({
