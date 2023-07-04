@@ -2,7 +2,6 @@ import { IRecharge } from "@/libs/iRecharge";
 import { Global, Module } from "@nestjs/common";
 import { IRechargeWorkflowService } from "./services";
 import { iRechargeOptions } from "@/config";
-import { PrismaService } from "@/modules/core/prisma/services";
 
 @Global()
 @Module({

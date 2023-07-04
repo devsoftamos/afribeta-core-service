@@ -27,7 +27,7 @@ export class PowerBillService {
             where: { isActive: true },
         });
 
-        for (let provider of providers) {
+        for (const provider of providers) {
             switch (provider.slug) {
                 case ProviderSlug.IRECHARGE: {
                     const iRechargeDiscos =

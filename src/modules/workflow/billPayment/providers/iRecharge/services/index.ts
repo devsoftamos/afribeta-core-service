@@ -1,6 +1,5 @@
 import { DiscoBundleData, IRecharge } from "@/libs/iRecharge";
 import { IRechargeError } from "@/libs/iRecharge/errors";
-import { PrismaService } from "@/modules/core/prisma/services";
 import { HttpStatus, Injectable } from "@nestjs/common";
 import logger from "moment-logger";
 import { FormattedElectricDiscoData, MeterType } from "../../../interfaces";
