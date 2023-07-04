@@ -13,7 +13,7 @@ import {
 export class IRechargeWorkflowService {
     constructor(private iRecharge: IRecharge, private prisma: PrismaService) {}
 
-    private slug: string = "irecharge";
+    private slug = "irecharge";
     private blackListedDiscos: string[] = [
         "Ikeja_Electric_Bill_Payment",
         "Ikeja_Token_Purchase",
