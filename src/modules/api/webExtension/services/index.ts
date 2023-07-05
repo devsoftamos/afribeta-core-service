@@ -1,16 +1,16 @@
-import { EmailService } from "@/modules/core/email/services";
+import { isProduction } from "@/config";
 
 import { Injectable } from "@nestjs/common";
 
 @Injectable()
 export class WebExtensionService {
-    constructor(private brevoEmailService: EmailService) {}
-
     health() {
         return {
             success: true,
             message: "OK",
             timestamp: Date.now(),
+            env: process.env.NODE_ENV,
+            production: isProduction,
         };
     }
 }
