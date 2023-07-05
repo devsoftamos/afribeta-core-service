@@ -17,5 +17,5 @@ export class PaystackVerifyTransactionException extends HttpException {
 }
 
 export class PaystackDynamicVirtualAccountException extends HttpException {
-    name: string = "PaystackDynamicVirtualAccountException";
+    name = "PaystackDynamicVirtualAccountException";
 }
