@@ -1,4 +1,4 @@
-import { isProduction, showStack } from "@/config";
+import { showStack } from "@/config";
 import { ValidationException } from "@/core/pipe/error";
 import {
     ExceptionFilter,

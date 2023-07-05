@@ -1,7 +1,6 @@
 import {
     AssignDynamicVirtualAccountWithValidationOptions,
     PaystackError,
-    SupportedBank,
 } from "@/libs/paystack";
 import { PrismaService } from "@/modules/core/prisma/services";
 import { PaystackService } from "@/modules/workflow/payment/services/paystack";
@@ -47,13 +46,12 @@ import {
 } from "../interfaces";
 import logger from "moment-logger";
 import { ApiResponse, buildResponse } from "@/utils/api-response-util";
-import { TransactionService } from "../../transaction/services";
 import {
     TransactionNotFoundException,
     TransactionShortDescription,
 } from "../../transaction";
 import { customAlphabet } from "nanoid";
-import { isProduction, paystackVirtualAccountBank } from "@/config";
+import {  paystackVirtualAccountBank } from "@/config";
 import { generateId } from "@/utils";
 
 @Injectable()
@@ -62,7 +60,6 @@ export class WalletService {
         private prisma: PrismaService,
         private paystackService: PaystackService,
         private userService: UserService,
-        private transactionService: TransactionService
     ) {}
 
     async createUserWalletAndVirtualAccount(
