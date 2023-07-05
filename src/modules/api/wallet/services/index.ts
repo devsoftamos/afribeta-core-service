@@ -412,7 +412,7 @@ export class WalletService {
                     data: {
                         paymentStatus: PaymentStatus.FAILED,
                         status: TransactionStatus.FAILED,
-                        transferCode: options.transferCode,
+                        serviceTransactionCode: options.transferCode,
                     },
                 });
             }
@@ -467,7 +467,7 @@ export class WalletService {
                 data: {
                     status: TransactionStatus.SUCCESS,
                     paymentStatus: PaymentStatus.SUCCESS,
-                    transferCode: transferCode,
+                    serviceTransactionCode: transferCode,
                 },
             });
         });

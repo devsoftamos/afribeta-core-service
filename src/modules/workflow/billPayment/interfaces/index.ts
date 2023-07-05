@@ -11,3 +11,14 @@ export interface FormattedElectricDiscoData {
     minValue: number;
     maxValue: number;
 }
+
+export interface GetMeterInfoOptions {
+    discoType: string;
+    meterNumber: number;
+    reference: string;
+}
+
+export interface GetMeterResponse {
+    accessToken: string;
+    hash?: string;
+}

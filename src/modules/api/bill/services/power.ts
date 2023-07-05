@@ -4,12 +4,16 @@ import { IRechargeWorkflowService } from "@/modules/workflow/billPayment/provide
 import { ApiResponse, buildResponse, generateId } from "@/utils";
 import { HttpStatus, Injectable } from "@nestjs/common";
 import {
+    BillProvider,
+    PaymentChannel,
+    PaymentStatus,
     Prisma,
     TransactionFlow,
     TransactionStatus,
     TransactionType,
     User,
 } from "@prisma/client";
+import { TransactionShortDescription } from "../../transaction";
 import { PaymentSource, BuyPowerDto } from "../dtos";
 import { BuyPowerException } from "../errors";
 import { ProviderSlug } from "../interfaces";
@@ -52,6 +56,15 @@ export class PowerBillService {
 
     async processBuyPowerRequest(options: BuyPowerDto, user: User) {
         console.log(user);
+        const provider = await this.prisma.billProvider.findUnique({
+            where: { slug: options.billProvider },
+        });
+        if (!provider) {
+            throw new BuyPowerException(
+                "Bill provider could not be found",
+                HttpStatus.NOT_FOUND
+            );
+        }
         switch (options.paymentSource) {
             case PaymentSource.WALLET: {
                 break;
@@ -71,7 +84,20 @@ export class PowerBillService {
     }
 
     //TODO: complete
-    async handlePowerPurchaseWithPaystack(options: BuyPowerDto, user: User) {
+    async handlePowerPurchaseWithPaystack(
+        options: BuyPowerDto,
+        user: User,
+        provider: BillProvider
+    ) {
+        const paymentReference = generateId({ type: "reference" });
+        const billPaymentReference = generateId({
+            type: "custom_lower_case",
+            length: 12,
+        });
+
+        //TODO: compute commission for agent and merchant here
+
+        //record transaction
         const transactionCreateOptions: Prisma.TransactionUncheckedCreateInput =
             {
                 amount: options.amount,
@@ -82,12 +108,32 @@ export class PowerBillService {
                 type: TransactionType.ELECTRICITY_BILL,
                 userId: user.id,
                 accountId: options.phone,
-                billPaymentReference: generateId({
-                    type: "custom_lower_case",
-                    length: 12,
-                }),
-                // billProvider: options.provider,
+                billPaymentReference: billPaymentReference,
+                billProviderId: provider.id,
+                meterType: options.meterType,
+                paymentChannel: PaymentChannel.PAYSTACK_CHANNEL,
+                paymentReference: paymentReference,
+                paymentStatus: PaymentStatus.PENDING,
+                packageType: options.discoType,
+                shortDescription:
+                    TransactionShortDescription.ELECTRICITY_PAYMENT,
+                description: options.narration,
             };
-        console.log(transactionCreateOptions);
+
+        if (provider.slug == ProviderSlug.IRECHARGE) {
+            const meterInfo = await this.iRechargeWorkflowService.getMeterInfo({
+                discoType: options.discoType,
+                meterNumber: options.meterNumber,
+                reference: billPaymentReference,
+            });
+            transactionCreateOptions.serviceTransactionCode =
+                meterInfo.accessToken;
+
+            await this.prisma.$transaction(async (tx) => {
+                await tx.transaction.create({
+                    data: transactionCreateOptions,
+                });
+            });
+        }
     }
 }

@@ -22,7 +22,7 @@ export interface GetMeterInfoOptions {
     vendor_code: string;
     meter: number;
     reference_id: string;
-    disco: DiscoType;
+    disco: string;
     response_format: ResponseFormat;
     hash: string;
 }

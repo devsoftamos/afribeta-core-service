@@ -279,14 +279,14 @@ model Transaction {
   accountId                    String?
   packageType                  String?
   meterType                    String?
-  phone1                       String?
-  phone2                       String?
+  senderIdentifier             String?
+  receiverIdentifier           String?
   paymentChannel               PaymentChannel?
   token                        String?
   commission                   Float?
   merchantCommission           Float?
   companyCommission            Float?
-  transferCode                 String?
+  serviceTransactionCode       String?
   billProviderId               Int?
   billPaymentReference         String?
   walletFundTransactionFlow    WalletFundTransactionFlow?

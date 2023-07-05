@@ -2,7 +2,12 @@ import { DiscoBundleData, IRecharge } from "@/libs/iRecharge";
 import { IRechargeError } from "@/libs/iRecharge/errors";
 import { HttpStatus, Injectable } from "@nestjs/common";
 import logger from "moment-logger";
-import { FormattedElectricDiscoData, MeterType } from "../../../interfaces";
+import {
+    FormattedElectricDiscoData,
+    GetMeterInfoOptions,
+    GetMeterResponse,
+    MeterType,
+} from "../../../interfaces";
 import {
     IRechargeElectricityException,
     IRechargeWorkflowException,
@@ -87,5 +92,50 @@ export class IRechargeWorkflowService {
             }
         );
         return formattedBundles;
+    }
+
+    async getMeterInfo(
+        options: GetMeterInfoOptions
+    ): Promise<GetMeterResponse> {
+        try {
+            const getMeterInfo = await this.iRecharge.getMeterInfo({
+                disco: options.discoType,
+                meter: options.meterNumber,
+                hash: "bbb",
+                reference_id: options.reference,
+            });
+            return {
+                accessToken: getMeterInfo.access_token,
+                hash: getMeterInfo.response_hash,
+            };
+        } catch (error) {
+            logger.error(error);
+            switch (true) {
+                case error instanceof IRechargeError: {
+                    const clientErrorCodes = ["13", "14", "15", "41"];
+                    if (clientErrorCodes.includes(error.status)) {
+                        throw new IRechargeElectricityException(
+                            error.message,
+                            HttpStatus.BAD_REQUEST
+                        );
+                    }
+
+                    throw new IRechargeElectricityException(
+                        error.message,
+                        HttpStatus.INTERNAL_SERVER_ERROR
+                    );
+                }
+                case error instanceof IRechargeWorkflowException: {
+                    throw error;
+                }
+
+                default: {
+                    throw new IRechargeWorkflowException(
+                        "Failed to retrieve electric discos. Error ocurred",
+                        HttpStatus.INTERNAL_SERVER_ERROR
+                    );
+                }
+            }
+        }
     }
 }
