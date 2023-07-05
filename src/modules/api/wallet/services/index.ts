@@ -51,7 +51,7 @@ import {
     TransactionShortDescription,
 } from "../../transaction";
 import { customAlphabet } from "nanoid";
-import {  paystackVirtualAccountBank } from "@/config";
+import { paystackVirtualAccountBank } from "@/config";
 import { generateId } from "@/utils";
 
 @Injectable()
@@ -59,7 +59,7 @@ export class WalletService {
     constructor(
         private prisma: PrismaService,
         private paystackService: PaystackService,
-        private userService: UserService,
+        private userService: UserService
     ) {}
 
     async createUserWalletAndVirtualAccount(
