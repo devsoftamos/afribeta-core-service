@@ -1,4 +1,4 @@
-import { isProduction } from "@/config";
+import { isProduction, showStack } from "@/config";
 import { ValidationException } from "@/core/pipe/error";
 import {
     ExceptionFilter,
@@ -32,7 +32,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
                     success: false,
                     message: "Failed Validation",
                     errors: exceptionResponse,
-                    stack: isProduction ? undefined : exception.stack, //only show stack in development
+                    stack: showStack ? exception.stack : undefined, //only show stack in development
                 };
                 return httpAdapter.reply(
                     ctx.getResponse(),
@@ -48,7 +48,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
                         httpStatus == 500
                             ? "Something went wrong"
                             : exception.message,
-                    stack: isProduction ? undefined : exception.stack, //only show stack in development
+                    stack: showStack ? exception.stack : undefined, //only show stack in development
                 };
                 httpAdapter.reply(ctx.getResponse(), responseBody, httpStatus);
             }

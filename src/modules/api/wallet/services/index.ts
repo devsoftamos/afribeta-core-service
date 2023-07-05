@@ -53,7 +53,7 @@ import {
     TransactionShortDescription,
 } from "../../transaction";
 import { customAlphabet } from "nanoid";
-import { isProduction } from "@/config";
+import { isProduction, paystackVirtualAccountBank } from "@/config";
 import { generateId } from "@/utils";
 
 @Injectable()
@@ -161,9 +161,8 @@ export class WalletService {
                     first_name: user.firstName,
                     last_name: user.lastName,
                     phone: `+234${user.phone.substring(1)}`,
-                    preferred_bank: isProduction
-                        ? SupportedBank.WEMA_BANK
-                        : ("test-bank" as any), // ***********************************************************
+                    preferred_bank:
+                        paystackVirtualAccountBank ?? ("wema-bank" as any), // ***********************************************************
                 };
 
             await this.paystackService.assignDynamicValidatedVirtualAccount(

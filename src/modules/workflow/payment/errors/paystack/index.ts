@@ -4,14 +4,18 @@ export class PaystackWorkflowException extends HttpException {
     name = "PaystackWorkflowException";
 }
 
-export class PaystackBankException extends PaystackWorkflowException {
+export class PaystackBankException extends HttpException {
     name = "PaystackBankException";
 }
 
-export class PaystackTransferException extends PaystackWorkflowException {
+export class PaystackTransferException extends HttpException {
     name = "PaystackTransferException";
 }
 
-export class PaystackVerifyTransactionException extends PaystackWorkflowException {
+export class PaystackVerifyTransactionException extends HttpException {
     name = "PaystackVerifyTransactionException";
+}
+
+export class PaystackDynamicVirtualAccountException extends HttpException {
+    name: string = "PaystackDynamicVirtualAccountException";
 }

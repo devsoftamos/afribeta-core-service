@@ -8,7 +8,6 @@ import {
     TransactionShortDescription,
     TransferServiceProvider,
 } from "@/modules/api/transaction";
-import { TransactionService } from "@/modules/api/transaction/services";
 import { PrismaService } from "@/modules/core/prisma/services";
 import { generateId } from "@/utils";
 import { HttpStatus, Injectable } from "@nestjs/common";
@@ -19,6 +18,7 @@ import {
 } from "@prisma/client";
 import {
     PaystackBankException,
+    PaystackDynamicVirtualAccountException,
     PaystackTransferException,
     PaystackVerifyTransactionException,
     PaystackWorkflowException,
@@ -30,13 +30,13 @@ import {
     ResolveAccountResponse,
     VerifyTransactionResponse,
 } from "../../interfaces";
+import logger from "moment-logger";
 
 @Injectable()
 export class PaystackService {
     private paystack: Paystack = new Paystack(this.instanceOptions);
     constructor(
         public instanceOptions: PaystackOptions,
-        private transactionService: TransactionService,
         private prisma: PrismaService
     ) {
         //super(instanceOptions);
@@ -45,7 +45,30 @@ export class PaystackService {
     async assignDynamicValidatedVirtualAccount(
         options: AssignDynamicVirtualAccountWithValidationOptions
     ) {
-        return this.paystack.assignDynamicValidatedVirtualAccount(options);
+        try {
+            const resp =
+                await this.paystack.assignDynamicValidatedVirtualAccount(
+                    options
+                );
+            return resp;
+        } catch (error) {
+            logger.error(error);
+            switch (true) {
+                case error instanceof PaystackError: {
+                    throw new PaystackDynamicVirtualAccountException(
+                        error.message,
+                        HttpStatus.INTERNAL_SERVER_ERROR
+                    );
+                }
+
+                default: {
+                    throw new PaystackWorkflowException(
+                        "Failed to initiate dynamic virtual account creation",
+                        HttpStatus.INTERNAL_SERVER_ERROR
+                    );
+                }
+            }
+        }
     }
 
     async getBankList(): Promise<ListBanks[]> {

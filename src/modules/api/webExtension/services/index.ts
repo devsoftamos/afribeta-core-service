@@ -9,8 +9,6 @@ export class WebExtensionService {
             success: true,
             message: "OK",
             timestamp: Date.now(),
-            env: process.env.NODE_ENV,
-            production: isProduction,
         };
     }
 }

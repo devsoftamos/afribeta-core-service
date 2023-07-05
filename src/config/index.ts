@@ -64,6 +64,10 @@ const runtimeEnvironment: RequiredEnvironment[] = [
         name: "IRECHARGE_BASE_URL",
         type: RequiredEnvironmentTypes.String,
     },
+    {
+        name: "PAYSTACK_VIRTUAL_ACCOUNT_BANK",
+        type: RequiredEnvironmentTypes.String,
+    },
 ];
 
 validate(runtimeEnvironment);
@@ -89,6 +93,11 @@ export const passwordResetTemplate = +process.env.PASSWORD_RESET_TEMPLATE;
 
 //payment
 export const paystackSecretKey: string = process.env.PAYSTACK_SECRET_KEY;
+
+export const paystackVirtualAccountBank: string =
+    process.env.PAYSTACK_VIRTUAL_ACCOUNT_BANK;
+
+export const showStack = process.env.SHOW_ERROR_STACK === "true";
 
 export const paystackConfiguration: PaystackOptions = {
     baseUrl: process.env.PAYSTACK_BASE_URL,
