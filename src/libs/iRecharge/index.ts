@@ -1,28 +1,39 @@
 import Axios, { AxiosInstance, AxiosRequestConfig } from "axios";
+import { createHmac } from "crypto";
 import { IRechargeError } from "./errors";
 import {
     GetElectricDiscosResponse,
+    GetMeterInfoHashOptions,
     GetMeterInfoOptions,
     GetMeterInfoResponse,
     GetWalletBalanceResponse,
     IRechargeOptions,
     RequestOptions,
+    VendPowerHashOptions,
     VendPowerOptions,
     VendStatusOptions,
     VendStatusResponse,
 } from "./interfaces";
-import { VendAirtimeOptions, VendAirtimeResponse } from "./interfaces/airtime";
+import {
+    VendAirtimeHashOptions,
+    VendAirtimeOptions,
+    VendAirtimeResponse,
+} from "./interfaces/airtime";
 import {
     GetDataBundleOptions,
     GetDataBundleResponse,
+    GetSmileDeviceInfoHashOptions,
+    VendDataHashOptions,
     VendDataOptions,
     VendDataResponse,
 } from "./interfaces/data";
 import {
+    GetSmartCardInfoHashOptions,
     GetSmartCardOptions,
     GetSmartCardResponse,
     GetTVBouquetOptions,
     GetTVBouquetResponse,
+    VendTVHashOptions,
     VendTVOptions,
     VendTVResponse,
 } from "./interfaces/tv";
@@ -306,5 +317,61 @@ export class IRecharge {
         } catch (error) {
             throw error;
         }
+    }
+
+    getMeterInfoHash(options: GetMeterInfoHashOptions): string {
+        const combinedString = `${this.instanceOptions.vendorCode}|${options.referenceId}|${options.meterNumber}|${options.disco}|${this.instanceOptions.publicKey}`;
+        return createHmac("sha1", this.instanceOptions.privateKey)
+            .update(combinedString)
+            .digest("hex");
+    }
+
+    vendPowerHash(options: VendPowerHashOptions): string {
+        const combinedString = `${this.instanceOptions.vendorCode}|${options.referenceId}|${options.meterNumber}|${options.disco}|${options.amount}|${options.accessToken}|${this.instanceOptions.publicKey}`;
+        return createHmac("sha1", this.instanceOptions.privateKey)
+            .update(combinedString)
+            .digest("hex");
+    }
+
+    vendAirtimeHash(options: VendAirtimeHashOptions) {
+        const combinedString = `${this.instanceOptions.vendorCode}|${options.referenceId}|${options.vtuNumber}|${options.vtuNetwork}|${options.vtuAmount}|${this.instanceOptions.publicKey}`;
+        return createHmac("sha1", this.instanceOptions.privateKey)
+            .update(combinedString)
+            .digest("hex");
+    }
+
+    getSmartCardInfoHash(options: GetSmartCardInfoHashOptions) {
+        const combinedString = `${this.instanceOptions.vendorCode}|${options.referenceId}|${options.tvNetwork}|${options.smartCardNumber}|${options.serviceCode}|${this.instanceOptions.publicKey}`;
+        return createHmac("sha1", this.instanceOptions.privateKey)
+            .update(combinedString)
+            .digest("hex");
+    }
+
+    vendTVHash(options: VendTVHashOptions) {
+        const combinedString = `${this.instanceOptions.vendorCode}|${options.referenceId}|${options.smartCardNumber}|${options.tvNetwork}|${options.serviceCode}|${options.accessToken}|${this.instanceOptions.publicKey}`;
+        return createHmac("sha1", this.instanceOptions.privateKey)
+            .update(combinedString)
+            .digest("hex");
+    }
+
+    getSmileDeviceInfoHash(options: GetSmileDeviceInfoHashOptions): string {
+        const combinedString = `${this.instanceOptions.vendorCode}|${options.receiver}|${this.instanceOptions.publicKey}`;
+        return createHmac("sha1", this.instanceOptions.privateKey)
+            .update(combinedString)
+            .digest("hex");
+    }
+
+    vendDataHash(options: VendDataHashOptions): string {
+        const combinedString = `${this.instanceOptions.vendorCode}|${options.referenceId}|${options.vtuNumber}|${options.vtuNetwork}|${options.vtuData}|${this.instanceOptions.publicKey}`;
+        return createHmac("sha1", this.instanceOptions.privateKey)
+            .update(combinedString)
+            .digest("hex");
+    }
+
+    checkVendStatusHash(options: VendStatusOptions) {
+        const combinedString = `${this.instanceOptions.vendorCode}|${options.access_token}|${this.instanceOptions.publicKey}`;
+        return createHmac("sha1", this.instanceOptions.privateKey)
+            .update(combinedString)
+            .digest("hex");
     }
 }

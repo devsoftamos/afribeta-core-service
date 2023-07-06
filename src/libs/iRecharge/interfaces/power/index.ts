@@ -68,3 +68,14 @@ export interface DiscoBundleData {
 export interface GetElectricDiscosResponse extends IRechargeResponse {
     bundles: DiscoBundleData[];
 }
+
+export interface GetMeterInfoHashOptions {
+    referenceId: string;
+    meterNumber: string;
+    disco: string;
+}
+
+export interface VendPowerHashOptions extends GetMeterInfoHashOptions {
+    amount: string;
+    accessToken: string;
+}

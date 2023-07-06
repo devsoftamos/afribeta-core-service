@@ -76,3 +76,7 @@ export interface GetWalletBalanceResponse {
     status: IRechargeStatusCode;
     wallet_balance: string;
 }
+
+export interface VendStatusHashOptions {
+    accessToken: string;
+}

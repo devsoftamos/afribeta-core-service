@@ -97,7 +97,7 @@ export const paystackSecretKey: string = process.env.PAYSTACK_SECRET_KEY;
 export const paystackVirtualAccountBank: string =
     process.env.PAYSTACK_VIRTUAL_ACCOUNT_BANK;
 
-export const showStack = process.env.SHOW_ERROR_STACK === "true";
+export const showStack = process.env.STACK_MODE == "show_error_stack";
 
 export const paystackConfiguration: PaystackOptions = {
     baseUrl: process.env.PAYSTACK_BASE_URL,

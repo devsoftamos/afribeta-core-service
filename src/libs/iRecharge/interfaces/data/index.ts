@@ -45,3 +45,14 @@ export interface VendDataResponse extends IRechargeResponse {
     ref: string;
     response_hash: string;
 }
+
+export interface GetSmileDeviceInfoHashOptions {
+    receiver: string;
+}
+
+export interface VendDataHashOptions {
+    referenceId: string;
+    vtuNumber: string;
+    vtuNetwork: DataBundleProvider;
+    vtuData: string;
+}

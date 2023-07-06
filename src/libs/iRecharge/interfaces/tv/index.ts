@@ -61,3 +61,14 @@ export interface VendTVResponse extends IRechargeResponse {
     response_hash: string;
     ref: string;
 }
+
+export interface GetSmartCardInfoHashOptions {
+    tvNetwork: TVNetworkProvider;
+    smartCardNumber: string;
+    serviceCode: string;
+    referenceId: string;
+}
+
+export interface VendTVHashOptions extends GetSmartCardInfoHashOptions {
+    accessToken: string;
+}
