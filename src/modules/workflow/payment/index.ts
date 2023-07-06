@@ -13,11 +13,7 @@ import { PaystackService } from "./services/paystack";
                 transactionService: TransactionService,
                 prisma: PrismaService
             ) {
-                return new PaystackService(
-                    paystackConfiguration,
-                    transactionService,
-                    prisma
-                );
+                return new PaystackService(paystackConfiguration, prisma);
             },
             inject: [TransactionService, PrismaService],
         },
