@@ -13,7 +13,7 @@ export interface FormattedElectricDiscoData {
 }
 
 export interface GetMeterInfoOptions {
-    discoType: string;
+    discoCode: string;
     meterNumber: number;
     reference: string;
 }

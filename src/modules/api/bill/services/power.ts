@@ -14,7 +14,7 @@ import {
     User,
 } from "@prisma/client";
 import { TransactionShortDescription } from "../../transaction";
-import { PaymentSource, BuyPowerDto } from "../dtos";
+import { PaymentProvider, PurchasePowerDto } from "../dtos";
 import { BuyPowerException } from "../errors";
 import { ProviderSlug } from "../interfaces";
 
@@ -54,29 +54,45 @@ export class PowerBillService {
         });
     }
 
-    async processBuyPowerRequest(options: BuyPowerDto, user: User) {
-        console.log(user);
+    async initializePowerPurchase(options: PurchasePowerDto, user: User) {
         const provider = await this.prisma.billProvider.findUnique({
             where: { slug: options.billProvider },
         });
         if (!provider) {
             throw new BuyPowerException(
-                "Bill provider could not be found",
+                "Bill provider does not exist",
                 HttpStatus.NOT_FOUND
             );
         }
-        switch (options.paymentSource) {
-            case PaymentSource.WALLET: {
-                break;
-            }
 
-            case PaymentSource.PAYSTACK: {
-                break;
+        if (!provider.isActive) {
+            throw new BuyPowerException(
+                "Bill Provider not active",
+                HttpStatus.BAD_REQUEST
+            );
+        }
+
+        switch (options.paymentProvider) {
+            case PaymentProvider.PAYSTACK: {
+                const reference =
+                    await this.handlePowerPurchaseInitializationWithPaystack(
+                        options,
+                        user,
+                        provider
+                    );
+                return buildResponse({
+                    message: "payment reference successfully generated",
+                    data: {
+                        amount: options.amount,
+                        email: user.email,
+                        reference: reference,
+                    },
+                });
             }
 
             default: {
                 throw new BuyPowerException(
-                    `Invalid Payment Source must be one of: ${PaymentSource.PAYSTACK}, ${PaymentSource.WALLET}`,
+                    `Invalid Payment Source must be one of: ${PaymentProvider.PAYSTACK}`,
                     HttpStatus.BAD_REQUEST
                 );
             }
@@ -84,11 +100,11 @@ export class PowerBillService {
     }
 
     //TODO: complete
-    async handlePowerPurchaseWithPaystack(
-        options: BuyPowerDto,
+    async handlePowerPurchaseInitializationWithPaystack(
+        options: PurchasePowerDto,
         user: User,
         provider: BillProvider
-    ) {
+    ): Promise<string> {
         const paymentReference = generateId({ type: "reference" });
         const billPaymentReference = generateId({
             type: "custom_lower_case",
@@ -120,20 +136,25 @@ export class PowerBillService {
                 description: options.narration,
             };
 
+        //iRecharge provider
         if (provider.slug == ProviderSlug.IRECHARGE) {
             const meterInfo = await this.iRechargeWorkflowService.getMeterInfo({
-                discoType: options.discoType,
+                discoCode: options.discoCode,
                 meterNumber: options.meterNumber,
                 reference: billPaymentReference,
             });
             transactionCreateOptions.serviceTransactionCode =
                 meterInfo.accessToken;
 
-            await this.prisma.$transaction(async (tx) => {
-                await tx.transaction.create({
-                    data: transactionCreateOptions,
-                });
+            await this.prisma.transaction.create({
+                data: transactionCreateOptions,
             });
         }
+
+        //Ikeja electric
+        if (provider.slug == ProviderSlug.IKEJA_ELECTRIC) {
+        }
+
+        return paymentReference;
     }
 }

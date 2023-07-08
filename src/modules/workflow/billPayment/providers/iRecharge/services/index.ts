@@ -98,10 +98,18 @@ export class IRechargeWorkflowService {
         options: GetMeterInfoOptions
     ): Promise<GetMeterResponse> {
         try {
+            const hash = this.iRecharge.getMeterInfoHash({
+                disco: options.discoCode,
+                meterNumber: options.meterNumber,
+                referenceId: options.reference,
+            });
+
+            //console.log(hash);
+
             const getMeterInfo = await this.iRecharge.getMeterInfo({
-                disco: options.discoType,
+                disco: options.discoCode,
                 meter: options.meterNumber,
-                hash: "bbb",
+                hash: hash,
                 reference_id: options.reference,
             });
             return {

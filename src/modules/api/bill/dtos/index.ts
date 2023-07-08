@@ -7,8 +7,7 @@ import {
     Length,
 } from "class-validator";
 
-export enum PaymentSource {
-    WALLET = "WALLET",
+export enum PaymentProvider {
     PAYSTACK = "PAYSTACK",
 }
 
@@ -17,11 +16,11 @@ export enum MeterType {
     POSTPAID = "POSTPAID",
 }
 
-export class BuyPowerDto {
-    @IsEnum(PaymentSource)
-    paymentSource: PaymentSource;
+export class PurchasePowerDto {
+    @IsEnum(PaymentProvider)
+    paymentProvider: PaymentProvider;
 
-    @IsInt()
+    @IsString()
     billProvider: string;
 
     @IsInt()
@@ -34,10 +33,12 @@ export class BuyPowerDto {
     discoType: string;
 
     @IsString()
-    serviceCode: string;
+    discoCode: string;
 
     @IsPhoneNumber("NG")
-    @Length(11, 11, { message: "Phone number must be 11 digits" })
+    @Length(11, 11, {
+        message: "Phone number must be valid containing 11 digits",
+    })
     phone: string;
 
     @IsInt()

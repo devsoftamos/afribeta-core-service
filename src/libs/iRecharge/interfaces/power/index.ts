@@ -71,7 +71,7 @@ export interface GetElectricDiscosResponse extends IRechargeResponse {
 
 export interface GetMeterInfoHashOptions {
     referenceId: string;
-    meterNumber: string;
+    meterNumber: string | number;
     disco: string;
 }
 
