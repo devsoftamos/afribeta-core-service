@@ -2,7 +2,6 @@ import {
     AssignDynamicVirtualAccountWithValidationOptions,
     Paystack,
     PaystackError,
-    PaystackOptions,
 } from "@/libs/paystack";
 import {
     TransactionShortDescription,
