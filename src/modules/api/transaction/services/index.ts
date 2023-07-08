@@ -1,5 +1,5 @@
 import { PrismaService } from "@/modules/core/prisma/services";
-import { PaystackService } from "@/modules/workflow/payment/services/paystack";
+import { PaystackService } from "@/modules/workflow/payment/providers/paystack/services";
 import { ApiResponse, buildResponse } from "@/utils/api-response-util";
 import { forwardRef, HttpStatus, Inject, Injectable } from "@nestjs/common";
 import { VerifyTransactionDto, VerifyTransactionProvider } from "../dtos";

@@ -22,25 +22,19 @@ import {
     PaystackTransferException,
     PaystackVerifyTransactionException,
     PaystackWorkflowException,
-} from "../../errors";
+} from "../errors";
 import {
     InitializeTransferOptions,
     ListBanks,
     ResolveAccountOptions,
     ResolveAccountResponse,
     VerifyTransactionResponse,
-} from "../../interfaces";
+} from "../../../interfaces";
 import logger from "moment-logger";
 
 @Injectable()
 export class PaystackService {
-    private paystack: Paystack = new Paystack(this.instanceOptions);
-    constructor(
-        public instanceOptions: PaystackOptions,
-        private prisma: PrismaService
-    ) {
-        //super(instanceOptions);
-    }
+    constructor(private paystack: Paystack, private prisma: PrismaService) {}
 
     async assignDynamicValidatedVirtualAccount(
         options: AssignDynamicVirtualAccountWithValidationOptions

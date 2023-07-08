@@ -1,19 +1,7 @@
-import { paystackConfiguration } from "@/config";
-import { PrismaService } from "@/modules/core/prisma/services";
-import { Global, Module } from "@nestjs/common";
-import { PaystackService } from "./services/paystack";
+import { Module } from "@nestjs/common";
+import { PaystackWorkflowModule } from "./providers/paystack";
 
-@Global()
 @Module({
-    providers: [
-        {
-            provide: PaystackService,
-            useFactory(prisma: PrismaService) {
-                return new PaystackService(paystackConfiguration, prisma);
-            },
-            inject: [PrismaService],
-        },
-    ],
-    exports: [PaystackService],
+    imports: [PaystackWorkflowModule],
 })
 export class PaymentWorkflowModule {}

@@ -3,7 +3,7 @@ import {
     PaystackError,
 } from "@/libs/paystack";
 import { PrismaService } from "@/modules/core/prisma/services";
-import { PaystackService } from "@/modules/workflow/payment/services/paystack";
+import { PaystackService } from "@/modules/workflow/payment/providers/paystack/services";
 import { HttpStatus, Injectable } from "@nestjs/common";
 import {
     PaymentStatus,
