@@ -1,7 +1,4 @@
-import {
-    AssignDynamicVirtualAccountWithValidationOptions,
-    PaystackError,
-} from "@/libs/paystack";
+import { AssignDynamicVirtualAccountWithValidationOptions } from "@/libs/paystack";
 import { PrismaService } from "@/modules/core/prisma/services";
 import { PaystackService } from "@/modules/workflow/payment/providers/paystack/services";
 import { HttpStatus, Injectable } from "@nestjs/common";
@@ -15,10 +12,7 @@ import {
     UserType,
     WalletFundTransactionFlow,
 } from "@prisma/client";
-import {
-    DuplicateUserException,
-    UserNotFoundException,
-} from "@/modules/api/user";
+import { UserNotFoundException } from "@/modules/api/user";
 import { UserService } from "@/modules/api/user/services";
 import {
     InitializeWalletFundingDto,
@@ -30,7 +24,6 @@ import {
 } from "../dto";
 import {
     WalletCreationException,
-    WalletCreationPaystackException,
     DuplicateWalletException,
     WalletNotFoundException,
     InvalidWalletFundTransactionFlow,
@@ -53,7 +46,6 @@ import {
 import { customAlphabet } from "nanoid";
 import { paystackVirtualAccountBank } from "@/config";
 import { generateId } from "@/utils";
-import { PaystackDynamicVirtualAccountException } from "@/modules/workflow/payment/providers/paystack/errors";
 
 @Injectable()
 export class WalletService {
