@@ -6,6 +6,7 @@ import { APIWebhookResponse, EventBody, ProvidusWebhook } from "../interfaces";
 export class ProvidusWebhookService implements ProvidusWebhook {
     constructor(private userService: UserService) {}
     processWebhookEvent(eventBody: EventBody): Promise<APIWebhookResponse> {
+        console.log(eventBody, this.userService);
         throw new Error("Method not implemented.");
     }
 }
