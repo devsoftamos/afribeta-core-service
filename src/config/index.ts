@@ -6,6 +6,7 @@ import validate, {
 } from "@boxpositron/vre";
 import { PaystackOptions } from "@/libs/paystack";
 import { IRechargeOptions } from "@/libs/iRecharge";
+import { ProvidusOptions } from "@/libs/providus";
 
 export * from "./constants";
 
@@ -68,6 +69,18 @@ const runtimeEnvironment: RequiredEnvironment[] = [
         name: "PAYSTACK_VIRTUAL_ACCOUNT_BANK",
         type: RequiredEnvironmentTypes.String,
     },
+    {
+        name: "PAYSTACK_VIRTUAL_ACCOUNT_BANK",
+        type: RequiredEnvironmentTypes.String,
+    },
+    {
+        name: "PAYSTACK_VIRTUAL_ACCOUNT_BANK",
+        type: RequiredEnvironmentTypes.String,
+    },
+    {
+        name: "PAYSTACK_VIRTUAL_ACCOUNT_BANK",
+        type: RequiredEnvironmentTypes.String,
+    },
 ];
 
 validate(runtimeEnvironment);
@@ -110,4 +123,11 @@ export const iRechargeOptions: IRechargeOptions = {
     publicKey: process.env.IRECHARGE_PUBLIC_KEY,
     vendorCode: process.env.IRECHARGE_VENDOR_CODE,
     baseUrl: process.env.IRECHARGE_BASE_URL,
+};
+
+//providus
+export const providusConfiguration: ProvidusOptions = {
+    authSignature: process.env.PROVIDUS_AUTH_SIGNATURE,
+    baseUrl: process.env.BASE_URL,
+    clientId: process.env.CLIENT_ID,
 };

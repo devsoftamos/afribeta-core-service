@@ -27,3 +27,14 @@ export type VerifyTransactionStatus = "success" | "cancelled" | "failed";
 export interface VerifyTransactionResponse {
     status: VerifyTransactionStatus;
 }
+
+export interface CreateVirtualAccountOptions {
+    bvn: string;
+    accountName: string;
+    bankName?: string;
+}
+
+export interface CreateVirtualAccountResponse {
+    accountName: string;
+    accountNumber: string;
+}

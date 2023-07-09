@@ -53,6 +53,7 @@ import {
 import { customAlphabet } from "nanoid";
 import { paystackVirtualAccountBank } from "@/config";
 import { generateId } from "@/utils";
+import { PaystackDynamicVirtualAccountException } from "@/modules/workflow/payment/providers/paystack/errors";
 
 @Injectable()
 export class WalletService {
@@ -118,79 +119,56 @@ export class WalletService {
         options: InitiateWalletCreationDto,
         user: User
     ) {
-        try {
-            const wallet = await this.prisma.wallet.findUnique({
-                where: { userId: user.id },
-            });
+        const wallet = await this.prisma.wallet.findUnique({
+            where: { userId: user.id },
+        });
 
-            if (user.userType !== "CUSTOMER") {
-                throw new WalletCreationException(
-                    "User must be of customer type",
-                    HttpStatus.BAD_REQUEST
-                );
-            }
-
-            if (wallet) {
-                throw new DuplicateWalletException(
-                    "Wallet already exists",
-                    HttpStatus.BAD_REQUEST
-                );
-            }
-
-            // const testData = {
-            //     country: "NG",
-            //     type: "bank_account",
-            //     account_number: "0111111111",
-            //     bvn: "22222222222",
-            //     bank_code: "007",
-            //     first_name: "Uchenna",
-            //     last_name: "Okoro",
-            //     email: "uche@example.com",
-            // };
-
-            const paystackDynamicVirtualAccountCreationOptions: AssignDynamicVirtualAccountWithValidationOptions =
-                {
-                    bvn: options.bvn,
-                    account_number: options.accountNumber,
-                    bank_code: options.bankCode,
-                    country: "NG",
-                    email: user.email,
-                    first_name: user.firstName,
-                    last_name: user.lastName,
-                    phone: `+234${user.phone.substring(1)}`,
-                    preferred_bank:
-                        paystackVirtualAccountBank ?? ("wema-bank" as any), // ***********************************************************
-                };
-
-            await this.paystackService.assignDynamicValidatedVirtualAccount(
-                paystackDynamicVirtualAccountCreationOptions
+        if (user.userType !== "CUSTOMER") {
+            throw new WalletCreationException(
+                "User must be of customer type",
+                HttpStatus.BAD_REQUEST
             );
-            return buildResponse({
-                message:
-                    "Your Afribeta wallet would be created after we have successfully verified your bank details",
-            });
-        } catch (error) {
-            switch (true) {
-                case error instanceof DuplicateUserException: {
-                    throw error;
-                }
-
-                case error instanceof WalletCreationException: {
-                    throw error;
-                }
-
-                case error instanceof PaystackError: {
-                    throw new WalletCreationPaystackException(
-                        error.message,
-                        HttpStatus.INTERNAL_SERVER_ERROR
-                    );
-                }
-
-                default: {
-                    throw error;
-                }
-            }
         }
+
+        if (wallet) {
+            throw new DuplicateWalletException(
+                "Wallet already exists",
+                HttpStatus.BAD_REQUEST
+            );
+        }
+
+        // const testData = {
+        //     country: "NG",
+        //     type: "bank_account",
+        //     account_number: "0111111111",
+        //     bvn: "22222222222",
+        //     bank_code: "007",
+        //     first_name: "Uchenna",
+        //     last_name: "Okoro",
+        //     email: "uche@example.com",
+        // };
+
+        const paystackDynamicVirtualAccountCreationOptions: AssignDynamicVirtualAccountWithValidationOptions =
+            {
+                bvn: options.bvn,
+                account_number: options.accountNumber,
+                bank_code: options.bankCode,
+                country: "NG",
+                email: user.email,
+                first_name: user.firstName,
+                last_name: user.lastName,
+                phone: `+234${user.phone.substring(1)}`,
+                preferred_bank:
+                    paystackVirtualAccountBank ?? ("wema-bank" as any),
+            };
+
+        await this.paystackService.assignDynamicValidatedVirtualAccount(
+            paystackDynamicVirtualAccountCreationOptions
+        );
+        return buildResponse({
+            message:
+                "Your Afribeta wallet would be created after we have successfully verified your bank details",
+        });
     }
 
     //Process wallet funding

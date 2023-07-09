@@ -36,6 +36,7 @@ export class Providus {
                 const error = new ProvidusError(data.responseMessage);
                 error.status = data.responseCode;
             }
+            return data;
         } catch (error) {
             throw error;
         }
