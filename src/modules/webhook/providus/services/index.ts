@@ -1,32 +1,21 @@
-import { UserService } from "@/modules/api/user/services";
 import {
     DuplicateSelfFundWalletTransaction,
     WalletFundProvider,
 } from "@/modules/api/wallet";
 import { WalletService } from "@/modules/api/wallet/services";
-import { PrismaService } from "@/modules/core/prisma/services";
 import { Injectable } from "@nestjs/common";
 import {
     PaymentChannel,
     PaymentStatus,
     TransactionStatus,
-    User,
     WalletFundTransactionFlow,
 } from "@prisma/client";
 import logger from "moment-logger";
-import {
-    APIWebhookResponse,
-    EventBody,
-    ProvidusWebhook,
-    UserIdentifier,
-} from "../interfaces";
+import { APIWebhookResponse, EventBody, UserIdentifier } from "../interfaces";
 
 @Injectable()
 export class ProvidusWebhookService {
-    constructor(
-        private prisma: PrismaService,
-        private walletService: WalletService
-    ) {}
+    constructor(private walletService: WalletService) {}
     async processWebhookEvent(eventBody: EventBody, user: UserIdentifier) {
         return await this.processWalletFunding(eventBody, user);
     }
