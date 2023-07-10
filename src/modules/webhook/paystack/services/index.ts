@@ -1,4 +1,7 @@
-import { CreateWalletAAndVirtualAccount } from "@/modules/api/wallet";
+import {
+    CreateWalletAAndVirtualAccount,
+    WalletFundProvider,
+} from "@/modules/api/wallet";
 import { WalletService } from "@/modules/api/wallet/services";
 import { HttpStatus, Injectable } from "@nestjs/common";
 import {
@@ -16,7 +19,7 @@ import {
     PaymentStatus,
     TransactionStatus,
     TransactionType,
-    VirtualAccountProviders,
+    VirtualAccountProvider,
     WalletFundTransactionFlow,
 } from "@prisma/client";
 import { UserService } from "@/modules/api/user/services";
@@ -84,7 +87,7 @@ export class PaystackWebhookService implements PaystackWebhook {
             accountNumber: eventData.dedicated_account.account_number,
             bankName: eventData.dedicated_account.bank.name,
             email: eventData.customer.email,
-            provider: VirtualAccountProviders.PAYSTACK,
+            provider: VirtualAccountProvider.PAYSTACK,
             providerBankSlug: eventData.dedicated_account.bank.slug,
         };
 
@@ -131,6 +134,7 @@ export class PaystackWebhookService implements PaystackWebhook {
                 paymentReference: eventData.reference,
                 paymentStatus: PaymentStatus.SUCCESS,
                 walletFundTransactionFlow: WalletFundTransactionFlow.SELF_FUND,
+                provider: WalletFundProvider.PAYSTACK,
             });
         } catch (error) {
             logger.error(error);

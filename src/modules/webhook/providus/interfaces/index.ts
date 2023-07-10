@@ -1,3 +1,6 @@
+import { User } from "@prisma/client";
+import { Request } from "express";
+
 export interface EventBody {
     sessionId: string;
     accountNumber: string;
@@ -31,11 +34,37 @@ type RejectedRequestReply = {
     responseCode: "02";
 };
 
+type SystemFailureOrRetryRequestReply = {
+    responseMessage: "system failure" | "retry";
+    responseCode: "03";
+};
+
 export type APIWebhookResponse = {
     requestSuccessful: true;
     sessionId: string;
-} & (SuccessRequestReply | DuplicateRequestReply | RejectedRequestReply);
+} & (
+    | SuccessRequestReply
+    | DuplicateRequestReply
+    | RejectedRequestReply
+    | SystemFailureOrRetryRequestReply
+);
 
 export interface ProvidusWebhook {
     processWebhookEvent(eventBody: EventBody): Promise<APIWebhookResponse>;
 }
+
+interface ProvidusHeader {
+    ["x-auth-signature"]: string;
+}
+
+export interface UserIdentifier {
+    id: number;
+    email: string;
+    identifier: string;
+}
+
+export type RequestFromProvidus = Request<any, any, EventBody> & {
+    headers: ProvidusHeader;
+    body: EventBody;
+    userIdentifier: UserIdentifier;
+};

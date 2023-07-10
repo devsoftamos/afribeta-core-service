@@ -2,7 +2,7 @@ import {
     PaymentChannel,
     Prisma,
     TransactionStatus,
-    VirtualAccountProviders,
+    VirtualAccountProvider,
 } from "@prisma/client";
 import { WalletFundTransactionFlow, PaymentStatus } from "@prisma/client";
 
@@ -14,9 +14,15 @@ export interface CreateWalletAAndVirtualAccount {
     bankName: string;
     accountName: string;
     accountNumber: string;
-    provider: VirtualAccountProviders;
+    provider: VirtualAccountProvider;
     customerCode: string;
     providerBankSlug?: string;
+}
+
+export enum WalletFundProvider {
+    PAYSTACK = "PAYSTACK",
+    PROVIDUS = "PROVIDUS",
+    WALLET = "WALLET",
 }
 
 export interface ProcessWalletFundOptions {
@@ -30,6 +36,7 @@ export interface ProcessWalletFundOptions {
     paymentChannel?: PaymentChannel;
     status?: TransactionStatus;
     paymentReference?: string;
+    provider: WalletFundProvider;
 }
 
 export interface ProcessWalletWithdrawalOptions {

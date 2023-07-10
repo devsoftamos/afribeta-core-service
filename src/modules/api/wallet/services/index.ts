@@ -36,6 +36,7 @@ import {
     CreateWalletAAndVirtualAccount,
     ProcessWalletFundOptions,
     ProcessWalletWithdrawalOptions,
+    WalletFundProvider,
 } from "../interfaces";
 import logger from "moment-logger";
 import { ApiResponse, buildResponse } from "@/utils/api-response-util";
@@ -243,6 +244,7 @@ export class WalletService {
                     shortDescription: TransactionShortDescription.WALLET_FUNDED,
                     walletFundTransactionFlow:
                         options.walletFundTransactionFlow,
+                    provider: options.provider,
                 },
             });
         });
@@ -274,6 +276,7 @@ export class WalletService {
                 shortDescription: TransactionShortDescription.WALLET_FUNDED,
                 walletFundTransactionFlow: WalletFundTransactionFlow.SELF_FUND,
                 transactionId: transactionId,
+                provider: WalletFundProvider.PAYSTACK, //currently default to paystack
             },
         });
 
