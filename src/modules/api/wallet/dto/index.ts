@@ -62,9 +62,6 @@ export class InitializeWithdrawalDto {
 
     @IsString()
     bankCode: string;
-
-    // @IsEnum(WalletBallanceSource)
-    // walletBalanceSource: WalletBallanceSource;
 }
 
 export class TransferToOtherWalletDto {
@@ -78,4 +75,12 @@ export class TransferToOtherWalletDto {
 export class VerifyWalletDto {
     @IsString()
     walletNumber: string;
+}
+
+export class CreateVendorWalletDto {
+    @IsNumberString()
+    @Length(11, 11, {
+        message: "Please input a valid Bank Verification Number",
+    })
+    bvn: string;
 }

@@ -11,7 +11,7 @@ import {
 } from "../errors";
 
 @Injectable()
-export class ProvidusWorkflowService {
+export class ProvidusService {
     constructor(private providus: Providus) {}
 
     async createVirtualAccount(

@@ -14,6 +14,7 @@ export class Providus {
         headers: {
             "X-Auth-Signature": this.instanceOptions.authSignature,
             "Content-Type": "application/json",
+            "Client-Id": this.instanceOptions.clientId,
         },
     });
     constructor(protected instanceOptions: ProvidusOptions) {}
@@ -24,9 +25,12 @@ export class Providus {
         try {
             const requestOptions: AxiosRequestConfig<CreateReservedVirtualAccountOptions> =
                 {
-                    url: "PiPCreateReservedAccountNumber",
+                    url: "/PiPCreateReservedAccountNumber",
                     method: "POST",
-                    data: options,
+                    data: {
+                        account_name: options.account_name,
+                        bvn: options.bvn,
+                    },
                 };
             const { data } = await this.axios<
                 ProvidusResponse<CreateReservedVirtualAccountResponse>
@@ -35,6 +39,7 @@ export class Providus {
             if (data.responseCode != "00") {
                 const error = new ProvidusError(data.responseMessage);
                 error.status = data.responseCode;
+                throw error;
             }
             return data;
         } catch (error) {

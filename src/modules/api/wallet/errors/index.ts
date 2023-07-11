@@ -8,10 +8,6 @@ export class DuplicateWalletException extends HttpException {
     name = "DuplicateWalletException";
 }
 
-export class WalletCreationPaystackException extends HttpException {
-    name = "WalletCreationPaystackException";
-}
-
 export class WalletNotFoundException extends HttpException {
     name = "WalletNotFoundException";
 }

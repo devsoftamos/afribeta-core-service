@@ -10,11 +10,13 @@ import {
     TransactionType,
     User,
     UserType,
+    VirtualAccountProvider,
     WalletFundTransactionFlow,
 } from "@prisma/client";
 import { UserNotFoundException } from "@/modules/api/user";
 import { UserService } from "@/modules/api/user/services";
 import {
+    CreateVendorWalletDto,
     InitializeWalletFundingDto,
     InitializeWithdrawalDto,
     InitiateWalletCreationDto,
@@ -47,16 +49,18 @@ import {
 import { customAlphabet } from "nanoid";
 import { paystackVirtualAccountBank } from "@/config";
 import { generateId } from "@/utils";
+import { ProvidusService } from "@/modules/workflow/payment/providers/providus/services";
 
 @Injectable()
 export class WalletService {
     constructor(
         private prisma: PrismaService,
         private paystackService: PaystackService,
-        private userService: UserService
+        private userService: UserService,
+        private providusService: ProvidusService
     ) {}
 
-    async createUserWalletAndVirtualAccount(
+    async processWebhookWalletAndVirtualAccountCreation(
         options: CreateWalletAAndVirtualAccount
     ) {
         try {
@@ -129,17 +133,6 @@ export class WalletService {
                 HttpStatus.BAD_REQUEST
             );
         }
-
-        // const testData = {
-        //     country: "NG",
-        //     type: "bank_account",
-        //     account_number: "0111111111",
-        //     bvn: "22222222222",
-        //     bank_code: "007",
-        //     first_name: "Uchenna",
-        //     last_name: "Okoro",
-        //     email: "uche@example.com",
-        // };
 
         const paystackDynamicVirtualAccountCreationOptions: AssignDynamicVirtualAccountWithValidationOptions =
             {
@@ -581,6 +574,72 @@ export class WalletService {
         return buildResponse({
             message: "Wallet successfully retrieved",
             data: wallet,
+        });
+    }
+
+    async createVendorWallet(
+        options: CreateVendorWalletDto,
+        user: User
+    ): Promise<ApiResponse> {
+        const wallet = await this.prisma.wallet.findUnique({
+            where: { userId: user.id },
+        });
+
+        if (wallet) {
+            throw new DuplicateWalletException(
+                "Wallet already exists",
+                HttpStatus.BAD_REQUEST
+            );
+        }
+
+        const vendorTypes = [UserType.MERCHANT, UserType.AGENT];
+        if (!vendorTypes.includes(user.userType as any)) {
+            throw new WalletCreationException(
+                "User must be an agent or merchant",
+                HttpStatus.BAD_REQUEST
+            );
+        }
+
+        const accountDetail = await this.providusService.createVirtualAccount({
+            accountName: `${user.firstName} ${user.lastName}`,
+            bvn: options.bvn,
+        });
+
+        if (!accountDetail) {
+            throw new WalletCreationException(
+                "Failed to create wallet. Kindly try again",
+                HttpStatus.NOT_IMPLEMENTED
+            );
+        }
+
+        //create record
+        const walletNumber = customAlphabet("1234567890ABCDEFGH", 10)();
+        await this.prisma
+            .$transaction(async (tx) => {
+                await tx.wallet.create({
+                    data: { userId: user.id, walletNumber: walletNumber },
+                });
+
+                await tx.virtualBankAccount.create({
+                    data: {
+                        accountName: accountDetail.accountName,
+                        accountNumber: accountDetail.accountNumber,
+                        bankName: "Providus",
+                        provider: VirtualAccountProvider.PROVIDUS,
+                        userId: user.id,
+                        slug: "providus",
+                    },
+                });
+            })
+            .catch((err) => {
+                throw new WalletCreationException(
+                    err.message,
+                    HttpStatus.INTERNAL_SERVER_ERROR
+                );
+            });
+
+        return buildResponse({
+            message: "Wallet successfully created",
         });
     }
 }

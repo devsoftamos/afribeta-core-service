@@ -1,22 +1,23 @@
 import { providusConfiguration } from "@/config";
 import { Providus } from "@/libs/providus";
 import { Global, Module } from "@nestjs/common";
-import { ProvidusWorkflowService } from "./services";
+import { ProvidusService } from "./services";
 
 @Global()
 @Module({
     providers: [
         {
-            provide: ProvidusWorkflowService,
+            provide: ProvidusService,
             useFactory() {
                 const providus = new Providus({
                     authSignature: providusConfiguration.authSignature,
-                    baseUrl: providusConfiguration.clientId,
+                    baseUrl: providusConfiguration.baseUrl,
                     clientId: providusConfiguration.clientId,
                 });
-                return new ProvidusWorkflowService(providus);
+                return new ProvidusService(providus);
             },
         },
     ],
+    exports: [ProvidusService],
 })
 export class ProvidusWorkflowModule {}

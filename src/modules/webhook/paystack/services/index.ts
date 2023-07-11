@@ -91,7 +91,7 @@ export class PaystackWebhookService implements PaystackWebhook {
             providerBankSlug: eventData.dedicated_account.bank.slug,
         };
 
-        await this.walletService.createUserWalletAndVirtualAccount(
+        await this.walletService.processWebhookWalletAndVirtualAccountCreation(
             createWalletAccountOptions
         );
     }

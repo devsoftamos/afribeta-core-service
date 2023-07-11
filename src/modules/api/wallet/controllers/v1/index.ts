@@ -13,6 +13,7 @@ import {
 } from "@nestjs/common";
 import { User as UserModel } from "@prisma/client";
 import {
+    CreateVendorWalletDto,
     InitializeWalletFundingDto,
     InitializeWithdrawalDto,
     InitiateWalletCreationDto,
@@ -91,5 +92,16 @@ export class WalletController {
     @Get()
     async getUserWallet(@User() user: UserModel) {
         return await this.walletService.getWallet(user.id);
+    }
+
+    @Post("assign-vendor-wallet")
+    async createVendorWallet(
+        @Body(ValidationPipe) createVendorWalletDto: CreateVendorWalletDto,
+        @User() user: UserModel
+    ) {
+        return await this.walletService.createVendorWallet(
+            createVendorWalletDto,
+            user
+        );
     }
 }
