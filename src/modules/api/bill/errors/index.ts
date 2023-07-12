@@ -5,9 +5,9 @@ export class BuyPowerException extends HttpException {
 }
 
 export class DuplicatePowerPurchaseException extends HttpException {
-    name: string = "DuplicatePowerPurchaseException";
+    name = "DuplicatePowerPurchaseException";
 }
 
 export class BillProviderNotFoundException extends HttpException {
-    name: string = "BillProviderNotFoundException";
+    name = "BillProviderNotFoundException";
 }
