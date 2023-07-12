@@ -4,6 +4,8 @@ import {
     Body,
     Controller,
     Get,
+    HttpCode,
+    HttpStatus,
     Post,
     UseGuards,
     ValidationPipe,
@@ -24,6 +26,7 @@ export class BillController {
         return await this.powerBillService.getElectricDiscos();
     }
 
+    @HttpCode(HttpStatus.OK)
     @Post("power/initialize-power-purchase")
     async initializePowerPurchase(
         @Body(ValidationPipe) purchasePowerDto: PurchasePowerDto,
