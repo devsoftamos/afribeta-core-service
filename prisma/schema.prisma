@@ -284,6 +284,7 @@ model Transaction {
   receiverIdentifier           String?
   paymentChannel               PaymentChannel?
   token                        String?
+  units                        String?
   commission                   Float?
   merchantCommission           Float?
   companyCommission            Float?

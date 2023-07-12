@@ -6,5 +6,6 @@ import { PowerBillService } from "./services/power";
 @Module({
     providers: [BillService, PowerBillService],
     controllers: [BillController],
+    exports: [BillService],
 })
 export class BillModule {}

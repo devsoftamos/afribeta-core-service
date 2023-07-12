@@ -6,6 +6,7 @@ export * from "./interfaces";
 
 export const generateId = (options: TransactionIdOption): string => {
     const alphaNumeric = "1234567890ABCDEFGH";
+    const numeric = "0123456789";
     const length = options.length ?? 15;
 
     switch (options.type) {
@@ -20,6 +21,10 @@ export const generateId = (options: TransactionIdOption): string => {
         }
         case "custom_upper_case": {
             return customAlphabet(alphaNumeric, length)();
+        }
+
+        case "numeric": {
+            return customAlphabet(numeric, length)();
         }
 
         default:

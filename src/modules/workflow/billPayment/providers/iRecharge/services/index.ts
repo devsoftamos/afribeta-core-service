@@ -7,11 +7,10 @@ import {
     GetMeterInfoOptions,
     GetMeterResponse,
     MeterType,
+    VendPowerOptions,
+    VendPowerResponse,
 } from "../../../interfaces";
-import {
-    IRechargeElectricityException,
-    IRechargeWorkflowException,
-} from "../errors";
+import { IRechargePowerException, IRechargeWorkflowException } from "../errors";
 
 @Injectable()
 export class IRechargeWorkflowService {
@@ -42,7 +41,7 @@ export class IRechargeWorkflowService {
             logger.error(error);
             switch (true) {
                 case error instanceof IRechargeError: {
-                    throw new IRechargeElectricityException(
+                    throw new IRechargePowerException(
                         error.message,
                         HttpStatus.INTERNAL_SERVER_ERROR
                     );
@@ -122,13 +121,68 @@ export class IRechargeWorkflowService {
                 case error instanceof IRechargeError: {
                     const clientErrorCodes = ["13", "14", "15", "41"];
                     if (clientErrorCodes.includes(error.status)) {
-                        throw new IRechargeElectricityException(
+                        throw new IRechargePowerException(
                             error.message,
                             HttpStatus.BAD_REQUEST
                         );
                     }
 
-                    throw new IRechargeElectricityException(
+                    throw new IRechargePowerException(
+                        error.message,
+                        HttpStatus.INTERNAL_SERVER_ERROR
+                    );
+                }
+                case error instanceof IRechargeWorkflowException: {
+                    throw error;
+                }
+
+                default: {
+                    throw new IRechargeWorkflowException(
+                        "Failed to retrieve electric discos. Error ocurred",
+                        HttpStatus.INTERNAL_SERVER_ERROR
+                    );
+                }
+            }
+        }
+    }
+
+    async vendPower(options: VendPowerOptions): Promise<VendPowerResponse> {
+        try {
+            const vendPowerHash = this.iRecharge.vendPowerHash({
+                accessToken: options.accessToken,
+                amount: options.amount,
+                disco: options.discoCode,
+                meterNumber: options.meterNumber,
+                referenceId: options.referenceId,
+            });
+
+            const vendPowerResp = await this.iRecharge.vendPower({
+                access_token: options.accessToken,
+                amount: options.amount,
+                disco: options.discoCode,
+                email: options.email,
+                meter: options.meterNumber,
+                hash: vendPowerHash,
+                phone: options.accountId,
+                reference_id: options.referenceId,
+            });
+            return {
+                meterToken: vendPowerResp.meter_token,
+                units: vendPowerResp.units,
+            };
+        } catch (error) {
+            logger.error(error);
+            switch (true) {
+                case error instanceof IRechargeError: {
+                    const clientErrorCodes = ["13", "14", "15", "41"];
+                    if (clientErrorCodes.includes(error.status)) {
+                        throw new IRechargePowerException(
+                            error.message,
+                            HttpStatus.BAD_REQUEST
+                        );
+                    }
+
+                    throw new IRechargePowerException(
                         error.message,
                         HttpStatus.INTERNAL_SERVER_ERROR
                     );

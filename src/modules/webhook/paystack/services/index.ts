@@ -26,13 +26,15 @@ import { UserService } from "@/modules/api/user/services";
 import { UserNotFoundException } from "@/modules/api/user";
 import { TransactionService } from "@/modules/api/transaction/services";
 import { TransactionNotFoundException } from "@/modules/api/transaction";
+import { BillService } from "@/modules/api/bill/services";
 
 @Injectable()
 export class PaystackWebhookService implements PaystackWebhook {
     constructor(
         private walletService: WalletService,
         private userService: UserService,
-        private transactionService: TransactionService
+        private transactionService: TransactionService,
+        private billService: BillService
     ) {}
 
     async processWebhookEvent(eventBody: EventBody) {
@@ -156,8 +158,13 @@ export class PaystackWebhookService implements PaystackWebhook {
             //Wallet funding
             if (transaction.type == TransactionType.WALLET_FUND) {
                 await this.processWalletFunding(eventData);
+            } else {
+                //Bill payment
+                await this.billService.handleWebhookSuccessfulBillPayment({
+                    billType: transaction.type,
+                    paymentReference: transaction.paymentReference,
+                });
             }
-            //Bill payment
         } catch (error) {
             logger.error(error);
         }

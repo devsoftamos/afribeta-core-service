@@ -14,11 +14,26 @@ export interface FormattedElectricDiscoData {
 
 export interface GetMeterInfoOptions {
     discoCode: string;
-    meterNumber: number;
+    meterNumber: string;
     reference: string;
 }
 
 export interface GetMeterResponse {
     accessToken: string;
     hash?: string;
+}
+
+export interface VendPowerOptions {
+    accessToken: string;
+    discoCode: string;
+    accountId: string;
+    email: string;
+    referenceId: string;
+    amount: number;
+    meterNumber: string;
+}
+
+export interface VendPowerResponse {
+    units: string;
+    meterToken: string;
 }

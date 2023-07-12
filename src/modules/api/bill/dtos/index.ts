@@ -41,8 +41,8 @@ export class PurchasePowerDto {
     })
     phone: string;
 
-    @IsInt()
-    meterNumber: number;
+    @IsString()
+    meterNumber: string;
 
     @IsOptional()
     @IsString()

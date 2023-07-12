@@ -4,6 +4,7 @@ export interface TransactionIdOption {
         | "transaction"
         | "reference"
         | "custom_upper_case"
-        | "custom_lower_case";
+        | "custom_lower_case"
+        | "numeric";
     length?: number;
 }

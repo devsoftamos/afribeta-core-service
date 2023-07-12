@@ -12,11 +12,25 @@ import {
     TransactionStatus,
     TransactionType,
     User,
+    UserType,
 } from "@prisma/client";
-import { TransactionShortDescription } from "../../transaction";
+import {
+    TransactionNotFoundException,
+    TransactionShortDescription,
+} from "../../transaction";
 import { PaymentProvider, PurchasePowerDto } from "../dtos";
-import { BuyPowerException } from "../errors";
-import { ProviderSlug } from "../interfaces";
+import {
+    BillProviderNotFoundException,
+    BuyPowerException,
+    DuplicatePowerPurchaseException,
+} from "../errors";
+import {
+    CompletePowerPurchaseOptions,
+    ProcessBillPaymentOptions,
+    ProviderSlug,
+} from "../interfaces";
+import logger from "moment-logger";
+import { UserNotFoundException } from "../../user";
 
 @Injectable()
 export class PowerBillService {
@@ -107,7 +121,7 @@ export class PowerBillService {
     ): Promise<string> {
         const paymentReference = generateId({ type: "reference" });
         const billPaymentReference = generateId({
-            type: "custom_lower_case",
+            type: "numeric",
             length: 12,
         });
 
@@ -134,6 +148,8 @@ export class PowerBillService {
                 shortDescription:
                     TransactionShortDescription.ELECTRICITY_PAYMENT,
                 description: options.narration,
+                senderIdentifier: options.discoCode,
+                receiverIdentifier: options.meterNumber,
             };
 
         //iRecharge provider
@@ -156,5 +172,126 @@ export class PowerBillService {
         }
 
         return paymentReference;
+    }
+
+    async processWebhookPowerPurchase(options: ProcessBillPaymentOptions) {
+        try {
+            const transaction = await this.prisma.transaction.findUnique({
+                where: {
+                    paymentReference: options.paymentReference,
+                },
+                select: {
+                    id: true,
+                    billProviderId: true,
+                    serviceTransactionCode: true,
+                    userId: true,
+                    accountId: true,
+                    amount: true,
+                    senderIdentifier: true,
+                    receiverIdentifier: true,
+                    paymentStatus: true,
+                    status: true,
+                },
+            });
+            if (!transaction) {
+                const error = new TransactionNotFoundException(
+                    "Failed to complete power purchase. Bill Initialization transaction record not found",
+                    HttpStatus.NOT_FOUND
+                );
+                return logger.error(error);
+            }
+
+            if (transaction.paymentStatus == PaymentStatus.SUCCESS) {
+                const error = new DuplicatePowerPurchaseException(
+                    "Duplicate webhook power purchase event",
+                    HttpStatus.BAD_REQUEST
+                );
+                return logger.error(error);
+            }
+
+            const user = await this.prisma.user.findUnique({
+                where: { id: transaction.userId },
+                select: { email: true, userType: true },
+            });
+            if (!user) {
+                const error = new UserNotFoundException(
+                    "Failed to complete power purchase. Customer details does not exist",
+                    HttpStatus.NOT_FOUND
+                );
+                return logger.error(error);
+            }
+
+            const billProvider = await this.prisma.billProvider.findUnique({
+                where: {
+                    id: transaction.billProviderId,
+                },
+            });
+
+            if (!billProvider) {
+                //TODO: For Automation, check for an active provider and switch automatically
+                const error = new BillProviderNotFoundException(
+                    "Failed to complete power purchase. Bill provider not found",
+                    HttpStatus.NOT_FOUND
+                );
+                return logger.error(error);
+            }
+
+            await this.completePowerPurchase({
+                transaction: transaction,
+                user: user,
+                billProvider: billProvider,
+            });
+        } catch (error) {
+            logger.error(error);
+        }
+    }
+
+    async completePowerPurchase(options: CompletePowerPurchaseOptions) {
+        switch (options.billProvider.slug) {
+            case ProviderSlug.IRECHARGE: {
+                const vendPowerResp =
+                    await this.iRechargeWorkflowService.vendPower({
+                        accessToken: options.transaction.serviceTransactionCode,
+                        accountId: options.transaction.accountId,
+                        amount: options.transaction.amount,
+                        discoCode: options.transaction.senderIdentifier,
+                        email: options.user.email,
+                        meterNumber: options.transaction.receiverIdentifier,
+                        referenceId: generateId({
+                            type: "numeric",
+                            length: 12,
+                        }),
+                    });
+
+                await this.prisma.$transaction(async (tx) => {
+                    await tx.transaction.update({
+                        where: {
+                            id: options.transaction.id,
+                        },
+                        data: {
+                            units: vendPowerResp.units,
+                            token: vendPowerResp.meterToken,
+                            paymentStatus: PaymentStatus.SUCCESS,
+                            status: TransactionStatus.SUCCESS,
+                        },
+                    });
+
+                    //TODO: for agent and merchant, credit wallet commission balance
+                    if (
+                        options.user.userType == UserType.MERCHANT ||
+                        options.user.userType == UserType.AGENT
+                    ) {
+                    }
+                });
+
+                break;
+            }
+
+            default: {
+                logger.error(
+                    "Failed to complete purchase purchase power. Bill provider slug does not match"
+                );
+            }
+        }
     }
 }

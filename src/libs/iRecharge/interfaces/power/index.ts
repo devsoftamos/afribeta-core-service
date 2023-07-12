@@ -20,7 +20,7 @@ export enum DiscoType {
 //Get meter info
 export interface GetMeterInfoOptions {
     vendor_code: string;
-    meter: number;
+    meter: string;
     reference_id: string;
     disco: string;
     response_format: ResponseFormat;
@@ -41,15 +41,15 @@ export interface VendPowerOptions {
     disco: string; //gotten from the code attribute of the get_electric_disco request
     access_token: string; //from get meter info response
     amount: number;
-    phone: number;
+    phone: string;
     email: string;
     hash: string;
     response_format: ResponseFormat;
 }
 
 export interface VendPowerResponse extends IRechargeResponse {
-    meter_token: number;
-    units: number;
+    meter_token: string;
+    units: string;
     amount: number;
     address: string;
     wallet_balance: number;
@@ -76,6 +76,6 @@ export interface GetMeterInfoHashOptions {
 }
 
 export interface VendPowerHashOptions extends GetMeterInfoHashOptions {
-    amount: string;
+    amount: string | number;
     accessToken: string;
 }

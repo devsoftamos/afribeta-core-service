@@ -11,6 +11,7 @@ import {
     RequestOptions,
     VendPowerHashOptions,
     VendPowerOptions,
+    VendPowerResponse,
     VendStatusOptions,
     VendStatusResponse,
 } from "./interfaces";
@@ -83,7 +84,9 @@ export class IRecharge {
                     vendor_code: this.instanceOptions.vendorCode,
                 } as VendPowerOptions,
             };
-            const { data } = await this.axios<GetMeterInfoResponse>(
+
+            //console.log(requestOptions, "*************REQ*********");
+            const { data } = await this.axios<VendPowerResponse>(
                 requestOptions
             );
             if (data.status != "00") {

@@ -4,6 +4,6 @@ export class IRechargeWorkflowException extends HttpException {
     name = "IRechargeWorkflowException";
 }
 
-export class IRechargeElectricityException extends HttpException {
-    name = "IRechargeElectricityException";
+export class IRechargePowerException extends HttpException {
+    name = "IRechargePowerException";
 }
