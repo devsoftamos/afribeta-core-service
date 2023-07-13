@@ -44,3 +44,8 @@ export interface PowerPurchaseInitializationHandlerOptions {
 export interface PowerPurchaseInitializationHandlerOutput {
     paymentReference: string;
 }
+
+export interface CompletePowerPurchaseOutput {
+    meterToken: string;
+    units: string;
+}

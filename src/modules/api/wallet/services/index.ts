@@ -203,44 +203,50 @@ export class WalletService {
         }
 
         //Handle DB transactions
-        await this.prisma.$transaction(async (tx) => {
-            //update wallet idf status is success
-            await tx.wallet.update({
-                where: { userId: options.userId },
-                data: {
-                    mainBalance: { increment: options.amount },
-                },
-            });
+        await this.prisma.$transaction(
+            async (tx) => {
+                //update wallet idf status is success
+                await tx.wallet.update({
+                    where: { userId: options.userId },
+                    data: {
+                        mainBalance: { increment: options.amount },
+                    },
+                });
 
-            await tx.transaction.upsert({
-                where: {
-                    paymentReference: options.paymentReference,
-                },
-                update: {
-                    status: TransactionStatus.SUCCESS,
-                    paymentStatus: PaymentStatus.SUCCESS,
-                },
-                create: {
-                    //for virtual account transfer
-                    amount: options.amount,
-                    userId: options.userId,
-                    status: options.status,
-                    totalAmount: options.amount,
-                    flow: TransactionFlow.IN,
-                    type: TransactionType.WALLET_FUND,
-                    paymentStatus: options.paymentStatus,
-                    paymentChannel: options.paymentChannel,
-                    paymentReference: options.paymentReference,
-                    transactionId: generateId({
-                        type: "transaction",
-                    }),
-                    shortDescription: TransactionShortDescription.WALLET_FUNDED,
-                    walletFundTransactionFlow:
-                        options.walletFundTransactionFlow,
-                    provider: options.provider,
-                },
-            });
-        });
+                await tx.transaction.upsert({
+                    where: {
+                        paymentReference: options.paymentReference,
+                    },
+                    update: {
+                        status: TransactionStatus.SUCCESS,
+                        paymentStatus: PaymentStatus.SUCCESS,
+                    },
+                    create: {
+                        //for virtual account transfer
+                        amount: options.amount,
+                        userId: options.userId,
+                        status: options.status,
+                        totalAmount: options.amount,
+                        flow: TransactionFlow.IN,
+                        type: TransactionType.WALLET_FUND,
+                        paymentStatus: options.paymentStatus,
+                        paymentChannel: options.paymentChannel,
+                        paymentReference: options.paymentReference,
+                        transactionId: generateId({
+                            type: "transaction",
+                        }),
+                        shortDescription:
+                            TransactionShortDescription.WALLET_FUNDED,
+                        walletFundTransactionFlow:
+                            options.walletFundTransactionFlow,
+                        provider: options.provider,
+                    },
+                });
+            },
+            {
+                timeout: 8000,
+            }
+        );
     }
 
     // wallet funding --- currently paystack

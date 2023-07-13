@@ -17,7 +17,11 @@ import {
     TransactionNotFoundException,
     TransactionShortDescription,
 } from "../../transaction";
-import { PaymentProvider, PurchasePowerDto } from "../dtos";
+import {
+    PaymentProvider,
+    PurchasePowerDto,
+    PurchasePowerViaExternalPaymentProcessorDto,
+} from "../dtos";
 import {
     BillProviderNotFoundException,
     PowerPurchaseException,
@@ -26,6 +30,7 @@ import {
 } from "../errors";
 import {
     CompletePowerPurchaseOptions,
+    CompletePowerPurchaseOutput,
     CompletePowerPurchaseTransactionOptions,
     CompletePowerPurchaseUserOptions,
     PowerPurchaseInitializationHandlerOptions,
@@ -77,7 +82,7 @@ export class PowerBillService {
     }
 
     async initializePowerPurchase(
-        options: PurchasePowerDto,
+        options: PurchasePowerViaExternalPaymentProcessorDto,
         user: User
     ): Promise<ApiResponse> {
         const provider = await this.prisma.billProvider.findUnique({
@@ -91,6 +96,7 @@ export class PowerBillService {
         }
 
         if (!provider.isActive) {
+            //TODO: AUTOMATION UPGRADE, check for an active provider and switch automatically
             throw new PowerPurchaseException(
                 "Bill Provider not active",
                 HttpStatus.BAD_REQUEST
@@ -117,7 +123,7 @@ export class PowerBillService {
 
             default: {
                 throw new PowerPurchaseException(
-                    `Payment Source must be one of: ${PaymentProvider.PAYSTACK}`,
+                    `Payment provider must be one of: ${PaymentProvider.PAYSTACK}`,
                     HttpStatus.BAD_REQUEST
                 );
             }
@@ -296,7 +302,9 @@ export class PowerBillService {
         }
     }
 
-    async completePowerPurchase(options: CompletePowerPurchaseOptions) {
+    async completePowerPurchase(
+        options: CompletePowerPurchaseOptions
+    ): Promise<CompletePowerPurchaseOutput> {
         switch (options.billProvider.slug) {
             case ProviderSlug.IRECHARGE: {
                 //TODO: AUTOMATION UPGRADE, if iRecharge service fails, check for an active provider and switch automatically
@@ -334,7 +342,10 @@ export class PowerBillService {
                     }
                 });
 
-                break;
+                return {
+                    meterToken: vendPowerResp.meterToken,
+                    units: vendPowerResp.meterToken,
+                };
             }
 
             default: {
@@ -345,7 +356,7 @@ export class PowerBillService {
         }
     }
 
-    //TODO: purchase with wallet
+    //TODO: add controller and test
     async purchasePowerWithWallet(options: PurchasePowerDto, user: User) {
         const wallet = await this.prisma.wallet.findUnique({
             where: {
@@ -365,6 +376,77 @@ export class PowerBillService {
                 "Insufficient wallet balance",
                 HttpStatus.BAD_REQUEST
             );
+        }
+
+        const billProvider = await this.prisma.billProvider.findUnique({
+            where: {
+                slug: options.billProvider,
+            },
+        });
+
+        if (!billProvider) {
+            throw new PowerPurchaseException(
+                "Bill provider does not exist",
+                HttpStatus.NOT_FOUND
+            );
+        }
+
+        if (!billProvider.isActive) {
+            //TODO: AUTOMATION UPGRADE, check for an active provider and switch automatically
+            throw new PowerPurchaseException(
+                "Bill Provider not active",
+                HttpStatus.BAD_REQUEST
+            );
+        }
+
+        //initialize purchase
+        const resp = await this.handlePowerPurchaseInitialization({
+            billProvider: billProvider,
+            paymentChannel: PaymentChannel.WALLET,
+            purchaseOptions: options,
+            user: user,
+            wallet: wallet,
+        });
+
+        //complete purchase
+        const transaction = await this.prisma.transaction.findUnique({
+            where: {
+                paymentReference: resp.paymentReference,
+            },
+        });
+        if (!transaction) {
+            throw new TransactionNotFoundException(
+                "Failed to initialize wallet payment. Please try again",
+                HttpStatus.NOT_IMPLEMENTED
+            );
+        }
+        const purchaseInfo = await this.completePowerPurchase({
+            billProvider: billProvider,
+            transaction: transaction,
+            user: {
+                email: user.email,
+                userType: user.userType,
+            },
+        });
+
+        if (purchaseInfo) {
+            return buildResponse({
+                message: "Power purchase successful",
+                data: {
+                    meter: {
+                        units: purchaseInfo.units,
+                        token: purchaseInfo.meterToken,
+                    },
+                    reference: resp.paymentReference,
+                },
+            });
+        } else {
+            return buildResponse({
+                message: "Power purchase successful",
+                data: {
+                    reference: resp.paymentReference,
+                },
+            });
         }
     }
 }

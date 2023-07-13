@@ -17,9 +17,6 @@ export enum MeterType {
 }
 
 export class PurchasePowerDto {
-    @IsEnum(PaymentProvider)
-    paymentProvider: PaymentProvider;
-
     @IsString()
     billProvider: string;
 
@@ -47,4 +44,9 @@ export class PurchasePowerDto {
     @IsOptional()
     @IsString()
     narration: string;
+}
+
+export class PurchasePowerViaExternalPaymentProcessorDto extends PurchasePowerDto {
+    @IsEnum(PaymentProvider)
+    paymentProvider: PaymentProvider;
 }

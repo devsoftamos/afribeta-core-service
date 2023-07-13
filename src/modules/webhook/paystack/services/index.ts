@@ -106,6 +106,7 @@ export class PaystackWebhookService implements PaystackWebhook {
                 break;
             }
             default: {
+                //other successful payment
                 await this.chargeSuccessProcessor(eventData);
                 break;
             }
@@ -157,6 +158,8 @@ export class PaystackWebhookService implements PaystackWebhook {
             }
             //Wallet funding
             if (transaction.type == TransactionType.WALLET_FUND) {
+                // console.log(eventData, "************WEBHOOK*********");
+
                 await this.processWalletFunding(eventData);
             } else {
                 //Bill payment
