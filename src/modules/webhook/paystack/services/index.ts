@@ -160,6 +160,7 @@ export class PaystackWebhookService implements PaystackWebhook {
                 await this.processWalletFunding(eventData);
             } else {
                 //Bill payment
+                //console.log(eventData, "************WEBHOOK*********");
                 await this.billService.handleWebhookSuccessfulBillPayment({
                     billType: transaction.type,
                     paymentReference: transaction.paymentReference,

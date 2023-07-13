@@ -1,9 +1,13 @@
 import {
     BillProvider,
+    PaymentChannel,
     PaymentStatus,
     TransactionStatus,
+    User,
     UserType,
+    Wallet,
 } from "@prisma/client";
+import { PurchasePowerDto } from "../dtos";
 
 export interface CompletePowerPurchaseOptions {
     user: CompletePowerPurchaseUserOptions;
@@ -27,4 +31,16 @@ export interface CompletePowerPurchaseTransactionOptions {
 export interface CompletePowerPurchaseUserOptions {
     email: string;
     userType: UserType;
+}
+
+export interface PowerPurchaseInitializationHandlerOptions {
+    purchaseOptions: PurchasePowerDto;
+    user: User;
+    billProvider: BillProvider;
+    paymentChannel: PaymentChannel;
+    wallet?: Wallet;
+}
+
+export interface PowerPurchaseInitializationHandlerOutput {
+    paymentReference: string;
 }

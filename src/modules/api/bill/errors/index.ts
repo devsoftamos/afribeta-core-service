@@ -1,7 +1,7 @@
 import { HttpException } from "@nestjs/common";
 
-export class BuyPowerException extends HttpException {
-    name = "BuyPowerException";
+export class PowerPurchaseException extends HttpException {
+    name = "PowerPurchaseException";
 }
 
 export class DuplicatePowerPurchaseException extends HttpException {
@@ -10,4 +10,8 @@ export class DuplicatePowerPurchaseException extends HttpException {
 
 export class BillProviderNotFoundException extends HttpException {
     name = "BillProviderNotFoundException";
+}
+
+export class PowerPurchaseInitializationHandlerException extends HttpException {
+    name: string = "PowerPurchaseInitializationHandlerException";
 }

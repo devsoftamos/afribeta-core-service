@@ -4,7 +4,6 @@ import { IRechargeWorkflowService } from "@/modules/workflow/billPayment/provide
 import { ApiResponse, buildResponse, generateId } from "@/utils";
 import { HttpStatus, Injectable } from "@nestjs/common";
 import {
-    BillProvider,
     PaymentChannel,
     PaymentStatus,
     Prisma,
@@ -21,18 +20,25 @@ import {
 import { PaymentProvider, PurchasePowerDto } from "../dtos";
 import {
     BillProviderNotFoundException,
-    BuyPowerException,
+    PowerPurchaseException,
     DuplicatePowerPurchaseException,
+    PowerPurchaseInitializationHandlerException,
 } from "../errors";
 import {
     CompletePowerPurchaseOptions,
     CompletePowerPurchaseTransactionOptions,
     CompletePowerPurchaseUserOptions,
+    PowerPurchaseInitializationHandlerOptions,
+    PowerPurchaseInitializationHandlerOutput,
     ProcessBillPaymentOptions,
     ProviderSlug,
 } from "../interfaces";
 import logger from "moment-logger";
 import { UserNotFoundException } from "../../user";
+import {
+    WalletNotFoundException,
+    InsufficientWalletBalanceException,
+} from "../../wallet";
 
 @Injectable()
 export class PowerBillService {
@@ -70,19 +76,22 @@ export class PowerBillService {
         });
     }
 
-    async initializePowerPurchase(options: PurchasePowerDto, user: User) {
+    async initializePowerPurchase(
+        options: PurchasePowerDto,
+        user: User
+    ): Promise<ApiResponse> {
         const provider = await this.prisma.billProvider.findUnique({
             where: { slug: options.billProvider },
         });
         if (!provider) {
-            throw new BuyPowerException(
+            throw new PowerPurchaseException(
                 "Bill provider does not exist",
                 HttpStatus.NOT_FOUND
             );
         }
 
         if (!provider.isActive) {
-            throw new BuyPowerException(
+            throw new PowerPurchaseException(
                 "Bill Provider not active",
                 HttpStatus.BAD_REQUEST
             );
@@ -90,37 +99,36 @@ export class PowerBillService {
 
         switch (options.paymentProvider) {
             case PaymentProvider.PAYSTACK: {
-                const reference =
-                    await this.handlePowerPurchaseInitializationWithPaystack(
-                        options,
-                        user,
-                        provider
-                    );
+                const resp = await this.handlePowerPurchaseInitialization({
+                    billProvider: provider,
+                    purchaseOptions: options,
+                    user: user,
+                    paymentChannel: PaymentChannel.PAYSTACK_CHANNEL,
+                });
                 return buildResponse({
                     message: "payment reference successfully generated",
                     data: {
                         amount: options.amount,
                         email: user.email,
-                        reference: reference,
+                        reference: resp.paymentReference,
                     },
                 });
             }
 
             default: {
-                throw new BuyPowerException(
-                    `Invalid Payment Source must be one of: ${PaymentProvider.PAYSTACK}`,
+                throw new PowerPurchaseException(
+                    `Payment Source must be one of: ${PaymentProvider.PAYSTACK}`,
                     HttpStatus.BAD_REQUEST
                 );
             }
         }
     }
 
-    //TODO: complete
-    async handlePowerPurchaseInitializationWithPaystack(
-        options: PurchasePowerDto,
-        user: User,
-        provider: BillProvider
-    ): Promise<string> {
+    async handlePowerPurchaseInitialization(
+        options: PowerPurchaseInitializationHandlerOptions
+    ): Promise<PowerPurchaseInitializationHandlerOutput> {
+        const { billProvider, paymentChannel, purchaseOptions, user } = options;
+
         const paymentReference = generateId({ type: "reference" });
         const billPaymentReference = generateId({
             type: "numeric",
@@ -132,48 +140,80 @@ export class PowerBillService {
         //record transaction
         const transactionCreateOptions: Prisma.TransactionUncheckedCreateInput =
             {
-                amount: options.amount,
+                amount: purchaseOptions.amount,
                 flow: TransactionFlow.OUT,
                 status: TransactionStatus.PENDING,
-                totalAmount: options.amount,
+                totalAmount: purchaseOptions.amount,
                 transactionId: generateId({ type: "transaction" }),
                 type: TransactionType.ELECTRICITY_BILL,
                 userId: user.id,
-                accountId: options.phone,
+                accountId: purchaseOptions.phone,
                 billPaymentReference: billPaymentReference,
-                billProviderId: provider.id,
-                meterType: options.meterType,
-                paymentChannel: PaymentChannel.PAYSTACK_CHANNEL,
+                billProviderId: billProvider.id,
+                meterType: purchaseOptions.meterType,
+                paymentChannel: paymentChannel,
                 paymentReference: paymentReference,
                 paymentStatus: PaymentStatus.PENDING,
-                packageType: options.discoType,
+                packageType: purchaseOptions.discoType,
                 shortDescription:
                     TransactionShortDescription.ELECTRICITY_PAYMENT,
-                description: options.narration,
-                senderIdentifier: options.discoCode,
-                receiverIdentifier: options.meterNumber,
+                description: purchaseOptions.narration,
+                senderIdentifier: purchaseOptions.discoCode,
+                receiverIdentifier: purchaseOptions.meterNumber,
             };
 
-        //iRecharge provider
-        if (provider.slug == ProviderSlug.IRECHARGE) {
-            const meterInfo = await this.iRechargeWorkflowService.getMeterInfo({
-                discoCode: options.discoCode,
-                meterNumber: options.meterNumber,
-                reference: billPaymentReference,
-            });
-            transactionCreateOptions.serviceTransactionCode =
-                meterInfo.accessToken;
+        switch (billProvider.slug) {
+            //iRecharge provider
+            case ProviderSlug.IRECHARGE: {
+                const meterInfo =
+                    await this.iRechargeWorkflowService.getMeterInfo({
+                        discoCode: purchaseOptions.discoCode,
+                        meterNumber: purchaseOptions.meterNumber,
+                        reference: billPaymentReference,
+                    });
+                transactionCreateOptions.serviceTransactionCode =
+                    meterInfo.accessToken;
 
-            await this.prisma.transaction.create({
-                data: transactionCreateOptions,
-            });
+                //create/update records
+                await this.prisma.$transaction(async (tx) => {
+                    //for wallet payment
+                    if (options.wallet) {
+                        await tx.wallet.update({
+                            where: {
+                                id: options.wallet.id,
+                            },
+                            data: {
+                                mainBalance: {
+                                    decrement: purchaseOptions.amount,
+                                },
+                            },
+                        });
+                        transactionCreateOptions.paymentStatus =
+                            PaymentStatus.SUCCESS;
+                    }
+                    await tx.transaction.create({
+                        data: transactionCreateOptions,
+                    });
+                });
+                break;
+            }
+
+            //Ikeja Electric
+            case ProviderSlug.IKEJA_ELECTRIC: {
+                break;
+            }
+
+            default: {
+                throw new PowerPurchaseInitializationHandlerException(
+                    "Third party power vending provider not integrated",
+                    HttpStatus.NOT_IMPLEMENTED
+                );
+            }
         }
 
-        //Ikeja electric
-        if (provider.slug == ProviderSlug.IKEJA_ELECTRIC) {
-        }
-
-        return paymentReference;
+        return {
+            paymentReference: paymentReference,
+        };
     }
 
     async processWebhookPowerPurchase(options: ProcessBillPaymentOptions) {
@@ -306,4 +346,25 @@ export class PowerBillService {
     }
 
     //TODO: purchase with wallet
+    async purchasePowerWithWallet(options: PurchasePowerDto, user: User) {
+        const wallet = await this.prisma.wallet.findUnique({
+            where: {
+                userId: user.id,
+            },
+        });
+
+        if (!wallet) {
+            throw new WalletNotFoundException(
+                "Wallet not created. Kindly setup your KYC",
+                HttpStatus.NOT_FOUND
+            );
+        }
+
+        if (wallet.mainBalance < options.amount) {
+            throw new InsufficientWalletBalanceException(
+                "Insufficient wallet balance",
+                HttpStatus.BAD_REQUEST
+            );
+        }
+    }
 }
