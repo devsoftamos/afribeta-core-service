@@ -1,12 +1,23 @@
-import { Injectable } from "@nestjs/common";
-import { TransactionType } from "@prisma/client";
+import { forwardRef, Inject, Injectable } from "@nestjs/common";
+import {
+    PaymentStatus,
+    Transaction,
+    TransactionStatus,
+    TransactionType,
+} from "@prisma/client";
 import { ProcessBillPaymentOptions } from "../interfaces";
 import logger from "moment-logger";
 import { PowerBillService } from "./power";
+import { PrismaService } from "@/modules/core/prisma/services";
+import { DB_TRANSACTION_TIMEOUT } from "@/config";
 
 @Injectable()
 export class BillService {
-    constructor(private powerBillService: PowerBillService) {}
+    constructor(
+        @Inject(forwardRef(() => PowerBillService))
+        private powerBillService: PowerBillService,
+        private prisma: PrismaService
+    ) {}
 
     async handleWebhookSuccessfulBillPayment(
         options: ProcessBillPaymentOptions
@@ -26,5 +37,36 @@ export class BillService {
                 );
             }
         }
+    }
+
+    async handleFailedBillPaymentFromProvider(transaction: Transaction) {
+        //revert debit
+        await this.prisma.$transaction(
+            async (tx) => {
+                await tx.transaction.update({
+                    where: {
+                        id: transaction.id,
+                    },
+                    data: {
+                        status: TransactionStatus.FAILED,
+                        paymentStatus: PaymentStatus.FAILED,
+                    },
+                });
+
+                await tx.wallet.update({
+                    where: {
+                        userId: transaction.userId,
+                    },
+                    data: {
+                        mainBalance: {
+                            increment: transaction.amount,
+                        },
+                    },
+                });
+            },
+            {
+                timeout: DB_TRANSACTION_TIMEOUT,
+            }
+        );
     }
 }

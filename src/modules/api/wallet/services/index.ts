@@ -47,7 +47,7 @@ import {
     TransactionShortDescription,
 } from "../../transaction";
 import { customAlphabet } from "nanoid";
-import { paystackVirtualAccountBank } from "@/config";
+import { DB_TRANSACTION_TIMEOUT, paystackVirtualAccountBank } from "@/config";
 import { generateId } from "@/utils";
 import { ProvidusService } from "@/modules/workflow/payment/providers/providus/services";
 
@@ -244,7 +244,7 @@ export class WalletService {
                 });
             },
             {
-                timeout: 8000,
+                timeout: DB_TRANSACTION_TIMEOUT,
             }
         );
     }

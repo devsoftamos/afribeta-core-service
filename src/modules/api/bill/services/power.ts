@@ -44,12 +44,16 @@ import {
     WalletNotFoundException,
     InsufficientWalletBalanceException,
 } from "../../wallet";
+import { IRechargePowerException } from "@/modules/workflow/billPayment/providers/iRecharge";
+import { BillService } from ".";
+import { DB_TRANSACTION_TIMEOUT } from "@/config";
 
 @Injectable()
 export class PowerBillService {
     constructor(
         private iRechargeWorkflowService: IRechargeWorkflowService,
-        private prisma: PrismaService
+        private prisma: PrismaService,
+        private billService: BillService
     ) {}
 
     async getElectricDiscos(): Promise<ApiResponse> {
@@ -181,26 +185,31 @@ export class PowerBillService {
                     meterInfo.accessToken;
 
                 //create/update records
-                await this.prisma.$transaction(async (tx) => {
-                    //for wallet payment
-                    if (options.wallet) {
-                        await tx.wallet.update({
-                            where: {
-                                id: options.wallet.id,
-                            },
-                            data: {
-                                mainBalance: {
-                                    decrement: purchaseOptions.amount,
+                await this.prisma.$transaction(
+                    async (tx) => {
+                        //for wallet payment
+                        if (options.wallet) {
+                            await tx.wallet.update({
+                                where: {
+                                    id: options.wallet.id,
                                 },
-                            },
+                                data: {
+                                    mainBalance: {
+                                        decrement: purchaseOptions.amount,
+                                    },
+                                },
+                            });
+                            transactionCreateOptions.paymentStatus =
+                                PaymentStatus.SUCCESS;
+                        }
+                        await tx.transaction.create({
+                            data: transactionCreateOptions,
                         });
-                        transactionCreateOptions.paymentStatus =
-                            PaymentStatus.SUCCESS;
+                    },
+                    {
+                        timeout: DB_TRANSACTION_TIMEOUT,
                     }
-                    await tx.transaction.create({
-                        data: transactionCreateOptions,
-                    });
-                });
+                );
                 break;
             }
 
@@ -344,14 +353,16 @@ export class PowerBillService {
 
                 return {
                     meterToken: vendPowerResp.meterToken,
-                    units: vendPowerResp.meterToken,
+                    units: vendPowerResp.units,
                 };
             }
 
             default: {
-                logger.error(
-                    "Failed to complete purchase purchase power. Bill provider slug does not match"
+                const error = new PowerPurchaseException(
+                    "Failed to complete purchase purchase power. Invalid bill provider slug",
+                    HttpStatus.NOT_IMPLEMENTED
                 );
+                logger.error(error);
             }
         }
     }
@@ -420,33 +431,55 @@ export class PowerBillService {
                 HttpStatus.NOT_IMPLEMENTED
             );
         }
-        const purchaseInfo = await this.completePowerPurchase({
-            billProvider: billProvider,
-            transaction: transaction,
-            user: {
-                email: user.email,
-                userType: user.userType,
-            },
-        });
 
-        if (purchaseInfo) {
-            return buildResponse({
-                message: "Power purchase successful",
-                data: {
-                    meter: {
-                        units: purchaseInfo.units,
-                        token: purchaseInfo.meterToken,
+        try {
+            const purchaseInfo = await this.completePowerPurchase({
+                billProvider: billProvider,
+                transaction: transaction,
+                user: {
+                    email: user.email,
+                    userType: user.userType,
+                },
+            });
+
+            if (purchaseInfo) {
+                return buildResponse({
+                    message: "Power purchase successful",
+                    data: {
+                        meter: {
+                            units: purchaseInfo.units,
+                            token: purchaseInfo.meterToken,
+                        },
+                        reference: resp.paymentReference,
                     },
-                    reference: resp.paymentReference,
-                },
-            });
-        } else {
-            return buildResponse({
-                message: "Power purchase successful",
-                data: {
-                    reference: resp.paymentReference,
-                },
-            });
+                });
+            } else {
+                return buildResponse({
+                    message: "Power purchase successful",
+                    data: {
+                        reference: resp.paymentReference,
+                    },
+                });
+            }
+        } catch (error) {
+            switch (true) {
+                case error instanceof IRechargePowerException: {
+                    await this.billService.handleFailedBillPaymentFromProvider(
+                        transaction
+                    );
+                    throw error;
+                }
+                case error instanceof IRechargeWorkflowService: {
+                    await this.billService.handleFailedBillPaymentFromProvider(
+                        transaction
+                    );
+                    throw error;
+                }
+
+                default: {
+                    throw error;
+                }
+            }
         }
     }
 }

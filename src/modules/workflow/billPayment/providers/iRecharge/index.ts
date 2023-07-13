@@ -2,6 +2,7 @@ import { IRecharge } from "@/libs/iRecharge";
 import { Global, Module } from "@nestjs/common";
 import { IRechargeWorkflowService } from "./services";
 import { iRechargeOptions } from "@/config";
+export * from "./errors";
 
 @Global()
 @Module({
