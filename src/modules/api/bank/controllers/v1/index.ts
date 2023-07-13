@@ -28,7 +28,7 @@ export class BankController {
     @UseGuards(AuthGuard)
     @Get("virtual-account")
     async getVirtualBankAccount(@User() user: UserEntity) {
-        return await this.bankService.getVirtualBankAccount(user);
+        return await this.bankService.getVirtualBankAccounts(user);
     }
 
     @Get("resolve")

@@ -66,7 +66,7 @@ model User {
   transactions          Transaction[]          @relation(name: "userToTransaction")
   senderTransactions    Transaction[]          @relation(name: "senderToTransaction")
   receiverTransactions  Transaction[]          @relation(name: "receiverToTransaction")
-  virtualBankAccount    VirtualBankAccount?
+  virtualBankAccount    VirtualBankAccount[]
   commissions           UserCommission[]
 
   @@map("Users")
@@ -98,11 +98,13 @@ model Bank {
 enum VirtualAccountProvider {
   PAYSTACK
   PROVIDUS
+  GTBANK
+  POLARIS
 }
 
 model VirtualBankAccount {
   id            Int                    @id @default(autoincrement())
-  userId        Int                    @unique
+  userId        Int
   bankName      String
   accountName   String
   accountNumber String
@@ -113,6 +115,7 @@ model VirtualBankAccount {
   updatedAt     DateTime               @updatedAt
   user          User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@unique([userId, provider])
   @@index([accountNumber, provider])
   @@map("VirtualBankAccounts")
 }

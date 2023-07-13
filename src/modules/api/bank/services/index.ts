@@ -49,8 +49,8 @@ export class BankService {
         }
     }
 
-    async getVirtualBankAccount(user: User) {
-        const virtualAccount = await this.prisma.virtualBankAccount.findUnique({
+    async getVirtualBankAccounts(user: User): Promise<ApiResponse> {
+        const virtualAccounts = await this.prisma.virtualBankAccount.findMany({
             where: { userId: user.id },
             select: {
                 accountName: true,
@@ -60,15 +60,10 @@ export class BankService {
                 provider: true,
             },
         });
-        if (!virtualAccount) {
-            throw new VirtualAccountNotFoundException(
-                "Virtual account not found",
-                HttpStatus.NOT_FOUND
-            );
-        }
+
         return buildResponse({
-            message: "Virtual account successfully retrieved",
-            data: virtualAccount,
+            message: "Virtual accounts successfully retrieved",
+            data: virtualAccounts,
         });
     }
 
