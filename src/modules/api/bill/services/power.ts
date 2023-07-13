@@ -26,6 +26,8 @@ import {
 } from "../errors";
 import {
     CompletePowerPurchaseOptions,
+    CompletePowerPurchaseTransactionOptions,
+    CompletePowerPurchaseUserOptions,
     ProcessBillPaymentOptions,
     ProviderSlug,
 } from "../interfaces";
@@ -176,7 +178,7 @@ export class PowerBillService {
 
     async processWebhookPowerPurchase(options: ProcessBillPaymentOptions) {
         try {
-            const transaction = await this.prisma.transaction.findUnique({
+            const transaction = (await this.prisma.transaction.findUnique({
                 where: {
                     paymentReference: options.paymentReference,
                 },
@@ -192,7 +194,8 @@ export class PowerBillService {
                     paymentStatus: true,
                     status: true,
                 },
-            });
+            })) as CompletePowerPurchaseTransactionOptions;
+
             if (!transaction) {
                 const error = new TransactionNotFoundException(
                     "Failed to complete power purchase. Bill Initialization transaction record not found",
@@ -209,10 +212,17 @@ export class PowerBillService {
                 return logger.error(error);
             }
 
-            const user = await this.prisma.user.findUnique({
+            await this.prisma.transaction.update({
+                where: { id: transaction.id },
+                data: {
+                    paymentStatus: PaymentStatus.SUCCESS,
+                },
+            });
+
+            const user = (await this.prisma.user.findUnique({
                 where: { id: transaction.userId },
                 select: { email: true, userType: true },
-            });
+            })) as CompletePowerPurchaseUserOptions;
             if (!user) {
                 const error = new UserNotFoundException(
                     "Failed to complete power purchase. Customer details does not exist",
@@ -228,7 +238,7 @@ export class PowerBillService {
             });
 
             if (!billProvider) {
-                //TODO: For Automation, check for an active provider and switch automatically
+                //TODO: AUTOMATION UPGRADE, check for an active provider and switch automatically
                 const error = new BillProviderNotFoundException(
                     "Failed to complete power purchase. Bill provider not found",
                     HttpStatus.NOT_FOUND
@@ -242,13 +252,14 @@ export class PowerBillService {
                 billProvider: billProvider,
             });
         } catch (error) {
-            logger.error(error);
+            logger.error(`POWER_PURCHASE_COMPLETION_ERROR: ${error}`);
         }
     }
 
     async completePowerPurchase(options: CompletePowerPurchaseOptions) {
         switch (options.billProvider.slug) {
             case ProviderSlug.IRECHARGE: {
+                //TODO: AUTOMATION UPGRADE, if iRecharge service fails, check for an active provider and switch automatically
                 const vendPowerResp =
                     await this.iRechargeWorkflowService.vendPower({
                         accessToken: options.transaction.serviceTransactionCode,
@@ -271,7 +282,6 @@ export class PowerBillService {
                         data: {
                             units: vendPowerResp.units,
                             token: vendPowerResp.meterToken,
-                            paymentStatus: PaymentStatus.SUCCESS,
                             status: TransactionStatus.SUCCESS,
                         },
                     });
@@ -294,4 +304,6 @@ export class PowerBillService {
             }
         }
     }
+
+    //TODO: purchase with wallet
 }
