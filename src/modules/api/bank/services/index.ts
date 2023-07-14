@@ -8,10 +8,7 @@ import {
     GetPaymentProviderBanksDto,
     ResolveBankAccountDto,
 } from "../dtos";
-import {
-    InvalidBankProvider,
-    VirtualAccountNotFoundException,
-} from "../errors";
+import { InvalidBankProvider } from "../errors";
 
 @Injectable()
 export class BankService {

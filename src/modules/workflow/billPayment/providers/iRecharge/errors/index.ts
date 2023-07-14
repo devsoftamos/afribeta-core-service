@@ -13,5 +13,5 @@ export class IRechargeVendPowerException extends IRechargePowerException {
 }
 
 export class IRechargeGetMeterInfoException extends IRechargePowerException {
-    name: string = "IRechargeGetMeterInfoException";
+    name = "IRechargeGetMeterInfoException";
 }

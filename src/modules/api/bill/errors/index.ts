@@ -17,5 +17,5 @@ export class PowerPurchaseInitializationHandlerException extends HttpException {
 }
 
 export class InvalidBillTypePaymentReference extends HttpException {
-    name: string = "InvalidBillTypePaymentReference";
+    name = "InvalidBillTypePaymentReference";
 }
