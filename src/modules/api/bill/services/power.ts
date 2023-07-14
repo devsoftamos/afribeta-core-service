@@ -48,9 +48,7 @@ import {
     WalletNotFoundException,
     InsufficientWalletBalanceException,
 } from "../../wallet";
-import {
-    IRechargeVendPowerException,
-} from "@/modules/workflow/billPayment/providers/iRecharge";
+import { IRechargeVendPowerException } from "@/modules/workflow/billPayment/providers/iRecharge";
 import { DB_TRANSACTION_TIMEOUT } from "@/config";
 import { billEvent } from "../events";
 
@@ -58,8 +56,7 @@ import { billEvent } from "../events";
 export class PowerBillService {
     constructor(
         private iRechargeWorkflowService: IRechargeWorkflowService,
-        private prisma: PrismaService,
-        //private billService: BillService
+        private prisma: PrismaService //private billService: BillService
     ) {}
 
     async getElectricDiscos(): Promise<ApiResponse> {
