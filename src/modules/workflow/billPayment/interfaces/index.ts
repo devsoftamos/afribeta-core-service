@@ -21,6 +21,12 @@ export interface GetMeterInfoOptions {
 export interface GetMeterResponse {
     accessToken: string;
     hash?: string;
+    customer: {
+        name: string;
+        address: string;
+        util: string;
+        minimumAmount: number;
+    };
 }
 
 export interface VendPowerOptions {

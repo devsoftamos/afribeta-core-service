@@ -7,3 +7,11 @@ export class IRechargeWorkflowException extends HttpException {
 export class IRechargePowerException extends HttpException {
     name = "IRechargePowerException";
 }
+
+export class IRechargeVendPowerException extends IRechargePowerException {
+    name = "IRechargeVendPowerException";
+}
+
+export class IRechargeGetMeterInfoException extends IRechargePowerException {
+    name: string = "IRechargeGetMeterInfoException";
+}

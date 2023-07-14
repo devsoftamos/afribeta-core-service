@@ -9,6 +9,7 @@ import {
 
 export enum PaymentProvider {
     PAYSTACK = "PAYSTACK",
+    WALLET = "WALLET",
 }
 
 export enum MeterType {
@@ -17,6 +18,9 @@ export enum MeterType {
 }
 
 export class PurchasePowerDto {
+    @IsEnum(PaymentProvider)
+    paymentProvider: PaymentProvider;
+
     @IsString()
     billProvider: string;
 
@@ -46,7 +50,17 @@ export class PurchasePowerDto {
     narration: string;
 }
 
-export class PurchasePowerViaExternalPaymentProcessorDto extends PurchasePowerDto {
-    @IsEnum(PaymentProvider)
-    paymentProvider: PaymentProvider;
+export class GetMeterInfoDto {
+    @IsString()
+    billProvider: string;
+}
+
+export class WalletPowerPaymentDto {
+    @IsString()
+    reference: string;
+}
+
+export class GetPowerPurchaseStatusDto {
+    @IsString()
+    reference: string;
 }

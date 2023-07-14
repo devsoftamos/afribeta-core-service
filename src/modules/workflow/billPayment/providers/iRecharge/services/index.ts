@@ -10,7 +10,12 @@ import {
     VendPowerOptions,
     VendPowerResponse,
 } from "../../../interfaces";
-import { IRechargePowerException, IRechargeWorkflowException } from "../errors";
+import {
+    IRechargeGetMeterInfoException,
+    IRechargePowerException,
+    IRechargeVendPowerException,
+    IRechargeWorkflowException,
+} from "../errors";
 
 @Injectable()
 export class IRechargeWorkflowService {
@@ -111,9 +116,23 @@ export class IRechargeWorkflowService {
                 hash: hash,
                 reference_id: options.reference,
             });
+
+            if (!getMeterInfo || !getMeterInfo.customer) {
+                throw new IRechargeGetMeterInfoException(
+                    "Failed to retrieve meter information",
+                    HttpStatus.INTERNAL_SERVER_ERROR
+                );
+            }
+
             return {
                 accessToken: getMeterInfo.access_token,
                 hash: getMeterInfo.response_hash,
+                customer: {
+                    address: getMeterInfo.customer.address,
+                    name: getMeterInfo.customer.name,
+                    minimumAmount: +getMeterInfo.customer.minimumAmount,
+                    util: getMeterInfo.customer.util,
+                },
             };
         } catch (error) {
             logger.error(error);
@@ -121,24 +140,24 @@ export class IRechargeWorkflowService {
                 case error instanceof IRechargeError: {
                     const clientErrorCodes = ["13", "14", "15", "41"];
                     if (clientErrorCodes.includes(error.status)) {
-                        throw new IRechargePowerException(
+                        throw new IRechargeGetMeterInfoException(
                             error.message,
                             HttpStatus.BAD_REQUEST
                         );
                     }
 
-                    throw new IRechargePowerException(
+                    throw new IRechargeGetMeterInfoException(
                         error.message,
                         HttpStatus.INTERNAL_SERVER_ERROR
                     );
                 }
-                case error instanceof IRechargeWorkflowException: {
+                case error instanceof IRechargePowerException: {
                     throw error;
                 }
 
                 default: {
                     throw new IRechargeWorkflowException(
-                        "Failed to retrieve electric discos. Error ocurred",
+                        "Failed to retrieve meter information. Error ocurred",
                         HttpStatus.INTERNAL_SERVER_ERROR
                     );
                 }
@@ -176,18 +195,18 @@ export class IRechargeWorkflowService {
                 case error instanceof IRechargeError: {
                     const clientErrorCodes = ["13", "14", "15", "41"];
                     if (clientErrorCodes.includes(error.status)) {
-                        throw new IRechargePowerException(
+                        throw new IRechargeVendPowerException(
                             error.message,
                             HttpStatus.BAD_REQUEST
                         );
                     }
 
-                    throw new IRechargePowerException(
+                    throw new IRechargeVendPowerException(
                         error.message,
                         HttpStatus.INTERNAL_SERVER_ERROR
                     );
                 }
-                case error instanceof IRechargeWorkflowException: {
+                case error instanceof IRechargePowerException: {
                     throw error;
                 }
 

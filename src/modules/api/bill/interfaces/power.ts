@@ -41,8 +41,15 @@ export interface PowerPurchaseInitializationHandlerOptions {
     wallet?: Wallet;
 }
 
+export interface CustomerMeterInfo {
+    name: string;
+    address: string;
+    util: string;
+    minimumAmount: number;
+}
 export interface PowerPurchaseInitializationHandlerOutput {
     paymentReference: string;
+    customer: CustomerMeterInfo;
 }
 
 export interface CompletePowerPurchaseOutput {

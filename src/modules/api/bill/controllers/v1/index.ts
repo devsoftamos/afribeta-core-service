@@ -6,14 +6,16 @@ import {
     Get,
     HttpCode,
     HttpStatus,
+    Param,
     Post,
     UseGuards,
     ValidationPipe,
 } from "@nestjs/common";
 import { User as UserModel } from "@prisma/client";
 import {
+    GetPowerPurchaseStatusDto,
     PurchasePowerDto,
-    PurchasePowerViaExternalPaymentProcessorDto,
+    WalletPowerPaymentDto,
 } from "../../dtos";
 import { PowerBillService } from "../../services/power";
 
@@ -33,7 +35,7 @@ export class BillController {
     @Post("power/initialize-power-purchase")
     async initializePowerPurchase(
         @Body(ValidationPipe)
-        purchasePowerDto: PurchasePowerViaExternalPaymentProcessorDto,
+        purchasePowerDto: PurchasePowerDto,
         @User() user: UserModel
     ) {
         return await this.powerBillService.initializePowerPurchase(
@@ -43,14 +45,26 @@ export class BillController {
     }
 
     @HttpCode(HttpStatus.OK)
-    @Post("power/wallet-purchase")
-    async purchasePowerViaWallet(
+    @Post("power/wallet-payment")
+    async walletPayment(
         @Body(ValidationPipe)
-        purchasePowerDto: PurchasePowerDto,
+        walletPowerPaymentDto: WalletPowerPaymentDto,
         @User() user: UserModel
     ) {
-        return await this.powerBillService.purchasePowerWithWallet(
-            purchasePowerDto,
+        return await this.powerBillService.walletPayment(
+            walletPowerPaymentDto,
+            user
+        );
+    }
+
+    @Get("power/status/:reference")
+    async getPowerPurchaseStatus(
+        @Param(ValidationPipe)
+        getPowerPurchaseStatusDto: GetPowerPurchaseStatusDto,
+        @User() user: UserModel
+    ) {
+        return await this.powerBillService.getPowerPurchaseStatus(
+            getPowerPurchaseStatusDto,
             user
         );
     }

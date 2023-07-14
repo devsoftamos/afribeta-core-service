@@ -15,3 +15,7 @@ export class BillProviderNotFoundException extends HttpException {
 export class PowerPurchaseInitializationHandlerException extends HttpException {
     name = "PowerPurchaseInitializationHandlerException";
 }
+
+export class InvalidBillTypePaymentReference extends HttpException {
+    name: string = "InvalidBillTypePaymentReference";
+}

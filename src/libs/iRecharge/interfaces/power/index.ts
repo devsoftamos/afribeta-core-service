@@ -29,7 +29,12 @@ export interface GetMeterInfoOptions {
 
 export interface GetMeterInfoResponse extends IRechargeResponse {
     access_token: string;
-    customer: string;
+    customer: {
+        name: string;
+        address: string;
+        util: string;
+        minimumAmount: string;
+    };
     response_hash: string;
 }
 
