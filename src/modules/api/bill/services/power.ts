@@ -281,7 +281,7 @@ export class PowerBillService {
 
             if (transaction.paymentStatus == PaymentStatus.SUCCESS) {
                 throw new DuplicatePowerPurchaseException(
-                    "Duplicate webhook power purchase event",
+                    "Duplicate webhook power payment event",
                     HttpStatus.BAD_REQUEST
                 );
             }
@@ -417,6 +417,13 @@ export class PowerBillService {
             );
         }
 
+        if (transaction.paymentStatus == PaymentStatus.SUCCESS) {
+            throw new DuplicatePowerPurchaseException(
+                "Duplicate power payment",
+                HttpStatus.BAD_REQUEST
+            );
+        }
+
         if (wallet.mainBalance < transaction.amount) {
             throw new InsufficientWalletBalanceException(
                 "Insufficient wallet balance",
@@ -446,27 +453,32 @@ export class PowerBillService {
         }
 
         //record payment
-        await this.prisma.$transaction(async (tx) => {
-            await tx.wallet.update({
-                where: {
-                    id: wallet.id,
-                },
-                data: {
-                    mainBalance: {
-                        decrement: transaction.amount,
+        await this.prisma.$transaction(
+            async (tx) => {
+                await tx.wallet.update({
+                    where: {
+                        id: wallet.id,
                     },
-                },
-            });
+                    data: {
+                        mainBalance: {
+                            decrement: transaction.amount,
+                        },
+                    },
+                });
 
-            await tx.transaction.update({
-                where: {
-                    id: transaction.id,
-                },
-                data: {
-                    paymentStatus: PaymentStatus.SUCCESS,
-                },
-            });
-        });
+                await tx.transaction.update({
+                    where: {
+                        id: transaction.id,
+                    },
+                    data: {
+                        paymentStatus: PaymentStatus.SUCCESS,
+                    },
+                });
+            },
+            {
+                timeout: DB_TRANSACTION_TIMEOUT,
+            }
+        );
 
         //purchase
         try {
