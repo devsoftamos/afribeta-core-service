@@ -22,7 +22,7 @@ import {
 
 @Injectable()
 export class IRechargeWorkflowService {
-    public provider: string = "irecharge";
+    public provider = "irecharge";
     constructor(private iRecharge: IRecharge) {}
 
     private blackListedDiscos: string[] = [
