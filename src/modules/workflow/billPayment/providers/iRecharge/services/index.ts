@@ -1,9 +1,12 @@
 import { DiscoBundleData, IRecharge } from "@/libs/iRecharge";
 import { IRechargeError } from "@/libs/iRecharge/errors";
+import { DataBundleProvider } from "@/libs/iRecharge/interfaces/data";
 import { HttpStatus, Injectable } from "@nestjs/common";
 import logger from "moment-logger";
 import {
+    NetworkDataProvider,
     FormattedElectricDiscoData,
+    GetDataBundleResponse,
     GetMeterInfoOptions,
     GetMeterResponse,
     MeterType,
@@ -11,14 +14,15 @@ import {
     VendPowerResponse,
 } from "../../../interfaces";
 import {
+    IRechargeDataException,
     IRechargeGetMeterInfoException,
     IRechargePowerException,
     IRechargeVendPowerException,
-    IRechargeWorkflowException,
 } from "../errors";
 
 @Injectable()
 export class IRechargeWorkflowService {
+    public provider: string = "irecharge";
     constructor(private iRecharge: IRecharge) {}
 
     private blackListedDiscos: string[] = [
@@ -32,7 +36,7 @@ export class IRechargeWorkflowService {
         try {
             const resData = await this.iRecharge.getElectricDiscos();
             if (!resData || !resData.bundles) {
-                throw new IRechargeWorkflowException(
+                throw new IRechargePowerException(
                     "Unable to retrieve electric discos. Please try again",
                     HttpStatus.INTERNAL_SERVER_ERROR
                 );
@@ -51,12 +55,12 @@ export class IRechargeWorkflowService {
                         HttpStatus.INTERNAL_SERVER_ERROR
                     );
                 }
-                case error instanceof IRechargeWorkflowException: {
+                case error instanceof IRechargePowerException: {
                     throw error;
                 }
 
                 default: {
-                    throw new IRechargeWorkflowException(
+                    throw new IRechargePowerException(
                         "Failed to retrieve electric discos. Error ocurred",
                         HttpStatus.INTERNAL_SERVER_ERROR
                     );
@@ -156,7 +160,7 @@ export class IRechargeWorkflowService {
                 }
 
                 default: {
-                    throw new IRechargeWorkflowException(
+                    throw new IRechargePowerException(
                         "Failed to retrieve meter information. Error ocurred",
                         HttpStatus.INTERNAL_SERVER_ERROR
                     );
@@ -211,8 +215,85 @@ export class IRechargeWorkflowService {
                 }
 
                 default: {
-                    throw new IRechargeWorkflowException(
+                    throw new IRechargePowerException(
                         "Failed to retrieve electric discos. Error ocurred",
+                        HttpStatus.INTERNAL_SERVER_ERROR
+                    );
+                }
+            }
+        }
+    }
+
+    async getDataBundles(
+        networkProvider: NetworkDataProvider
+    ): Promise<GetDataBundleResponse[]> {
+        try {
+            const fetchData = async (networkProvider: DataBundleProvider) => {
+                const resp = await this.iRecharge.getDataBundles({
+                    data_network: networkProvider,
+                });
+
+                if (!resp || !resp.bundles) {
+                    throw new IRechargeDataException(
+                        "Unable to retrieve data bundles from upstream service",
+                        HttpStatus.INTERNAL_SERVER_ERROR
+                    );
+                }
+
+                return resp.bundles.map((bundle) => {
+                    return {
+                        code: bundle.code,
+                        price: +bundle.price,
+                        title: bundle.title,
+                        validity: bundle.validity,
+                        billProvider: this.provider,
+                    };
+                });
+            };
+
+            switch (networkProvider) {
+                case NetworkDataProvider.AIRTEL: {
+                    return await fetchData(DataBundleProvider.AIRTEL);
+                }
+                case NetworkDataProvider.MTN: {
+                    return await fetchData(DataBundleProvider.MTN);
+                }
+                case NetworkDataProvider.GLO: {
+                    return await fetchData(DataBundleProvider.GLO);
+                }
+                case NetworkDataProvider.SMILE: {
+                    return await fetchData(DataBundleProvider.SMILE);
+                }
+                case NetworkDataProvider.ETISALAT: {
+                    return await fetchData(DataBundleProvider.ETISALAT);
+                }
+                case NetworkDataProvider.SPECTRANET: {
+                    return await fetchData(DataBundleProvider.SPECTRANET);
+                }
+
+                default: {
+                    throw new IRechargeDataException(
+                        "Invalid data bundle provider network",
+                        HttpStatus.INTERNAL_SERVER_ERROR
+                    );
+                }
+            }
+        } catch (error) {
+            switch (true) {
+                case error instanceof IRechargeError: {
+                    throw new IRechargeDataException(
+                        "Unable to retrieve data bundles from upstream service",
+                        HttpStatus.INTERNAL_SERVER_ERROR
+                    );
+                }
+
+                case error instanceof IRechargeDataException: {
+                    throw error;
+                }
+
+                default: {
+                    throw new IRechargeDataException(
+                        "Failed to retrieve data bundles",
                         HttpStatus.INTERNAL_SERVER_ERROR
                     );
                 }

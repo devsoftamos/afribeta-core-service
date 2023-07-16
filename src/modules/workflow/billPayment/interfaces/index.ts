@@ -43,3 +43,20 @@ export interface VendPowerResponse {
     units: string;
     meterToken: string;
 }
+
+export enum NetworkDataProvider {
+    MTN = "MTN",
+    AIRTEL = "AIRTEL",
+    ETISALAT = "ETISALAT",
+    GLO = "GLO",
+    SMILE = "SMILE",
+    SPECTRANET = "SPECTRANET",
+}
+
+export interface GetDataBundleResponse {
+    code: string;
+    price: number;
+    title: string;
+    validity?: string;
+    billProvider: string;
+}
