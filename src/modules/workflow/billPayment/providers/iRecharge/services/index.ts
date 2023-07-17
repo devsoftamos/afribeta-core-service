@@ -12,11 +12,14 @@ import {
     MeterType,
     VendPowerOptions,
     VendPowerResponse,
+    VendDataOptions,
+    VendDataResponse,
 } from "../../../interfaces";
 import {
     IRechargeDataException,
     IRechargeGetMeterInfoException,
     IRechargePowerException,
+    IRechargeVendDataException,
     IRechargeVendPowerException,
 } from "../errors";
 
@@ -210,13 +213,10 @@ export class IRechargeWorkflowService {
                         HttpStatus.INTERNAL_SERVER_ERROR
                     );
                 }
-                case error instanceof IRechargePowerException: {
-                    throw error;
-                }
 
                 default: {
                     throw new IRechargePowerException(
-                        "Failed to retrieve electric discos. Error ocurred",
+                        "Failed to vend power. Error ocurred",
                         HttpStatus.INTERNAL_SERVER_ERROR
                     );
                 }
@@ -298,6 +298,80 @@ export class IRechargeWorkflowService {
                     );
                 }
             }
+        }
+    }
+
+    async vendData(options: VendDataOptions): Promise<VendDataResponse> {
+        try {
+            const vendDataHash = this.iRecharge.vendDataHash({
+                referenceId: options.referenceId,
+                vtuData: options.dataCode,
+                vtuNetwork: this.resolveNetworkName(options.vtuNetwork),
+                vtuNumber: options.vtuNumber,
+            });
+
+            const response = await this.iRecharge.vendData({
+                hash: vendDataHash,
+                reference_id: options.referenceId,
+                vtu_data: options.dataCode,
+                vtu_network: this.resolveNetworkName(options.vtuNetwork),
+                vtu_number: options.vtuNumber,
+                vtu_email: options.vtuEmail,
+            });
+            return {
+                networkProviderReference: response.ref,
+            };
+        } catch (error) {
+            logger.error(error);
+            switch (true) {
+                case error instanceof IRechargeError: {
+                    const clientErrorCodes = ["41"];
+                    if (clientErrorCodes.includes(error.status)) {
+                        throw new IRechargeVendDataException(
+                            error.message,
+                            HttpStatus.BAD_REQUEST
+                        );
+                    }
+
+                    throw new IRechargeVendDataException(
+                        error.message,
+                        HttpStatus.INTERNAL_SERVER_ERROR
+                    );
+                }
+
+                default: {
+                    throw new IRechargeDataException(
+                        "Failed to vend data. Error ocurred",
+                        HttpStatus.INTERNAL_SERVER_ERROR
+                    );
+                }
+            }
+        }
+    }
+
+    resolveNetworkName(network: NetworkDataProvider) {
+        switch (network) {
+            case NetworkDataProvider.AIRTEL: {
+                return DataBundleProvider.AIRTEL;
+            }
+            case NetworkDataProvider.MTN: {
+                return DataBundleProvider.MTN;
+            }
+            case NetworkDataProvider.GLO: {
+                return DataBundleProvider.GLO;
+            }
+            case NetworkDataProvider.ETISALAT: {
+                return DataBundleProvider.ETISALAT;
+            }
+            case NetworkDataProvider.SMILE: {
+                return DataBundleProvider.SMILE;
+            }
+            case NetworkDataProvider.SPECTRANET: {
+                return DataBundleProvider.SPECTRANET;
+            }
+
+            default:
+                break;
         }
     }
 }

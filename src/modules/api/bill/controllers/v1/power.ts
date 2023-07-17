@@ -16,7 +16,7 @@ import {
     GetPowerPurchaseStatusDto,
     PurchasePowerDto,
     WalletPowerPaymentDto,
-} from "../../dtos";
+} from "../../dtos/power";
 import { PowerBillService } from "../../services/power";
 
 @UseGuards(AuthGuard)

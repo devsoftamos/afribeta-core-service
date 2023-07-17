@@ -14,7 +14,7 @@ export class TransactionService {
     ) {}
 
     async getTransactionByPaymentReference(reference: string) {
-        return await this.prisma.transaction.findFirst({
+        return await this.prisma.transaction.findUnique({
             where: { paymentReference: reference },
         });
     }

@@ -1,5 +1,14 @@
 import { PrismaService } from "@/modules/core/prisma/services";
-import { Transaction, TransactionType } from "@prisma/client";
+import {
+    BillProvider,
+    PaymentChannel,
+    PaymentStatus,
+    Transaction,
+    TransactionType,
+    User,
+    UserType,
+    Wallet,
+} from "@prisma/client";
 export * from "./power";
 
 export enum ProviderSlug {
@@ -25,4 +34,34 @@ export interface OnBillPurchaseFailure {
 
 export enum BillEventType {
     BILL_PURCHASE_FAILURE = "bill_purchase_failure",
+}
+
+export interface BillPurchaseInitializationHandlerOptions<PurchaseOptions> {
+    purchaseOptions: PurchaseOptions;
+    user: User;
+    billProvider: BillProvider;
+    paymentChannel: PaymentChannel;
+    wallet?: Wallet;
+}
+
+export interface CompleteBillPurchaseUserOptions {
+    email: string;
+    userType: UserType;
+}
+
+export interface CompleteBillPurchaseTransactionOptions {
+    id: number;
+    billProviderId: number;
+    userId: number;
+    amount: number;
+    senderIdentifier: string; //third party package code
+    receiverIdentifier: string; //customer receiver identifier
+    billPaymentReference: string;
+    paymentStatus: PaymentStatus;
+}
+
+export interface CompleteBillPurchaseOptions<TransactionOptions> {
+    user: CompleteBillPurchaseUserOptions;
+    transaction: TransactionOptions;
+    billProvider: BillProvider;
 }

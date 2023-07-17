@@ -60,3 +60,15 @@ export interface GetDataBundleResponse {
     validity?: string;
     billProvider: string;
 }
+
+export interface VendDataOptions {
+    vtuNumber: string;
+    vtuNetwork: NetworkDataProvider;
+    dataCode: string;
+    referenceId: string;
+    vtuEmail?: string;
+}
+
+export interface VendDataResponse {
+    networkProviderReference: string;
+}

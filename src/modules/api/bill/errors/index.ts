@@ -19,3 +19,11 @@ export class PowerPurchaseInitializationHandlerException extends HttpException {
 export class InvalidBillTypePaymentReference extends HttpException {
     name = "InvalidBillTypePaymentReference";
 }
+
+export class DataPurchaseException extends HttpException {
+    name = "DataPurchaseException";
+}
+
+export class DuplicateDataPurchaseException extends HttpException {
+    name = "DuplicateDataPurchaseException";
+}

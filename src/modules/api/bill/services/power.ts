@@ -19,10 +19,9 @@ import {
 } from "../../transaction";
 import {
     GetPowerPurchaseStatusDto,
-    PaymentProvider,
     PurchasePowerDto,
     WalletPowerPaymentDto,
-} from "../dtos";
+} from "../dtos/power";
 import {
     BillProviderNotFoundException,
     PowerPurchaseException,
@@ -32,15 +31,15 @@ import {
 } from "../errors";
 import {
     BillEventType,
-    CompletePowerPurchaseOptions,
     CompletePowerPurchaseOutput,
     CompletePowerPurchaseTransactionOptions,
-    CompletePowerPurchaseUserOptions,
+    CompleteBillPurchaseUserOptions,
     CustomerMeterInfo,
-    PowerPurchaseInitializationHandlerOptions,
+    BillPurchaseInitializationHandlerOptions,
     PowerPurchaseInitializationHandlerOutput,
     ProcessBillPaymentOptions,
     ProviderSlug,
+    CompleteBillPurchaseOptions,
 } from "../interfaces";
 import logger from "moment-logger";
 import { UserNotFoundException } from "../../user";
@@ -51,6 +50,7 @@ import {
 import { IRechargeVendPowerException } from "@/modules/workflow/billPayment/providers/iRecharge";
 import { DB_TRANSACTION_TIMEOUT } from "@/config";
 import { billEvent } from "../events";
+import { PaymentProvider } from "../dtos";
 
 @Injectable()
 export class PowerBillService {
@@ -103,7 +103,6 @@ export class PowerBillService {
         }
 
         if (!provider.isActive) {
-            //TODO: AUTOMATION UPGRADE, check for an active provider and switch automatically
             throw new PowerPurchaseException(
                 "Bill Provider not active",
                 HttpStatus.BAD_REQUEST
@@ -178,7 +177,7 @@ export class PowerBillService {
     }
 
     async handlePowerPurchaseInitialization(
-        options: PowerPurchaseInitializationHandlerOptions
+        options: BillPurchaseInitializationHandlerOptions<PurchasePowerDto>
     ): Promise<PowerPurchaseInitializationHandlerOutput> {
         const { billProvider, paymentChannel, purchaseOptions, user } = options;
 
@@ -222,7 +221,10 @@ export class PowerBillService {
                     await this.iRechargeWorkflowService.getMeterInfo({
                         discoCode: purchaseOptions.discoCode,
                         meterNumber: purchaseOptions.meterNumber,
-                        reference: billPaymentReference,
+                        reference: generateId({
+                            type: "numeric",
+                            length: 12,
+                        }),
                     });
                 transactionCreateOptions.serviceTransactionCode =
                     meterInfo.accessToken;
@@ -254,23 +256,25 @@ export class PowerBillService {
 
     async processWebhookPowerPurchase(options: ProcessBillPaymentOptions) {
         try {
-            const transaction = (await this.prisma.transaction.findUnique({
-                where: {
-                    paymentReference: options.paymentReference,
-                },
-                select: {
-                    id: true,
-                    billProviderId: true,
-                    serviceTransactionCode: true,
-                    userId: true,
-                    accountId: true,
-                    amount: true,
-                    senderIdentifier: true,
-                    receiverIdentifier: true,
-                    paymentStatus: true,
-                    status: true,
-                },
-            })) as CompletePowerPurchaseTransactionOptions;
+            const transaction: CompletePowerPurchaseTransactionOptions =
+                await this.prisma.transaction.findUnique({
+                    where: {
+                        paymentReference: options.paymentReference,
+                    },
+                    select: {
+                        id: true,
+                        billProviderId: true,
+                        serviceTransactionCode: true,
+                        userId: true,
+                        accountId: true,
+                        amount: true,
+                        senderIdentifier: true,
+                        receiverIdentifier: true,
+                        paymentStatus: true,
+                        status: true,
+                        billPaymentReference: true,
+                    },
+                });
 
             if (!transaction) {
                 throw new TransactionNotFoundException(
@@ -293,10 +297,11 @@ export class PowerBillService {
                 },
             });
 
-            const user = (await this.prisma.user.findUnique({
-                where: { id: transaction.userId },
-                select: { email: true, userType: true },
-            })) as CompletePowerPurchaseUserOptions;
+            const user: CompleteBillPurchaseUserOptions =
+                await this.prisma.user.findUnique({
+                    where: { id: transaction.userId },
+                    select: { email: true, userType: true },
+                });
             if (!user) {
                 throw new UserNotFoundException(
                     "Failed to complete power purchase. Customer details does not exist",
@@ -330,23 +335,20 @@ export class PowerBillService {
     }
 
     async completePowerPurchase(
-        options: CompletePowerPurchaseOptions
+        options: CompleteBillPurchaseOptions<CompletePowerPurchaseTransactionOptions>
     ): Promise<CompletePowerPurchaseOutput> {
         switch (options.billProvider.slug) {
             case ProviderSlug.IRECHARGE: {
                 //TODO: AUTOMATION UPGRADE, if iRecharge service fails, check for an active provider and switch automatically
                 const vendPowerResp =
                     await this.iRechargeWorkflowService.vendPower({
-                        accessToken: options.transaction.serviceTransactionCode,
+                        accessToken: options.transaction.serviceTransactionCode, //access token from get meter info -- irecharge
                         accountId: options.transaction.accountId,
                         amount: options.transaction.amount,
                         discoCode: options.transaction.senderIdentifier,
                         email: options.user.email,
                         meterNumber: options.transaction.receiverIdentifier,
-                        referenceId: generateId({
-                            type: "numeric",
-                            length: 12,
-                        }),
+                        referenceId: options.transaction.billPaymentReference,
                     });
 
                 await this.prisma.$transaction(
@@ -382,7 +384,7 @@ export class PowerBillService {
 
             default: {
                 throw new PowerPurchaseException(
-                    "Failed to complete power purchase. Bill provider not registered in app",
+                    "Failed to complete power purchase. Invalid bill provider",
                     HttpStatus.NOT_IMPLEMENTED
                 );
             }
