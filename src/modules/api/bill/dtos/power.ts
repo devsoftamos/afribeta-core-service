@@ -44,13 +44,3 @@ export class GetMeterInfoDto {
     @IsString()
     billProvider: string;
 }
-
-export class WalletPowerPaymentDto {
-    @IsString()
-    reference: string;
-}
-
-export class GetPowerPurchaseStatusDto {
-    @IsString()
-    reference: string;
-}

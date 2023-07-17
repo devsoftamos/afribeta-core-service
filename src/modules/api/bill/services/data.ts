@@ -5,7 +5,7 @@ import {
 } from "@/modules/workflow/billPayment";
 import { IRechargeWorkflowService } from "@/modules/workflow/billPayment/providers/iRecharge/services";
 import { ApiResponse, buildResponse, generateId } from "@/utils";
-import { HttpStatus, Injectable } from "@nestjs/common";
+import { forwardRef, HttpStatus, Inject, Injectable } from "@nestjs/common";
 import {
     PaymentChannel,
     PaymentStatus,
@@ -25,15 +25,17 @@ import {
     InsufficientWalletBalanceException,
     WalletNotFoundException,
 } from "../../wallet";
-import { PaymentProvider } from "../dtos";
+import { PaymentProvider, PaymentReferenceDto } from "../dtos";
 import { GetDataBundleDto, PurchaseDataDto } from "../dtos/data";
 import {
     BillProviderNotFoundException,
     DataPurchaseException,
     DuplicateDataPurchaseException,
     PowerPurchaseException,
+    InvalidBillTypePaymentReference,
 } from "../errors";
 import {
+    BillEventType,
     BillPurchaseInitializationHandlerOptions,
     CompleteBillPurchaseOptions,
     CompleteBillPurchaseUserOptions,
@@ -47,12 +49,18 @@ import {
 } from "../interfaces/data";
 import logger from "moment-logger";
 import { DB_TRANSACTION_TIMEOUT } from "@/config";
+import { BillService } from ".";
+import { IRechargeVendDataException } from "@/modules/workflow/billPayment/providers/iRecharge";
+import { billEvent } from "../events";
 
 @Injectable()
 export class DataBillService {
     constructor(
         private iRechargeWorkflowService: IRechargeWorkflowService,
-        private prisma: PrismaService
+        private prisma: PrismaService,
+
+        @Inject(forwardRef(() => BillService))
+        private billService: BillService
     ) {}
 
     async getDataBundles(options: GetDataBundleDto): Promise<ApiResponse> {
@@ -224,6 +232,7 @@ export class DataBillService {
                         status: true,
                         provider: true, //network provider
                         billPaymentReference: true,
+                        paymentChannel: true,
                     },
                 });
 
@@ -309,6 +318,9 @@ export class DataBillService {
                             data: {
                                 status: TransactionStatus.SUCCESS,
                                 token: response.networkProviderReference,
+                                paymentChannel: options.isWalletPayment
+                                    ? PaymentChannel.WALLET
+                                    : options.transaction.paymentChannel,
                             },
                         });
 
@@ -336,5 +348,165 @@ export class DataBillService {
                 );
             }
         }
+    }
+
+    async walletPayment(options: PaymentReferenceDto, user: User) {
+        const wallet = await this.prisma.wallet.findUnique({
+            where: {
+                userId: user.id,
+            },
+        });
+
+        if (!wallet) {
+            throw new WalletNotFoundException(
+                "Wallet not created. Kindly setup your KYC",
+                HttpStatus.NOT_FOUND
+            );
+        }
+
+        const transaction = await this.prisma.transaction.findUnique({
+            where: {
+                paymentReference: options.reference,
+            },
+        });
+
+        if (!transaction) {
+            throw new TransactionNotFoundException(
+                "Failed to complete wallet payment for data purchase. Payment reference not found",
+                HttpStatus.NOT_FOUND
+            );
+        }
+
+        if (transaction.type != TransactionType.DATA_PURCHASE) {
+            throw new InvalidBillTypePaymentReference(
+                "Invalid data purchase reference",
+                HttpStatus.BAD_REQUEST
+            );
+        }
+
+        if (transaction.paymentStatus == PaymentStatus.SUCCESS) {
+            throw new DuplicateDataPurchaseException(
+                "Duplicate data purchase payment",
+                HttpStatus.BAD_REQUEST
+            );
+        }
+
+        if (wallet.mainBalance < transaction.amount) {
+            throw new InsufficientWalletBalanceException(
+                "Insufficient wallet balance",
+                HttpStatus.BAD_REQUEST
+            );
+        }
+
+        const billProvider = await this.prisma.billProvider.findUnique({
+            where: {
+                id: transaction.billProviderId,
+            },
+        });
+
+        if (!billProvider) {
+            throw new PowerPurchaseException(
+                "Bill provider does not exist",
+                HttpStatus.NOT_FOUND
+            );
+        }
+
+        if (!billProvider.isActive) {
+            //TODO: AUTOMATION UPGRADE, check for an active provider and switch automatically
+            throw new PowerPurchaseException(
+                "Bill Provider not active",
+                HttpStatus.BAD_REQUEST
+            );
+        }
+
+        //record payment
+        await this.billService.walletDebitHandler({
+            amount: transaction.amount,
+            transactionId: transaction.id,
+            walletId: wallet.id,
+        });
+
+        //purchase
+        try {
+            const purchaseInfo = await this.completeDataPurchase({
+                billProvider: billProvider,
+                transaction: transaction,
+                user: {
+                    email: user.email,
+                    userType: user.userType,
+                },
+                isWalletPayment: true,
+            });
+
+            return buildResponse({
+                message: "Power purchase successful",
+                data: {
+                    network: {
+                        reference: purchaseInfo.networkProviderReference,
+                    },
+                    reference: options.reference,
+                },
+            });
+        } catch (error) {
+            switch (true) {
+                case error instanceof IRechargeVendDataException: {
+                    billEvent.emit(BillEventType.BILL_PURCHASE_FAILURE, {
+                        transaction,
+                        prisma: this.prisma,
+                    });
+                    throw error;
+                }
+
+                default: {
+                    throw error;
+                }
+            }
+        }
+    }
+
+    async getDataPurchaseStatus(options: PaymentReferenceDto, user: User) {
+        const transaction = await this.prisma.transaction.findUnique({
+            where: {
+                paymentReference: options.reference,
+            },
+            select: {
+                type: true,
+                status: true,
+                units: true,
+                token: true,
+                userId: true,
+            },
+        });
+
+        if (!transaction) {
+            throw new TransactionNotFoundException(
+                "Payment reference not found",
+                HttpStatus.NOT_FOUND
+            );
+        }
+
+        if (transaction.userId != user.id) {
+            throw new TransactionNotFoundException(
+                "Payment reference not found",
+                HttpStatus.NOT_FOUND
+            );
+        }
+
+        if (transaction.type != TransactionType.DATA_PURCHASE) {
+            throw new InvalidBillTypePaymentReference(
+                "Invalid data purchase reference",
+                HttpStatus.BAD_REQUEST
+            );
+        }
+
+        const data = {
+            status: transaction.status,
+            networkReference: transaction.token,
+        };
+
+        return buildResponse({
+            message: "Data purchase status retrieved successfully",
+            data: data,
+        });
     }
 }

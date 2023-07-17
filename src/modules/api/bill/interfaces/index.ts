@@ -58,10 +58,18 @@ export interface CompleteBillPurchaseTransactionOptions {
     receiverIdentifier: string; //customer receiver identifier
     billPaymentReference: string;
     paymentStatus: PaymentStatus;
+    paymentChannel: PaymentChannel;
 }
 
 export interface CompleteBillPurchaseOptions<TransactionOptions> {
     user: CompleteBillPurchaseUserOptions;
     transaction: TransactionOptions;
     billProvider: BillProvider;
+    isWalletPayment?: boolean;
+}
+
+export interface WalletDebitHandler {
+    amount: number;
+    walletId: number;
+    transactionId: number;
 }

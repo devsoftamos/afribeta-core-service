@@ -11,3 +11,8 @@ export class PurchaseBillDto {
     @IsString()
     billProvider: string;
 }
+
+export class PaymentReferenceDto {
+    @IsString()
+    reference: string;
+}

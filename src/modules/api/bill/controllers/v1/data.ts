@@ -6,12 +6,14 @@ import {
     Get,
     HttpCode,
     HttpStatus,
+    Param,
     Post,
     Query,
     UseGuards,
     ValidationPipe,
 } from "@nestjs/common";
 import { User as UserModel } from "@prisma/client";
+import { PaymentReferenceDto } from "../../dtos";
 import { GetDataBundleDto, PurchaseDataDto } from "../../dtos/data";
 import { DataBillService } from "../../services/data";
 
@@ -38,6 +40,31 @@ export class DataController {
     ) {
         return await this.dataBillService.initializeDataPurchase(
             purchaseDataDto,
+            user
+        );
+    }
+
+    @HttpCode(HttpStatus.OK)
+    @Post("wallet-payment")
+    async walletPayment(
+        @Body(ValidationPipe)
+        walletDataPaymentDto: PaymentReferenceDto,
+        @User() user: UserModel
+    ) {
+        return await this.dataBillService.walletPayment(
+            walletDataPaymentDto,
+            user
+        );
+    }
+
+    @Get("status/:reference")
+    async getPowerPurchaseStatus(
+        @Param(ValidationPipe)
+        getDataPurchaseStatusDto: PaymentReferenceDto,
+        @User() user: UserModel
+    ) {
+        return await this.dataBillService.getDataPurchaseStatus(
+            getDataPurchaseStatusDto,
             user
         );
     }

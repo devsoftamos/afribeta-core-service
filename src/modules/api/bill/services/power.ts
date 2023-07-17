@@ -2,7 +2,7 @@ import { PrismaService } from "@/modules/core/prisma/services";
 import { FormattedElectricDiscoData } from "@/modules/workflow/billPayment/interfaces";
 import { IRechargeWorkflowService } from "@/modules/workflow/billPayment/providers/iRecharge/services";
 import { ApiResponse, buildResponse, generateId } from "@/utils";
-import { HttpStatus, Injectable } from "@nestjs/common";
+import { forwardRef, HttpStatus, Inject, Injectable } from "@nestjs/common";
 import {
     PaymentChannel,
     PaymentStatus,
@@ -17,11 +17,7 @@ import {
     TransactionNotFoundException,
     TransactionShortDescription,
 } from "../../transaction";
-import {
-    GetPowerPurchaseStatusDto,
-    PurchasePowerDto,
-    WalletPowerPaymentDto,
-} from "../dtos/power";
+import { PurchasePowerDto } from "../dtos/power";
 import {
     BillProviderNotFoundException,
     PowerPurchaseException,
@@ -50,13 +46,16 @@ import {
 import { IRechargeVendPowerException } from "@/modules/workflow/billPayment/providers/iRecharge";
 import { DB_TRANSACTION_TIMEOUT } from "@/config";
 import { billEvent } from "../events";
-import { PaymentProvider } from "../dtos";
+import { PaymentProvider, PaymentReferenceDto } from "../dtos";
+import { BillService } from ".";
 
 @Injectable()
 export class PowerBillService {
     constructor(
         private iRechargeWorkflowService: IRechargeWorkflowService,
-        private prisma: PrismaService //private billService: BillService
+        private prisma: PrismaService,
+        @Inject(forwardRef(() => BillService))
+        private billService: BillService
     ) {}
 
     async getElectricDiscos(): Promise<ApiResponse> {
@@ -273,6 +272,7 @@ export class PowerBillService {
                         paymentStatus: true,
                         status: true,
                         billPaymentReference: true,
+                        paymentChannel: true,
                     },
                 });
 
@@ -361,6 +361,9 @@ export class PowerBillService {
                                 units: vendPowerResp.units,
                                 token: vendPowerResp.meterToken,
                                 status: TransactionStatus.SUCCESS,
+                                paymentChannel: options.isWalletPayment
+                                    ? PaymentChannel.WALLET
+                                    : options.transaction.paymentChannel,
                             },
                         });
 
@@ -391,8 +394,7 @@ export class PowerBillService {
         }
     }
 
-    //TODO: add controller and test
-    async walletPayment(options: WalletPowerPaymentDto, user: User) {
+    async walletPayment(options: PaymentReferenceDto, user: User) {
         const wallet = await this.prisma.wallet.findUnique({
             where: {
                 userId: user.id,
@@ -414,8 +416,15 @@ export class PowerBillService {
 
         if (!transaction) {
             throw new TransactionNotFoundException(
-                "Failed to complete wallet power purchase payment. payment reference not found",
+                "Failed to complete wallet payment for power purchase. Payment reference not found",
                 HttpStatus.NOT_FOUND
+            );
+        }
+
+        if (transaction.type != TransactionType.ELECTRICITY_BILL) {
+            throw new InvalidBillTypePaymentReference(
+                "Invalid power bill reference",
+                HttpStatus.BAD_REQUEST
             );
         }
 
@@ -455,32 +464,11 @@ export class PowerBillService {
         }
 
         //record payment
-        await this.prisma.$transaction(
-            async (tx) => {
-                await tx.wallet.update({
-                    where: {
-                        id: wallet.id,
-                    },
-                    data: {
-                        mainBalance: {
-                            decrement: transaction.amount,
-                        },
-                    },
-                });
-
-                await tx.transaction.update({
-                    where: {
-                        id: transaction.id,
-                    },
-                    data: {
-                        paymentStatus: PaymentStatus.SUCCESS,
-                    },
-                });
-            },
-            {
-                timeout: DB_TRANSACTION_TIMEOUT,
-            }
-        );
+        await this.billService.walletDebitHandler({
+            amount: transaction.amount,
+            transactionId: transaction.id,
+            walletId: wallet.id,
+        });
 
         //purchase
         try {
@@ -491,6 +479,7 @@ export class PowerBillService {
                     email: user.email,
                     userType: user.userType,
                 },
+                isWalletPayment: true,
             });
 
             if (purchaseInfo) {
@@ -515,9 +504,6 @@ export class PowerBillService {
         } catch (error) {
             switch (true) {
                 case error instanceof IRechargeVendPowerException: {
-                    // await this.billService.handleFailedBillPaymentFromProvider(
-                    //     transaction
-                    // );
                     billEvent.emit(BillEventType.BILL_PURCHASE_FAILURE, {
                         transaction,
                         prisma: this.prisma,
@@ -532,10 +518,7 @@ export class PowerBillService {
         }
     }
 
-    async getPowerPurchaseStatus(
-        options: GetPowerPurchaseStatusDto,
-        user: User
-    ) {
+    async getPowerPurchaseStatus(options: PaymentReferenceDto, user: User) {
         const transaction = await this.prisma.transaction.findUnique({
             where: {
                 paymentReference: options.reference,
