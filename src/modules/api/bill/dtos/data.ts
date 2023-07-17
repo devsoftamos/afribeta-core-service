@@ -16,7 +16,7 @@ export class PurchaseDataDto extends PurchaseBillDto {
     vtuNumber: string;
 
     @IsString()
-    code: string;
+    dataCode: string;
 
     @IsString()
     packageType: string;

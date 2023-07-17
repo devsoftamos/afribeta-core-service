@@ -192,7 +192,7 @@ export class DataBillService {
                 paymentStatus: PaymentStatus.PENDING,
                 packageType: purchaseOptions.packageType,
                 shortDescription: TransactionShortDescription.DATA_PURCHASE,
-                senderIdentifier: purchaseOptions.code,
+                senderIdentifier: purchaseOptions.dataCode,
                 receiverIdentifier: purchaseOptions.vtuNumber,
                 provider: purchaseOptions.networkProvider,
             };
