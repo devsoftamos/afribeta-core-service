@@ -1,11 +1,22 @@
-import { forwardRef, Inject, Injectable } from "@nestjs/common";
-import { PaymentStatus, TransactionType } from "@prisma/client";
-import { ProcessBillPaymentOptions, WalletDebitHandler } from "../interfaces";
+import { forwardRef, HttpStatus, Inject, Injectable } from "@nestjs/common";
+import {
+    PaymentStatus,
+    TransactionStatus,
+    TransactionType,
+} from "@prisma/client";
+import {
+    BillPaymentFailure,
+    BillPurchaseFailure,
+    ProcessBillPaymentOptions,
+    WalletChargeHandler,
+} from "../interfaces";
 import logger from "moment-logger";
 import { PowerBillService } from "./power";
 import { DataBillService } from "./data";
 import { PrismaService } from "@/modules/core/prisma/services";
 import { DB_TRANSACTION_TIMEOUT } from "@/config";
+import { WalletDebitException } from "../../wallet";
+import { WalletChargeException } from "../errors";
 
 @Injectable()
 export class BillService {
@@ -46,32 +57,71 @@ export class BillService {
         }
     }
 
-    async walletDebitHandler(options: WalletDebitHandler) {
-        await this.prisma.$transaction(
-            async (tx) => {
-                await tx.wallet.update({
-                    where: {
-                        id: options.walletId,
-                    },
-                    data: {
-                        mainBalance: {
-                            decrement: options.amount,
+    async walletChargeHandler(options: WalletChargeHandler) {
+        try {
+            await this.prisma.$transaction(
+                async (tx) => {
+                    await tx.wallet.update({
+                        where: {
+                            id: options.walletId,
                         },
-                    },
-                });
+                        data: {
+                            mainBalance: {
+                                decrement: options.amount,
+                            },
+                        },
+                    });
 
-                await tx.transaction.update({
-                    where: {
-                        id: options.transactionId,
-                    },
-                    data: {
-                        paymentStatus: PaymentStatus.SUCCESS,
-                    },
-                });
-            },
-            {
-                timeout: DB_TRANSACTION_TIMEOUT,
-            }
-        );
+                    await tx.transaction.update({
+                        where: {
+                            id: options.transactionId,
+                        },
+                        data: {
+                            paymentStatus: PaymentStatus.SUCCESS,
+                        },
+                    });
+                },
+                {
+                    timeout: DB_TRANSACTION_TIMEOUT,
+                }
+            );
+        } catch (error) {
+            throw new WalletChargeException(
+                "Failed to complete wallet charge",
+                HttpStatus.INTERNAL_SERVER_ERROR
+            );
+        }
+    }
+
+    async paymentFailureHandler(options: BillPaymentFailure) {
+        try {
+            await this.prisma.transaction.update({
+                where: {
+                    id: options.transaction.id,
+                },
+                data: {
+                    status: TransactionStatus.FAILED,
+                    paymentStatus: PaymentStatus.FAILED,
+                },
+            });
+        } catch (error) {
+            logger.error(error);
+        }
+    }
+
+    async billPurchaseFailureHandler(options: BillPurchaseFailure) {
+        const { transaction } = options;
+        try {
+            await this.prisma.transaction.update({
+                where: {
+                    id: transaction.id,
+                },
+                data: {
+                    status: TransactionStatus.FAILED,
+                },
+            });
+        } catch (error) {
+            logger.error(error);
+        }
     }
 }

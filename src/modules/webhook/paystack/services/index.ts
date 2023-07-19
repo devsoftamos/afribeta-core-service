@@ -107,7 +107,7 @@ export class PaystackWebhookService implements PaystackWebhook {
             }
             default: {
                 //other successful payment
-                await this.chargeSuccessProcessor(eventData);
+                await this.processPayment(eventData);
                 break;
             }
         }
@@ -125,6 +125,7 @@ export class PaystackWebhookService implements PaystackWebhook {
                     HttpStatus.NOT_FOUND
                 );
             }
+
             const amount = eventData.amount / 100;
             await this.walletService.processWalletFunding({
                 amount: amount,
@@ -144,7 +145,7 @@ export class PaystackWebhookService implements PaystackWebhook {
         }
     }
 
-    async chargeSuccessProcessor(eventData: ChargeSuccessData) {
+    async processPayment(eventData: ChargeSuccessData) {
         try {
             const transaction =
                 await this.transactionService.getTransactionByPaymentReference(

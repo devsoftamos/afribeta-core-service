@@ -132,3 +132,7 @@ interface ChargeSuccessMetadata {
 export interface PaystackWebhook {
     processWebhookEvent(eventBody: EventBody): Promise<void>;
 }
+
+export interface WebhookEventMap {
+    "process-webhook-event": EventBody;
+}

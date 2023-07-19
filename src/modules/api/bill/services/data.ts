@@ -33,9 +33,9 @@ import {
     DuplicateDataPurchaseException,
     PowerPurchaseException,
     InvalidBillTypePaymentReference,
+    WalletChargeException,
 } from "../errors";
 import {
-    BillEventType,
     BillPurchaseInitializationHandlerOptions,
     CompleteBillPurchaseOptions,
     CompleteBillPurchaseUserOptions,
@@ -51,7 +51,7 @@ import logger from "moment-logger";
 import { DB_TRANSACTION_TIMEOUT } from "@/config";
 import { BillService } from ".";
 import { IRechargeVendDataException } from "@/modules/workflow/billPayment/providers/iRecharge";
-import { billEvent } from "../events";
+import { BillEvent } from "../events";
 
 @Injectable()
 export class DataBillService {
@@ -60,7 +60,8 @@ export class DataBillService {
         private prisma: PrismaService,
 
         @Inject(forwardRef(() => BillService))
-        private billService: BillService
+        private billService: BillService,
+        private billEvent: BillEvent
     ) {}
 
     async getDataBundles(options: GetDataBundleDto): Promise<ApiResponse> {
@@ -392,6 +393,9 @@ export class DataBillService {
         }
 
         if (wallet.mainBalance < transaction.amount) {
+            this.billEvent.emit("payment-failure", {
+                transaction: transaction,
+            });
             throw new InsufficientWalletBalanceException(
                 "Insufficient wallet balance",
                 HttpStatus.BAD_REQUEST
@@ -420,7 +424,7 @@ export class DataBillService {
         }
 
         //record payment
-        await this.billService.walletDebitHandler({
+        await this.billService.walletChargeHandler({
             amount: transaction.amount,
             transactionId: transaction.id,
             walletId: wallet.id,
@@ -450,11 +454,15 @@ export class DataBillService {
         } catch (error) {
             switch (true) {
                 case error instanceof IRechargeVendDataException: {
-                    billEvent.emit(BillEventType.BILL_PURCHASE_FAILURE, {
-                        transaction,
-                        prisma: this.prisma,
+                    this.billEvent.emit("bill-purchase-failure", {
+                        transaction: transaction,
                     });
                     throw error;
+                }
+                case error instanceof WalletChargeException: {
+                    this.billEvent.emit("payment-failure", {
+                        transaction: transaction,
+                    });
                 }
 
                 default: {

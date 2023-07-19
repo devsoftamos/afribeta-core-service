@@ -27,11 +27,6 @@ export interface ProcessBillPaymentOptions {
     paymentReference: string;
 }
 
-export interface OnBillPurchaseFailure {
-    prisma: PrismaService;
-    transaction: Transaction;
-}
-
 export enum BillEventType {
     BILL_PURCHASE_FAILURE = "bill_purchase_failure",
 }
@@ -68,8 +63,18 @@ export interface CompleteBillPurchaseOptions<TransactionOptions> {
     isWalletPayment?: boolean;
 }
 
-export interface WalletDebitHandler {
+export interface WalletChargeHandler {
     amount: number;
     walletId: number;
     transactionId: number;
+}
+
+export interface BillPurchaseFailure {
+    transaction: Transaction;
+}
+export interface BillPaymentFailure extends BillPurchaseFailure {}
+
+export interface BillEventMap {
+    "payment-failure": BillPaymentFailure;
+    "bill-purchase-failure": BillPurchaseFailure;
 }
