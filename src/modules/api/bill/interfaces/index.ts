@@ -72,7 +72,7 @@ export interface WalletChargeHandler {
 export interface BillPurchaseFailure {
     transaction: Transaction;
 }
-export interface BillPaymentFailure extends BillPurchaseFailure {}
+export type BillPaymentFailure = BillPurchaseFailure;
 
 export interface BillEventMap {
     "payment-failure": BillPaymentFailure;

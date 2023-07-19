@@ -33,5 +33,5 @@ export class DuplicateWalletWithdrawalTransaction extends HttpException {
 }
 
 export class WalletDebitException extends HttpException {
-    name: string = "WalletDebitException";
+    name = "WalletDebitException";
 }
