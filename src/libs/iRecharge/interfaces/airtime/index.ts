@@ -28,7 +28,7 @@ export interface VendAirtimeResponse extends IRechargeResponse {
 
 export interface VendAirtimeHashOptions {
     vtuNumber: string;
-    vtuNetwork: string;
-    vtuAmount: string;
+    vtuNetwork: AirtimeProvider;
+    vtuAmount: number;
     referenceId: string;
 }

@@ -2,6 +2,8 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 import logger from "moment-logger";
 import { billProviders } from "./billProvider";
+import { billProviderElectricDiscos } from "./billProviderElectricDisco";
+import { billServiceData } from "./billService";
 import { commissions } from "./commission";
 
 async function main() {
@@ -17,8 +19,28 @@ async function main() {
         await prisma.billProvider.upsert({
             where: { slug: provider.slug },
             update: {},
-            create: provider
-        })
+            create: provider,
+        });
+    }
+    for (let billService of billServiceData) {
+        await prisma.billService.upsert({
+            where: { slug: billService.slug },
+            update: {},
+            create: billService as any,
+        });
+    }
+    for (let billProviderElectricDisco of billProviderElectricDiscos) {
+        await prisma.billProviderElectricDisco.upsert({
+            where: {
+                billServiceSlug_billProviderSlug: {
+                    billProviderSlug:
+                        billProviderElectricDisco.billProviderSlug,
+                    billServiceSlug: billProviderElectricDisco.billServiceSlug,
+                },
+            },
+            update: {},
+            create: billProviderElectricDisco,
+        });
     }
 }
 

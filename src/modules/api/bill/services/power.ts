@@ -1,5 +1,4 @@
 import { PrismaService } from "@/modules/core/prisma/services";
-import { FormattedElectricDiscoData } from "@/modules/workflow/billPayment/interfaces";
 import { IRechargeWorkflowService } from "@/modules/workflow/billPayment/providers/iRecharge/services";
 import { ApiResponse, buildResponse, generateId } from "@/utils";
 import { forwardRef, HttpStatus, Inject, Injectable } from "@nestjs/common";
@@ -36,6 +35,9 @@ import {
     ProcessBillPaymentOptions,
     ProviderSlug,
     CompleteBillPurchaseOptions,
+    FormattedElectricDiscoData,
+    MeterType,
+    FormatDiscoOptions,
 } from "../interfaces";
 import logger from "moment-logger";
 import { UserNotFoundException } from "../../user";
@@ -60,31 +62,105 @@ export class PowerBillService {
     ) {}
 
     async getElectricDiscos(): Promise<ApiResponse> {
+        // let discos: FormattedElectricDiscoData[] = [];
+        // const providers = await this.prisma.billProvider.findMany({
+        //     where: { isActive: true },
+        // });
+
+        // for (const provider of providers) {
+        //     switch (provider.slug) {
+        //         case ProviderSlug.IRECHARGE: {
+        //             const iRechargeDiscos =
+        //                 await this.iRechargeWorkflowService.getElectricDiscos(
+        //                     provider.slug
+        //                 );
+        //             discos = [...discos, ...iRechargeDiscos];
+        //             break;
+        //         }
+
+        //         default: {
+        //             discos = [...discos];
+        //         }
+        //     }
+        // }
+
         let discos: FormattedElectricDiscoData[] = [];
-        const providers = await this.prisma.billProvider.findMany({
-            where: { isActive: true },
+
+        //Always fetch ikeja by default
+        const ikejaProvider = await this.prisma.billProvider.findUnique({
+            where: {
+                slug: ProviderSlug.IKEJA_ELECTRIC,
+            },
         });
 
-        for (const provider of providers) {
-            switch (provider.slug) {
-                case ProviderSlug.IRECHARGE: {
-                    const iRechargeDiscos =
-                        await this.iRechargeWorkflowService.getElectricDiscos(
-                            provider.slug
-                        );
-                    discos = [...discos, ...iRechargeDiscos];
-                    break;
-                }
+        const queryOptions = {
+            where: {
+                billProviderSlug: ikejaProvider.slug,
+            },
+            select: {
+                billProviderSlug: true,
+                prepaidMeterCode: true,
+                postpaidMeterCode: true,
+                discoProvider: {
+                    select: {
+                        name: true,
+                    },
+                },
+            },
+        };
 
-                default: {
-                    discos = [...discos];
-                }
-            }
+        if (ikejaProvider) {
+            const ikejaDiscos =
+                await this.prisma.billProviderElectricDisco.findMany(
+                    queryOptions
+                );
+
+            discos = this.formatDiscosOutput(ikejaDiscos);
+        }
+
+        const randomBillProvider = await this.prisma.billProvider.findFirst({
+            where: {
+                isActive: true,
+                slug: {
+                    not: ProviderSlug.IKEJA_ELECTRIC,
+                },
+            },
+        });
+
+        if (randomBillProvider) {
+            queryOptions.where.billProviderSlug = randomBillProvider.slug;
+            const randomDiscos =
+                await this.prisma.billProviderElectricDisco.findMany(
+                    queryOptions
+                );
+            const formattedDiscos = this.formatDiscosOutput(randomDiscos);
+            discos = [...discos, ...formattedDiscos];
         }
 
         return buildResponse({
             message: "Electric discos successfully retrieved",
             data: discos,
+        });
+    }
+
+    formatDiscosOutput(
+        discos: FormatDiscoOptions[]
+    ): FormattedElectricDiscoData[] {
+        return discos.map((disco) => {
+            return {
+                billProvider: disco.billProviderSlug,
+                discoType: disco.discoProvider.name,
+                meter: [
+                    {
+                        code: disco.prepaidMeterCode,
+                        type: MeterType.PREPAID,
+                    },
+                    {
+                        code: disco.postpaidMeterCode,
+                        type: MeterType.POSTPAID,
+                    },
+                ],
+            };
         });
     }
 

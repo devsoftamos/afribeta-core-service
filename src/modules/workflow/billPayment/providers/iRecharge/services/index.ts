@@ -1,11 +1,11 @@
 import { DiscoBundleData, IRecharge } from "@/libs/iRecharge";
 import { IRechargeError } from "@/libs/iRecharge/errors";
+import { AirtimeProvider } from "@/libs/iRecharge/interfaces/airtime";
 import { DataBundleProvider } from "@/libs/iRecharge/interfaces/data";
 import { HttpStatus, Injectable } from "@nestjs/common";
 import logger from "moment-logger";
 import {
     NetworkDataProvider,
-    FormattedElectricDiscoData,
     GetDataBundleResponse,
     GetMeterInfoOptions,
     GetMeterResponse,
@@ -14,11 +14,16 @@ import {
     VendPowerResponse,
     VendDataOptions,
     VendDataResponse,
+    VendAirtimeOptions,
+    VendAirtimeResponse,
+    FormattedElectricDiscoData,
 } from "../../../interfaces";
 import {
+    IRechargeAirtimeException,
     IRechargeDataException,
     IRechargeGetMeterInfoException,
     IRechargePowerException,
+    IRechargeVendAirtimeException,
     IRechargeVendDataException,
     IRechargeVendPowerException,
 } from "../errors";
@@ -293,7 +298,7 @@ export class IRechargeWorkflowService {
 
                 default: {
                     throw new IRechargeDataException(
-                        "Failed to retrieve data bundles",
+                        error.message,
                         HttpStatus.INTERNAL_SERVER_ERROR
                     );
                 }
@@ -306,7 +311,7 @@ export class IRechargeWorkflowService {
             const vendDataHash = this.iRecharge.vendDataHash({
                 referenceId: options.referenceId,
                 vtuData: options.dataCode,
-                vtuNetwork: this.resolveNetworkName(options.vtuNetwork),
+                vtuNetwork: this.resolveDataNetworkName(options.vtuNetwork),
                 vtuNumber: options.vtuNumber,
             });
 
@@ -314,7 +319,7 @@ export class IRechargeWorkflowService {
                 hash: vendDataHash,
                 reference_id: options.referenceId,
                 vtu_data: options.dataCode,
-                vtu_network: this.resolveNetworkName(options.vtuNetwork),
+                vtu_network: this.resolveDataNetworkName(options.vtuNetwork),
                 vtu_number: options.vtuNumber,
                 vtu_email: options.vtuEmail,
             });
@@ -341,7 +346,7 @@ export class IRechargeWorkflowService {
 
                 default: {
                     throw new IRechargeDataException(
-                        "Failed to vend data. Error ocurred",
+                        error.message,
                         HttpStatus.INTERNAL_SERVER_ERROR
                     );
                 }
@@ -349,7 +354,7 @@ export class IRechargeWorkflowService {
         }
     }
 
-    resolveNetworkName(network: NetworkDataProvider) {
+    resolveDataNetworkName(network: NetworkDataProvider) {
         switch (network) {
             case NetworkDataProvider.AIRTEL: {
                 return DataBundleProvider.AIRTEL;
@@ -372,6 +377,77 @@ export class IRechargeWorkflowService {
 
             default:
                 break;
+        }
+    }
+
+    resolveAirtimeNetworkName(network: NetworkDataProvider) {
+        switch (network) {
+            case NetworkDataProvider.AIRTEL: {
+                return AirtimeProvider.AIRTEL;
+            }
+            case NetworkDataProvider.MTN: {
+                return AirtimeProvider.MTN;
+            }
+            case NetworkDataProvider.GLO: {
+                return AirtimeProvider.GLO;
+            }
+            case NetworkDataProvider.ETISALAT: {
+                return AirtimeProvider.ETISALAT;
+            }
+
+            default:
+                break;
+        }
+    }
+
+    async vendAirtime(
+        options: VendAirtimeOptions
+    ): Promise<VendAirtimeResponse> {
+        try {
+            const vendAirtimeHash = this.iRecharge.vendAirtimeHash({
+                referenceId: options.referenceId,
+                vtuAmount: options.vtuAmount,
+                vtuNetwork: this.resolveAirtimeNetworkName(options.vtuNetwork),
+                vtuNumber: options.vtuNumber,
+            });
+            const resp = await this.iRecharge.vendAirtime({
+                hash: vendAirtimeHash,
+                reference_id: options.referenceId,
+                vtu_amount: options.vtuAmount,
+                vtu_email: options.vtuEmail,
+                vtu_network: this.resolveAirtimeNetworkName(options.vtuNetwork),
+                vtu_number: options.vtuNumber,
+            });
+
+            return {
+                networkProviderReference: resp.ref,
+                package: resp.order,
+            };
+        } catch (error) {
+            logger.error(error);
+            switch (true) {
+                case error instanceof IRechargeError: {
+                    const clientErrorCodes = ["41"];
+                    if (clientErrorCodes.includes(error.status)) {
+                        throw new IRechargeVendAirtimeException(
+                            error.message,
+                            HttpStatus.BAD_REQUEST
+                        );
+                    }
+
+                    throw new IRechargeVendAirtimeException(
+                        error.message,
+                        HttpStatus.INTERNAL_SERVER_ERROR
+                    );
+                }
+
+                default: {
+                    throw new IRechargeAirtimeException(
+                        error.message,
+                        HttpStatus.INTERNAL_SERVER_ERROR
+                    );
+                }
+            }
         }
     }
 }

@@ -25,3 +25,11 @@ export class IRechargeDataException extends HttpException {
 export class IRechargeVendDataException extends IRechargeDataException {
     name = "IRechargeVendDataException";
 }
+
+//Airtime
+export class IRechargeAirtimeException extends HttpException {
+    name = "IRechargeDataException";
+}
+export class IRechargeVendAirtimeException extends IRechargeAirtimeException {
+    name = "IRechargeVendAirtimeException";
+}

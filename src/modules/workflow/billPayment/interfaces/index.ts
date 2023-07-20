@@ -72,3 +72,16 @@ export interface VendDataOptions {
 export interface VendDataResponse {
     networkProviderReference: string;
 }
+
+export interface VendAirtimeOptions {
+    vtuNumber: string;
+    vtuNetwork: NetworkDataProvider;
+    vtuAmount: number;
+    vtuEmail?: string;
+    referenceId: string;
+}
+
+export interface VendAirtimeResponse {
+    networkProviderReference: string;
+    package: string;
+}

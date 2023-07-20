@@ -7,11 +7,9 @@ import {
     Length,
 } from "class-validator";
 import { PurchaseBillDto } from ".";
+import { MeterType } from "../interfaces";
 
-export enum MeterType {
-    PREPAID = "PREPAID",
-    POSTPAID = "POSTPAID",
-}
+
 
 export class PurchasePowerDto extends PurchaseBillDto {
     @IsInt()

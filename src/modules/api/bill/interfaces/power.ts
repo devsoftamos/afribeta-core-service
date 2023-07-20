@@ -21,3 +21,12 @@ export interface CompletePowerPurchaseOutput {
     meterToken: string;
     units: string;
 }
+
+export interface FormatDiscoOptions {
+    billProviderSlug: string;
+    prepaidMeterCode: string;
+    postpaidMeterCode: string;
+    discoProvider: {
+        name: string;
+    };
+}
