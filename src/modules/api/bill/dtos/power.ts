@@ -9,8 +9,6 @@ import {
 import { PurchaseBillDto } from ".";
 import { MeterType } from "../interfaces";
 
-
-
 export class PurchasePowerDto extends PurchaseBillDto {
     @IsInt()
     amount: number;
