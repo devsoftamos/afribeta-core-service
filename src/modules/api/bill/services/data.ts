@@ -36,11 +36,11 @@ import {
     WalletChargeException,
 } from "../errors";
 import {
+    BillProviderSlug,
     BillPurchaseInitializationHandlerOptions,
     CompleteBillPurchaseOptions,
     CompleteBillPurchaseUserOptions,
     ProcessBillPaymentOptions,
-    ProviderSlug,
 } from "../interfaces";
 import {
     DataPurchaseInitializationHandlerOutput,
@@ -72,7 +72,7 @@ export class DataBillService {
 
         for (const provider of providers) {
             switch (provider.slug) {
-                case ProviderSlug.IRECHARGE: {
+                case BillProviderSlug.IRECHARGE: {
                     const iRechargeDataBundles =
                         await this.iRechargeWorkflowService.getDataBundles(
                             options.networkProvider
@@ -299,7 +299,7 @@ export class DataBillService {
         options: CompleteBillPurchaseOptions<CompleteDataPurchaseTransactionOptions>
     ): Promise<CompleteDataPurchaseOutput> {
         switch (options.billProvider.slug) {
-            case ProviderSlug.IRECHARGE: {
+            case BillProviderSlug.IRECHARGE: {
                 //TODO: AUTOMATION UPGRADE, if iRecharge service fails, check for an active provider and switch automatically
                 const response = await this.iRechargeWorkflowService.vendData({
                     dataCode: options.transaction.senderIdentifier,

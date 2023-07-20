@@ -1,18 +1,17 @@
 import { IsEnum, IsString } from "class-validator";
+import { BillProviderSlug } from "../interfaces";
 
 export enum PaymentProvider {
     PAYSTACK = "PAYSTACK",
     WALLET = "WALLET",
 }
-export enum BillProvider {
-    IRECHARGE = "irecharge",
-}
+
 export class PurchaseBillDto {
     @IsEnum(PaymentProvider)
     paymentProvider: PaymentProvider;
 
-    @IsEnum(BillProvider)
-    billProvider: BillProvider;
+    @IsEnum(BillProviderSlug)
+    billProvider: BillProviderSlug;
 }
 
 export class PaymentReferenceDto {

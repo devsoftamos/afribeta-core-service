@@ -8,12 +8,13 @@ import {
     HttpStatus,
     Param,
     Post,
+    Query,
     UseGuards,
     ValidationPipe,
 } from "@nestjs/common";
 import { User as UserModel } from "@prisma/client";
 import { PaymentReferenceDto } from "../../dtos";
-import { PurchasePowerDto } from "../../dtos/power";
+import { GetMeterInfoDto, PurchasePowerDto } from "../../dtos/power";
 import { PowerBillService } from "../../services/power";
 
 @UseGuards(AuthGuard)
@@ -64,5 +65,12 @@ export class BillPowerController {
             getPowerPurchaseStatusDto,
             user
         );
+    }
+
+    @Get("meter")
+    async getMeterInfo(
+        @Query(ValidationPipe) getMeterInfoDto: GetMeterInfoDto
+    ) {
+        return await this.powerBillService.getMeterInfo(getMeterInfoDto);
     }
 }

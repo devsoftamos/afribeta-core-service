@@ -16,7 +16,7 @@ import {
     TransactionNotFoundException,
     TransactionShortDescription,
 } from "../../transaction";
-import { PurchasePowerDto } from "../dtos/power";
+import { GetMeterInfoDto, PurchasePowerDto } from "../dtos/power";
 import {
     BillProviderNotFoundException,
     PowerPurchaseException,
@@ -24,20 +24,21 @@ import {
     PowerPurchaseInitializationHandlerException,
     InvalidBillTypePaymentReference,
     WalletChargeException,
+    InvalidBillProviderException,
 } from "../errors";
 import {
     CompletePowerPurchaseOutput,
     CompletePowerPurchaseTransactionOptions,
     CompleteBillPurchaseUserOptions,
-    CustomerMeterInfo,
     BillPurchaseInitializationHandlerOptions,
     PowerPurchaseInitializationHandlerOutput,
     ProcessBillPaymentOptions,
-    ProviderSlug,
+    BillProviderSlug,
     CompleteBillPurchaseOptions,
     FormattedElectricDiscoData,
     MeterType,
     FormatDiscoOptions,
+    BillProviderSlugForPower,
 } from "../interfaces";
 import logger from "moment-logger";
 import { UserNotFoundException } from "../../user";
@@ -89,7 +90,7 @@ export class PowerBillService {
         //Always fetch ikeja by default
         const ikejaProvider = await this.prisma.billProvider.findUnique({
             where: {
-                slug: ProviderSlug.IKEJA_ELECTRIC,
+                slug: BillProviderSlugForPower.IKEJA_ELECTRIC,
             },
         });
 
@@ -122,7 +123,7 @@ export class PowerBillService {
             where: {
                 isActive: true,
                 slug: {
-                    not: ProviderSlug.IKEJA_ELECTRIC,
+                    not: BillProviderSlugForPower.IKEJA_ELECTRIC,
                 },
             },
         });
@@ -192,14 +193,6 @@ export class PowerBillService {
                     amount: options.amount,
                     email: user.email,
                     reference: resp.paymentReference,
-                    meter: {
-                        address: resp.customer.address,
-                        minimumAmount: resp.customer.minimumAmount,
-                        name: resp.customer.name,
-                        util: resp.customer.util,
-                        phone: options.phone,
-                        meterNumber: options.meterNumber,
-                    } as CustomerMeterInfo,
                 },
             });
         };
@@ -286,38 +279,25 @@ export class PowerBillService {
                 shortDescription:
                     TransactionShortDescription.ELECTRICITY_PAYMENT,
                 description: purchaseOptions.narration,
-                senderIdentifier: purchaseOptions.discoCode,
+                senderIdentifier: purchaseOptions.accessToken,
                 receiverIdentifier: purchaseOptions.meterNumber,
             };
 
         switch (billProvider.slug) {
             //iRecharge provider
-            case ProviderSlug.IRECHARGE: {
-                const meterInfo =
-                    await this.iRechargeWorkflowService.getMeterInfo({
-                        discoCode: purchaseOptions.discoCode,
-                        meterNumber: purchaseOptions.meterNumber,
-                        reference: generateId({
-                            type: "numeric",
-                            length: 12,
-                        }),
-                    });
-                transactionCreateOptions.serviceTransactionCode =
-                    meterInfo.accessToken;
-
-                //create/update records
-                await this.prisma.transaction.create({
-                    data: transactionCreateOptions,
-                });
-
-                return {
-                    paymentReference: paymentReference,
-                    customer: meterInfo.customer,
-                };
+            case BillProviderSlug.IRECHARGE: {
+                if (!purchaseOptions.accessToken) {
+                    throw new PowerPurchaseInitializationHandlerException(
+                        `Meter access token is required for ${BillProviderSlug.IRECHARGE} provider`,
+                        HttpStatus.BAD_REQUEST
+                    );
+                }
+                transactionCreateOptions.senderIdentifier =
+                    purchaseOptions.accessToken;
             }
 
             //Ikeja Electric
-            case ProviderSlug.IKEJA_ELECTRIC: {
+            case BillProviderSlugForPower.IKEJA_ELECTRIC: {
                 break;
             }
 
@@ -328,6 +308,14 @@ export class PowerBillService {
                 );
             }
         }
+
+        await this.prisma.transaction.create({
+            data: transactionCreateOptions,
+        });
+
+        return {
+            paymentReference: paymentReference,
+        };
     }
 
     async processWebhookPowerPurchase(options: ProcessBillPaymentOptions) {
@@ -415,7 +403,7 @@ export class PowerBillService {
         options: CompleteBillPurchaseOptions<CompletePowerPurchaseTransactionOptions>
     ): Promise<CompletePowerPurchaseOutput> {
         switch (options.billProvider.slug) {
-            case ProviderSlug.IRECHARGE: {
+            case BillProviderSlug.IRECHARGE: {
                 //TODO: AUTOMATION UPGRADE, if iRecharge service fails, check for an active provider and switch automatically
                 const vendPowerResp =
                     await this.iRechargeWorkflowService.vendPower({
@@ -647,5 +635,34 @@ export class PowerBillService {
             message: "Power purchase status retrieved successfully",
             data: data,
         });
+    }
+
+    async getMeterInfo(options: GetMeterInfoDto): Promise<ApiResponse> {
+        const reference = generateId({
+            type: "numeric",
+            length: 12,
+        });
+        switch (options.billProvider) {
+            case BillProviderSlugForPower.IRECHARGE: {
+                const resp = await this.iRechargeWorkflowService.getMeterInfo({
+                    discoCode: options.meterCode,
+                    meterNumber: options.meterNumber,
+                    reference: reference,
+                });
+                return buildResponse({
+                    message: "Meter successfully retrieved",
+                    data: resp,
+                });
+            }
+            case BillProviderSlugForPower.IKEJA_ELECTRIC: {
+            }
+
+            default: {
+                throw new InvalidBillProviderException(
+                    "Invalid bill provider",
+                    HttpStatus.BAD_REQUEST
+                );
+            }
+        }
     }
 }

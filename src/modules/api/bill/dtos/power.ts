@@ -7,7 +7,11 @@ import {
     Length,
 } from "class-validator";
 import { PurchaseBillDto } from ".";
-import { MeterType } from "../interfaces";
+import {
+    BillProviderSlug,
+    BillProviderSlugForPower,
+    MeterType,
+} from "../interfaces";
 
 export class PurchasePowerDto extends PurchaseBillDto {
     @IsInt()
@@ -20,7 +24,7 @@ export class PurchasePowerDto extends PurchaseBillDto {
     discoType: string;
 
     @IsString()
-    discoCode: string;
+    meterCode: string;
 
     @IsPhoneNumber("NG")
     @Length(11, 11, {
@@ -34,9 +38,22 @@ export class PurchasePowerDto extends PurchaseBillDto {
     @IsOptional()
     @IsString()
     narration: string;
+
+    @IsOptional()
+    @IsString()
+    accessToken: string;
 }
 
 export class GetMeterInfoDto {
+    @IsEnum(BillProviderSlugForPower)
+    billProvider: BillProviderSlugForPower;
+
     @IsString()
-    billProvider: string;
+    meterNumber: string;
+
+    @IsEnum(MeterType)
+    meterType: MeterType;
+
+    @IsString()
+    meterCode: string;
 }

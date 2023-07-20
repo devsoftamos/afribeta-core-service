@@ -138,12 +138,10 @@ export class IRechargeWorkflowService {
 
             return {
                 accessToken: getMeterInfo.access_token,
-                hash: getMeterInfo.response_hash,
                 customer: {
                     address: getMeterInfo.customer.address,
                     name: getMeterInfo.customer.name,
                     minimumAmount: +getMeterInfo.customer.minimumAmount,
-                    util: getMeterInfo.customer.util,
                 },
             };
         } catch (error) {

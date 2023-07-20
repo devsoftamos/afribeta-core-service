@@ -31,3 +31,7 @@ export class DuplicateDataPurchaseException extends HttpException {
 export class WalletChargeException extends HttpException {
     name = "WalletChargeException";
 }
+
+export class InvalidBillProviderException extends HttpException {
+    name: string = "InvalidBillProviderException";
+}

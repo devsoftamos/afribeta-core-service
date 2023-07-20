@@ -10,9 +10,13 @@ import {
 } from "@prisma/client";
 export * from "./power";
 
-export enum ProviderSlug {
+export enum BillProviderSlugForPower {
     IRECHARGE = "irecharge",
     IKEJA_ELECTRIC = "ikeja-electric",
+}
+
+export enum BillProviderSlug { //exclude ikeja electric
+    IRECHARGE = "irecharge",
 }
 
 export enum BillType {

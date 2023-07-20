@@ -324,7 +324,6 @@ export class IRecharge {
 
     getMeterInfoHash(options: GetMeterInfoHashOptions): string {
         const combinedString = `${this.instanceOptions.vendorCode}|${options.referenceId}|${options.meterNumber}|${options.disco}|${this.instanceOptions.publicKey}`;
-        console.log(combinedString);
         return createHmac("sha1", this.instanceOptions.privateKey)
             .update(combinedString)
             .digest("hex");
