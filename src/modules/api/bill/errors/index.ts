@@ -33,5 +33,5 @@ export class WalletChargeException extends HttpException {
 }
 
 export class InvalidBillProviderException extends HttpException {
-    name: string = "InvalidBillProviderException";
+    name = "InvalidBillProviderException";
 }
