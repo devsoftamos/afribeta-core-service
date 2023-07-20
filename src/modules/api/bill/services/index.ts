@@ -15,7 +15,6 @@ import { PowerBillService } from "./power";
 import { DataBillService } from "./data";
 import { PrismaService } from "@/modules/core/prisma/services";
 import { DB_TRANSACTION_TIMEOUT } from "@/config";
-import { WalletDebitException } from "../../wallet";
 import { WalletChargeException } from "../errors";
 
 @Injectable()

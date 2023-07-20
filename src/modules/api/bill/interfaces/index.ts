@@ -1,4 +1,3 @@
-import { PrismaService } from "@/modules/core/prisma/services";
 import {
     BillProvider,
     PaymentChannel,
