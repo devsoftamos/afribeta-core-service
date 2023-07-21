@@ -7,11 +7,7 @@ import {
     Length,
 } from "class-validator";
 import { PurchaseBillDto } from ".";
-import {
-    BillProviderSlug,
-    BillProviderSlugForPower,
-    MeterType,
-} from "../interfaces";
+import { BillProviderSlugForPower, MeterType } from "../interfaces";
 
 export class PurchasePowerDto extends PurchaseBillDto {
     @IsInt()
