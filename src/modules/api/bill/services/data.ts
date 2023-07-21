@@ -7,6 +7,7 @@ import { IRechargeWorkflowService } from "@/modules/workflow/billPayment/provide
 import { ApiResponse, buildResponse, generateId } from "@/utils";
 import { forwardRef, HttpStatus, Inject, Injectable } from "@nestjs/common";
 import {
+    BillType,
     PaymentChannel,
     PaymentStatus,
     Prisma,
@@ -66,11 +67,11 @@ export class DataBillService {
 
     async getDataBundles(options: GetDataBundleDto): Promise<ApiResponse> {
         let dataBundles: GetDataBundleResponse[] = [];
-        const providers = await this.prisma.billProvider.findMany({
+        const provider = await this.prisma.billProvider.findFirst({
             where: { isActive: true },
         });
 
-        for (const provider of providers) {
+        if (provider) {
             switch (provider.slug) {
                 case BillProviderSlug.IRECHARGE: {
                     const iRechargeDataBundles =
@@ -515,6 +516,24 @@ export class DataBillService {
         return buildResponse({
             message: "Data purchase status retrieved successfully",
             data: data,
+        });
+    }
+
+    async getDataNetworks() {
+        const networks = await this.prisma.billService.findMany({
+            where: {
+                type: BillType.DATA,
+            },
+            select: {
+                icon: true,
+                name: true,
+                slug: true,
+            },
+        });
+
+        return buildResponse({
+            message: "Data networks successfully retrieved",
+            data: networks,
         });
     }
 }

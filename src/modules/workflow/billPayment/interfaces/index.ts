@@ -43,12 +43,12 @@ export interface VendPowerResponse {
 }
 
 export enum NetworkDataProvider {
-    MTN = "MTN",
-    AIRTEL = "AIRTEL",
-    ETISALAT = "ETISALAT",
-    GLO = "GLO",
-    SMILE = "SMILE",
-    SPECTRANET = "SPECTRANET",
+    MTN = "mtn-data",
+    AIRTEL = "airtel-data",
+    ETISALAT = "etisalat-data",
+    GLO = "glo-data",
+    SMILE = "smile-data",
+    SPECTRANET = "spectranet-data",
 }
 
 export interface GetDataBundleResponse {

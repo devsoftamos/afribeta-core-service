@@ -68,4 +68,9 @@ export class DataController {
             user
         );
     }
+
+    @Get("network")
+    async getDataNetworks() {
+        return await this.dataBillService.getDataNetworks();
+    }
 }

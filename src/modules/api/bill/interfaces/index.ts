@@ -92,6 +92,7 @@ interface DiscoMeterOptions {
 }
 export interface FormattedElectricDiscoData {
     discoType: string;
+    icon: string;
     billProvider: string;
     meter: DiscoMeterOptions[];
 }

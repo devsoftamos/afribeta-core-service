@@ -21,5 +21,6 @@ export interface FormatDiscoOptions {
     postpaidMeterCode: string;
     discoProvider: {
         name: string;
+        icon: string;
     };
 }

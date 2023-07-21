@@ -105,6 +105,7 @@ export class PowerBillService {
                 discoProvider: {
                     select: {
                         name: true,
+                        icon: true,
                     },
                 },
             },
@@ -151,6 +152,7 @@ export class PowerBillService {
             return {
                 billProvider: disco.billProviderSlug,
                 discoType: disco.discoProvider.name,
+                icon: disco.discoProvider.icon,
                 meter: [
                     {
                         code: disco.prepaidMeterCode,

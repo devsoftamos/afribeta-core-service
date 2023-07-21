@@ -338,14 +338,17 @@ model UserCommission {
 }
 
 model BillProvider {
-  id           Int                         @id @default(autoincrement())
+  id           Int                             @id @default(autoincrement())
   name         String
-  slug         String                      @unique
-  isActive     Boolean?                    @default(true)
-  createdAt    DateTime                    @default(now())
-  updatedAt    DateTime                    @updatedAt
+  slug         String                          @unique
+  isActive     Boolean?                        @default(true)
+  createdAt    DateTime                        @default(now())
+  updatedAt    DateTime                        @updatedAt
   transactions Transaction[]
   discos       BillProviderElectricDisco[]
+  airtimes     BillProviderDataBundleNetwork[]
+  dataBundles  BillProviderAirtimeNetwork[]
+  cableTVs     BillProviderCableTVNetwork[]
 
   @@map("BillProviders")
 }
@@ -358,16 +361,19 @@ enum BillType {
 }
 
 model BillService {
-  id                    Int                         @id @default(autoincrement())
+  id                    Int                             @id @default(autoincrement())
   name                  String
-  slug                  String                      @unique
+  slug                  String                          @unique
   type                  BillType
   abbrev                String?
   icon                  String
-  createdAt             DateTime                    @default(now())
-  updatedAt             DateTime                    @updatedAt
+  createdAt             DateTime                        @default(now())
+  updatedAt             DateTime                        @updatedAt
   electricBillProviders BillProviderElectricDisco[]
   transactions          Transaction[]
+  dataBundleProviders   BillProviderDataBundleNetwork[]
+  airtimeProviders      BillProviderAirtimeNetwork[]
+  cableTVProviders      BillProviderCableTVNetwork[]
 
   @@map("BillServices")
 }
@@ -381,10 +387,46 @@ model BillProviderElectricDisco {
   createdAt         DateTime     @default(now())
   updatedAt         DateTime     @updatedAt
   billProvider      BillProvider @relation(fields: [billProviderSlug], references: [slug])
-  discoProvider     BillService? @relation(fields: [billServiceSlug], references: [slug])
+  discoProvider     BillService  @relation(fields: [billServiceSlug], references: [slug])
 
   @@id([billServiceSlug, billProviderSlug])
   @@map("BillProviderElectricDiscos")
+}
+
+model BillProviderDataBundleNetwork {
+  billProviderSlug String
+  billServiceSlug  String
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+  billProvider     BillProvider @relation(fields: [billProviderSlug], references: [slug])
+  dataProvider     BillService  @relation(fields: [billServiceSlug], references: [slug])
+
+  @@id([billServiceSlug, billProviderSlug])
+  @@map("BillProviderDataBundleNetworks")
+}
+
+model BillProviderAirtimeNetwork {
+  billProviderSlug String
+  billServiceSlug  String
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+  billProvider     BillProvider @relation(fields: [billProviderSlug], references: [slug])
+  airtimeProvider  BillService  @relation(fields: [billServiceSlug], references: [slug])
+
+  @@id([billServiceSlug, billProviderSlug])
+  @@map("BillProviderAirtimeNetworks")
+}
+
+model BillProviderCableTVNetwork {
+  billProviderSlug String
+  billServiceSlug  String
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+  billProvider     BillProvider @relation(fields: [billProviderSlug], references: [slug])
+  cableTVProvider  BillService  @relation(fields: [billServiceSlug], references: [slug])
+
+  @@id([billServiceSlug, billProviderSlug])
+  @@map("BillProviderCableTVNetworks")
 }
 
 // model DiscoProvider {
