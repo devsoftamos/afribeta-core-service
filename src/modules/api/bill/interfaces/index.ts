@@ -9,6 +9,7 @@ import {
     Wallet,
 } from "@prisma/client";
 export * from "./power";
+export * from "./data";
 
 export enum BillProviderSlugForPower {
     IRECHARGE = "irecharge",
@@ -80,19 +81,4 @@ export type BillPaymentFailure = BillPurchaseFailure;
 export interface BillEventMap {
     "payment-failure": BillPaymentFailure;
     "bill-purchase-failure": BillPurchaseFailure;
-}
-
-export enum MeterType {
-    PREPAID = "PREPAID",
-    POSTPAID = "POSTPAID",
-}
-interface DiscoMeterOptions {
-    type: MeterType;
-    code: string;
-}
-export interface FormattedElectricDiscoData {
-    discoType: string;
-    icon: string;
-    billProvider: string;
-    meter: DiscoMeterOptions[];
 }

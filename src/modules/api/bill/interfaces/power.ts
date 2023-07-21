@@ -24,3 +24,18 @@ export interface FormatDiscoOptions {
         icon: string;
     };
 }
+
+export enum MeterType {
+    PREPAID = "PREPAID",
+    POSTPAID = "POSTPAID",
+}
+interface DiscoMeterOptions {
+    type: MeterType;
+    code: string;
+}
+export interface FormattedElectricDiscoData {
+    discoType: string;
+    icon: string;
+    billProvider: string;
+    meter: DiscoMeterOptions[];
+}

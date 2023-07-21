@@ -47,6 +47,8 @@ import {
     DataPurchaseInitializationHandlerOutput,
     CompleteDataPurchaseTransactionOptions,
     CompleteDataPurchaseOutput,
+    FormatDataBundleNetworkInput,
+    FormatDataBundleNetworkOutput,
 } from "../interfaces/data";
 import logger from "moment-logger";
 import { DB_TRANSACTION_TIMEOUT } from "@/config";
@@ -520,20 +522,51 @@ export class DataBillService {
     }
 
     async getDataNetworks() {
-        const networks = await this.prisma.billService.findMany({
+        let networks = [];
+        const billProvider = await this.prisma.billProvider.findFirst({
             where: {
-                type: BillType.DATA,
-            },
-            select: {
-                icon: true,
-                name: true,
-                slug: true,
+                isActive: true,
             },
         });
+        if (billProvider) {
+            const providerNetworks =
+                await this.prisma.billProviderDataBundleNetwork.findMany({
+                    where: {
+                        billProviderSlug: billProvider.slug,
+                    },
+                    select: {
+                        billProviderSlug: true,
+                        billServiceSlug: true,
+                        dataProvider: {
+                            select: {
+                                name: true,
+                                icon: true,
+                            },
+                        },
+                    },
+                });
+            networks = this.formatDataBundleNetwork(providerNetworks);
+        }
 
         return buildResponse({
             message: "Data networks successfully retrieved",
             data: networks,
         });
+    }
+
+    formatDataBundleNetwork(
+        networks: FormatDataBundleNetworkInput[]
+    ): FormatDataBundleNetworkOutput[] {
+        const formatted: FormatDataBundleNetworkOutput[] = networks.map(
+            (network) => {
+                return {
+                    billProvider: network.billProviderSlug,
+                    icon: network.dataProvider.icon,
+                    name: network.dataProvider.name,
+                    slug: network.billServiceSlug,
+                };
+            }
+        );
+        return formatted;
     }
 }
