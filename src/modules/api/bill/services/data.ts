@@ -7,7 +7,6 @@ import { IRechargeWorkflowService } from "@/modules/workflow/billPayment/provide
 import { ApiResponse, buildResponse, generateId } from "@/utils";
 import { forwardRef, HttpStatus, Inject, Injectable } from "@nestjs/common";
 import {
-    BillType,
     PaymentChannel,
     PaymentStatus,
     Prisma,
