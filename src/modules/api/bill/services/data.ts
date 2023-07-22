@@ -77,21 +77,25 @@ export class DataBillService {
                 case BillProviderSlug.IRECHARGE: {
                     const iRechargeDataBundles =
                         await this.iRechargeWorkflowService.getDataBundles(
-                            options.networkProvider
+                            options.billService
                         );
                     dataBundles = [...dataBundles, ...iRechargeDataBundles];
                     break;
                 }
 
                 default: {
-                    dataBundles = [...dataBundles];
+                    break;
                 }
             }
         }
 
         return buildResponse({
             message: "Successfully retrieved data bundles",
-            data: dataBundles,
+            data: {
+                billProvider: provider.slug,
+                billService: options.billService,
+                bundles: dataBundles,
+            },
         });
     }
 
@@ -99,22 +103,43 @@ export class DataBillService {
         options: PurchaseDataDto,
         user: User
     ): Promise<ApiResponse> {
-        const provider = await this.prisma.billProvider.findUnique({
-            where: { slug: options.billProvider },
+        const billProvider = await this.prisma.billProvider.findUnique({
+            where: {
+                slug: options.billProvider,
+            },
         });
-        if (!provider) {
+
+        if (!billProvider) {
             throw new DataPurchaseException(
                 "Bill provider does not exist",
                 HttpStatus.NOT_FOUND
             );
         }
 
-        if (!provider.isActive) {
+        if (!billProvider.isActive) {
             throw new PowerPurchaseException(
                 "Bill Provider not active",
                 HttpStatus.BAD_REQUEST
             );
         }
+
+        const providerNetwork =
+            await this.prisma.billProviderDataBundleNetwork.findUnique({
+                where: {
+                    billServiceSlug_billProviderSlug: {
+                        billProviderSlug: options.billProvider,
+                        billServiceSlug: options.billService,
+                    },
+                },
+            });
+
+        if (!providerNetwork) {
+            throw new DataPurchaseException(
+                "The network provider is not associated with the bill provider",
+                HttpStatus.BAD_REQUEST
+            );
+        }
+
         const response = (resp: DataPurchaseInitializationHandlerOutput) => {
             return buildResponse({
                 message: "Data purchase payment successfully initialized",
@@ -129,7 +154,7 @@ export class DataBillService {
         switch (options.paymentProvider) {
             case PaymentProvider.PAYSTACK: {
                 const resp = await this.handleDataPurchaseInitialization({
-                    billProvider: provider,
+                    billProvider: billProvider,
                     purchaseOptions: options,
                     user: user,
                     paymentChannel: PaymentChannel.PAYSTACK_CHANNEL,
@@ -156,7 +181,7 @@ export class DataBillService {
                     );
                 }
                 const resp = await this.handleDataPurchaseInitialization({
-                    billProvider: provider,
+                    billProvider: billProvider,
                     paymentChannel: PaymentChannel.WALLET,
                     purchaseOptions: options,
                     user: user,
@@ -203,9 +228,10 @@ export class DataBillService {
                 paymentStatus: PaymentStatus.PENDING,
                 packageType: purchaseOptions.packageType,
                 shortDescription: TransactionShortDescription.DATA_PURCHASE,
-                senderIdentifier: purchaseOptions.dataCode,
-                receiverIdentifier: purchaseOptions.vtuNumber,
-                provider: purchaseOptions.networkProvider,
+                serviceTransactionCode: purchaseOptions.dataCode,
+                senderIdentifier: purchaseOptions.vtuNumber,
+                billServiceSlug: purchaseOptions.billService,
+                provider: purchaseOptions.billProvider,
             };
 
         await this.prisma.transaction.create({
@@ -229,13 +255,13 @@ export class DataBillService {
                         billProviderId: true,
                         userId: true,
                         amount: true,
-                        senderIdentifier: true, //third party data bundle code
-                        receiverIdentifier: true, //vtuNumber
+                        senderIdentifier: true, //vtuNumber
                         paymentStatus: true,
                         status: true,
-                        provider: true, //network provider
+                        billServiceSlug: true, //network provider
                         billPaymentReference: true,
                         paymentChannel: true,
+                        serviceTransactionCode: true, //third party data bundle code
                     },
                 });
 
@@ -257,6 +283,7 @@ export class DataBillService {
                 where: { id: transaction.id },
                 data: {
                     paymentStatus: PaymentStatus.SUCCESS,
+                    paymentChannel: PaymentChannel.PAYSTACK_CHANNEL,
                 },
             });
 
@@ -304,11 +331,11 @@ export class DataBillService {
             case BillProviderSlug.IRECHARGE: {
                 //TODO: AUTOMATION UPGRADE, if iRecharge service fails, check for an active provider and switch automatically
                 const response = await this.iRechargeWorkflowService.vendData({
-                    dataCode: options.transaction.senderIdentifier,
+                    dataCode: options.transaction.serviceTransactionCode,
                     referenceId: options.transaction.billPaymentReference,
                     vtuNetwork: options.transaction
-                        .provider as NetworkDataProvider,
-                    vtuNumber: options.transaction.receiverIdentifier,
+                        .billServiceSlug as NetworkDataProvider,
+                    vtuNumber: options.transaction.senderIdentifier,
                     vtuEmail: options.user.email,
                 });
 
@@ -562,7 +589,7 @@ export class DataBillService {
                     billProvider: network.billProviderSlug,
                     icon: network.dataProvider.icon,
                     name: network.dataProvider.name,
-                    slug: network.billServiceSlug,
+                    billService: network.billServiceSlug,
                 };
             }
         );

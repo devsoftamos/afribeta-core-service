@@ -100,6 +100,7 @@ export class PowerBillService {
             },
             select: {
                 billProviderSlug: true,
+                billServiceSlug: true,
                 prepaidMeterCode: true,
                 postpaidMeterCode: true,
                 discoProvider: {
@@ -151,6 +152,7 @@ export class PowerBillService {
         return discos.map((disco) => {
             return {
                 billProvider: disco.billProviderSlug,
+                billService: disco.billServiceSlug,
                 discoType: disco.discoProvider.name,
                 icon: disco.discoProvider.icon,
                 meter: [
@@ -184,6 +186,23 @@ export class PowerBillService {
         if (!provider.isActive) {
             throw new PowerPurchaseException(
                 "Bill Provider not active",
+                HttpStatus.BAD_REQUEST
+            );
+        }
+
+        const providerDisco =
+            await this.prisma.billProviderElectricDisco.findUnique({
+                where: {
+                    billServiceSlug_billProviderSlug: {
+                        billProviderSlug: options.billProvider,
+                        billServiceSlug: options.billService,
+                    },
+                },
+            });
+
+        if (!providerDisco) {
+            throw new PowerPurchaseException(
+                "The disco service is not associated with the bill provider",
                 HttpStatus.BAD_REQUEST
             );
         }
@@ -281,8 +300,10 @@ export class PowerBillService {
                 shortDescription:
                     TransactionShortDescription.ELECTRICITY_PAYMENT,
                 description: purchaseOptions.narration,
-                senderIdentifier: purchaseOptions.accessToken,
-                receiverIdentifier: purchaseOptions.meterNumber,
+                senderIdentifier: purchaseOptions.meterNumber,
+                billServiceSlug: purchaseOptions.billService,
+                provider: purchaseOptions.billProvider,
+                serviceTransactionCode2: purchaseOptions.meterCode,
             };
 
         switch (billProvider.slug) {
@@ -294,7 +315,7 @@ export class PowerBillService {
                         HttpStatus.BAD_REQUEST
                     );
                 }
-                transactionCreateOptions.senderIdentifier =
+                transactionCreateOptions.serviceTransactionCode =
                     purchaseOptions.accessToken;
             }
 
@@ -340,6 +361,7 @@ export class PowerBillService {
                         status: true,
                         billPaymentReference: true,
                         paymentChannel: true,
+                        serviceTransactionCode2: true,
                     },
                 });
 
@@ -361,6 +383,7 @@ export class PowerBillService {
                 where: { id: transaction.id },
                 data: {
                     paymentStatus: PaymentStatus.SUCCESS,
+                    paymentChannel: PaymentChannel.PAYSTACK_CHANNEL,
                 },
             });
 
@@ -412,9 +435,9 @@ export class PowerBillService {
                         accessToken: options.transaction.serviceTransactionCode, //access token from get meter info -- irecharge
                         accountId: options.transaction.accountId,
                         amount: options.transaction.amount,
-                        discoCode: options.transaction.senderIdentifier,
+                        discoCode: options.transaction.serviceTransactionCode2,
                         email: options.user.email,
-                        meterNumber: options.transaction.receiverIdentifier,
+                        meterNumber: options.transaction.senderIdentifier,
                         referenceId: options.transaction.billPaymentReference,
                     });
 

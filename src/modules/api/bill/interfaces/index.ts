@@ -53,8 +53,7 @@ export interface CompleteBillPurchaseTransactionOptions {
     billProviderId: number;
     userId: number;
     amount: number;
-    senderIdentifier: string; //third party package code
-    receiverIdentifier: string; //customer receiver identifier
+    senderIdentifier: string; //customer receiver identifier
     billPaymentReference: string;
     paymentStatus: PaymentStatus;
     paymentChannel: PaymentChannel;

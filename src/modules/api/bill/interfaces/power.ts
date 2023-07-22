@@ -3,6 +3,7 @@ import { CompleteBillPurchaseTransactionOptions } from ".";
 export interface CompletePowerPurchaseTransactionOptions
     extends CompleteBillPurchaseTransactionOptions {
     serviceTransactionCode: string;
+    serviceTransactionCode2: string;
     accountId: string;
 }
 
@@ -17,6 +18,7 @@ export interface CompletePowerPurchaseOutput {
 
 export interface FormatDiscoOptions {
     billProviderSlug: string;
+    billServiceSlug: string;
     prepaidMeterCode: string;
     postpaidMeterCode: string;
     discoProvider: {
@@ -37,5 +39,6 @@ export interface FormattedElectricDiscoData {
     discoType: string;
     icon: string;
     billProvider: string;
+    billService: string;
     meter: DiscoMeterOptions[];
 }

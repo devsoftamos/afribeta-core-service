@@ -56,7 +56,6 @@ export interface GetDataBundleResponse {
     price: number;
     title: string;
     validity?: string;
-    billProvider: string;
 }
 
 export interface VendDataOptions {

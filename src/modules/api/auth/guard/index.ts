@@ -12,6 +12,7 @@ import { UserService } from "../../user/services";
 import {
     AuthTokenValidationException,
     InvalidAuthTokenException,
+    PrismaNetworkException,
 } from "../errors";
 import {
     DataStoredInToken,
@@ -20,6 +21,7 @@ import {
 } from "../interfaces";
 import { Observable } from "rxjs";
 import { createHmac } from "crypto";
+import { PrismaClientKnownRequestError } from "@prisma/client/runtime";
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -33,7 +35,7 @@ export class AuthGuard implements CanActivate {
         const token = this.extractTokenFromHeader(request);
         if (!token) {
             throw new InvalidAuthTokenException(
-                "Your session is unauthorized",
+                "Authorization header is missing",
                 HttpStatus.UNAUTHORIZED
             );
         }
@@ -53,10 +55,18 @@ export class AuthGuard implements CanActivate {
             }
             request.user = user;
         } catch (error) {
+            console.log(error, "*****AUTH****ERR******");
             switch (true) {
                 case error instanceof UserNotFoundException: {
                     throw error;
                 }
+                case error instanceof PrismaClientKnownRequestError: {
+                    throw new PrismaNetworkException(
+                        error.message,
+                        HttpStatus.INTERNAL_SERVER_ERROR
+                    );
+                }
+
                 default: {
                     throw new AuthTokenValidationException(
                         "Your session is unauthorized or expired",

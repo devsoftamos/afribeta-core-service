@@ -4,7 +4,7 @@ import { PurchaseBillDto } from ".";
 
 export class GetDataBundleDto {
     @IsEnum(NetworkDataProvider)
-    networkProvider: NetworkDataProvider;
+    billService: NetworkDataProvider;
 }
 
 export class PurchaseDataDto extends PurchaseBillDto {
@@ -21,5 +21,5 @@ export class PurchaseDataDto extends PurchaseBillDto {
     price: number;
 
     @IsEnum(NetworkDataProvider)
-    networkProvider: NetworkDataProvider;
+    billService: NetworkDataProvider;
 }

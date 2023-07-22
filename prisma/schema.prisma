@@ -260,23 +260,23 @@ enum PaymentStatus {
 }
 
 model Transaction {
-  id                           Int                        @id @default(autoincrement())
+  id                           Int               @id @default(autoincrement())
   type                         TransactionType
   flow                         TransactionFlow
   amount                       Float
-  serviceCharge                Float                      @default(0)
+  serviceCharge                Float             @default(0)
   totalAmount                  Float //serviceCharge + amount
   status                       TransactionStatus
   paymentStatus                PaymentStatus?
-  paymentReference             String?                    @unique //reference for payment
+  paymentReference             String?           @unique //reference for payment
   userId                       Int
   senderId                     Int?
   receiverId                   Int?
   destinationBankName          String?
   destinationBankAccountNumber String?
   destinationBankAccountName   String?
-  shortDescription             String?                    @db.VarChar(255)
-  description                  String?                    @db.Text
+  shortDescription             String?           @db.VarChar(255)
+  description                  String?           @db.Text
   transactionId                String
   provider                     String?
   providerLogo                 String?
@@ -292,10 +292,12 @@ model Transaction {
   merchantCommission           Float?
   companyCommission            Float?
   serviceTransactionCode       String?
-  billProviderId               Int?
-  billPaymentReference         String?
-  walletFundTransactionFlow    WalletFundTransactionFlow?
-  billServiceId                Int?
+  serviceTransactionCode2      String?
+
+  billProviderId            Int?
+  billPaymentReference      String?
+  walletFundTransactionFlow WalletFundTransactionFlow?
+  billServiceSlug           String?
 
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
@@ -303,7 +305,7 @@ model Transaction {
   sender       User?         @relation(name: "senderToTransaction", fields: [senderId], references: [id])
   receiver     User?         @relation(name: "receiverToTransaction", fields: [receiverId], references: [id])
   billProvider BillProvider? @relation(fields: [billProviderId], references: [id])
-  billService  BillService?  @relation(fields: [billServiceId], references: [id])
+  billService  BillService?  @relation(fields: [billServiceSlug], references: [slug])
 
   @@index([paymentReference, paymentStatus])
   @@index([transactionId])

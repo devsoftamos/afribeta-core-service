@@ -6,7 +6,8 @@ export interface DataPurchaseInitializationHandlerOutput {
 
 export interface CompleteDataPurchaseTransactionOptions
     extends CompleteBillPurchaseTransactionOptions {
-    provider: string; //network provider
+    billServiceSlug: string; //network provider
+    serviceTransactionCode: string;
 }
 
 export interface CompleteDataPurchaseOutput {
@@ -24,7 +25,7 @@ export interface FormatDataBundleNetworkInput {
 
 export interface FormatDataBundleNetworkOutput {
     billProvider: string;
+    billService: string;
     icon: string;
     name: string;
-    slug: string;
 }

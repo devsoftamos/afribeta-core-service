@@ -10,6 +10,9 @@ import { PurchaseBillDto } from ".";
 import { BillProviderSlugForPower, MeterType } from "../interfaces";
 
 export class PurchasePowerDto extends PurchaseBillDto {
+    @IsString()
+    billService: string;
+
     @IsInt()
     amount: number;
 

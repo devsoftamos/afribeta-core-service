@@ -249,7 +249,6 @@ export class IRechargeWorkflowService {
                         price: +bundle.price,
                         title: bundle.title,
                         validity: bundle.validity,
-                        billProvider: this.provider,
                     };
                 });
             };
