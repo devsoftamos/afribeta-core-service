@@ -37,5 +37,5 @@ export class PasswordResetCodeExpiredException extends HttpException {
 }
 
 export class PrismaNetworkException extends HttpException {
-    name: string = "PrismaNetworkException";
+    name = "PrismaNetworkException";
 }
