@@ -1,7 +1,7 @@
 export * from "./power";
 export * from "./tv";
 export * from "./data";
-export * from "./airtime"
+export * from "./airtime";
 
 export type Optional<T, Key extends keyof T> = Omit<T, Key> & Partial<T>;
 

@@ -37,7 +37,7 @@ export class InvalidBillProviderException extends HttpException {
 }
 
 export class DuplicateAirtimePurchaseException extends HttpException {
-    name: string = "DuplicateAirtimePurchaseException";
+    name = "DuplicateAirtimePurchaseException";
 }
 
 export class AirtimePurchaseException extends HttpException {

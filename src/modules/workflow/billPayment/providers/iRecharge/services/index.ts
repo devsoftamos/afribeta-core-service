@@ -23,7 +23,6 @@ import {
     FormattedElectricDiscoData,
     NetworkAirtimeProvider,
     CableTVProvider,
-    VendTVOptions,
 } from "../../../interfaces";
 import {
     IRechargeAirtimeException,
@@ -32,7 +31,6 @@ import {
     IRechargeGetMeterInfoException,
     IRechargePowerException,
     IRechargeVendAirtimeException,
-    IRechargeVendCableTVException,
     IRechargeVendDataException,
     IRechargeVendPowerException,
 } from "../errors";
