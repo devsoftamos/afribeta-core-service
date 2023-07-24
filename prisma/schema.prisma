@@ -222,6 +222,7 @@ enum TransactionType {
   ELECTRICITY_BILL
   INTERNET_BILL
   CABLETV_BILL
+  AIRTIME_PURCHASE
 }
 
 enum TransactionFlow {
@@ -351,6 +352,7 @@ model BillProvider {
   airtimes     BillProviderDataBundleNetwork[]
   dataBundles  BillProviderAirtimeNetwork[]
   cableTVs     BillProviderCableTVNetwork[]
+  //internets    BillProviderInternetNetwork[]
 
   @@map("BillProviders")
 }
@@ -376,6 +378,7 @@ model BillService {
   dataBundleProviders   BillProviderDataBundleNetwork[]
   airtimeProviders      BillProviderAirtimeNetwork[]
   cableTVProviders      BillProviderCableTVNetwork[]
+  //internetProviders     BillProviderInternetNetwork[]
 
   @@map("BillServices")
 }
@@ -430,6 +433,18 @@ model BillProviderCableTVNetwork {
   @@id([billServiceSlug, billProviderSlug])
   @@map("BillProviderCableTVNetworks")
 }
+
+// model BillProviderInternetNetwork {
+//   billProviderSlug String
+//   billServiceSlug  String
+//   createdAt        DateTime     @default(now())
+//   updatedAt        DateTime     @updatedAt
+//   billProvider     BillProvider @relation(fields: [billProviderSlug], references: [slug])
+//   internetProvider BillService  @relation(fields: [billServiceSlug], references: [slug])
+
+//   @@id([billServiceSlug, billProviderSlug])
+//   @@map("BillProviderInternetNetworks")
+// }
 
 // model DiscoProvider {
 //   id        Int      @id @default(autoincrement())

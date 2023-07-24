@@ -438,7 +438,7 @@ export class DataBillService {
         });
 
         if (!billProvider) {
-            throw new PowerPurchaseException(
+            throw new DataPurchaseException(
                 "Bill provider does not exist",
                 HttpStatus.NOT_FOUND
             );
@@ -446,7 +446,7 @@ export class DataBillService {
 
         if (!billProvider.isActive) {
             //TODO: AUTOMATION UPGRADE, check for an active provider and switch automatically
-            throw new PowerPurchaseException(
+            throw new DataPurchaseException(
                 "Bill Provider not active",
                 HttpStatus.BAD_REQUEST
             );
@@ -472,7 +472,7 @@ export class DataBillService {
             });
 
             return buildResponse({
-                message: "Power purchase successful",
+                message: "Data purchase successful",
                 data: {
                     network: {
                         reference: purchaseInfo.networkProviderReference,
@@ -509,7 +509,6 @@ export class DataBillService {
             select: {
                 type: true,
                 status: true,
-                units: true,
                 token: true,
                 userId: true,
             },

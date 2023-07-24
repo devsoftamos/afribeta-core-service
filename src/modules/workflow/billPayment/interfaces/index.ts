@@ -51,6 +51,13 @@ export enum NetworkDataProvider {
     SPECTRANET = "spectranet-data",
 }
 
+export enum NetworkAirtimeProvider {
+    MTN = "mtn-airtime",
+    AIRTEL = "airtel-airtime",
+    ETISALAT = "etisalat-airtime",
+    GLO = "glo-airtime",
+}
+
 export interface GetDataBundleResponse {
     code: string;
     price: number;
@@ -72,7 +79,7 @@ export interface VendDataResponse {
 
 export interface VendAirtimeOptions {
     vtuNumber: string;
-    vtuNetwork: NetworkDataProvider;
+    vtuNetwork: NetworkAirtimeProvider;
     vtuAmount: number;
     vtuEmail?: string;
     referenceId: string;
@@ -81,4 +88,38 @@ export interface VendAirtimeOptions {
 export interface VendAirtimeResponse {
     networkProviderReference: string;
     package: string;
+    amount: number;
+    phone: string;
 }
+
+//TV
+export interface GetCableTVSubscriptionResponse {
+    code: string;
+    price: number;
+    title: string;
+}
+
+export enum CableTVProvider {
+    DSTV = "dstv",
+    GOTV = "gotv",
+    STARTIMES = "startimes",
+}
+
+export interface VendTVOptions {
+    phone: string;
+    tvNetwork: CableTVProvider;
+    tvCode: string;
+    referenceId: string;
+    accessToken: string;
+    email?: string;
+    smartCardNumber: string;
+}
+
+// export enum NetworkInternetProvider {
+//     MTN = "mtn-data",
+//     AIRTEL = "airtel-data",
+//     ETISALAT = "etisalat-data",
+//     GLO = "glo-data",
+//     SMILE = "smile-data",
+//     SPECTRANET = "spectranet-data",
+// }

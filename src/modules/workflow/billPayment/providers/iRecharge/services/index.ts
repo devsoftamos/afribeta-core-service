@@ -1,4 +1,8 @@
-import { DiscoBundleData, IRecharge } from "@/libs/iRecharge";
+import {
+    DiscoBundleData,
+    IRecharge,
+    TVNetworkProvider,
+} from "@/libs/iRecharge";
 import { IRechargeError } from "@/libs/iRecharge/errors";
 import { AirtimeProvider } from "@/libs/iRecharge/interfaces/airtime";
 import { DataBundleProvider } from "@/libs/iRecharge/interfaces/data";
@@ -17,13 +21,18 @@ import {
     VendAirtimeOptions,
     VendAirtimeResponse,
     FormattedElectricDiscoData,
+    NetworkAirtimeProvider,
+    CableTVProvider,
+    VendTVOptions,
 } from "../../../interfaces";
 import {
     IRechargeAirtimeException,
+    IRechargeCableTVException,
     IRechargeDataException,
     IRechargeGetMeterInfoException,
     IRechargePowerException,
     IRechargeVendAirtimeException,
+    IRechargeVendCableTVException,
     IRechargeVendDataException,
     IRechargeVendPowerException,
 } from "../errors";
@@ -148,7 +157,7 @@ export class IRechargeWorkflowService {
             logger.error(error);
             switch (true) {
                 case error instanceof IRechargeError: {
-                    const clientErrorCodes = ["13", "14", "15", "41"];
+                    const clientErrorCodes = ["13", "14", "15", "41", "40"];
                     if (clientErrorCodes.includes(error.status)) {
                         throw new IRechargeGetMeterInfoException(
                             error.message,
@@ -203,7 +212,7 @@ export class IRechargeWorkflowService {
             logger.error(error);
             switch (true) {
                 case error instanceof IRechargeError: {
-                    const clientErrorCodes = ["13", "14", "15", "41"];
+                    const clientErrorCodes = ["13", "14", "15", "41", "40"];
                     if (clientErrorCodes.includes(error.status)) {
                         throw new IRechargeVendPowerException(
                             error.message,
@@ -327,7 +336,7 @@ export class IRechargeWorkflowService {
             logger.error(error);
             switch (true) {
                 case error instanceof IRechargeError: {
-                    const clientErrorCodes = ["41"];
+                    const clientErrorCodes = ["41", "40"];
                     if (clientErrorCodes.includes(error.status)) {
                         throw new IRechargeVendDataException(
                             error.message,
@@ -377,18 +386,18 @@ export class IRechargeWorkflowService {
         }
     }
 
-    resolveAirtimeNetworkName(network: NetworkDataProvider) {
+    resolveAirtimeNetworkName(network: NetworkAirtimeProvider) {
         switch (network) {
-            case NetworkDataProvider.AIRTEL: {
+            case NetworkAirtimeProvider.AIRTEL: {
                 return AirtimeProvider.AIRTEL;
             }
-            case NetworkDataProvider.MTN: {
+            case NetworkAirtimeProvider.MTN: {
                 return AirtimeProvider.MTN;
             }
-            case NetworkDataProvider.GLO: {
+            case NetworkAirtimeProvider.GLO: {
                 return AirtimeProvider.GLO;
             }
-            case NetworkDataProvider.ETISALAT: {
+            case NetworkAirtimeProvider.ETISALAT: {
                 return AirtimeProvider.ETISALAT;
             }
 
@@ -419,12 +428,14 @@ export class IRechargeWorkflowService {
             return {
                 networkProviderReference: resp.ref,
                 package: resp.order,
+                amount: resp.amount,
+                phone: resp.receiver,
             };
         } catch (error) {
             logger.error(error);
             switch (true) {
                 case error instanceof IRechargeError: {
-                    const clientErrorCodes = ["41"];
+                    const clientErrorCodes = ["41", "40"];
                     if (clientErrorCodes.includes(error.status)) {
                         throw new IRechargeVendAirtimeException(
                             error.message,
@@ -447,4 +458,118 @@ export class IRechargeWorkflowService {
             }
         }
     }
+
+    async getCableTVSubscriptions(
+        cableTVProvider: CableTVProvider
+    ): Promise<GetDataBundleResponse[]> {
+        try {
+            const fetchData = async (cableTVProvider: TVNetworkProvider) => {
+                const resp = await this.iRecharge.getTVBouquet({
+                    tv_network: cableTVProvider,
+                });
+
+                if (!resp || !resp.bundles) {
+                    throw new IRechargeCableTVException(
+                        "Unable to retrieve TV bundles from upstream service",
+                        HttpStatus.INTERNAL_SERVER_ERROR
+                    );
+                }
+
+                return resp.bundles.map((bundle) => {
+                    return {
+                        code: bundle.code,
+                        price: +bundle.price,
+                        title: bundle.title,
+                    };
+                });
+            };
+
+            switch (cableTVProvider) {
+                case CableTVProvider.DSTV: {
+                    return await fetchData(TVNetworkProvider.DSTV);
+                }
+                case CableTVProvider.GOTV: {
+                    return await fetchData(TVNetworkProvider.GOTV);
+                }
+                case CableTVProvider.STARTIMES: {
+                    return await fetchData(TVNetworkProvider.STARTIMES);
+                }
+
+                default: {
+                    throw new IRechargeCableTVException(
+                        "Invalid TV bundle provider network",
+                        HttpStatus.INTERNAL_SERVER_ERROR
+                    );
+                }
+            }
+        } catch (error) {
+            switch (true) {
+                case error instanceof IRechargeError: {
+                    throw new IRechargeCableTVException(
+                        "Unable to retrieve TV bundles from upstream service",
+                        HttpStatus.INTERNAL_SERVER_ERROR
+                    );
+                }
+
+                case error instanceof IRechargeCableTVException: {
+                    throw error;
+                }
+
+                default: {
+                    throw new IRechargeCableTVException(
+                        error.message,
+                        HttpStatus.INTERNAL_SERVER_ERROR
+                    );
+                }
+            }
+        }
+    }
+
+    // async vendTV(options: VendTVOptions): Promise<VendDataResponse> {
+    //     try {
+    //         const vendDataHash = this.iRecharge.vendDataHash({
+    //             referenceId: options.referenceId,
+    //             vtuData: options.dataCode,
+    //             vtuNetwork: this.resolveDataNetworkName(options.vtuNetwork),
+    //             vtuNumber: options.vtuNumber,
+    //         });
+
+    //         const response = await this.iRecharge.vendData({
+    //             hash: vendDataHash,
+    //             reference_id: options.referenceId,
+    //             vtu_data: options.dataCode,
+    //             vtu_network: this.resolveDataNetworkName(options.vtuNetwork),
+    //             vtu_number: options.vtuNumber,
+    //             vtu_email: options.vtuEmail,
+    //         });
+    //         return {
+    //             networkProviderReference: response.ref,
+    //         };
+    //     } catch (error) {
+    //         logger.error(error);
+    //         switch (true) {
+    //             case error instanceof IRechargeError: {
+    //                 const clientErrorCodes = ["41", "40", "12"];
+    //                 if (clientErrorCodes.includes(error.status)) {
+    //                     throw new IRechargeVendCableTVException(
+    //                         error.message,
+    //                         HttpStatus.BAD_REQUEST
+    //                     );
+    //                 }
+
+    //                 throw new IRechargeVendCableTVException(
+    //                     error.message,
+    //                     HttpStatus.INTERNAL_SERVER_ERROR
+    //                 );
+    //             }
+
+    //             default: {
+    //                 throw new IRechargeCableTVException(
+    //                     error.message,
+    //                     HttpStatus.INTERNAL_SERVER_ERROR
+    //                 );
+    //             }
+    //         }
+    //     }
+    // }
 }

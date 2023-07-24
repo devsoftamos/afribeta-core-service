@@ -21,7 +21,7 @@ import { PowerBillService } from "../../services/power";
 @Controller({
     path: "bill/power",
 })
-export class BillPowerController {
+export class PowerBillController {
     constructor(private readonly powerBillService: PowerBillService) {}
 
     @Get()

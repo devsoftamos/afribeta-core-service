@@ -19,7 +19,7 @@ export interface VendAirtimeOptions {
 
 export interface VendAirtimeResponse extends IRechargeResponse {
     order: string;
-    Receiver: string;
+    receiver: string;
     wallet_balance: number;
     amount: number;
     response_hash: string;

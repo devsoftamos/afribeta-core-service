@@ -1,489 +1,574 @@
-// import { PrismaService } from "@/modules/core/prisma/services";
-// import { NetworkDataProvider } from "@/modules/workflow/billPayment";
-// import { IRechargeWorkflowService } from "@/modules/workflow/billPayment/providers/iRecharge/services";
-// import { ApiResponse, buildResponse, generateId } from "@/utils";
-// import { forwardRef, HttpStatus, Inject, Injectable } from "@nestjs/common";
-// import {
-//     PaymentChannel,
-//     PaymentStatus,
-//     Prisma,
-//     TransactionFlow,
-//     TransactionStatus,
-//     TransactionType,
-//     User,
-//     UserType,
-// } from "@prisma/client";
-// import {
-//     TransactionNotFoundException,
-//     TransactionShortDescription,
-// } from "../../transaction";
-// import { UserNotFoundException } from "../../user";
-// import {
-//     InsufficientWalletBalanceException,
-//     WalletNotFoundException,
-// } from "../../wallet";
-// import { PaymentProvider, PaymentReferenceDto } from "../dtos";
-// import { PurchaseDataDto } from "../dtos/data";
-// import {
-//     BillProviderNotFoundException,
-//     DataPurchaseException,
-//     DuplicateDataPurchaseException,
-//     PowerPurchaseException,
-//     InvalidBillTypePaymentReference,
-//     WalletChargeException,
-// } from "../errors";
-// import {
-//     BillPurchaseInitializationHandlerOptions,
-//     CompleteBillPurchaseOptions,
-//     CompleteBillPurchaseUserOptions,
-//     ProcessBillPaymentOptions,
-//     ProviderSlug,
-// } from "../interfaces";
-// import {
-//     DataPurchaseInitializationHandlerOutput,
-//     CompleteDataPurchaseTransactionOptions,
-//     CompleteDataPurchaseOutput,
-// } from "../interfaces/data";
-// import logger from "moment-logger";
-// import { DB_TRANSACTION_TIMEOUT } from "@/config";
-// import { BillService } from ".";
-// import { IRechargeVendDataException } from "@/modules/workflow/billPayment/providers/iRecharge";
-// import { BillEvent } from "../events";
-// import { PurchaseAirtimeDto } from "../dtos/airtime";
+import { PrismaService } from "@/modules/core/prisma/services";
+import { NetworkAirtimeProvider } from "@/modules/workflow/billPayment";
+import { IRechargeWorkflowService } from "@/modules/workflow/billPayment/providers/iRecharge/services";
+import { ApiResponse, buildResponse, generateId } from "@/utils";
+import { forwardRef, HttpStatus, Inject, Injectable } from "@nestjs/common";
+import {
+    PaymentChannel,
+    PaymentStatus,
+    Prisma,
+    TransactionFlow,
+    TransactionStatus,
+    TransactionType,
+    User,
+    UserType,
+} from "@prisma/client";
+import {
+    TransactionNotFoundException,
+    TransactionShortDescription,
+} from "../../transaction";
+import { UserNotFoundException } from "../../user";
+import {
+    InsufficientWalletBalanceException,
+    WalletNotFoundException,
+} from "../../wallet";
+import { PaymentProvider, PaymentReferenceDto } from "../dtos";
+import {
+    BillProviderNotFoundException,
+    DataPurchaseException,
+    DuplicateDataPurchaseException,
+    PowerPurchaseException,
+    InvalidBillTypePaymentReference,
+    WalletChargeException,
+    DuplicateAirtimePurchaseException,
+    AirtimePurchaseException,
+} from "../errors";
+import {
+    BillProviderSlug,
+    BillPurchaseInitializationHandlerOptions,
+    CompleteBillPurchaseOptions,
+    CompleteBillPurchaseUserOptions,
+    ProcessBillPaymentOptions,
+} from "../interfaces";
 
-// @Injectable()
-// export class AirtimeBillService {
-//     constructor(
-//         private iRechargeWorkflowService: IRechargeWorkflowService,
-//         private prisma: PrismaService,
+import logger from "moment-logger";
+import { DB_TRANSACTION_TIMEOUT } from "@/config";
+import { BillService } from ".";
+import { IRechargeVendAirtimeException } from "@/modules/workflow/billPayment/providers/iRecharge";
+import { BillEvent } from "../events";
+import {
+    AirtimePurchaseInitializationHandlerOutput,
+    CompleteAirtimePurchaseOutput,
+    CompleteAirtimePurchaseTransactionOptions,
+    FormatAirtimeNetworkInput,
+    FormatAirtimeNetworkOutput,
+} from "../interfaces/airtime";
+import { PurchaseAirtimeDto } from "../dtos/airtime";
 
-//         @Inject(forwardRef(() => BillService))
-//         private billService: BillService,
-//         private billEvent: BillEvent
-//     ) {}
+@Injectable()
+export class AirtimeBillService {
+    constructor(
+        private iRechargeWorkflowService: IRechargeWorkflowService,
+        private prisma: PrismaService,
 
-//     async initializeAirtimePurchase(
-//         options: PurchaseAirtimeDto,
-//         user: User
-//     ): Promise<ApiResponse> {
-//         const provider = await this.prisma.billProvider.findUnique({
-//             where: { slug: options.billProvider },
-//         });
-//         if (!provider) {
-//             throw new DataPurchaseException(
-//                 "Bill provider does not exist",
-//                 HttpStatus.NOT_FOUND
-//             );
-//         }
+        @Inject(forwardRef(() => BillService))
+        private billService: BillService,
+        private billEvent: BillEvent
+    ) {}
 
-//         if (!provider.isActive) {
-//             throw new PowerPurchaseException(
-//                 "Bill Provider not active",
-//                 HttpStatus.BAD_REQUEST
-//             );
-//         }
-//         const response = (resp: DataPurchaseInitializationHandlerOutput) => {
-//             return buildResponse({
-//                 message: "Data purchase payment successfully initialized",
-//                 data: {
-//                     amount: options.price,
-//                     email: user.email,
-//                     reference: resp.paymentReference,
-//                 },
-//             });
-//         };
+    async getAirtimeNetworks() {
+        let networks = [];
+        const billProvider = await this.prisma.billProvider.findFirst({
+            where: {
+                isActive: true,
+            },
+        });
+        if (billProvider) {
+            const providerNetworks =
+                await this.prisma.billProviderAirtimeNetwork.findMany({
+                    where: {
+                        billProviderSlug: billProvider.slug,
+                    },
+                    select: {
+                        billProviderSlug: true,
+                        billServiceSlug: true,
+                        airtimeProvider: {
+                            select: {
+                                name: true,
+                                icon: true,
+                            },
+                        },
+                    },
+                });
+            networks = this.formatAirtimeNetwork(providerNetworks);
+        }
 
-//         switch (options.paymentProvider) {
-//             case PaymentProvider.PAYSTACK: {
-//                 const resp = await this.handleDataPurchaseInitialization({
-//                     billProvider: provider,
-//                     purchaseOptions: options,
-//                     user: user,
-//                     paymentChannel: PaymentChannel.PAYSTACK_CHANNEL,
-//                 });
-//                 return response(resp);
-//             }
-//             case PaymentProvider.WALLET: {
-//                 const wallet = await this.prisma.wallet.findUnique({
-//                     where: {
-//                         userId: user.id,
-//                     },
-//                 });
+        return buildResponse({
+            message: "Airtime networks successfully retrieved",
+            data: networks,
+        });
+    }
 
-//                 if (!wallet) {
-//                     throw new WalletNotFoundException(
-//                         "Wallet does not exist. Kindly setup your KYC",
-//                         HttpStatus.NOT_FOUND
-//                     );
-//                 }
-//                 if (wallet.mainBalance < options.price) {
-//                     throw new InsufficientWalletBalanceException(
-//                         "Insufficient wallet balance",
-//                         HttpStatus.BAD_REQUEST
-//                     );
-//                 }
-//                 const resp = await this.handleDataPurchaseInitialization({
-//                     billProvider: provider,
-//                     paymentChannel: PaymentChannel.WALLET,
-//                     purchaseOptions: options,
-//                     user: user,
-//                     wallet: wallet,
-//                 });
-//                 return response(resp);
-//             }
+    async initializeAirtimePurchase(
+        options: PurchaseAirtimeDto,
+        user: User
+    ): Promise<ApiResponse> {
+        const billProvider = await this.prisma.billProvider.findUnique({
+            where: {
+                slug: options.billProvider,
+            },
+        });
 
-//             default: {
-//                 throw new PowerPurchaseException(
-//                     `Payment provider must be one of: ${PaymentProvider.PAYSTACK}, ${PaymentProvider.WALLET}`,
-//                     HttpStatus.BAD_REQUEST
-//                 );
-//             }
-//         }
-//     }
+        if (!billProvider) {
+            throw new DataPurchaseException(
+                "Bill provider does not exist",
+                HttpStatus.NOT_FOUND
+            );
+        }
 
-//     async handleDataPurchaseInitialization(
-//         options: BillPurchaseInitializationHandlerOptions<PurchaseDataDto>
-//     ): Promise<DataPurchaseInitializationHandlerOutput> {
-//         const paymentReference = generateId({ type: "reference" });
-//         const billPaymentReference = generateId({
-//             type: "numeric",
-//             length: 12,
-//         });
-//         const { billProvider, paymentChannel, purchaseOptions, user } = options;
+        if (!billProvider.isActive) {
+            throw new PowerPurchaseException(
+                "Bill Provider not active",
+                HttpStatus.BAD_REQUEST
+            );
+        }
 
-//         //TODO: compute commission for agent and merchant here
+        const providerNetwork =
+            await this.prisma.billProviderAirtimeNetwork.findUnique({
+                where: {
+                    billServiceSlug_billProviderSlug: {
+                        billProviderSlug: options.billProvider,
+                        billServiceSlug: options.billService,
+                    },
+                },
+            });
 
-//         //record transaction
-//         const transactionCreateOptions: Prisma.TransactionUncheckedCreateInput =
-//             {
-//                 amount: purchaseOptions.price,
-//                 flow: TransactionFlow.OUT,
-//                 status: TransactionStatus.PENDING,
-//                 totalAmount: purchaseOptions.price,
-//                 transactionId: generateId({ type: "transaction" }),
-//                 type: TransactionType.DATA_PURCHASE,
-//                 userId: user.id,
-//                 billPaymentReference: billPaymentReference,
-//                 billProviderId: billProvider.id,
-//                 paymentChannel: paymentChannel,
-//                 paymentReference: paymentReference,
-//                 paymentStatus: PaymentStatus.PENDING,
-//                 packageType: purchaseOptions.packageType,
-//                 shortDescription: TransactionShortDescription.DATA_PURCHASE,
-//                 senderIdentifier: purchaseOptions.dataCode,
-//                 receiverIdentifier: purchaseOptions.vtuNumber,
-//                 provider: purchaseOptions.networkProvider,
-//             };
+        if (!providerNetwork) {
+            throw new DataPurchaseException(
+                "The network provider is not associated with the bill provider",
+                HttpStatus.BAD_REQUEST
+            );
+        }
 
-//         await this.prisma.transaction.create({
-//             data: transactionCreateOptions,
-//         });
+        const response = (resp: AirtimePurchaseInitializationHandlerOutput) => {
+            return buildResponse({
+                message: "Airtime purchase payment successfully initialized",
+                data: {
+                    amount: options.vtuAmount,
+                    email: user.email,
+                    reference: resp.paymentReference,
+                },
+            });
+        };
 
-//         return {
-//             paymentReference: paymentReference,
-//         };
-//     }
+        switch (options.paymentProvider) {
+            case PaymentProvider.PAYSTACK: {
+                const resp = await this.handleAirtimePurchaseInitialization({
+                    billProvider: billProvider,
+                    purchaseOptions: options,
+                    user: user,
+                    paymentChannel: PaymentChannel.PAYSTACK_CHANNEL,
+                });
+                return response(resp);
+            }
+            case PaymentProvider.WALLET: {
+                const wallet = await this.prisma.wallet.findUnique({
+                    where: {
+                        userId: user.id,
+                    },
+                });
 
-//     async processWebhookDataPurchase(options: ProcessBillPaymentOptions) {
-//         try {
-//             const transaction: CompleteDataPurchaseTransactionOptions =
-//                 await this.prisma.transaction.findUnique({
-//                     where: {
-//                         paymentReference: options.paymentReference,
-//                     },
-//                     select: {
-//                         id: true,
-//                         billProviderId: true,
-//                         userId: true,
-//                         amount: true,
-//                         senderIdentifier: true, //third party data bundle code
-//                         receiverIdentifier: true, //vtuNumber
-//                         paymentStatus: true,
-//                         status: true,
-//                         provider: true, //network provider
-//                         billPaymentReference: true,
-//                         paymentChannel: true,
-//                     },
-//                 });
+                if (!wallet) {
+                    throw new WalletNotFoundException(
+                        "Wallet does not exist. Kindly setup your KYC",
+                        HttpStatus.NOT_FOUND
+                    );
+                }
+                if (wallet.mainBalance < options.vtuAmount) {
+                    throw new InsufficientWalletBalanceException(
+                        "Insufficient wallet balance",
+                        HttpStatus.BAD_REQUEST
+                    );
+                }
+                const resp = await this.handleAirtimePurchaseInitialization({
+                    billProvider: billProvider,
+                    paymentChannel: PaymentChannel.WALLET,
+                    purchaseOptions: options,
+                    user: user,
+                    wallet: wallet,
+                });
+                return response(resp);
+            }
 
-//             if (!transaction) {
-//                 throw new TransactionNotFoundException(
-//                     "Failed to complete data purchase. Bill Initialization transaction record not found",
-//                     HttpStatus.NOT_FOUND
-//                 );
-//             }
+            default: {
+                throw new PowerPurchaseException(
+                    `Payment provider must be one of: ${PaymentProvider.PAYSTACK}, ${PaymentProvider.WALLET}`,
+                    HttpStatus.BAD_REQUEST
+                );
+            }
+        }
+    }
 
-//             if (transaction.paymentStatus == PaymentStatus.SUCCESS) {
-//                 throw new DuplicateDataPurchaseException(
-//                     "Duplicate webhook data purchase payment event",
-//                     HttpStatus.BAD_REQUEST
-//                 );
-//             }
+    async handleAirtimePurchaseInitialization(
+        options: BillPurchaseInitializationHandlerOptions<PurchaseAirtimeDto>
+    ): Promise<AirtimePurchaseInitializationHandlerOutput> {
+        const paymentReference = generateId({ type: "reference" });
+        const billPaymentReference = generateId({
+            type: "numeric",
+            length: 12,
+        });
+        const { billProvider, paymentChannel, purchaseOptions, user } = options;
 
-//             await this.prisma.transaction.update({
-//                 where: { id: transaction.id },
-//                 data: {
-//                     paymentStatus: PaymentStatus.SUCCESS,
-//                 },
-//             });
+        //TODO: compute commission for agent and merchant here
 
-//             const user: CompleteBillPurchaseUserOptions =
-//                 await this.prisma.user.findUnique({
-//                     where: { id: transaction.userId },
-//                     select: { email: true, userType: true },
-//                 });
-//             if (!user) {
-//                 throw new UserNotFoundException(
-//                     "Failed to complete data purchase. Could not fetch user details",
-//                     HttpStatus.NOT_FOUND
-//                 );
-//             }
+        //record transaction
+        const transactionCreateOptions: Prisma.TransactionUncheckedCreateInput =
+            {
+                amount: purchaseOptions.vtuAmount,
+                flow: TransactionFlow.OUT,
+                status: TransactionStatus.PENDING,
+                totalAmount: purchaseOptions.vtuAmount,
+                transactionId: generateId({ type: "transaction" }),
+                type: TransactionType.AIRTIME_PURCHASE,
+                userId: user.id,
+                billPaymentReference: billPaymentReference,
+                billProviderId: billProvider.id,
+                paymentChannel: paymentChannel,
+                paymentReference: paymentReference,
+                paymentStatus: PaymentStatus.PENDING,
+                shortDescription: TransactionShortDescription.AIRTIME_PURCHASE,
+                senderIdentifier: purchaseOptions.vtuNumber,
+                billServiceSlug: purchaseOptions.billService,
+                provider: purchaseOptions.billProvider,
+            };
 
-//             const billProvider = await this.prisma.billProvider.findUnique({
-//                 where: {
-//                     id: transaction.billProviderId,
-//                 },
-//             });
+        await this.prisma.transaction.create({
+            data: transactionCreateOptions,
+        });
 
-//             if (!billProvider) {
-//                 //TODO: AUTOMATION UPGRADE, check for an active provider and switch automatically
-//                 throw new BillProviderNotFoundException(
-//                     "Failed to complete data purchase. Bill provider not found",
-//                     HttpStatus.NOT_FOUND
-//                 );
-//             }
+        return {
+            paymentReference: paymentReference,
+        };
+    }
 
-//             //complete purchase
-//             await this.completeDataPurchase({
-//                 transaction: transaction,
-//                 user: user,
-//                 billProvider: billProvider,
-//             });
-//         } catch (error) {
-//             logger.error(error);
-//         }
-//     }
+    async processWebhookDataPurchase(options: ProcessBillPaymentOptions) {
+        try {
+            const transaction: CompleteAirtimePurchaseTransactionOptions =
+                await this.prisma.transaction.findUnique({
+                    where: {
+                        paymentReference: options.paymentReference,
+                    },
+                    select: {
+                        id: true,
+                        billProviderId: true,
+                        userId: true,
+                        amount: true,
+                        senderIdentifier: true, //vtuNumber
+                        paymentStatus: true,
+                        status: true,
+                        billServiceSlug: true, //network provider
+                        billPaymentReference: true,
+                        paymentChannel: true,
+                    },
+                });
 
-//     async completeDataPurchase(
-//         options: CompleteBillPurchaseOptions<CompleteDataPurchaseTransactionOptions>
-//     ): Promise<CompleteDataPurchaseOutput> {
-//         switch (options.billProvider.slug) {
-//             case ProviderSlug.IRECHARGE: {
-//                 //TODO: AUTOMATION UPGRADE, if iRecharge service fails, check for an active provider and switch automatically
-//                 const response = await this.iRechargeWorkflowService.vendData({
-//                     dataCode: options.transaction.senderIdentifier,
-//                     referenceId: options.transaction.billPaymentReference,
-//                     vtuNetwork: options.transaction
-//                         .provider as NetworkDataProvider,
-//                     vtuNumber: options.transaction.receiverIdentifier,
-//                     vtuEmail: options.user.email,
-//                 });
+            if (!transaction) {
+                throw new TransactionNotFoundException(
+                    "Failed to complete airtime purchase. Bill Initialization transaction record not found",
+                    HttpStatus.NOT_FOUND
+                );
+            }
 
-//                 await this.prisma.$transaction(
-//                     async (tx) => {
-//                         await tx.transaction.update({
-//                             where: {
-//                                 id: options.transaction.id,
-//                             },
-//                             data: {
-//                                 status: TransactionStatus.SUCCESS,
-//                                 token: response.networkProviderReference,
-//                                 paymentChannel: options.isWalletPayment
-//                                     ? PaymentChannel.WALLET
-//                                     : options.transaction.paymentChannel,
-//                             },
-//                         });
+            if (transaction.paymentStatus == PaymentStatus.SUCCESS) {
+                throw new DuplicateDataPurchaseException(
+                    "Duplicate webhook airtime purchase payment event",
+                    HttpStatus.BAD_REQUEST
+                );
+            }
 
-//                         //TODO: for agent and merchant, credit wallet commission balance
-//                         if (
-//                             options.user.userType == UserType.MERCHANT ||
-//                             options.user.userType == UserType.AGENT
-//                         ) {
-//                         }
-//                     },
-//                     {
-//                         timeout: DB_TRANSACTION_TIMEOUT,
-//                     }
-//                 );
+            await this.prisma.transaction.update({
+                where: { id: transaction.id },
+                data: {
+                    paymentStatus: PaymentStatus.SUCCESS,
+                    paymentChannel: PaymentChannel.PAYSTACK_CHANNEL,
+                },
+            });
 
-//                 return {
-//                     networkProviderReference: response.networkProviderReference,
-//                 };
-//             }
+            const user: CompleteBillPurchaseUserOptions =
+                await this.prisma.user.findUnique({
+                    where: { id: transaction.userId },
+                    select: { email: true, userType: true },
+                });
+            if (!user) {
+                throw new UserNotFoundException(
+                    "Failed to complete airtime purchase. Could not fetch user details",
+                    HttpStatus.NOT_FOUND
+                );
+            }
 
-//             default: {
-//                 throw new PowerPurchaseException(
-//                     "Failed to complete data purchase. Invalid bill provider",
-//                     HttpStatus.NOT_IMPLEMENTED
-//                 );
-//             }
-//         }
-//     }
+            const billProvider = await this.prisma.billProvider.findUnique({
+                where: {
+                    id: transaction.billProviderId,
+                },
+            });
 
-//     async walletPayment(options: PaymentReferenceDto, user: User) {
-//         const wallet = await this.prisma.wallet.findUnique({
-//             where: {
-//                 userId: user.id,
-//             },
-//         });
+            if (!billProvider) {
+                //TODO: AUTOMATION UPGRADE, check for an active provider and switch automatically
+                throw new BillProviderNotFoundException(
+                    "Failed to complete airtime purchase. Bill provider not found",
+                    HttpStatus.NOT_FOUND
+                );
+            }
 
-//         if (!wallet) {
-//             throw new WalletNotFoundException(
-//                 "Wallet not created. Kindly setup your KYC",
-//                 HttpStatus.NOT_FOUND
-//             );
-//         }
+            //complete purchase
+            await this.completeAirtimePurchase({
+                transaction: transaction,
+                user: user,
+                billProvider: billProvider,
+            });
+        } catch (error) {
+            logger.error(error);
+        }
+    }
 
-//         const transaction = await this.prisma.transaction.findUnique({
-//             where: {
-//                 paymentReference: options.reference,
-//             },
-//         });
+    async completeAirtimePurchase(
+        options: CompleteBillPurchaseOptions<CompleteAirtimePurchaseTransactionOptions>
+    ): Promise<CompleteAirtimePurchaseOutput> {
+        switch (options.billProvider.slug) {
+            case BillProviderSlug.IRECHARGE: {
+                //TODO: AUTOMATION UPGRADE, if iRecharge service fails, check for an active provider and switch automatically
+                const response =
+                    await this.iRechargeWorkflowService.vendAirtime({
+                        referenceId: options.transaction.billPaymentReference,
+                        vtuNetwork: options.transaction
+                            .billServiceSlug as NetworkAirtimeProvider,
+                        vtuNumber: options.transaction.senderIdentifier,
+                        vtuEmail: options.user.email,
+                        vtuAmount: options.transaction.amount,
+                    });
 
-//         if (!transaction) {
-//             throw new TransactionNotFoundException(
-//                 "Failed to complete wallet payment for data purchase. Payment reference not found",
-//                 HttpStatus.NOT_FOUND
-//             );
-//         }
+                await this.prisma.$transaction(
+                    async (tx) => {
+                        await tx.transaction.update({
+                            where: {
+                                id: options.transaction.id,
+                            },
+                            data: {
+                                status: TransactionStatus.SUCCESS,
+                                token: response.networkProviderReference,
+                                paymentChannel: options.isWalletPayment
+                                    ? PaymentChannel.WALLET
+                                    : options.transaction.paymentChannel,
+                            },
+                        });
 
-//         if (transaction.type != TransactionType.DATA_PURCHASE) {
-//             throw new InvalidBillTypePaymentReference(
-//                 "Invalid data purchase reference",
-//                 HttpStatus.BAD_REQUEST
-//             );
-//         }
+                        //TODO: for agent and merchant, credit wallet commission balance
+                        if (
+                            options.user.userType == UserType.MERCHANT ||
+                            options.user.userType == UserType.AGENT
+                        ) {
+                        }
+                    },
+                    {
+                        timeout: DB_TRANSACTION_TIMEOUT,
+                    }
+                );
 
-//         if (transaction.paymentStatus == PaymentStatus.SUCCESS) {
-//             throw new DuplicateDataPurchaseException(
-//                 "Duplicate data purchase payment",
-//                 HttpStatus.BAD_REQUEST
-//             );
-//         }
+                return {
+                    networkProviderReference: response.networkProviderReference,
+                    amount: response.amount,
+                    phone: response.phone,
+                };
+            }
 
-//         if (wallet.mainBalance < transaction.amount) {
-//             this.billEvent.emit("payment-failure", {
-//                 transaction: transaction,
-//             });
-//             throw new InsufficientWalletBalanceException(
-//                 "Insufficient wallet balance",
-//                 HttpStatus.BAD_REQUEST
-//             );
-//         }
+            default: {
+                throw new PowerPurchaseException(
+                    "Failed to complete data purchase. Invalid bill provider",
+                    HttpStatus.NOT_IMPLEMENTED
+                );
+            }
+        }
+    }
 
-//         const billProvider = await this.prisma.billProvider.findUnique({
-//             where: {
-//                 id: transaction.billProviderId,
-//             },
-//         });
+    async walletPayment(options: PaymentReferenceDto, user: User) {
+        const wallet = await this.prisma.wallet.findUnique({
+            where: {
+                userId: user.id,
+            },
+        });
 
-//         if (!billProvider) {
-//             throw new PowerPurchaseException(
-//                 "Bill provider does not exist",
-//                 HttpStatus.NOT_FOUND
-//             );
-//         }
+        if (!wallet) {
+            throw new WalletNotFoundException(
+                "Wallet not created. Kindly setup your KYC",
+                HttpStatus.NOT_FOUND
+            );
+        }
 
-//         if (!billProvider.isActive) {
-//             //TODO: AUTOMATION UPGRADE, check for an active provider and switch automatically
-//             throw new PowerPurchaseException(
-//                 "Bill Provider not active",
-//                 HttpStatus.BAD_REQUEST
-//             );
-//         }
+        const transaction = await this.prisma.transaction.findUnique({
+            where: {
+                paymentReference: options.reference,
+            },
+        });
 
-//         //record payment
-//         await this.billService.walletChargeHandler({
-//             amount: transaction.amount,
-//             transactionId: transaction.id,
-//             walletId: wallet.id,
-//         });
+        if (!transaction) {
+            throw new TransactionNotFoundException(
+                "Failed to complete wallet payment for airtime purchase. Payment reference not found",
+                HttpStatus.NOT_FOUND
+            );
+        }
 
-//         //purchase
-//         try {
-//             const purchaseInfo = await this.completeDataPurchase({
-//                 billProvider: billProvider,
-//                 transaction: transaction,
-//                 user: {
-//                     email: user.email,
-//                     userType: user.userType,
-//                 },
-//                 isWalletPayment: true,
-//             });
+        if (transaction.type != TransactionType.AIRTIME_PURCHASE) {
+            throw new InvalidBillTypePaymentReference(
+                "Invalid airtime purchase reference",
+                HttpStatus.BAD_REQUEST
+            );
+        }
 
-//             return buildResponse({
-//                 message: "Power purchase successful",
-//                 data: {
-//                     network: {
-//                         reference: purchaseInfo.networkProviderReference,
-//                     },
-//                     reference: options.reference,
-//                 },
-//             });
-//         } catch (error) {
-//             switch (true) {
-//                 case error instanceof IRechargeVendDataException: {
-//                     this.billEvent.emit("bill-purchase-failure", {
-//                         transaction: transaction,
-//                     });
-//                     throw error;
-//                 }
-//                 case error instanceof WalletChargeException: {
-//                     this.billEvent.emit("payment-failure", {
-//                         transaction: transaction,
-//                     });
-//                 }
+        if (transaction.paymentStatus == PaymentStatus.SUCCESS) {
+            throw new DuplicateAirtimePurchaseException(
+                "Duplicate airtime purchase payment",
+                HttpStatus.BAD_REQUEST
+            );
+        }
 
-//                 default: {
-//                     throw error;
-//                 }
-//             }
-//         }
-//     }
+        if (wallet.mainBalance < transaction.amount) {
+            this.billEvent.emit("payment-failure", {
+                transaction: transaction,
+            });
+            throw new InsufficientWalletBalanceException(
+                "Insufficient wallet balance",
+                HttpStatus.BAD_REQUEST
+            );
+        }
 
-//     async getDataPurchaseStatus(options: PaymentReferenceDto, user: User) {
-//         const transaction = await this.prisma.transaction.findUnique({
-//             where: {
-//                 paymentReference: options.reference,
-//             },
-//             select: {
-//                 type: true,
-//                 status: true,
-//                 units: true,
-//                 token: true,
-//                 userId: true,
-//             },
-//         });
+        const billProvider = await this.prisma.billProvider.findUnique({
+            where: {
+                id: transaction.billProviderId,
+            },
+        });
 
-//         if (!transaction) {
-//             throw new TransactionNotFoundException(
-//                 "Payment reference not found",
-//                 HttpStatus.NOT_FOUND
-//             );
-//         }
+        if (!billProvider) {
+            throw new AirtimePurchaseException(
+                "Failed to complete wallet payment for airtime purchase. Bill provider does not exist",
+                HttpStatus.NOT_FOUND
+            );
+        }
 
-//         if (transaction.userId != user.id) {
-//             throw new TransactionNotFoundException(
-//                 "Payment reference not found",
-//                 HttpStatus.NOT_FOUND
-//             );
-//         }
+        if (!billProvider.isActive) {
+            //TODO: AUTOMATION UPGRADE, check for an active provider and switch automatically
+            throw new AirtimePurchaseException(
+                "Failed to complete wallet payment for airtime purchase. Bill Provider not active",
+                HttpStatus.BAD_REQUEST
+            );
+        }
 
-//         if (transaction.type != TransactionType.DATA_PURCHASE) {
-//             throw new InvalidBillTypePaymentReference(
-//                 "Invalid data purchase reference",
-//                 HttpStatus.BAD_REQUEST
-//             );
-//         }
+        //record payment
+        await this.billService.walletChargeHandler({
+            amount: transaction.amount,
+            transactionId: transaction.id,
+            walletId: wallet.id,
+        });
 
-//         const data = {
-//             status: transaction.status,
-//             networkReference: transaction.token,
-//         };
+        //purchase
+        try {
+            const purchaseInfo = await this.completeAirtimePurchase({
+                billProvider: billProvider,
+                transaction: transaction,
+                user: {
+                    email: user.email,
+                    userType: user.userType,
+                },
+                isWalletPayment: true,
+            });
 
-//         return buildResponse({
-//             message: "Data purchase status retrieved successfully",
-//             data: data,
-//         });
-//     }
-// }
+            return buildResponse({
+                message: "Airtime purchase successful",
+                data: {
+                    reference: options.reference,
+                    amount: transaction.amount,
+                    phone: transaction.senderIdentifier,
+                    network: {
+                        reference: purchaseInfo.networkProviderReference,
+                    },
+                },
+            });
+        } catch (error) {
+            switch (true) {
+                case error instanceof IRechargeVendAirtimeException: {
+                    this.billEvent.emit("bill-purchase-failure", {
+                        transaction: transaction,
+                    });
+                    throw error;
+                }
+                case error instanceof WalletChargeException: {
+                    this.billEvent.emit("payment-failure", {
+                        transaction: transaction,
+                    });
+                }
+
+                default: {
+                    throw error;
+                }
+            }
+        }
+    }
+
+    async getAirtimePurchaseStatus(options: PaymentReferenceDto, user: User) {
+        const transaction = await this.prisma.transaction.findUnique({
+            where: {
+                paymentReference: options.reference,
+            },
+            select: {
+                type: true,
+                status: true,
+                token: true,
+                userId: true,
+                amount: true,
+                senderIdentifier: true,
+                paymentReference: true,
+            },
+        });
+
+        if (!transaction) {
+            throw new TransactionNotFoundException(
+                "Payment reference not found",
+                HttpStatus.NOT_FOUND
+            );
+        }
+
+        if (transaction.userId != user.id) {
+            throw new TransactionNotFoundException(
+                "Payment reference not found",
+                HttpStatus.NOT_FOUND
+            );
+        }
+
+        if (transaction.type != TransactionType.AIRTIME_PURCHASE) {
+            throw new InvalidBillTypePaymentReference(
+                "Invalid airtime purchase reference",
+                HttpStatus.BAD_REQUEST
+            );
+        }
+
+        const data = {
+            status: transaction.status,
+            reference: transaction.token,
+            amount: transaction.amount,
+            phone: transaction.senderIdentifier,
+            network: {
+                reference: transaction.paymentReference,
+            },
+        };
+
+        return buildResponse({
+            message: "Airtime purchase status retrieved successfully",
+            data: data,
+        });
+    }
+
+    formatAirtimeNetwork(
+        networks: FormatAirtimeNetworkInput[]
+    ): FormatAirtimeNetworkOutput[] {
+        const formatted: FormatAirtimeNetworkOutput[] = networks.map(
+            (network) => {
+                return {
+                    billProvider: network.billProviderSlug,
+                    icon: network.airtimeProvider.icon,
+                    name: network.airtimeProvider.name,
+                    billService: network.billServiceSlug,
+                };
+            }
+        );
+        return formatted;
+    }
+}

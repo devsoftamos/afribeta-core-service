@@ -21,7 +21,7 @@ import { DataBillService } from "../../services/data";
 @Controller({
     path: "bill/data",
 })
-export class DataController {
+export class DataBillController {
     constructor(private readonly dataBillService: DataBillService) {}
 
     @Get()
@@ -58,7 +58,7 @@ export class DataController {
     }
 
     @Get("status/:reference")
-    async getPowerPurchaseStatus(
+    async getDataPurchaseStatus(
         @Param(ValidationPipe)
         getDataPurchaseStatusDto: PaymentReferenceDto,
         @User() user: UserModel

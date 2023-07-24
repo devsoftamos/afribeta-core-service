@@ -1,4 +1,4 @@
-import { NetworkDataProvider } from "@/modules/workflow/billPayment";
+import { NetworkAirtimeProvider } from "@/modules/workflow/billPayment";
 import { IsEnum, IsInt, IsString } from "class-validator";
 import { PurchaseBillDto } from ".";
 
@@ -9,6 +9,6 @@ export class PurchaseAirtimeDto extends PurchaseBillDto {
     @IsInt()
     vtuAmount: number;
 
-    @IsEnum(NetworkDataProvider)
-    networkProvider: NetworkDataProvider;
+    @IsEnum(NetworkAirtimeProvider)
+    billService: NetworkAirtimeProvider;
 }

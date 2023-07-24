@@ -33,3 +33,12 @@ export class IRechargeAirtimeException extends HttpException {
 export class IRechargeVendAirtimeException extends IRechargeAirtimeException {
     name = "IRechargeVendAirtimeException";
 }
+
+//cable tv
+export class IRechargeCableTVException extends HttpException {
+    name: string = "IRechargeCableTVException";
+}
+
+export class IRechargeVendCableTVException extends IRechargeCableTVException {
+    name: string = "IRechargeVendCableTVException";
+}
