@@ -45,7 +45,7 @@ export class AirtimePurchaseException extends HttpException {
 }
 
 export class InternetPurchaseException extends HttpException {
-    name: string = "InternetPurchaseException";
+    name = "InternetPurchaseException";
 }
 
 export class DuplicateInternetPurchaseException extends HttpException {

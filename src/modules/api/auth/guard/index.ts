@@ -21,7 +21,6 @@ import {
 } from "../interfaces";
 import { Observable } from "rxjs";
 import { createHmac } from "crypto";
-import { PrismaClientKnownRequestError } from "@prisma/client/runtime";
 
 @Injectable()
 export class AuthGuard implements CanActivate {

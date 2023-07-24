@@ -14,13 +14,11 @@ import {
 } from "@nestjs/common";
 import { User as UserModel } from "@prisma/client";
 import { PaymentReferenceDto } from "../../dtos";
-import { GetDataBundleDto, PurchaseDataDto } from "../../dtos/data";
 import {
     GetInternetBundleDto,
     GetSmileDeviceInfoDto,
     PurchaseInternetDto,
 } from "../../dtos/internet";
-import { DataBillService } from "../../services/data";
 import { InternetBillService } from "../../services/internet";
 
 @UseGuards(AuthGuard)
