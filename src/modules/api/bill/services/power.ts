@@ -63,28 +63,6 @@ export class PowerBillService {
     ) {}
 
     async getElectricDiscos(): Promise<ApiResponse> {
-        // let discos: FormattedElectricDiscoData[] = [];
-        // const providers = await this.prisma.billProvider.findMany({
-        //     where: { isActive: true },
-        // });
-
-        // for (const provider of providers) {
-        //     switch (provider.slug) {
-        //         case ProviderSlug.IRECHARGE: {
-        //             const iRechargeDiscos =
-        //                 await this.iRechargeWorkflowService.getElectricDiscos(
-        //                     provider.slug
-        //                 );
-        //             discos = [...discos, ...iRechargeDiscos];
-        //             break;
-        //         }
-
-        //         default: {
-        //             discos = [...discos];
-        //         }
-        //     }
-        // }
-
         let discos: FormattedElectricDiscoData[] = [];
 
         //Always fetch ikeja by default
@@ -606,6 +584,7 @@ export class PowerBillService {
                     this.billEvent.emit("payment-failure", {
                         transaction: transaction,
                     });
+                    throw error;
                 }
 
                 default: {

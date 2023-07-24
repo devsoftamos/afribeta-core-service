@@ -352,7 +352,7 @@ model BillProvider {
   airtimes     BillProviderDataBundleNetwork[]
   dataBundles  BillProviderAirtimeNetwork[]
   cableTVs     BillProviderCableTVNetwork[]
-  //internets    BillProviderInternetNetwork[]
+  internets    BillProviderInternetNetwork[]
 
   @@map("BillProviders")
 }
@@ -362,6 +362,7 @@ enum BillType {
   ELECTRICITY
   AIRTIME
   CABLE_TV
+  INTERNET
 }
 
 model BillService {
@@ -378,7 +379,7 @@ model BillService {
   dataBundleProviders   BillProviderDataBundleNetwork[]
   airtimeProviders      BillProviderAirtimeNetwork[]
   cableTVProviders      BillProviderCableTVNetwork[]
-  //internetProviders     BillProviderInternetNetwork[]
+  internetProviders     BillProviderInternetNetwork[]
 
   @@map("BillServices")
 }
@@ -434,17 +435,17 @@ model BillProviderCableTVNetwork {
   @@map("BillProviderCableTVNetworks")
 }
 
-// model BillProviderInternetNetwork {
-//   billProviderSlug String
-//   billServiceSlug  String
-//   createdAt        DateTime     @default(now())
-//   updatedAt        DateTime     @updatedAt
-//   billProvider     BillProvider @relation(fields: [billProviderSlug], references: [slug])
-//   internetProvider BillService  @relation(fields: [billServiceSlug], references: [slug])
+model BillProviderInternetNetwork {
+  billProviderSlug String
+  billServiceSlug  String
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+  billProvider     BillProvider @relation(fields: [billProviderSlug], references: [slug])
+  internetProvider BillService  @relation(fields: [billServiceSlug], references: [slug])
 
-//   @@id([billServiceSlug, billProviderSlug])
-//   @@map("BillProviderInternetNetworks")
-// }
+  @@id([billServiceSlug, billProviderSlug])
+  @@map("BillProviderInternetNetworks")
+}
 
 // model DiscoProvider {
 //   id        Int      @id @default(autoincrement())

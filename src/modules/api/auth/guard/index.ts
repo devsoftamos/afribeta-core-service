@@ -55,12 +55,11 @@ export class AuthGuard implements CanActivate {
             }
             request.user = user;
         } catch (error) {
-            console.log(error, "*****AUTH****ERR******");
             switch (true) {
                 case error instanceof UserNotFoundException: {
                     throw error;
                 }
-                case error instanceof PrismaClientKnownRequestError: {
+                case error.name == "PrismaClientKnownRequestError": {
                     throw new PrismaNetworkException(
                         error.message,
                         HttpStatus.INTERNAL_SERVER_ERROR

@@ -52,18 +52,6 @@ const data = [
         type: "DATA",
         icon: "https://example.com",
     },
-    {
-        name: "Smile",
-        slug: "smile-data",
-        type: "DATA",
-        icon: "https://example.com",
-    },
-    {
-        name: "Spectranet",
-        slug: "spectranet-data",
-        type: "DATA",
-        icon: "https://example.com",
-    },
 ];
 
 const cableTv = [
@@ -167,9 +155,49 @@ const electricity = [
     },
 ];
 
+const internet = [
+    {
+        name: "MTN",
+        slug: "mtn-internet",
+        type: "INTERNET",
+        icon: "https://example.com",
+    },
+    {
+        name: "Glo",
+        slug: "glo-internet",
+        type: "INTERNET",
+        icon: "https://example.com",
+    },
+    {
+        name: "Etisalat",
+        slug: "etisalat-internet",
+        type: "INTERNET",
+        icon: "https://example.com",
+    },
+    {
+        name: "Airtel",
+        slug: "airtel-internet",
+        type: "INTERNET",
+        icon: "https://example.com",
+    },
+    {
+        name: "Smile",
+        slug: "smile-internet",
+        type: "INTERNET",
+        icon: "https://example.com",
+    },
+    {
+        name: "Spectranet",
+        slug: "spectranet-internet",
+        type: "INTERNET",
+        icon: "https://example.com",
+    },
+];
+
 export const billServiceData = [
     ...airtime,
     ...data,
     ...cableTv,
     ...electricity,
+    ...internet,
 ];

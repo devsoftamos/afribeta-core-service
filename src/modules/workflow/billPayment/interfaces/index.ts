@@ -47,8 +47,6 @@ export enum NetworkDataProvider {
     AIRTEL = "airtel-data",
     ETISALAT = "etisalat-data",
     GLO = "glo-data",
-    SMILE = "smile-data",
-    SPECTRANET = "spectranet-data",
 }
 
 export enum NetworkAirtimeProvider {
@@ -115,11 +113,36 @@ export interface VendTVOptions {
     smartCardNumber: string;
 }
 
-// export enum NetworkInternetProvider {
-//     MTN = "mtn-data",
-//     AIRTEL = "airtel-data",
-//     ETISALAT = "etisalat-data",
-//     GLO = "glo-data",
-//     SMILE = "smile-data",
-//     SPECTRANET = "spectranet-data",
-// }
+export enum NetworkInternetProvider {
+    MTN = "mtn-internet",
+    AIRTEL = "airtel-internet",
+    ETISALAT = "etisalat-internet",
+    GLO = "glo-internet",
+    SMILE = "smile-internet",
+    SPECTRANET = "spectranet-internet",
+}
+
+export interface GetInternetBundleResponse {
+    code: string;
+    price: number;
+    title: string;
+}
+
+export interface VendInternetOptions {
+    vtuNumber: string;
+    vtuNetwork: NetworkInternetProvider;
+    internetCode: string;
+    referenceId: string;
+    vtuEmail?: string;
+}
+
+export interface VendInternetResponse {
+    networkProviderReference: string;
+    package: string;
+    amount: number;
+    receiver: string;
+}
+
+export interface getSmileDeviceInfoOptions {
+    deviceId: string;
+}

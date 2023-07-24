@@ -56,3 +56,13 @@ export interface VendDataHashOptions {
     vtuNetwork: DataBundleProvider;
     vtuData: string;
 }
+
+export interface GetSmileDeviceInfoOptions {
+    receiver: string;
+    hash: string;
+}
+
+export interface GetSmileDeviceInfoResponse extends IRechargeResponse {
+    customer: any;
+    response_hash: string;
+}

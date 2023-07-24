@@ -16,6 +16,8 @@ import { DataBillService } from "./data";
 import { PrismaService } from "@/modules/core/prisma/services";
 import { DB_TRANSACTION_TIMEOUT } from "@/config";
 import { WalletChargeException } from "../errors";
+import { AirtimeBillService } from "./airtime";
+import { InternetBillService } from "./internet";
 
 @Injectable()
 export class BillService {
@@ -25,6 +27,12 @@ export class BillService {
 
         @Inject(forwardRef(() => DataBillService))
         private dataBillService: DataBillService,
+
+        @Inject(forwardRef(() => AirtimeBillService))
+        private airtimeBillService: AirtimeBillService,
+
+        @Inject(forwardRef(() => InternetBillService))
+        private internetBillService: InternetBillService,
 
         private prisma: PrismaService
     ) {}
@@ -42,6 +50,22 @@ export class BillService {
             }
             case TransactionType.DATA_PURCHASE: {
                 await this.dataBillService.processWebhookDataPurchase({
+                    billType: options.billType,
+                    paymentReference: options.paymentReference,
+                });
+                break;
+            }
+
+            case TransactionType.AIRTIME_PURCHASE: {
+                await this.airtimeBillService.processWebhookAirtimePurchase({
+                    billType: options.billType,
+                    paymentReference: options.paymentReference,
+                });
+                break;
+            }
+
+            case TransactionType.INTERNET_BILL: {
+                await this.internetBillService.processWebhookInternetPurchase({
                     billType: options.billType,
                     paymentReference: options.paymentReference,
                 });

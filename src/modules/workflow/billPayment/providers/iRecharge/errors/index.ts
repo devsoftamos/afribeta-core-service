@@ -34,6 +34,15 @@ export class IRechargeVendAirtimeException extends IRechargeAirtimeException {
     name = "IRechargeVendAirtimeException";
 }
 
+//internet
+export class IRechargeInternetException extends HttpException {
+    name = "IRechargeInternetException";
+}
+
+export class IRechargeVendInternetException extends IRechargeInternetException {
+    name = "IRechargeVendInternetException";
+}
+
 //cable tv
 export class IRechargeCableTVException extends HttpException {
     name = "IRechargeCableTVException";
@@ -41,4 +50,8 @@ export class IRechargeCableTVException extends HttpException {
 
 export class IRechargeVendCableTVException extends IRechargeCableTVException {
     name = "IRechargeVendCableTVException";
+}
+
+export class IRechargeGetSmileDeviceInfoException extends HttpException {
+    name: string = "IRechargeGetSmileDeviceInfoException";
 }

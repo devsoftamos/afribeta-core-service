@@ -24,6 +24,8 @@ import {
     GetDataBundleOptions,
     GetDataBundleResponse,
     GetSmileDeviceInfoHashOptions,
+    GetSmileDeviceInfoOptions,
+    GetSmileDeviceInfoResponse,
     VendDataHashOptions,
     VendDataOptions,
     VendDataResponse,
@@ -160,6 +162,33 @@ export class IRecharge {
                 },
             };
             const { data } = await this.axios<VendDataResponse>(requestOptions);
+            if (data.status != "00") {
+                const error = new IRechargeError(data.message);
+                error.status = data.status;
+                throw error;
+            }
+            return data;
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async getSmileDeviceInfo(
+        options: RequestOptions<GetSmileDeviceInfoOptions>
+    ) {
+        try {
+            const requestOptions: AxiosRequestConfig = {
+                method: "GET",
+                url: "get_smile_info.php",
+                params: {
+                    ...options,
+                    response_format: "json",
+                    vendor_code: this.instanceOptions.vendorCode,
+                },
+            };
+            const { data } = await this.axios<GetSmileDeviceInfoResponse>(
+                requestOptions
+            );
             if (data.status != "00") {
                 const error = new IRechargeError(data.message);
                 error.status = data.status;

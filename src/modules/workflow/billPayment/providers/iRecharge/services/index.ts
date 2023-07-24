@@ -23,15 +23,23 @@ import {
     FormattedElectricDiscoData,
     NetworkAirtimeProvider,
     CableTVProvider,
+    NetworkInternetProvider,
+    GetInternetBundleResponse,
+    VendInternetOptions,
+    VendInternetResponse,
+    getSmileDeviceInfoOptions,
 } from "../../../interfaces";
 import {
     IRechargeAirtimeException,
     IRechargeCableTVException,
     IRechargeDataException,
     IRechargeGetMeterInfoException,
+    IRechargeGetSmileDeviceInfoException,
+    IRechargeInternetException,
     IRechargePowerException,
     IRechargeVendAirtimeException,
     IRechargeVendDataException,
+    IRechargeVendInternetException,
     IRechargeVendPowerException,
 } from "../errors";
 
@@ -168,12 +176,12 @@ export class IRechargeWorkflowService {
                         HttpStatus.INTERNAL_SERVER_ERROR
                     );
                 }
-                case error instanceof IRechargePowerException: {
+                case error instanceof IRechargeGetMeterInfoException: {
                     throw error;
                 }
 
                 default: {
-                    throw new IRechargePowerException(
+                    throw new IRechargeGetMeterInfoException(
                         "Failed to retrieve meter information. Error ocurred",
                         HttpStatus.INTERNAL_SERVER_ERROR
                     );
@@ -270,14 +278,9 @@ export class IRechargeWorkflowService {
                 case NetworkDataProvider.GLO: {
                     return await fetchData(DataBundleProvider.GLO);
                 }
-                case NetworkDataProvider.SMILE: {
-                    return await fetchData(DataBundleProvider.SMILE);
-                }
+
                 case NetworkDataProvider.ETISALAT: {
                     return await fetchData(DataBundleProvider.ETISALAT);
-                }
-                case NetworkDataProvider.SPECTRANET: {
-                    return await fetchData(DataBundleProvider.SPECTRANET);
                 }
 
                 default: {
@@ -291,7 +294,7 @@ export class IRechargeWorkflowService {
             switch (true) {
                 case error instanceof IRechargeError: {
                     throw new IRechargeDataException(
-                        "Unable to retrieve data bundles from upstream service",
+                        error.message,
                         HttpStatus.INTERNAL_SERVER_ERROR
                     );
                 }
@@ -372,12 +375,6 @@ export class IRechargeWorkflowService {
             case NetworkDataProvider.ETISALAT: {
                 return DataBundleProvider.ETISALAT;
             }
-            case NetworkDataProvider.SMILE: {
-                return DataBundleProvider.SMILE;
-            }
-            case NetworkDataProvider.SPECTRANET: {
-                return DataBundleProvider.SPECTRANET;
-            }
 
             default:
                 break;
@@ -449,6 +446,204 @@ export class IRechargeWorkflowService {
 
                 default: {
                     throw new IRechargeAirtimeException(
+                        error.message,
+                        HttpStatus.INTERNAL_SERVER_ERROR
+                    );
+                }
+            }
+        }
+    }
+
+    async getInternetBundles(
+        networkProvider: NetworkInternetProvider
+    ): Promise<GetInternetBundleResponse[]> {
+        try {
+            const fetchData = async (networkProvider: DataBundleProvider) => {
+                const resp = await this.iRecharge.getDataBundles({
+                    //same as data bundles
+                    data_network: networkProvider,
+                });
+
+                if (!resp || !resp.bundles) {
+                    throw new IRechargeInternetException(
+                        "Unable to retrieve internet bundles from upstream service",
+                        HttpStatus.INTERNAL_SERVER_ERROR
+                    );
+                }
+
+                return resp.bundles.map((bundle) => {
+                    return {
+                        code: bundle.code,
+                        price: +bundle.price,
+                        title: bundle.title,
+                    };
+                });
+            };
+
+            switch (networkProvider) {
+                case NetworkInternetProvider.AIRTEL: {
+                    return await fetchData(DataBundleProvider.AIRTEL);
+                }
+                case NetworkInternetProvider.MTN: {
+                    return await fetchData(DataBundleProvider.MTN);
+                }
+                case NetworkInternetProvider.GLO: {
+                    return await fetchData(DataBundleProvider.GLO);
+                }
+
+                case NetworkInternetProvider.ETISALAT: {
+                    return await fetchData(DataBundleProvider.ETISALAT);
+                }
+                case NetworkInternetProvider.SMILE: {
+                    return await fetchData(DataBundleProvider.SMILE);
+                }
+
+                case NetworkInternetProvider.SPECTRANET: {
+                    return await fetchData(DataBundleProvider.SPECTRANET);
+                }
+
+                default: {
+                    throw new IRechargeInternetException(
+                        "Invalid internet bundle provider network",
+                        HttpStatus.INTERNAL_SERVER_ERROR
+                    );
+                }
+            }
+        } catch (error) {
+            switch (true) {
+                case error instanceof IRechargeError: {
+                    throw new IRechargeInternetException(
+                        error.message,
+                        HttpStatus.INTERNAL_SERVER_ERROR
+                    );
+                }
+
+                case error instanceof IRechargeInternetException: {
+                    throw error;
+                }
+
+                default: {
+                    throw new IRechargeInternetException(
+                        error.message,
+                        HttpStatus.INTERNAL_SERVER_ERROR
+                    );
+                }
+            }
+        }
+    }
+
+    async vendInternet(
+        options: VendInternetOptions
+    ): Promise<VendInternetResponse> {
+        try {
+            const vendInternetHash = this.iRecharge.vendDataHash({
+                referenceId: options.referenceId,
+                vtuData: options.internetCode,
+                vtuNetwork: this.resolveInternetNetworkName(options.vtuNetwork),
+                vtuNumber: options.vtuNumber,
+            });
+
+            const response = await this.iRecharge.vendData({
+                hash: vendInternetHash,
+                reference_id: options.referenceId,
+                vtu_data: options.internetCode,
+                vtu_network: this.resolveInternetNetworkName(
+                    options.vtuNetwork
+                ),
+                vtu_number: options.vtuNumber,
+                vtu_email: options.vtuEmail,
+            });
+            return {
+                networkProviderReference: response.ref,
+                amount: response.amount,
+                package: response.order,
+                receiver: response.receiver,
+            };
+        } catch (error) {
+            logger.error(error);
+            switch (true) {
+                case error instanceof IRechargeError: {
+                    const clientErrorCodes = ["41", "40"];
+                    if (clientErrorCodes.includes(error.status)) {
+                        throw new IRechargeVendInternetException(
+                            error.message,
+                            HttpStatus.BAD_REQUEST
+                        );
+                    }
+
+                    throw new IRechargeVendInternetException(
+                        error.message,
+                        HttpStatus.INTERNAL_SERVER_ERROR
+                    );
+                }
+
+                default: {
+                    throw new IRechargeInternetException(
+                        error.message,
+                        HttpStatus.INTERNAL_SERVER_ERROR
+                    );
+                }
+            }
+        }
+    }
+
+    resolveInternetNetworkName(network: NetworkInternetProvider) {
+        switch (network) {
+            case NetworkInternetProvider.AIRTEL: {
+                return DataBundleProvider.AIRTEL;
+            }
+            case NetworkInternetProvider.MTN: {
+                return DataBundleProvider.MTN;
+            }
+            case NetworkInternetProvider.GLO: {
+                return DataBundleProvider.GLO;
+            }
+            case NetworkInternetProvider.ETISALAT: {
+                return DataBundleProvider.ETISALAT;
+            }
+            case NetworkInternetProvider.SMILE: {
+                return DataBundleProvider.SMILE;
+            }
+            case NetworkInternetProvider.SPECTRANET: {
+                return DataBundleProvider.SPECTRANET;
+            }
+
+            default:
+                break;
+        }
+    }
+
+    async getSmileDeviceInfo(options: getSmileDeviceInfoOptions) {
+        try {
+            const hash = this.iRecharge.getSmileDeviceInfoHash({
+                receiver: options.deviceId,
+            });
+
+            const resp = await this.iRecharge.getSmileDeviceInfo({
+                hash: hash,
+                receiver: options.deviceId,
+            });
+            return resp;
+        } catch (error) {
+            logger.error(error);
+            switch (true) {
+                case error instanceof IRechargeError: {
+                    const clientErrorCodes = ["41", "12"];
+                    if (clientErrorCodes.includes(error.status)) {
+                        throw new IRechargeGetSmileDeviceInfoException(
+                            error.message,
+                            HttpStatus.BAD_REQUEST
+                        );
+                    }
+
+                    throw new IRechargeGetSmileDeviceInfoException(
+                        error.message,
+                        HttpStatus.INTERNAL_SERVER_ERROR
+                    );
+                }
+
+                default: {
+                    throw new IRechargeGetSmileDeviceInfoException(
                         error.message,
                         HttpStatus.INTERNAL_SERVER_ERROR
                     );

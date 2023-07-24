@@ -117,7 +117,7 @@ export class DataBillService {
         }
 
         if (!billProvider.isActive) {
-            throw new PowerPurchaseException(
+            throw new DataPurchaseException(
                 "Bill Provider not active",
                 HttpStatus.BAD_REQUEST
             );
@@ -372,7 +372,7 @@ export class DataBillService {
             }
 
             default: {
-                throw new PowerPurchaseException(
+                throw new DataPurchaseException(
                     "Failed to complete data purchase. Invalid bill provider",
                     HttpStatus.NOT_IMPLEMENTED
                 );
@@ -492,6 +492,7 @@ export class DataBillService {
                     this.billEvent.emit("payment-failure", {
                         transaction: transaction,
                     });
+                    throw error;
                 }
 
                 default: {

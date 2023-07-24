@@ -43,3 +43,11 @@ export class DuplicateAirtimePurchaseException extends HttpException {
 export class AirtimePurchaseException extends HttpException {
     name = "AirtimePurchaseException";
 }
+
+export class InternetPurchaseException extends HttpException {
+    name: string = "InternetPurchaseException";
+}
+
+export class DuplicateInternetPurchaseException extends HttpException {
+    name = "DuplicateInternetPurchaseException";
+}
