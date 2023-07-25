@@ -103,9 +103,10 @@ export class PaystackService {
                 accountNumber: resp.data.account_number,
             };
         } catch (error) {
+            logger.error(error);
             switch (true) {
                 case error instanceof PaystackError: {
-                    const clientError = [400, 404];
+                    const clientError = [400, 404, 422];
 
                     if (clientError.includes(error.status)) {
                         throw new PaystackBankException(

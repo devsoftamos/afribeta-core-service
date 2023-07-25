@@ -106,6 +106,14 @@ export class WalletService {
                         slug: options.providerBankSlug,
                     },
                 });
+                await tx.user.update({
+                    where: {
+                        id: user.id,
+                    },
+                    data: {
+                        isKycVerified: true,
+                    },
+                });
             });
         } catch (error) {
             logger.error(error);

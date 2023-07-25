@@ -1,8 +1,9 @@
 import Axios, { AxiosError, AxiosInstance, AxiosRequestConfig } from "axios";
 import {
     PaystackAuthorizationError,
+    PaystackGenericError,
     PaystackNotFoundError,
-    PaystackServerError,
+    PaystackUnprocessableError,
     PaystackValidationError,
 } from "./errors";
 import {
@@ -50,8 +51,18 @@ export class Paystack {
                 throw new PaystackNotFoundError(error.response.data.message);
             }
 
+            case error.response?.status == 422: {
+                throw new PaystackUnprocessableError(
+                    error.response.data.message
+                );
+            }
+
             default: {
-                throw new PaystackServerError("Something unexpected happened");
+                const err = new PaystackGenericError(
+                    error.response.data.message
+                );
+                err.status = error.response.status;
+                throw err;
             }
         }
     }
