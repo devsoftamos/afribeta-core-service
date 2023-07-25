@@ -1,29 +1,29 @@
 export class PaystackError extends Error {
-    name: string = "PaystackError";
+    name = "PaystackError";
     status: number;
 }
 
 export class PaystackGenericError extends PaystackError {
-    name: string = "PaystackGenericError";
+    name = "PaystackGenericError";
     status: number;
 }
 
 export class PaystackAuthorizationError extends PaystackError {
-    name: string = "PaystackAuthorizationError";
+    name = "PaystackAuthorizationError";
     status = 401;
 }
 
 export class PaystackValidationError extends PaystackError {
-    name: string = "PaystackValidationError";
+    name = "PaystackValidationError";
     status = 400;
 }
 
 export class PaystackNotFoundError extends PaystackError {
-    name: string = "PaystackNotFoundError";
+    name = "PaystackNotFoundError";
     status = 404;
 }
 
 export class PaystackUnprocessableError extends PaystackError {
-    name: string = "PaystackUnprocessableError";
+    name = "PaystackUnprocessableError";
     status = 422;
 }
