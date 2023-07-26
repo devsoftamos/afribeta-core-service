@@ -57,5 +57,5 @@ export class IRechargeGetSmileDeviceInfoException extends HttpException {
 }
 
 export class IRechargeGetSmartCardInfoException extends HttpException {
-    name: string = "IRechargeGetSmartCardInfoException";
+    name = "IRechargeGetSmartCardInfoException";
 }

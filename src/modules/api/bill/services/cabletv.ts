@@ -2,7 +2,6 @@ import { PrismaService } from "@/modules/core/prisma/services";
 import {
     CableTVProvider,
     GetDataBundleResponse,
-    NetworkDataProvider,
 } from "@/modules/workflow/billPayment";
 import { IRechargeWorkflowService } from "@/modules/workflow/billPayment/providers/iRecharge/services";
 import { ApiResponse, buildResponse, generateId } from "@/utils";
@@ -27,12 +26,8 @@ import {
     WalletNotFoundException,
 } from "../../wallet";
 import { PaymentProvider, PaymentReferenceDto } from "../dtos";
-import { PurchaseDataDto } from "../dtos/data";
 import {
     BillProviderNotFoundException,
-    DataPurchaseException,
-    DuplicateDataPurchaseException,
-    PowerPurchaseException,
     InvalidBillTypePaymentReference,
     WalletChargeException,
     InvalidBillProviderException,
@@ -46,19 +41,11 @@ import {
     CompleteBillPurchaseUserOptions,
     ProcessBillPaymentOptions,
 } from "../interfaces";
-import {
-    DataPurchaseInitializationHandlerOutput,
-    CompleteDataPurchaseTransactionOptions,
-    CompleteDataPurchaseOutput,
-    FormatDataBundleNetworkOutput,
-} from "../interfaces/data";
+import { FormatDataBundleNetworkOutput } from "../interfaces/data";
 import logger from "moment-logger";
 import { DB_TRANSACTION_TIMEOUT } from "@/config";
 import { BillService } from ".";
-import {
-    IRechargeVendCableTVException,
-    IRechargeVendDataException,
-} from "@/modules/workflow/billPayment/providers/iRecharge";
+import { IRechargeVendCableTVException } from "@/modules/workflow/billPayment/providers/iRecharge";
 import { BillEvent } from "../events";
 import {
     CableTVPurchaseInitializationHandlerOutput,
@@ -594,7 +581,7 @@ export class CableTVBillService {
 
         //purchase
         try {
-            const purchaseInfo = await this.completeCableTVPurchase({
+            await this.completeCableTVPurchase({
                 billProvider: billProvider,
                 transaction: transaction,
                 user: {
