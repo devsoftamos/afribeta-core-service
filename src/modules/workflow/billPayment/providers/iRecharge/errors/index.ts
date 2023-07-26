@@ -55,3 +55,7 @@ export class IRechargeVendCableTVException extends IRechargeCableTVException {
 export class IRechargeGetSmileDeviceInfoException extends HttpException {
     name = "IRechargeGetSmileDeviceInfoException";
 }
+
+export class IRechargeGetSmartCardInfoException extends HttpException {
+    name: string = "IRechargeGetSmartCardInfoException";
+}

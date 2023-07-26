@@ -18,6 +18,7 @@ import { DB_TRANSACTION_TIMEOUT } from "@/config";
 import { WalletChargeException } from "../errors";
 import { AirtimeBillService } from "./airtime";
 import { InternetBillService } from "./internet";
+import { CableTVBillService } from "./cabletv";
 
 @Injectable()
 export class BillService {
@@ -33,6 +34,9 @@ export class BillService {
 
         @Inject(forwardRef(() => InternetBillService))
         private internetBillService: InternetBillService,
+
+        @Inject(forwardRef(() => CableTVBillService))
+        private cableTVBillService: CableTVBillService,
 
         private prisma: PrismaService
     ) {}
@@ -66,6 +70,14 @@ export class BillService {
 
             case TransactionType.INTERNET_BILL: {
                 await this.internetBillService.processWebhookInternetPurchase({
+                    billType: options.billType,
+                    paymentReference: options.paymentReference,
+                });
+                break;
+            }
+
+            case TransactionType.CABLETV_BILL: {
+                await this.cableTVBillService.processWebhookCableTVPurchase({
                     billType: options.billType,
                     paymentReference: options.paymentReference,
                 });

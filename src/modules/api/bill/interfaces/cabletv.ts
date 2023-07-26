@@ -1,3 +1,5 @@
+import { CompleteBillPurchaseTransactionOptions } from ".";
+
 export interface FormatCableTVNetworkInput {
     billProviderSlug: string;
     billServiceSlug: string;
@@ -12,4 +14,20 @@ export interface FormatCableTVNetworkOutput {
     billService: string;
     icon: string;
     name: string;
+}
+
+export interface CableTVPurchaseInitializationHandlerOutput {
+    paymentReference: string;
+}
+
+export interface CompleteCableTVPurchaseTransactionOptions
+    extends CompleteBillPurchaseTransactionOptions {
+    serviceTransactionCode: string;
+    serviceTransactionCode2: string;
+    billServiceSlug: string;
+    receiverIdentifier: string;
+}
+
+export interface CompleteCableTVPurchaseOutput {
+    orderMessage?: string;
 }

@@ -36,6 +36,7 @@ export class InvalidBillProviderException extends HttpException {
     name = "InvalidBillProviderException";
 }
 
+//Airtime
 export class DuplicateAirtimePurchaseException extends HttpException {
     name = "DuplicateAirtimePurchaseException";
 }
@@ -44,10 +45,20 @@ export class AirtimePurchaseException extends HttpException {
     name = "AirtimePurchaseException";
 }
 
+//Internet
 export class InternetPurchaseException extends HttpException {
     name = "InternetPurchaseException";
 }
 
 export class DuplicateInternetPurchaseException extends HttpException {
     name = "DuplicateInternetPurchaseException";
+}
+
+//TV
+export class CableTVPurchaseException extends HttpException {
+    name = "CableTVPurchaseException";
+}
+
+export class DuplicateCableTVPurchaseException extends HttpException {
+    name = "DuplicateCableTVPurchaseException";
 }

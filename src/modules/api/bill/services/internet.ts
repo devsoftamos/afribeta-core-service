@@ -493,6 +493,13 @@ export class InternetBillService {
             );
         }
 
+        if (transaction.userId != user.id) {
+            throw new TransactionNotFoundException(
+                "Failed to complete wallet payment for internet purchase. Invalid user payment reference",
+                HttpStatus.NOT_FOUND
+            );
+        }
+
         if (transaction.type != TransactionType.INTERNET_BILL) {
             throw new InvalidBillTypePaymentReference(
                 "Invalid internet purchase reference",

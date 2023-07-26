@@ -28,16 +28,22 @@ import {
     VendInternetOptions,
     VendInternetResponse,
     getSmileDeviceInfoOptions,
+    GetSmartCardInfoOptions,
+    GetSmartCardInfoResponse,
+    VendTVOptions,
+    VendTVResponse,
 } from "../../../interfaces";
 import {
     IRechargeAirtimeException,
     IRechargeCableTVException,
     IRechargeDataException,
     IRechargeGetMeterInfoException,
+    IRechargeGetSmartCardInfoException,
     IRechargeGetSmileDeviceInfoException,
     IRechargeInternetException,
     IRechargePowerException,
     IRechargeVendAirtimeException,
+    IRechargeVendCableTVException,
     IRechargeVendDataException,
     IRechargeVendInternetException,
     IRechargeVendPowerException,
@@ -171,6 +177,14 @@ export class IRechargeWorkflowService {
                         );
                     }
 
+                    const serverErrorCodes = ["11", "42"];
+                    if (serverErrorCodes.includes(error.status)) {
+                        throw new IRechargeGetMeterInfoException(
+                            error.message,
+                            HttpStatus.SERVICE_UNAVAILABLE
+                        );
+                    }
+
                     throw new IRechargeGetMeterInfoException(
                         error.message,
                         HttpStatus.INTERNAL_SERVER_ERROR
@@ -223,6 +237,13 @@ export class IRechargeWorkflowService {
                         throw new IRechargeVendPowerException(
                             error.message,
                             HttpStatus.BAD_REQUEST
+                        );
+                    }
+                    const serverErrorCodes = ["11", "42"];
+                    if (serverErrorCodes.includes(error.status)) {
+                        throw new IRechargeVendPowerException(
+                            error.message,
+                            HttpStatus.SERVICE_UNAVAILABLE
                         );
                     }
 
@@ -344,6 +365,13 @@ export class IRechargeWorkflowService {
                             HttpStatus.BAD_REQUEST
                         );
                     }
+                    const serverErrorCodes = ["11", "42"];
+                    if (serverErrorCodes.includes(error.status)) {
+                        throw new IRechargeVendDataException(
+                            error.message,
+                            HttpStatus.SERVICE_UNAVAILABLE
+                        );
+                    }
 
                     throw new IRechargeVendDataException(
                         error.message,
@@ -377,7 +405,10 @@ export class IRechargeWorkflowService {
             }
 
             default:
-                break;
+                throw new IRechargeDataException(
+                    "Unable to resolve data network provider name for iRecharge. Invalid name or not supported",
+                    HttpStatus.INTERNAL_SERVER_ERROR
+                );
         }
     }
 
@@ -396,8 +427,12 @@ export class IRechargeWorkflowService {
                 return AirtimeProvider.ETISALAT;
             }
 
-            default:
-                break;
+            default: {
+                throw new IRechargeAirtimeException(
+                    "Unable to resolve airtime network provider name for iRecharge. Invalid name or not supported",
+                    HttpStatus.INTERNAL_SERVER_ERROR
+                );
+            }
         }
     }
 
@@ -435,6 +470,13 @@ export class IRechargeWorkflowService {
                         throw new IRechargeVendAirtimeException(
                             error.message,
                             HttpStatus.BAD_REQUEST
+                        );
+                    }
+                    const serverErrorCodes = ["11", "42"];
+                    if (serverErrorCodes.includes(error.status)) {
+                        throw new IRechargeVendAirtimeException(
+                            error.message,
+                            HttpStatus.SERVICE_UNAVAILABLE
                         );
                     }
 
@@ -570,6 +612,13 @@ export class IRechargeWorkflowService {
                             HttpStatus.BAD_REQUEST
                         );
                     }
+                    const serverErrorCodes = ["11", "42"];
+                    if (serverErrorCodes.includes(error.status)) {
+                        throw new IRechargeVendInternetException(
+                            error.message,
+                            HttpStatus.SERVICE_UNAVAILABLE
+                        );
+                    }
 
                     throw new IRechargeVendInternetException(
                         error.message,
@@ -608,8 +657,12 @@ export class IRechargeWorkflowService {
                 return DataBundleProvider.SPECTRANET;
             }
 
-            default:
-                break;
+            default: {
+                throw new IRechargeInternetException(
+                    "Unable to resolve internet network provider name for iRecharge provider. Invalid network name or not supported",
+                    HttpStatus.INTERNAL_SERVER_ERROR
+                );
+            }
         }
     }
 
@@ -668,13 +721,17 @@ export class IRechargeWorkflowService {
                     );
                 }
 
-                return resp.bundles.map((bundle) => {
+                let bouquets = resp.bundles.map((bundle) => {
                     return {
                         code: bundle.code,
                         price: +bundle.price,
                         title: bundle.title,
                     };
                 });
+                if (cableTVProvider == TVNetworkProvider.STARTIMES) {
+                    bouquets = bouquets.slice(1); //first element not a valid plan
+                }
+                return bouquets;
             };
 
             switch (cableTVProvider) {
@@ -718,51 +775,150 @@ export class IRechargeWorkflowService {
         }
     }
 
-    // async vendTV(options: VendTVOptions): Promise<VendDataResponse> {
-    //     try {
-    //         const vendDataHash = this.iRecharge.vendDataHash({
-    //             referenceId: options.referenceId,
-    //             vtuData: options.dataCode,
-    //             vtuNetwork: this.resolveDataNetworkName(options.vtuNetwork),
-    //             vtuNumber: options.vtuNumber,
-    //         });
+    async getSmartCardInfo(
+        options: GetSmartCardInfoOptions
+    ): Promise<GetSmartCardInfoResponse> {
+        try {
+            const hash = this.iRecharge.getSmartCardInfoHash({
+                referenceId: options.reference,
+                serviceCode: options.tvCode,
+                smartCardNumber: options.smartCardNumber,
+                tvNetwork: this.resolveTVNetworkName(options.tvNetwork),
+            });
 
-    //         const response = await this.iRecharge.vendData({
-    //             hash: vendDataHash,
-    //             reference_id: options.referenceId,
-    //             vtu_data: options.dataCode,
-    //             vtu_network: this.resolveDataNetworkName(options.vtuNetwork),
-    //             vtu_number: options.vtuNumber,
-    //             vtu_email: options.vtuEmail,
-    //         });
-    //         return {
-    //             networkProviderReference: response.ref,
-    //         };
-    //     } catch (error) {
-    //         logger.error(error);
-    //         switch (true) {
-    //             case error instanceof IRechargeError: {
-    //                 const clientErrorCodes = ["41", "40", "12"];
-    //                 if (clientErrorCodes.includes(error.status)) {
-    //                     throw new IRechargeVendCableTVException(
-    //                         error.message,
-    //                         HttpStatus.BAD_REQUEST
-    //                     );
-    //                 }
+            const resp = await this.iRecharge.getSmartCardInfo({
+                hash: hash,
+                reference_id: options.reference,
+                service_code: options.tvCode,
+                smartcard_number: options.smartCardNumber,
+                tv_network: this.resolveTVNetworkName(options.tvNetwork),
+            });
+            if (!resp) {
+                throw new IRechargeGetSmartCardInfoException(
+                    "Unable to retrieve SmartCard Information",
+                    HttpStatus.INTERNAL_SERVER_ERROR
+                );
+            }
+            return {
+                accessToken: resp.access_token,
+                customer: {
+                    address: resp.customer,
+                    name: resp.customer_number,
+                },
+            };
+        } catch (error) {
+            switch (true) {
+                case error instanceof IRechargeGetSmartCardInfoException: {
+                    throw error;
+                }
+                case error instanceof IRechargeError: {
+                    const clientErrorCodes = ["13"];
+                    if (clientErrorCodes.includes(error.status)) {
+                        throw new IRechargeGetSmartCardInfoException(
+                            error.message,
+                            HttpStatus.BAD_REQUEST
+                        );
+                    }
+                    const serverErrorCodes = ["11", "42"];
+                    if (serverErrorCodes.includes(error.status)) {
+                        throw new IRechargeGetSmartCardInfoException(
+                            error.message,
+                            HttpStatus.SERVICE_UNAVAILABLE
+                        );
+                    }
 
-    //                 throw new IRechargeVendCableTVException(
-    //                     error.message,
-    //                     HttpStatus.INTERNAL_SERVER_ERROR
-    //                 );
-    //             }
+                    throw new IRechargeGetSmartCardInfoException(
+                        error.message,
+                        HttpStatus.INTERNAL_SERVER_ERROR
+                    );
+                }
 
-    //             default: {
-    //                 throw new IRechargeCableTVException(
-    //                     error.message,
-    //                     HttpStatus.INTERNAL_SERVER_ERROR
-    //                 );
-    //             }
-    //         }
-    //     }
-    // }
+                default: {
+                    throw new IRechargeGetSmartCardInfoException(
+                        "Failed to retrieve smart card information",
+                        HttpStatus.INTERNAL_SERVER_ERROR
+                    );
+                }
+            }
+        }
+    }
+
+    resolveTVNetworkName(network: CableTVProvider): TVNetworkProvider {
+        switch (network) {
+            case CableTVProvider.DSTV: {
+                return TVNetworkProvider.DSTV;
+            }
+            case CableTVProvider.GOTV: {
+                return TVNetworkProvider.GOTV;
+            }
+            case CableTVProvider.STARTIMES: {
+                return TVNetworkProvider.STARTIMES;
+            }
+
+            default: {
+                throw new IRechargeCableTVException(
+                    "Failed to resolve iRecharge cable TV network name. Invalid TV network name or network not supported",
+                    HttpStatus.INTERNAL_SERVER_ERROR
+                );
+            }
+        }
+    }
+
+    async vendTV(options: VendTVOptions): Promise<VendTVResponse> {
+        try {
+            const hash = this.iRecharge.vendTVHash({
+                referenceId: options.referenceId,
+                accessToken: options.accessToken,
+                serviceCode: options.tvCode,
+                smartCardNumber: options.smartCardNumber,
+                tvNetwork: this.resolveTVNetworkName(options.tvNetwork),
+            });
+
+            const response = await this.iRecharge.vendTV({
+                hash: hash,
+                access_token: options.accessToken,
+                email: options.email,
+                phone: options.phone,
+                reference_id: options.referenceId,
+                service_code: options.tvCode,
+                smartcard_number: options.smartCardNumber,
+                tv_network: this.resolveTVNetworkName(options.tvNetwork),
+            });
+            return {
+                orderMessage: response.order,
+            };
+        } catch (error) {
+            logger.error(error);
+            switch (true) {
+                case error instanceof IRechargeError: {
+                    const clientErrorCodes = ["41", "40", "12"];
+                    if (clientErrorCodes.includes(error.status)) {
+                        throw new IRechargeVendCableTVException(
+                            error.message,
+                            HttpStatus.BAD_REQUEST
+                        );
+                    }
+                    const serverErrorCodes = ["11", "42"];
+                    if (serverErrorCodes.includes(error.status)) {
+                        throw new IRechargeVendCableTVException(
+                            error.message,
+                            HttpStatus.SERVICE_UNAVAILABLE
+                        );
+                    }
+
+                    throw new IRechargeVendCableTVException(
+                        error.message,
+                        HttpStatus.INTERNAL_SERVER_ERROR
+                    );
+                }
+
+                default: {
+                    throw new IRechargeCableTVException(
+                        error.message,
+                        HttpStatus.INTERNAL_SERVER_ERROR
+                    );
+                }
+            }
+        }
+    }
 }

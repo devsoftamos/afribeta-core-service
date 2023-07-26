@@ -506,6 +506,13 @@ export class PowerBillService {
             );
         }
 
+        if (transaction.userId != user.id) {
+            throw new TransactionNotFoundException(
+                "Failed to complete wallet payment for power purchase. Invalid user payment reference",
+                HttpStatus.NOT_FOUND
+            );
+        }
+
         if (transaction.type != TransactionType.ELECTRICITY_BILL) {
             throw new InvalidBillTypePaymentReference(
                 "Invalid power bill reference",

@@ -422,6 +422,12 @@ export class AirtimeBillService {
                 HttpStatus.NOT_FOUND
             );
         }
+        if (transaction.userId != user.id) {
+            throw new TransactionNotFoundException(
+                "Failed to complete wallet payment for airtime purchase. Invalid user payment reference",
+                HttpStatus.NOT_FOUND
+            );
+        }
 
         if (transaction.type != TransactionType.AIRTIME_PURCHASE) {
             throw new InvalidBillTypePaymentReference(

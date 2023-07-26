@@ -14,8 +14,11 @@ import {
 } from "@nestjs/common";
 import { User as UserModel } from "@prisma/client";
 import { PaymentReferenceDto } from "../../dtos";
-import { GetTVBouquetDto } from "../../dtos/cabletv";
-import { PurchaseDataDto } from "../../dtos/data";
+import {
+    GetSmartCardInfoDto,
+    GetTVBouquetDto,
+    PurchaseTVDto,
+} from "../../dtos/cabletv";
 import { CableTVBillService } from "../../services/cabletv";
 
 @UseGuards(AuthGuard)
@@ -37,15 +40,24 @@ export class CableTVBillController {
         return await this.cableTVBillService.getTVBouquets(getTVBouquetDto);
     }
 
+    @Get("smartcard")
+    async getSmartCardInfo(
+        @Query(ValidationPipe) getSmartCardInfoDto: GetSmartCardInfoDto
+    ) {
+        return await this.cableTVBillService.getSmartCardInfo(
+            getSmartCardInfoDto
+        );
+    }
+
     @HttpCode(HttpStatus.OK)
-    @Post("initialize-data-purchase")
-    async initializeDataPurchase(
+    @Post("initialize-cabletv-purchase")
+    async initializeCableTVPurchase(
         @Body(ValidationPipe)
-        purchaseDataDto: PurchaseDataDto,
+        purchaseCableTVDto: PurchaseTVDto,
         @User() user: UserModel
     ) {
-        return await this.cableTVBillService.initializeDataPurchase(
-            purchaseDataDto,
+        return await this.cableTVBillService.initializeCableTVPurchase(
+            purchaseCableTVDto,
             user
         );
     }
@@ -54,11 +66,11 @@ export class CableTVBillController {
     @Post("wallet-payment")
     async walletPayment(
         @Body(ValidationPipe)
-        walletDataPaymentDto: PaymentReferenceDto,
+        walletCableTVPaymentDto: PaymentReferenceDto,
         @User() user: UserModel
     ) {
         return await this.cableTVBillService.walletPayment(
-            walletDataPaymentDto,
+            walletCableTVPaymentDto,
             user
         );
     }
@@ -66,11 +78,11 @@ export class CableTVBillController {
     @Get("status/:reference")
     async getDataPurchaseStatus(
         @Param(ValidationPipe)
-        getDataPurchaseStatusDto: PaymentReferenceDto,
+        getCableTVPurchaseStatusDto: PaymentReferenceDto,
         @User() user: UserModel
     ) {
-        return await this.cableTVBillService.getDataPurchaseStatus(
-            getDataPurchaseStatusDto,
+        return await this.cableTVBillService.getCableTVPurchaseStatus(
+            getCableTVPurchaseStatusDto,
             user
         );
     }

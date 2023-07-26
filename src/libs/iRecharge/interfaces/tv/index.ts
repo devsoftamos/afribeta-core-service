@@ -27,7 +27,7 @@ export interface GetTVBouquetResponse extends IRechargeResponse {
 export interface GetSmartCardOptions {
     vendor_code: string;
     smartcard_number: string;
-    service_code: number; //from get tv bouquet
+    service_code: string; //from get tv bouquet
     reference_id: string;
     tv_network: TVNetworkProvider;
     tv_amount?: number; //startimes only

@@ -113,6 +113,25 @@ export interface VendTVOptions {
     smartCardNumber: string;
 }
 
+export interface VendTVResponse {
+    orderMessage: string;
+}
+
+export interface GetSmartCardInfoOptions {
+    tvCode: string;
+    smartCardNumber: string;
+    tvNetwork: CableTVProvider;
+    reference: string;
+}
+
+export interface GetSmartCardInfoResponse {
+    accessToken?: string;
+    customer: {
+        name: string;
+        address: string;
+    };
+}
+
 export enum NetworkInternetProvider {
     MTN = "mtn-internet",
     AIRTEL = "airtel-internet",
