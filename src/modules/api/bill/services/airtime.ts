@@ -317,6 +317,22 @@ export class AirtimeBillService {
                 billProvider: billProvider,
             });
         } catch (error) {
+            switch (true) {
+                case error instanceof IRechargeVendAirtimeException: {
+                    const transaction =
+                        await this.prisma.transaction.findUnique({
+                            where: {
+                                paymentReference: options.paymentReference,
+                            },
+                        });
+                    this.billEvent.emit("bill-purchase-failure", {
+                        transaction: transaction,
+                    });
+                }
+
+                default:
+                    break;
+            }
             logger.error(error);
         }
     }

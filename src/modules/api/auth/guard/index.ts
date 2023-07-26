@@ -21,6 +21,7 @@ import {
 } from "../interfaces";
 import { Observable } from "rxjs";
 import { createHmac } from "crypto";
+import logger from "moment-logger";
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -54,14 +55,15 @@ export class AuthGuard implements CanActivate {
             }
             request.user = user;
         } catch (error) {
+            logger.error(error);
             switch (true) {
                 case error instanceof UserNotFoundException: {
                     throw error;
                 }
                 case error.name == "PrismaClientKnownRequestError": {
                     throw new PrismaNetworkException(
-                        error.message,
-                        HttpStatus.INTERNAL_SERVER_ERROR
+                        "Unable to process request. Please try again",
+                        HttpStatus.SERVICE_UNAVAILABLE
                     );
                 }
 

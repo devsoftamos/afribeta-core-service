@@ -91,6 +91,7 @@ export class IRecharge {
             const { data } = await this.axios<VendPowerResponse>(
                 requestOptions
             );
+
             if (data.status != "00") {
                 const error = new IRechargeError(data.message);
                 error.status = data.status;

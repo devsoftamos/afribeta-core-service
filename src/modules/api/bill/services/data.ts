@@ -34,6 +34,7 @@ import {
     PowerPurchaseException,
     InvalidBillTypePaymentReference,
     WalletChargeException,
+    InvalidBillProviderException,
 } from "../errors";
 import {
     BillProviderSlug,
@@ -84,7 +85,10 @@ export class DataBillService {
                 }
 
                 default: {
-                    break;
+                    throw new InvalidBillProviderException(
+                        "No integration for the retrieved bill provider",
+                        HttpStatus.INTERNAL_SERVER_ERROR
+                    );
                 }
             }
         }
@@ -320,6 +324,22 @@ export class DataBillService {
                 billProvider: billProvider,
             });
         } catch (error) {
+            switch (true) {
+                case error instanceof IRechargeVendDataException: {
+                    const transaction =
+                        await this.prisma.transaction.findUnique({
+                            where: {
+                                paymentReference: options.paymentReference,
+                            },
+                        });
+                    this.billEvent.emit("bill-purchase-failure", {
+                        transaction: transaction,
+                    });
+                }
+
+                default:
+                    break;
+            }
             logger.error(error);
         }
     }

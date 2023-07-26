@@ -652,7 +652,7 @@ export class IRechargeWorkflowService {
         }
     }
 
-    async getCableTVSubscriptions(
+    async getCableTVBouquets(
         cableTVProvider: CableTVProvider
     ): Promise<GetDataBundleResponse[]> {
         try {

@@ -398,6 +398,23 @@ export class PowerBillService {
                 billProvider: billProvider,
             });
         } catch (error) {
+            switch (true) {
+                case error instanceof IRechargeVendPowerException: {
+                    const transaction =
+                        await this.prisma.transaction.findUnique({
+                            where: {
+                                paymentReference: options.paymentReference,
+                            },
+                        });
+                    this.billEvent.emit("bill-purchase-failure", {
+                        transaction: transaction,
+                    });
+                }
+
+                default:
+                    break;
+            }
+
             logger.error(`POWER_PURCHASE_COMPLETION_WEBHOOK_ERROR: ${error}`);
         }
     }
