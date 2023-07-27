@@ -68,7 +68,7 @@ export class InternetBillController {
         );
     }
 
-    @Get("status/:reference")
+    @Get("verify/:reference")
     async getDataPurchaseStatus(
         @Param(ValidationPipe)
         getInternetPurchaseStatusDto: PaymentReferenceDto,

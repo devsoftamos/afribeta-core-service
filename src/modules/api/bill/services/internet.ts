@@ -41,6 +41,7 @@ import {
     CompleteBillPurchaseOptions,
     CompleteBillPurchaseUserOptions,
     ProcessBillPaymentOptions,
+    VerifyPurchase,
 } from "../interfaces";
 
 import logger from "moment-logger";
@@ -59,6 +60,7 @@ import {
     FormatInternetBundleNetworkInput,
     FormatInternetBundleNetworkOutput,
     InternetPurchaseInitializationHandlerOutput,
+    VerifyInternetPurchaseData,
 } from "../interfaces/internet";
 
 @Injectable()
@@ -612,6 +614,12 @@ export class InternetBillService {
                 amount: true,
                 senderIdentifier: true,
                 packageType: true,
+                paymentChannel: true,
+                paymentStatus: true,
+                serviceCharge: true,
+                createdAt: true,
+                updatedAt: true,
+                transactionId: true,
             },
         });
 
@@ -636,19 +644,27 @@ export class InternetBillService {
             );
         }
 
-        const data = {
+        const data: VerifyPurchase<VerifyInternetPurchaseData> = {
             status: transaction.status,
-            reference: transaction.paymentReference,
+            transactionId: transaction.transactionId,
+            paymentReference: transaction.paymentReference,
             amount: transaction.amount,
             phone: transaction.senderIdentifier,
-            packageType: transaction.packageType,
-            network: {
-                reference: transaction.token,
+            plan: transaction.packageType,
+            networkReference: transaction.token,
+            paymentChannel: transaction.paymentChannel,
+            paymentStatus: transaction.paymentStatus,
+            serviceCharge: transaction.serviceCharge,
+            user: {
+                firstName: user.firstName,
+                lastName: user.lastName,
             },
+            createdAt: transaction.createdAt,
+            updatedAt: transaction.updatedAt,
         };
 
         return buildResponse({
-            message: "Internet purchase status retrieved successfully",
+            message: "Internet purchase successfully verified",
             data: data,
         });
     }

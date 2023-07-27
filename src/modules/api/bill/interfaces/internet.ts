@@ -32,3 +32,9 @@ export interface CompleteInternetPurchaseOutput {
     package: string;
     phone: string;
 }
+
+export interface VerifyInternetPurchaseData {
+    phone: string;
+    plan: string;
+    networkReference: string;
+}

@@ -55,13 +55,13 @@ export class PowerBillController {
         );
     }
 
-    @Get("status/:reference")
+    @Get("verify/:reference")
     async getPowerPurchaseStatus(
         @Param(ValidationPipe)
         getPowerPurchaseStatusDto: PaymentReferenceDto,
         @User() user: UserModel
     ) {
-        return await this.powerBillService.getPowerPurchaseStatus(
+        return await this.powerBillService.verifyPowerPurchase(
             getPowerPurchaseStatusDto,
             user
         );

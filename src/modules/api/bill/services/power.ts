@@ -39,6 +39,8 @@ import {
     MeterType,
     FormatDiscoOptions,
     BillProviderSlugForPower,
+    VerifyPurchase,
+    VerifyPowerPurchaseData,
 } from "../interfaces";
 import logger from "moment-logger";
 import { UserNotFoundException } from "../../user";
@@ -618,7 +620,7 @@ export class PowerBillService {
         }
     }
 
-    async getPowerPurchaseStatus(options: PaymentReferenceDto, user: User) {
+    async verifyPowerPurchase(options: PaymentReferenceDto, user: User) {
         const transaction = await this.prisma.transaction.findUnique({
             where: {
                 paymentReference: options.reference,
@@ -629,6 +631,18 @@ export class PowerBillService {
                 units: true,
                 token: true,
                 userId: true,
+                paymentReference: true,
+                transactionId: true,
+                packageType: true,
+                accountId: true,
+                meterType: true,
+                senderIdentifier: true,
+                amount: true,
+                paymentChannel: true,
+                paymentStatus: true,
+                serviceCharge: true,
+                createdAt: true,
+                updatedAt: true,
             },
         });
 
@@ -653,14 +667,32 @@ export class PowerBillService {
             );
         }
 
-        const data = {
+        const data: VerifyPurchase<VerifyPowerPurchaseData> = {
             status: transaction.status,
-            token: transaction.token,
-            units: transaction.units,
+            paymentStatus: transaction.paymentStatus,
+            paymentReference: transaction.paymentReference,
+            transactionId: transaction.transactionId,
+            amount: transaction.amount,
+            serviceCharge: transaction.serviceCharge,
+            paymentChannel: transaction.paymentChannel,
+            disco: transaction.packageType,
+            user: {
+                firstName: user.firstName,
+                lastName: user.lastName,
+            },
+            meter: {
+                type: transaction.meterType,
+                accountId: transaction.accountId,
+                meterNumber: transaction.senderIdentifier,
+                token: transaction.token,
+                units: transaction.units,
+            },
+            createdAt: transaction.createdAt,
+            updatedAt: transaction.updatedAt,
         };
 
         return buildResponse({
-            message: "Power purchase status retrieved successfully",
+            message: "Power purchase successfully verified",
             data: data,
         });
     }

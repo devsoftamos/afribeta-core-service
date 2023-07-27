@@ -42,3 +42,14 @@ export interface FormattedElectricDiscoData {
     billService: string;
     meter: DiscoMeterOptions[];
 }
+
+export interface VerifyPowerPurchaseData {
+    disco: string;
+    meter: {
+        type: string;
+        accountId: string;
+        meterNumber: string;
+        token: string;
+        units: string;
+    };
+}

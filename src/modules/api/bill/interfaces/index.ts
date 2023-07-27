@@ -81,3 +81,19 @@ export interface BillEventMap {
     "payment-failure": BillPaymentFailure;
     "bill-purchase-failure": BillPurchaseFailure;
 }
+
+export type VerifyPurchase<TBillData> = {
+    status: string;
+    paymentStatus: string;
+    paymentReference: string;
+    transactionId: string;
+    amount: number;
+    serviceCharge: number;
+    paymentChannel: string;
+    user: {
+        firstName: string;
+        lastName: string;
+    };
+    createdAt: Date;
+    updatedAt: Date;
+} & TBillData;
