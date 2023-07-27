@@ -15,8 +15,9 @@ import {
 import { User as UserEntity } from "@prisma/client";
 import { User } from "../../decorators";
 import {
+    CreateTransactionPinDto,
     UpdateProfilePasswordDto,
-    UpsertTransactionPinDto,
+    UpdateTransactionPinDto,
     VerifyTransactionPinDto,
 } from "../../dtos";
 import { UserService } from "../../services";
@@ -44,13 +45,13 @@ export class UserController {
             req.user
         );
     }
-    @Patch("profile/save-transaction-pin")
+    @Patch("profile/transaction-pin")
     async upsertTransactionPin(
-        @Body(ValidationPipe) upsertTransactionPinDto: UpsertTransactionPinDto,
+        @Body(ValidationPipe) updateTransactionPinDto: UpdateTransactionPinDto,
         @User() user: UserEntity
     ) {
-        return await this.userService.upsertTransactionPin(
-            upsertTransactionPinDto,
+        return await this.userService.updateTransactionPin(
+            updateTransactionPinDto,
             user
         );
     }
@@ -63,6 +64,17 @@ export class UserController {
     ) {
         return await this.userService.verifyTransactionPin(
             verifyTransactionPinDto,
+            user
+        );
+    }
+
+    @Post("profile/transaction-pin")
+    async createTransactionPin(
+        @Body(ValidationPipe) createTransactionPinDto: CreateTransactionPinDto,
+        @User() user: UserEntity
+    ) {
+        return await this.userService.createTransactionPin(
+            createTransactionPinDto,
             user
         );
     }

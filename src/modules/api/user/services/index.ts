@@ -4,13 +4,14 @@ import { forwardRef, HttpStatus, Inject, Injectable } from "@nestjs/common";
 import { Prisma, User } from "@prisma/client";
 import { AuthService } from "../../auth/services";
 import {
+    CreateTransactionPinDto,
     UpdateProfilePasswordDto,
-    UpsertTransactionPinDto,
+    UpdateTransactionPinDto,
     VerifyTransactionPinDto,
 } from "../dtos";
 import {
     IncorrectPasswordException,
-    IncorrectTransactionPinException,
+    TransactionPinException,
     UserNotFoundException,
 } from "../errors";
 
@@ -100,8 +101,8 @@ export class UserService {
         });
     }
 
-    async upsertTransactionPin(
-        options: UpsertTransactionPinDto,
+    async updateTransactionPin(
+        options: UpdateTransactionPinDto,
         user: User
     ): Promise<ApiResponse> {
         const userData = await this.prisma.user.findUnique({
@@ -110,7 +111,7 @@ export class UserService {
 
         if (!userData) {
             throw new UserNotFoundException(
-                "Failed to retrieve account",
+                "User account not found",
                 HttpStatus.NOT_FOUND
             );
         }
@@ -140,7 +141,7 @@ export class UserService {
         });
 
         return buildResponse({
-            message: "Transaction pin successfully saved",
+            message: "Transaction pin successfully updated",
         });
     }
 
@@ -148,18 +149,61 @@ export class UserService {
         options: VerifyTransactionPinDto,
         user: User
     ): Promise<ApiResponse> {
+        if (!user.transactionPin) {
+            throw new TransactionPinException(
+                "No transaction pin found. Kindly setup your transaction pin",
+                HttpStatus.NOT_FOUND
+            );
+        }
+
         const isMatched = await this.authService.comparePassword(
             options.transactionPin,
             user.transactionPin
         );
         if (!isMatched) {
-            throw new IncorrectTransactionPinException(
+            throw new TransactionPinException(
                 "Incorrect transaction pin",
                 HttpStatus.BAD_REQUEST
             );
         }
         return buildResponse({
             message: "Transaction pin successfully verified",
+        });
+    }
+
+    async createTransactionPin(options: CreateTransactionPinDto, user: User) {
+        const userData = await this.prisma.user.findUnique({
+            where: { id: user.id },
+        });
+
+        if (!userData) {
+            throw new UserNotFoundException(
+                "User account not found",
+                HttpStatus.NOT_FOUND
+            );
+        }
+
+        if (user.transactionPin) {
+            throw new TransactionPinException(
+                "Transaction pin already exists. You can change the pin in your settings",
+                HttpStatus.BAD_REQUEST
+            );
+        }
+
+        const hashedPin = await this.authService.hashPassword(
+            options.transactionPin
+        );
+        await this.prisma.user.update({
+            where: {
+                id: user.id,
+            },
+            data: {
+                transactionPin: hashedPin,
+            },
+        });
+
+        return buildResponse({
+            message: "Transaction pin successfully created",
         });
     }
 }

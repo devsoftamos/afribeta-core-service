@@ -12,6 +12,6 @@ export class IncorrectPasswordException extends HttpException {
     name = "IncorrectPasswordException";
 }
 
-export class IncorrectTransactionPinException extends HttpException {
-    name = "IncorrectTransactionPinException";
+export class TransactionPinException extends HttpException {
+    name: string = "TransactionPinException";
 }
