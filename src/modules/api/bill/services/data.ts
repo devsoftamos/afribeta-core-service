@@ -42,6 +42,7 @@ import {
     CompleteBillPurchaseOptions,
     CompleteBillPurchaseUserOptions,
     ProcessBillPaymentOptions,
+    VerifyPurchase,
 } from "../interfaces";
 import {
     DataPurchaseInitializationHandlerOutput,
@@ -49,6 +50,7 @@ import {
     CompleteDataPurchaseOutput,
     FormatDataBundleNetworkInput,
     FormatDataBundleNetworkOutput,
+    VerifyDataPurchaseData,
 } from "../interfaces/data";
 import logger from "moment-logger";
 import { DB_TRANSACTION_TIMEOUT } from "@/config";
@@ -529,7 +531,7 @@ export class DataBillService {
         }
     }
 
-    async getDataPurchaseStatus(options: PaymentReferenceDto, user: User) {
+    async verifyDataPurchase(options: PaymentReferenceDto, user: User) {
         const transaction = await this.prisma.transaction.findUnique({
             where: {
                 paymentReference: options.reference,
@@ -539,6 +541,21 @@ export class DataBillService {
                 status: true,
                 token: true,
                 userId: true,
+                paymentReference: true,
+                amount: true,
+                senderIdentifier: true,
+                packageType: true,
+                paymentChannel: true,
+                paymentStatus: true,
+                serviceCharge: true,
+                createdAt: true,
+                updatedAt: true,
+                transactionId: true,
+                billService: {
+                    select: {
+                        name: true,
+                    },
+                },
             },
         });
 
@@ -563,13 +580,28 @@ export class DataBillService {
             );
         }
 
-        const data = {
+        const data: VerifyPurchase<VerifyDataPurchaseData> = {
             status: transaction.status,
+            transactionId: transaction.transactionId,
+            paymentReference: transaction.paymentReference,
+            amount: transaction.amount,
+            phone: transaction.senderIdentifier,
+            plan: transaction.packageType,
             networkReference: transaction.token,
+            paymentChannel: transaction.paymentChannel,
+            paymentStatus: transaction.paymentStatus,
+            serviceCharge: transaction.serviceCharge,
+            network: transaction.billService.name,
+            user: {
+                firstName: user.firstName,
+                lastName: user.lastName,
+            },
+            createdAt: transaction.createdAt,
+            updatedAt: transaction.updatedAt,
         };
 
         return buildResponse({
-            message: "Data purchase status retrieved successfully",
+            message: "Data purchase successfully verified",
             data: data,
         });
     }

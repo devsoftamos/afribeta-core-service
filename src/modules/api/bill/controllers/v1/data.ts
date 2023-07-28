@@ -57,13 +57,13 @@ export class DataBillController {
         );
     }
 
-    @Get("status/:reference")
+    @Get("verify/:reference")
     async getDataPurchaseStatus(
         @Param(ValidationPipe)
         getDataPurchaseStatusDto: PaymentReferenceDto,
         @User() user: UserModel
     ) {
-        return await this.dataBillService.getDataPurchaseStatus(
+        return await this.dataBillService.verifyDataPurchase(
             getDataPurchaseStatusDto,
             user
         );

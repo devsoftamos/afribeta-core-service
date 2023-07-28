@@ -39,6 +39,7 @@ import {
     CompleteBillPurchaseOptions,
     CompleteBillPurchaseUserOptions,
     ProcessBillPaymentOptions,
+    VerifyPurchase,
 } from "../interfaces";
 
 import logger from "moment-logger";
@@ -52,6 +53,7 @@ import {
     CompleteAirtimePurchaseTransactionOptions,
     FormatAirtimeNetworkInput,
     FormatAirtimeNetworkOutput,
+    VerifyAirtimePurchaseData,
 } from "../interfaces/airtime";
 import { PurchaseAirtimeDto } from "../dtos/airtime";
 
@@ -526,7 +528,7 @@ export class AirtimeBillService {
         }
     }
 
-    async getAirtimePurchaseStatus(options: PaymentReferenceDto, user: User) {
+    async verifyAirtimePurchase(options: PaymentReferenceDto, user: User) {
         const transaction = await this.prisma.transaction.findUnique({
             where: {
                 paymentReference: options.reference,
@@ -536,9 +538,20 @@ export class AirtimeBillService {
                 status: true,
                 token: true,
                 userId: true,
+                paymentReference: true,
                 amount: true,
                 senderIdentifier: true,
-                paymentReference: true,
+                paymentChannel: true,
+                paymentStatus: true,
+                serviceCharge: true,
+                createdAt: true,
+                updatedAt: true,
+                transactionId: true,
+                billService: {
+                    select: {
+                        name: true,
+                    },
+                },
             },
         });
 
@@ -563,18 +576,27 @@ export class AirtimeBillService {
             );
         }
 
-        const data = {
+        const data: VerifyPurchase<VerifyAirtimePurchaseData> = {
             status: transaction.status,
-            reference: transaction.paymentReference,
+            transactionId: transaction.transactionId,
+            paymentReference: transaction.paymentReference,
             amount: transaction.amount,
             phone: transaction.senderIdentifier,
-            network: {
-                reference: transaction.token,
+            networkReference: transaction.token,
+            paymentChannel: transaction.paymentChannel,
+            paymentStatus: transaction.paymentStatus,
+            serviceCharge: transaction.serviceCharge,
+            network: transaction.billService.name,
+            user: {
+                firstName: user.firstName,
+                lastName: user.lastName,
             },
+            createdAt: transaction.createdAt,
+            updatedAt: transaction.updatedAt,
         };
 
         return buildResponse({
-            message: "Airtime purchase status retrieved successfully",
+            message: "Airtime purchase successfully verified",
             data: data,
         });
     }

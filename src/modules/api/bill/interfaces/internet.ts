@@ -37,4 +37,5 @@ export interface VerifyInternetPurchaseData {
     phone: string;
     plan: string;
     networkReference: string;
+    network: string;
 }

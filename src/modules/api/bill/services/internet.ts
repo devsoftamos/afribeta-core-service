@@ -600,7 +600,7 @@ export class InternetBillService {
         }
     }
 
-    async getInternetPurchaseStatus(options: PaymentReferenceDto, user: User) {
+    async verifyInternetPurchase(options: PaymentReferenceDto, user: User) {
         const transaction = await this.prisma.transaction.findUnique({
             where: {
                 paymentReference: options.reference,
@@ -620,6 +620,11 @@ export class InternetBillService {
                 createdAt: true,
                 updatedAt: true,
                 transactionId: true,
+                billService: {
+                    select: {
+                        name: true,
+                    },
+                },
             },
         });
 
@@ -655,6 +660,7 @@ export class InternetBillService {
             paymentChannel: transaction.paymentChannel,
             paymentStatus: transaction.paymentStatus,
             serviceCharge: transaction.serviceCharge,
+            network: transaction.billService.name,
             user: {
                 firstName: user.firstName,
                 lastName: user.lastName,

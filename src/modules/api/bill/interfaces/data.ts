@@ -29,3 +29,10 @@ export interface FormatDataBundleNetworkOutput {
     icon: string;
     name: string;
 }
+
+export interface VerifyDataPurchaseData {
+    phone: string;
+    plan: string;
+    networkReference: string;
+    network: string;
+}

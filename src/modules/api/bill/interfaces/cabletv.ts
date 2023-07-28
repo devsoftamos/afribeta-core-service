@@ -31,3 +31,10 @@ export interface CompleteCableTVPurchaseTransactionOptions
 export interface CompleteCableTVPurchaseOutput {
     orderMessage?: string;
 }
+
+export interface VerifyCableTVPurchaseData {
+    phone: string;
+    plan: string;
+    smartCardNumber: string;
+    network: string;
+}

@@ -75,13 +75,13 @@ export class CableTVBillController {
         );
     }
 
-    @Get("status/:reference")
+    @Get("verify/:reference")
     async getDataPurchaseStatus(
         @Param(ValidationPipe)
         getCableTVPurchaseStatusDto: PaymentReferenceDto,
         @User() user: UserModel
     ) {
-        return await this.cableTVBillService.getCableTVPurchaseStatus(
+        return await this.cableTVBillService.verifyCableTVPurchase(
             getCableTVPurchaseStatusDto,
             user
         );

@@ -49,13 +49,13 @@ export class AirtimeBillController {
         );
     }
 
-    @Get("status/:reference")
+    @Get("verify/:reference")
     async getAirtimePurchaseStatus(
         @Param(ValidationPipe)
         getAirtimePurchaseStatusDto: PaymentReferenceDto,
         @User() user: UserModel
     ) {
-        return await this.airtimeBillService.getAirtimePurchaseStatus(
+        return await this.airtimeBillService.verifyAirtimePurchase(
             getAirtimePurchaseStatusDto,
             user
         );

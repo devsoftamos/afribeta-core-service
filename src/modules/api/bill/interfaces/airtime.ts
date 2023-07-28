@@ -30,3 +30,9 @@ export interface CompleteAirtimePurchaseOutput {
     amount: number;
     phone: string;
 }
+
+export interface VerifyAirtimePurchaseData {
+    phone: string;
+    networkReference: string;
+    network: string;
+}

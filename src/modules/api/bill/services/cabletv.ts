@@ -40,6 +40,7 @@ import {
     CompleteBillPurchaseOptions,
     CompleteBillPurchaseUserOptions,
     ProcessBillPaymentOptions,
+    VerifyPurchase,
 } from "../interfaces";
 import { FormatDataBundleNetworkOutput } from "../interfaces/data";
 import logger from "moment-logger";
@@ -53,6 +54,7 @@ import {
     CompleteCableTVPurchaseTransactionOptions,
     FormatCableTVNetworkInput,
     FormatCableTVNetworkOutput,
+    VerifyCableTVPurchaseData,
 } from "../interfaces/cabletv";
 import {
     GetSmartCardInfoDto,
@@ -616,7 +618,7 @@ export class CableTVBillService {
         }
     }
 
-    async getCableTVPurchaseStatus(options: PaymentReferenceDto, user: User) {
+    async verifyCableTVPurchase(options: PaymentReferenceDto, user: User) {
         const transaction = await this.prisma.transaction.findUnique({
             where: {
                 paymentReference: options.reference,
@@ -625,7 +627,22 @@ export class CableTVBillService {
                 type: true,
                 status: true,
                 userId: true,
+                paymentReference: true,
+                amount: true,
+                senderIdentifier: true,
                 packageType: true,
+                paymentChannel: true,
+                paymentStatus: true,
+                serviceCharge: true,
+                createdAt: true,
+                updatedAt: true,
+                transactionId: true,
+                receiverIdentifier: true,
+                billService: {
+                    select: {
+                        name: true,
+                    },
+                },
             },
         });
 
@@ -650,13 +667,28 @@ export class CableTVBillService {
             );
         }
 
-        const data = {
+        const data: VerifyPurchase<VerifyCableTVPurchaseData> = {
             status: transaction.status,
-            package: transaction.packageType,
+            transactionId: transaction.transactionId,
+            paymentReference: transaction.paymentReference,
+            amount: transaction.amount,
+            smartCardNumber: transaction.senderIdentifier,
+            phone: transaction.receiverIdentifier,
+            plan: transaction.packageType,
+            paymentChannel: transaction.paymentChannel,
+            paymentStatus: transaction.paymentStatus,
+            serviceCharge: transaction.serviceCharge,
+            network: transaction.billService.name,
+            user: {
+                firstName: user.firstName,
+                lastName: user.lastName,
+            },
+            createdAt: transaction.createdAt,
+            updatedAt: transaction.updatedAt,
         };
 
         return buildResponse({
-            message: "Cable TV purchase status successfully retrieved",
+            message: "Cable TV purchase status successfully verified",
             data: data,
         });
     }

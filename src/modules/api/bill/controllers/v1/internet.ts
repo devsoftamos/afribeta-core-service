@@ -74,7 +74,7 @@ export class InternetBillController {
         getInternetPurchaseStatusDto: PaymentReferenceDto,
         @User() user: UserModel
     ) {
-        return await this.internetBillService.getInternetPurchaseStatus(
+        return await this.internetBillService.verifyInternetPurchase(
             getInternetPurchaseStatusDto,
             user
         );
