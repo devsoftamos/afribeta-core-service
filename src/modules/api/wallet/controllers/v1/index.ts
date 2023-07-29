@@ -6,6 +6,7 @@ import {
     Get,
     HttpCode,
     HttpStatus,
+    Param,
     Post,
     Query,
     UseGuards,
@@ -17,6 +18,7 @@ import {
     InitializeWalletFundingDto,
     InitializeWithdrawalDto,
     InitiateWalletCreationDto,
+    PaymentReferenceDto,
     TransferToOtherWalletDto,
     VerifyWalletDto,
 } from "../../dto";
@@ -101,6 +103,42 @@ export class WalletController {
     ) {
         return await this.walletService.createVendorWallet(
             createVendorWalletDto,
+            user
+        );
+    }
+
+    @Get("fund/verify/:reference")
+    async verifySelfWalletFunding(
+        @Param(ValidationPipe)
+        paymentReferenceDto: PaymentReferenceDto,
+        @User() user: UserModel
+    ) {
+        return await this.walletService.verifySelfWalletFunding(
+            paymentReferenceDto,
+            user
+        );
+    }
+
+    @Get("transfer/bank/verify/:reference")
+    async verifyWalletToBankTransfer(
+        @Param(ValidationPipe)
+        paymentReferenceDto: PaymentReferenceDto,
+        @User() user: UserModel
+    ) {
+        return await this.walletService.verifyWalletToBankTransfer(
+            paymentReferenceDto,
+            user
+        );
+    }
+
+    @Get("transfer/verify/:reference")
+    async verifyWalletToWalletTransfer(
+        @Param(ValidationPipe)
+        paymentReferenceDto: PaymentReferenceDto,
+        @User() user: UserModel
+    ) {
+        return await this.walletService.verifyWalletToWalletTransfer(
+            paymentReferenceDto,
             user
         );
     }

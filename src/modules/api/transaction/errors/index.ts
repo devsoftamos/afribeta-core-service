@@ -7,3 +7,7 @@ export class TransactionNotFoundException extends HttpException {
 export class InvalidTransactionVerificationProvider extends HttpException {
     name = "InvalidTransactionVerificationProvider";
 }
+
+export class TransactionTypeException extends HttpException {
+    name: string = "TransactionTypeException";
+}

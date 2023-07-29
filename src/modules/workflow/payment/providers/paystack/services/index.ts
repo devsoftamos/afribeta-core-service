@@ -11,9 +11,11 @@ import { PrismaService } from "@/modules/core/prisma/services";
 import { generateId } from "@/utils";
 import { HttpStatus, Injectable } from "@nestjs/common";
 import {
+    PaymentStatus,
     TransactionFlow,
     TransactionStatus,
     TransactionType,
+    UserType,
 } from "@prisma/client";
 import {
     PaystackBankException,
@@ -161,6 +163,7 @@ export class PaystackService {
             const transactionId = generateId({
                 type: "transaction",
             });
+            const totalAmount = options.amount + options.serviceCharge;
 
             await this.prisma.$transaction(async (tx) => {
                 await tx.transaction.create({
@@ -169,7 +172,8 @@ export class PaystackService {
                         provider: TransferServiceProvider.PAYSTACK,
                         flow: TransactionFlow.OUT,
                         status: TransactionStatus.PENDING,
-                        totalAmount: options.amount + options.serviceCharge,
+                        paymentStatus: PaymentStatus.SUCCESS,
+                        totalAmount: totalAmount,
                         type: TransactionType.TRANSFER_FUND,
                         userId: options.userId,
                         transactionId: transactionId,
@@ -182,6 +186,25 @@ export class PaystackService {
                             TransactionShortDescription.TRANSFER_FUND,
                     },
                 });
+                if (options.userType == UserType.CUSTOMER) {
+                    await tx.wallet.update({
+                        where: { userId: options.userId },
+                        data: {
+                            mainBalance: {
+                                decrement: totalAmount,
+                            },
+                        },
+                    });
+                } else {
+                    await tx.wallet.update({
+                        where: { userId: options.userId },
+                        data: {
+                            commissionBalance: {
+                                decrement: totalAmount,
+                            },
+                        },
+                    });
+                }
                 await this.paystack.initiateTransfer({
                     amount: options.amount * 100,
                     recipient: generateRecipient.data.recipient_code,

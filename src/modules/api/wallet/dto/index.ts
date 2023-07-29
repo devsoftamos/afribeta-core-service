@@ -84,3 +84,8 @@ export class CreateVendorWalletDto {
     })
     bvn: string;
 }
+
+export class PaymentReferenceDto {
+    @IsString()
+    reference: string;
+}

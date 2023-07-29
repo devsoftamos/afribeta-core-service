@@ -21,6 +21,7 @@ import {
     InitializeWithdrawalDto,
     InitiateWalletCreationDto,
     PaymentProvider,
+    PaymentReferenceDto,
     TransferToOtherWalletDto,
     VerifyWalletDto,
 } from "../dto";
@@ -38,6 +39,9 @@ import {
     CreateWalletAAndVirtualAccount,
     ProcessWalletFundOptions,
     ProcessWalletWithdrawalOptions,
+    VerifyWalletToBankTransferTransaction,
+    VerifyWalletToWalletTransferTransaction,
+    VerifyWalletTransaction,
     WalletFundProvider,
 } from "../interfaces";
 import logger from "moment-logger";
@@ -45,9 +49,14 @@ import { ApiResponse, buildResponse } from "@/utils/api-response-util";
 import {
     TransactionNotFoundException,
     TransactionShortDescription,
+    TransactionTypeException,
 } from "../../transaction";
 import { customAlphabet } from "nanoid";
-import { DB_TRANSACTION_TIMEOUT, paystackVirtualAccountBank } from "@/config";
+import {
+    AFRIBETA_WALLET_NAME,
+    DB_TRANSACTION_TIMEOUT,
+    paystackVirtualAccountBank,
+} from "@/config";
 import { generateId } from "@/utils";
 import { ProvidusService } from "@/modules/workflow/payment/providers/providus/services";
 
@@ -341,6 +350,7 @@ export class WalletService {
                     bankCode: options.bankCode,
                     bankName: options.bankName,
                     userId: user.id,
+                    userType: user.userType,
                 });
                 return buildResponse({
                     message: "Transfer successfully initiated",
@@ -362,15 +372,29 @@ export class WalletService {
         });
         if (!transaction) {
             throw new TransactionNotFoundException(
-                "Failed to update wallet withdrawal status. Transaction Reference not found",
+                "Failed to update transaction record. Transaction Reference not found",
                 HttpStatus.NOT_FOUND
             );
         }
 
-        if (transaction.status == TransactionStatus.SUCCESS) {
+        if (
+            transaction.status == TransactionStatus.SUCCESS ||
+            transaction.status == TransactionStatus.FAILED
+        ) {
             throw new DuplicateWalletWithdrawalTransaction(
                 "Wallet withdrawal transaction already completed",
                 HttpStatus.BAD_REQUEST
+            );
+        }
+
+        const user = await this.prisma.user.findUnique({
+            where: { id: transaction.userId },
+        });
+
+        if (!user) {
+            throw new UserNotFoundException(
+                "Failed to update transaction record. User not found",
+                HttpStatus.NOT_FOUND
             );
         }
 
@@ -383,13 +407,36 @@ export class WalletService {
                 break;
             }
             case PaymentStatus.FAILED: {
-                await this.prisma.transaction.update({
-                    where: { id: transaction.id },
-                    data: {
-                        paymentStatus: PaymentStatus.FAILED,
-                        status: TransactionStatus.FAILED,
-                        serviceTransactionCode: options.transferCode,
-                    },
+                const totalAmount =
+                    transaction.amount + transaction.serviceCharge;
+                await this.prisma.$transaction(async (tx) => {
+                    await tx.transaction.update({
+                        where: { id: transaction.id },
+                        data: {
+                            paymentStatus: PaymentStatus.FAILED,
+                            status: TransactionStatus.FAILED,
+                            serviceTransactionCode: options.transferCode,
+                        },
+                    });
+                    if (user.userType == UserType.CUSTOMER) {
+                        await tx.wallet.update({
+                            where: { userId: transaction.userId },
+                            data: {
+                                mainBalance: {
+                                    increment: totalAmount,
+                                },
+                            },
+                        });
+                    } else {
+                        await tx.wallet.update({
+                            where: { userId: transaction.userId },
+                            data: {
+                                commissionBalance: {
+                                    increment: totalAmount,
+                                },
+                            },
+                        });
+                    }
                 });
             }
 
@@ -402,47 +449,11 @@ export class WalletService {
         transaction: Transaction,
         transferCode?: string
     ) {
-        const user = await this.userService.findUserById(transaction.userId);
-        if (!user) {
-            throw new UserNotFoundException(
-                "Failed to update wallet withdrawal status. User not found",
-                HttpStatus.NOT_FOUND
-            );
-        }
-        const wallet = await this.prisma.wallet.findUnique({
-            where: { userId: user.id },
-        });
-        if (!wallet) {
-            throw new WalletNotFoundException(
-                "Failed to update wallet withdrawal status. User wallet not found",
-                HttpStatus.NOT_FOUND
-            );
-        }
         await this.prisma.$transaction(async (tx) => {
-            if (user.userType == UserType.CUSTOMER) {
-                await tx.wallet.update({
-                    where: { userId: user.id },
-                    data: {
-                        mainBalance: {
-                            decrement: transaction.totalAmount,
-                        },
-                    },
-                });
-            } else {
-                await tx.wallet.update({
-                    where: { userId: user.id },
-                    data: {
-                        commissionBalance: {
-                            decrement: transaction.totalAmount,
-                        },
-                    },
-                });
-            }
             await tx.transaction.update({
                 where: { id: transaction.id },
                 data: {
                     status: TransactionStatus.SUCCESS,
-                    paymentStatus: PaymentStatus.SUCCESS,
                     serviceTransactionCode: transferCode,
                 },
             });
@@ -525,6 +536,7 @@ export class WalletService {
             });
 
             //benefactor
+            const paymentReference = generateId({ type: "reference" });
             await tx.transaction.create({
                 data: {
                     amount: options.amount,
@@ -539,6 +551,8 @@ export class WalletService {
                     walletFundTransactionFlow:
                         WalletFundTransactionFlow.TO_BENEFICIARY,
                     shortDescription: TransactionShortDescription.WALLET_FUNDED,
+                    paymentReference: paymentReference,
+                    paymentStatus: PaymentStatus.SUCCESS,
                 },
             });
         });
@@ -654,6 +668,242 @@ export class WalletService {
 
         return buildResponse({
             message: "Wallet successfully created",
+        });
+    }
+
+    async verifySelfWalletFunding(options: PaymentReferenceDto, user: User) {
+        const transaction = await this.prisma.transaction.findUnique({
+            where: {
+                paymentReference: options.reference,
+            },
+            select: {
+                type: true,
+                status: true,
+                userId: true,
+                paymentReference: true,
+                amount: true,
+                paymentChannel: true,
+                paymentStatus: true,
+                serviceCharge: true,
+                createdAt: true,
+                updatedAt: true,
+                transactionId: true,
+                receiverIdentifier: true,
+                flow: true,
+                walletFundTransactionFlow: true,
+            },
+        });
+
+        if (!transaction) {
+            throw new TransactionNotFoundException(
+                "Payment reference not found",
+                HttpStatus.NOT_FOUND
+            );
+        }
+
+        if (transaction.userId != user.id) {
+            throw new TransactionNotFoundException(
+                "Reference not found",
+                HttpStatus.NOT_FOUND
+            );
+        }
+
+        if (
+            transaction.type != TransactionType.WALLET_FUND ||
+            transaction.walletFundTransactionFlow !=
+                WalletFundTransactionFlow.SELF_FUND
+        ) {
+            throw new TransactionTypeException(
+                "Invalid reference type",
+                HttpStatus.BAD_REQUEST
+            );
+        }
+
+        const data: VerifyWalletTransaction = {
+            status: transaction.status,
+            paymentStatus: transaction.paymentStatus,
+            amount: transaction.amount,
+            serviceCharge: transaction.serviceCharge,
+            flow: transaction.flow,
+            reference: transaction.paymentReference,
+            transactionId: transaction.transactionId,
+            type: transaction.type,
+            user: {
+                firstName: user.firstName,
+                lastName: user.lastName,
+            },
+            createdAt: transaction.createdAt,
+            updatedAt: transaction.updatedAt,
+        };
+
+        return buildResponse({
+            message: "Wallet fund transaction successfully verified",
+            data: data,
+        });
+    }
+
+    async verifyWalletToBankTransfer(options: PaymentReferenceDto, user: User) {
+        const transaction = await this.prisma.transaction.findUnique({
+            where: {
+                paymentReference: options.reference,
+            },
+            select: {
+                type: true,
+                status: true,
+                userId: true,
+                paymentReference: true,
+                amount: true,
+                paymentChannel: true,
+                paymentStatus: true,
+                serviceCharge: true,
+                createdAt: true,
+                updatedAt: true,
+                transactionId: true,
+                receiverIdentifier: true,
+                flow: true,
+                destinationBankAccountName: true,
+                destinationBankAccountNumber: true,
+                destinationBankName: true,
+            },
+        });
+
+        if (!transaction) {
+            throw new TransactionNotFoundException(
+                "Payment reference not found",
+                HttpStatus.NOT_FOUND
+            );
+        }
+
+        if (transaction.userId != user.id) {
+            throw new TransactionNotFoundException(
+                "Reference not found",
+                HttpStatus.NOT_FOUND
+            );
+        }
+
+        if (transaction.type != TransactionType.TRANSFER_FUND) {
+            throw new TransactionTypeException(
+                "Invalid reference type",
+                HttpStatus.BAD_REQUEST
+            );
+        }
+
+        const data: VerifyWalletToBankTransferTransaction = {
+            status: transaction.status,
+            paymentStatus: transaction.paymentStatus,
+            amount: transaction.amount,
+            serviceCharge: transaction.serviceCharge,
+            flow: transaction.flow,
+            reference: transaction.paymentReference,
+            transactionId: transaction.transactionId,
+            receiver: {
+                destinationBankAccountNumber:
+                    transaction.destinationBankAccountNumber,
+                destinationBankAccountName:
+                    transaction.destinationBankAccountName,
+                destinationBankName: transaction.destinationBankName,
+            },
+            type: transaction.type,
+            user: {
+                firstName: user.firstName,
+                lastName: user.lastName,
+            },
+            createdAt: transaction.createdAt,
+            updatedAt: transaction.updatedAt,
+        };
+
+        return buildResponse({
+            message: "Bank transfer transaction successfully verified",
+            data: data,
+        });
+    }
+
+    async verifyWalletToWalletTransfer(
+        options: PaymentReferenceDto,
+        user: User
+    ) {
+        const transaction = await this.prisma.transaction.findUnique({
+            where: {
+                paymentReference: options.reference,
+            },
+            select: {
+                type: true,
+                status: true,
+                userId: true,
+                paymentReference: true,
+                amount: true,
+                paymentChannel: true,
+                paymentStatus: true,
+                serviceCharge: true,
+                createdAt: true,
+                updatedAt: true,
+                transactionId: true,
+                walletFundTransactionFlow: true,
+                flow: true,
+                receiver: {
+                    select: {
+                        firstName: true,
+                        lastName: true,
+                        wallet: {
+                            select: {
+                                walletNumber: true,
+                            },
+                        },
+                    },
+                },
+            },
+        });
+
+        if (!transaction) {
+            throw new TransactionNotFoundException(
+                "Payment reference not found",
+                HttpStatus.NOT_FOUND
+            );
+        }
+
+        if (transaction.userId != user.id) {
+            throw new TransactionNotFoundException(
+                "Reference not found",
+                HttpStatus.NOT_FOUND
+            );
+        }
+
+        if (
+            transaction.type != TransactionType.WALLET_FUND ||
+            transaction.walletFundTransactionFlow !=
+                WalletFundTransactionFlow.TO_BENEFICIARY
+        ) {
+            throw new TransactionTypeException(
+                "Invalid reference type",
+                HttpStatus.BAD_REQUEST
+            );
+        }
+
+        const data: VerifyWalletToWalletTransferTransaction = {
+            status: transaction.status,
+            paymentStatus: transaction.paymentStatus,
+            amount: transaction.amount,
+            serviceCharge: transaction.serviceCharge,
+            flow: transaction.flow,
+            reference: transaction.paymentReference,
+            transactionId: transaction.transactionId,
+            receiver: {
+                walletNumber: transaction.receiver?.wallet?.walletNumber,
+                name: `${transaction.receiver?.firstName} ${transaction.receiver?.lastName}`,
+                bankName: AFRIBETA_WALLET_NAME,
+            },
+            type: transaction.type,
+            user: {
+                firstName: user.firstName,
+                lastName: user.lastName,
+            },
+            createdAt: transaction.createdAt,
+            updatedAt: transaction.updatedAt,
+        };
+
+        return buildResponse({
+            message: "Wallet transfer transaction successfully verified",
+            data: data,
         });
     }
 }

@@ -21,6 +21,7 @@ export interface InitializeTransferOptions {
     serviceCharge: number;
     bankName: string;
     userId: number;
+    userType: string;
 }
 
 export type VerifyTransactionStatus = "success" | "cancelled" | "failed";

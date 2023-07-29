@@ -1,7 +1,9 @@
 import {
     PaymentChannel,
     Prisma,
+    TransactionFlow,
     TransactionStatus,
+    TransactionType,
     VirtualAccountProvider,
 } from "@prisma/client";
 import { WalletFundTransactionFlow, PaymentStatus } from "@prisma/client";
@@ -43,4 +45,42 @@ export interface ProcessWalletWithdrawalOptions {
     paymentReference: string;
     paymentStatus: PaymentStatus;
     transferCode?: string;
+}
+
+export interface VerifyWalletTransaction {
+    type: TransactionType;
+    flow: TransactionFlow;
+    amount: number;
+    serviceCharge: number;
+    status: TransactionStatus;
+    paymentStatus: PaymentStatus;
+    transactionId: string;
+    reference: string;
+    user: {
+        firstName: string;
+        lastName: string;
+    };
+    createdAt: Date;
+    updatedAt: Date;
+}
+export interface VerifyWalletFundTransaction extends VerifyWalletTransaction {
+    paymentChannel: PaymentChannel;
+}
+
+export interface VerifyWalletToBankTransferTransaction
+    extends VerifyWalletTransaction {
+    receiver: {
+        destinationBankName: string;
+        destinationBankAccountNumber: string;
+        destinationBankAccountName: string;
+    };
+}
+
+export interface VerifyWalletToWalletTransferTransaction
+    extends VerifyWalletTransaction {
+    receiver: {
+        walletNumber: string;
+        name: string;
+        bankName: string;
+    };
 }
