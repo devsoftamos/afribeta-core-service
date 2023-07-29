@@ -9,5 +9,5 @@ export class InvalidTransactionVerificationProvider extends HttpException {
 }
 
 export class TransactionTypeException extends HttpException {
-    name: string = "TransactionTypeException";
+    name = "TransactionTypeException";
 }
