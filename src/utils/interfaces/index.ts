@@ -8,3 +8,14 @@ export interface TransactionIdOption {
         | "numeric";
     length?: number;
 }
+
+export interface PaginationMeta {
+    perPage: number;
+    page: number;
+    pageCount: number;
+    totalCount: number;
+}
+
+export interface Meta {
+    [key: string]: string | number;
+}

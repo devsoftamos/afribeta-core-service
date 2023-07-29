@@ -1,8 +1,14 @@
 import { PrismaService } from "@/modules/core/prisma/services";
 import { PaystackService } from "@/modules/workflow/payment/providers/paystack/services";
+import { PaginationMeta } from "@/utils";
 import { ApiResponse, buildResponse } from "@/utils/api-response-util";
 import { forwardRef, HttpStatus, Inject, Injectable } from "@nestjs/common";
-import { VerifyTransactionDto, VerifyTransactionProvider } from "../dtos";
+import { Prisma, User } from "@prisma/client";
+import {
+    TransactionHistoryDto,
+    VerifyTransactionDto,
+    VerifyTransactionProvider,
+} from "../dtos";
 import { InvalidTransactionVerificationProvider } from "../errors";
 
 @Injectable()
@@ -42,5 +48,63 @@ export class TransactionService {
                 );
             }
         }
+    }
+
+    async transactionHistory(options: TransactionHistoryDto, user: User) {
+        const meta: Partial<PaginationMeta> = {};
+
+        const queryOptions: Prisma.TransactionFindManyArgs = {
+            orderBy: { createdAt: "desc" },
+            where: {
+                userId: user.id,
+            },
+            select: {
+                id: true,
+                amount: true,
+                shortDescription: true,
+                status: true,
+                transactionId: true,
+                flow: true,
+                type: true,
+                billService: {
+                    select: {
+                        icon: true,
+                    },
+                },
+                createdAt: true,
+                updatedAt: true,
+            },
+        };
+
+        //pagination
+        if (options.pagination) {
+            const page = +options.page || 1;
+            const limit = +options.limit || 10;
+            const offset = (page - 1) * limit;
+            queryOptions.skip = offset;
+            queryOptions.take = limit;
+            const count = await this.prisma.transaction.count({
+                where: queryOptions.where,
+            });
+            meta.totalCount = count;
+            meta.page = page;
+            meta.perPage = limit;
+        }
+        const transactions = await this.prisma.transaction.findMany(
+            queryOptions
+        );
+        if (options.pagination) {
+            meta.pageCount = transactions.length;
+        }
+
+        const result = {
+            meta: meta,
+            records: transactions,
+        };
+
+        return buildResponse({
+            message: "Transaction history successfully retrieved",
+            data: result,
+        });
     }
 }

@@ -779,9 +779,14 @@ export class IRechargeWorkflowService {
         options: GetSmartCardInfoOptions
     ): Promise<GetSmartCardInfoResponse> {
         try {
+            const serviceCode =
+                options.tvNetwork == CableTVProvider.STARTIMES
+                    ? "StarTimes"
+                    : options.tvCode;
+
             const hash = this.iRecharge.getSmartCardInfoHash({
                 referenceId: options.reference,
-                serviceCode: options.tvCode,
+                serviceCode: serviceCode,
                 smartCardNumber: options.smartCardNumber,
                 tvNetwork: this.resolveTVNetworkName(options.tvNetwork),
             });
@@ -789,7 +794,7 @@ export class IRechargeWorkflowService {
             const resp = await this.iRecharge.getSmartCardInfo({
                 hash: hash,
                 reference_id: options.reference,
-                service_code: options.tvCode,
+                service_code: serviceCode,
                 smartcard_number: options.smartCardNumber,
                 tv_network: this.resolveTVNetworkName(options.tvNetwork),
             });
@@ -866,10 +871,15 @@ export class IRechargeWorkflowService {
 
     async vendTV(options: VendTVOptions): Promise<VendTVResponse> {
         try {
+            const serviceCode =
+                options.tvNetwork == CableTVProvider.STARTIMES
+                    ? "StarTimes"
+                    : options.tvCode;
+
             const hash = this.iRecharge.vendTVHash({
                 referenceId: options.referenceId,
                 accessToken: options.accessToken,
-                serviceCode: options.tvCode,
+                serviceCode: serviceCode,
                 smartCardNumber: options.smartCardNumber,
                 tvNetwork: this.resolveTVNetworkName(options.tvNetwork),
             });
@@ -880,7 +890,7 @@ export class IRechargeWorkflowService {
                 email: options.email,
                 phone: options.phone,
                 reference_id: options.referenceId,
-                service_code: options.tvCode,
+                service_code: serviceCode,
                 smartcard_number: options.smartCardNumber,
                 tv_network: this.resolveTVNetworkName(options.tvNetwork),
             });
