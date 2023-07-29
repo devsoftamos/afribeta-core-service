@@ -1,8 +1,10 @@
 import { forwardRef, HttpStatus, Inject, Injectable } from "@nestjs/common";
 import {
     PaymentStatus,
+    Prisma,
     TransactionStatus,
     TransactionType,
+    User,
 } from "@prisma/client";
 import {
     BillPaymentFailure,
@@ -19,6 +21,8 @@ import { WalletChargeException } from "../errors";
 import { AirtimeBillService } from "./airtime";
 import { InternetBillService } from "./internet";
 import { CableTVBillService } from "./cabletv";
+import { PaginationDto } from "../dtos";
+import { ApiResponse, buildResponse, PaginationMeta } from "@/utils";
 
 @Injectable()
 export class BillService {
@@ -158,5 +162,70 @@ export class BillService {
         } catch (error) {
             logger.error(error);
         }
+    }
+
+    async getBillHistory(
+        options: PaginationDto,
+        user: User
+    ): Promise<ApiResponse> {
+        const meta: Partial<PaginationMeta> = {};
+        const queryOptions: Prisma.TransactionFindManyArgs = {
+            orderBy: { createdAt: "desc" },
+            where: {
+                userId: user.id,
+                status: TransactionStatus.SUCCESS,
+                type: {
+                    in: [
+                        TransactionType.AIRTIME_PURCHASE,
+                        TransactionType.CABLETV_BILL,
+                        TransactionType.DATA_PURCHASE,
+                        TransactionType.ELECTRICITY_BILL,
+                        TransactionType.INTERNET_BILL,
+                    ],
+                },
+            },
+            select: {
+                id: true,
+                amount: true,
+                packageType: true,
+                billService: {
+                    select: {
+                        name: true,
+                        icon: true,
+                    },
+                },
+            },
+        };
+
+        //pagination
+        if (options.pagination) {
+            const page = +options.page || 1;
+            const limit = +options.limit || 10;
+            const offset = (page - 1) * limit;
+            queryOptions.skip = offset;
+            queryOptions.take = limit;
+            const count = await this.prisma.transaction.count({
+                where: queryOptions.where,
+            });
+            meta.totalCount = count;
+            meta.page = page;
+            meta.perPage = limit;
+        }
+        const transactions = await this.prisma.transaction.findMany(
+            queryOptions
+        );
+        if (options.pagination) {
+            meta.pageCount = transactions.length;
+        }
+
+        const result = {
+            meta: meta,
+            records: transactions,
+        };
+
+        return buildResponse({
+            message: "Bill history successfully retrieved",
+            data: result,
+        });
     }
 }

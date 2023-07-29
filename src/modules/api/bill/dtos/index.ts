@@ -1,4 +1,10 @@
-import { IsEnum, IsString } from "class-validator";
+import {
+    IsBooleanString,
+    IsEnum,
+    IsNumberString,
+    IsOptional,
+    IsString,
+} from "class-validator";
 import { BillProviderSlug } from "../interfaces";
 
 export enum PaymentProvider {
@@ -17,4 +23,18 @@ export class PurchaseBillDto {
 export class PaymentReferenceDto {
     @IsString()
     reference: string;
+}
+
+export class PaginationDto {
+    @IsOptional()
+    @IsBooleanString()
+    pagination: string;
+
+    @IsOptional()
+    @IsNumberString()
+    page: string;
+
+    @IsOptional()
+    @IsNumberString()
+    limit: string;
 }
