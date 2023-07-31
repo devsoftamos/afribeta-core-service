@@ -41,7 +41,7 @@ model User {
   phone                 String
   password              String
   userType              UserType
-  profilePhoto          String?
+  photo                 String?
   status                Status                 @default(ENABLED)
   state                 String?
   localGovernmentArea   String?
@@ -54,6 +54,7 @@ model User {
   notificationToken     String?
   cacNumber             String?
   utilityDocumentUrl    String?
+  isVerified            Boolean                @default(true) //email verification
   isKycVerified         Boolean                @default(false)
   isDeleted             Boolean?               @default(false)
   createdAt             DateTime               @default(now())
@@ -136,6 +137,7 @@ model AccountVerificationRequest {
 model Role {
   id          Int              @id @default(autoincrement())
   name        String           @unique
+  slug        String           @unique
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
   users       User[]
@@ -147,7 +149,8 @@ model Role {
 //Permission
 model Permission {
   id        Int              @id @default(autoincrement())
-  name      String
+  name      String           @unique
+  slug      String           @unique
   domain    String
   createdAt DateTime         @default(now())
   updatedAt DateTime         @updatedAt
@@ -316,28 +319,28 @@ model Transaction {
 }
 
 //Commission
-model Commission {
-  id        Int              @id @default(autoincrement())
-  name      String
-  slug      String           @unique
-  baseRate  Float
-  createdAt DateTime         @default(now())
-  updatedAt DateTime         @updatedAt
-  users     UserCommission[]
+// model Commission {
+//   id        Int              @id @default(autoincrement())
+//   name      String
+//   slug      String           @unique
+//   baseRate  Float
+//   createdAt DateTime         @default(now())
+//   updatedAt DateTime         @updatedAt
+//   users     UserCommission[]
 
-  @@map("Commissions")
-}
+//   @@map("Commissions")
+// }
 
 model UserCommission {
-  userId       Int
-  commissionId Int
-  rate         Float
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
-  commission   Commission @relation(fields: [commissionId], references: [id])
-  user         User       @relation(fields: [userId], references: [id])
+  userId          Int
+  billServiceSlug String
+  percentage      Float
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  billService     BillService @relation(fields: [billServiceSlug], references: [slug])
+  user            User        @relation(fields: [userId], references: [id])
 
-  @@id([userId, commissionId])
+  @@id([userId, billServiceSlug])
   @@map("UserCommissions")
 }
 
@@ -381,6 +384,7 @@ model BillService {
   airtimeProviders      BillProviderAirtimeNetwork[]
   cableTVProviders      BillProviderCableTVNetwork[]
   internetProviders     BillProviderInternetNetwork[]
+  commissions           UserCommission[]
 
   @@map("BillServices")
 }

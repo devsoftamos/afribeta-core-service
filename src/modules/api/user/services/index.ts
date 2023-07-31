@@ -5,6 +5,7 @@ import { Prisma, User } from "@prisma/client";
 import { AuthService } from "../../auth/services";
 import {
     CreateTransactionPinDto,
+    UpdateProfileDto,
     UpdateProfilePasswordDto,
     UpdateTransactionPinDto,
     VerifyTransactionPinDto,
@@ -206,4 +207,38 @@ export class UserService {
             message: "Transaction pin successfully created",
         });
     }
+
+    async updateProfile(options: UpdateProfileDto, user: User) {
+        const profileUpdateOptions: Prisma.UserUncheckedUpdateInput = {
+            firstName: options.firstName ?? user.firstName,
+            lastName: options.lastName ?? user.lastName,
+            phone: options.phone ?? user.phone,
+        };
+
+        // if (options.photo) {
+        //     profileUpdateOptions.photo = await this.photoUploadHandler(
+        //         options.photo
+        //     );
+        // }
+
+        const updatedProfile = await this.prisma.user.update({
+            where: {
+                id: user.id,
+            },
+            data: profileUpdateOptions,
+            select: {
+                firstName: true,
+                lastName: true,
+                phone: true,
+                photo: true,
+            },
+        });
+
+        return buildResponse({
+            message: "profile successfully updated",
+            data: updatedProfile,
+        });
+    }
+
+    //async createAgent(options: CreateAgentDto, user: User) {}
 }

@@ -13,7 +13,7 @@ import {
     UserNotFoundException,
 } from "@/modules/api/user";
 import * as bcrypt from "bcryptjs";
-import { Prisma } from "@prisma/client";
+import { Prisma, Role, UserType } from "@prisma/client";
 import { customAlphabet, urlAlphabet } from "nanoid";
 import {
     InvalidCredentialException,
@@ -158,8 +158,22 @@ export class AuthService {
         }
 
         const hashedPassword = await this.hashPassword(options.password);
+        let role: Role;
+        if (options.userType == UserType.AGENT) {
+            role = await this.prisma.role.findUnique({
+                where: {
+                    slug: "agent",
+                },
+            });
+        } else {
+            role = await this.prisma.role.findUnique({
+                where: {
+                    slug: "customer",
+                },
+            });
+        }
 
-        const createUserOptions: Prisma.UserCreateInput = {
+        const createUserOptions: Prisma.UserUncheckedCreateInput = {
             firstName: options.firstName,
             lastName: options.lastName,
             email: verificationData.email,
@@ -171,19 +185,12 @@ export class AuthService {
             isMerchantUpgradable: options.userType == "AGENT" ? true : false,
             merchantUpgradeStatus:
                 options.userType == "AGENT" ? "TO_BE_UPGRADED" : null,
-            role: {
-                connectOrCreate: {
-                    where: { name: options.userType },
-                    create: {
-                        name: options.userType,
-                    },
-                },
-            },
+            roleId: role?.id,
         };
 
-        const createdUser = await this.userService.createUser(
-            createUserOptions
-        );
+        const createdUser = await this.prisma.user.create({
+            data: createUserOptions,
+        });
         const accessToken = await this.jwtService.signAsync({
             sub: createdUser.identifier,
         });

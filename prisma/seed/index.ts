@@ -8,24 +8,16 @@ import { billProviderDataBundleNetworks } from "./billProviderDataBundleNetwork"
 import { billProviderElectricDiscos } from "./billProviderElectricDisco";
 import { billProviderInternetNetworks } from "./billProviderInternetNetwork";
 import { billServiceData } from "./billService";
-import { commissions } from "./commission";
+import { roles } from "./role";
 
 async function main() {
-    // for (let commission of commissions) {
-    //     await prisma.commission.upsert({
-    //         where: { slug: commission.slug },
-    //         update: {},
-    //         create: commission,
-    //     });
-    // }
-
-    // for (let provider of billProviders) {
-    //     await prisma.billProvider.upsert({
-    //         where: { slug: provider.slug },
-    //         update: {},
-    //         create: provider,
-    //     });
-    // }
+    for (let provider of billProviders) {
+        await prisma.billProvider.upsert({
+            where: { slug: provider.slug },
+            update: {},
+            create: provider,
+        });
+    }
     for (let billService of billServiceData) {
         await prisma.billService.upsert({
             where: { slug: billService.slug },
@@ -34,62 +26,62 @@ async function main() {
         });
     }
 
-    // Electric Discos
-    // for (let billProviderElectricDisco of billProviderElectricDiscos) {
-    //     await prisma.billProviderElectricDisco.upsert({
-    //         where: {
-    //             billServiceSlug_billProviderSlug: {
-    //                 billProviderSlug:
-    //                     billProviderElectricDisco.billProviderSlug,
-    //                 billServiceSlug: billProviderElectricDisco.billServiceSlug,
-    //             },
-    //         },
-    //         update: {},
-    //         create: billProviderElectricDisco,
-    //     });
-    // }
+    //Electric Discos
+    for (let billProviderElectricDisco of billProviderElectricDiscos) {
+        await prisma.billProviderElectricDisco.upsert({
+            where: {
+                billServiceSlug_billProviderSlug: {
+                    billProviderSlug:
+                        billProviderElectricDisco.billProviderSlug,
+                    billServiceSlug: billProviderElectricDisco.billServiceSlug,
+                },
+            },
+            update: {},
+            create: billProviderElectricDisco,
+        });
+    }
 
     //Airtime
-    // for (let payload of billProviderAirtimeNetworks) {
-    //     await prisma.billProviderAirtimeNetwork.upsert({
-    //         where: {
-    //             billServiceSlug_billProviderSlug: {
-    //                 billProviderSlug: payload.billProviderSlug,
-    //                 billServiceSlug: payload.billServiceSlug,
-    //             },
-    //         },
-    //         update: {},
-    //         create: payload,
-    //     });
-    // }
+    for (let payload of billProviderAirtimeNetworks) {
+        await prisma.billProviderAirtimeNetwork.upsert({
+            where: {
+                billServiceSlug_billProviderSlug: {
+                    billProviderSlug: payload.billProviderSlug,
+                    billServiceSlug: payload.billServiceSlug,
+                },
+            },
+            update: {},
+            create: payload,
+        });
+    }
 
-    // //Data
-    // for (let payload of billProviderDataBundleNetworks) {
-    //     await prisma.billProviderDataBundleNetwork.upsert({
-    //         where: {
-    //             billServiceSlug_billProviderSlug: {
-    //                 billProviderSlug: payload.billProviderSlug,
-    //                 billServiceSlug: payload.billServiceSlug,
-    //             },
-    //         },
-    //         update: {},
-    //         create: payload,
-    //     });
-    // }
+    //Data
+    for (let payload of billProviderDataBundleNetworks) {
+        await prisma.billProviderDataBundleNetwork.upsert({
+            where: {
+                billServiceSlug_billProviderSlug: {
+                    billProviderSlug: payload.billProviderSlug,
+                    billServiceSlug: payload.billServiceSlug,
+                },
+            },
+            update: {},
+            create: payload,
+        });
+    }
 
-    // //Cable TV
-    // for (let payload of billProviderCableTVNetworks) {
-    //     await prisma.billProviderCableTVNetwork.upsert({
-    //         where: {
-    //             billServiceSlug_billProviderSlug: {
-    //                 billProviderSlug: payload.billProviderSlug,
-    //                 billServiceSlug: payload.billServiceSlug,
-    //             },
-    //         },
-    //         update: {},
-    //         create: payload,
-    //     });
-    // }
+    //Cable TV
+    for (let payload of billProviderCableTVNetworks) {
+        await prisma.billProviderCableTVNetwork.upsert({
+            where: {
+                billServiceSlug_billProviderSlug: {
+                    billProviderSlug: payload.billProviderSlug,
+                    billServiceSlug: payload.billServiceSlug,
+                },
+            },
+            update: {},
+            create: payload,
+        });
+    }
 
     //Internet
     for (let payload of billProviderInternetNetworks) {
@@ -102,6 +94,15 @@ async function main() {
             },
             update: {},
             create: payload,
+        });
+    }
+
+    //Role
+    for (let role of roles) {
+        await prisma.role.upsert({
+            where: { slug: role.slug },
+            update: {},
+            create: role,
         });
     }
 }

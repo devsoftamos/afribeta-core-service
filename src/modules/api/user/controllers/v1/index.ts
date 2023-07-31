@@ -12,10 +12,11 @@ import {
     UseGuards,
     ValidationPipe,
 } from "@nestjs/common";
-import { User as UserEntity } from "@prisma/client";
+import { User as UserModel } from "@prisma/client";
 import { User } from "../../decorators";
 import {
     CreateTransactionPinDto,
+    UpdateProfileDto,
     UpdateProfilePasswordDto,
     UpdateTransactionPinDto,
     VerifyTransactionPinDto,
@@ -48,7 +49,7 @@ export class UserController {
     @Patch("profile/transaction-pin")
     async upsertTransactionPin(
         @Body(ValidationPipe) updateTransactionPinDto: UpdateTransactionPinDto,
-        @User() user: UserEntity
+        @User() user: UserModel
     ) {
         return await this.userService.updateTransactionPin(
             updateTransactionPinDto,
@@ -60,7 +61,7 @@ export class UserController {
     @Post("profile/verify-transaction-pin")
     async verifyTransactionPin(
         @Body(ValidationPipe) verifyTransactionPinDto: VerifyTransactionPinDto,
-        @User() user: UserEntity
+        @User() user: UserModel
     ) {
         return await this.userService.verifyTransactionPin(
             verifyTransactionPinDto,
@@ -71,11 +72,19 @@ export class UserController {
     @Post("profile/transaction-pin")
     async createTransactionPin(
         @Body(ValidationPipe) createTransactionPinDto: CreateTransactionPinDto,
-        @User() user: UserEntity
+        @User() user: UserModel
     ) {
         return await this.userService.createTransactionPin(
             createTransactionPinDto,
             user
         );
+    }
+
+    @Patch("profile")
+    async updateProfile(
+        @Body(ValidationPipe) updateProfileDto: UpdateProfileDto,
+        @User() user: UserModel
+    ) {
+        return await this.userService.updateProfile(updateProfileDto, user);
     }
 }
