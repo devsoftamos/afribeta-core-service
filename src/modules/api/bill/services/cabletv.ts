@@ -224,6 +224,9 @@ export class CableTVBillService {
                         billServiceSlug: options.billService,
                     },
                 },
+                select: {
+                    cableTVProvider: true,
+                },
             });
 
         if (!providerNetwork) {
@@ -251,6 +254,7 @@ export class CableTVBillService {
                     purchaseOptions: options,
                     user: user,
                     paymentChannel: PaymentChannel.PAYSTACK_CHANNEL,
+                    billService: providerNetwork.cableTVProvider,
                 });
                 return response(resp);
             }
@@ -279,6 +283,7 @@ export class CableTVBillService {
                     purchaseOptions: options,
                     user: user,
                     wallet: wallet,
+                    billService: providerNetwork.cableTVProvider,
                 });
                 return response(resp);
             }
@@ -301,7 +306,13 @@ export class CableTVBillService {
             type: "numeric",
             length: 12,
         });
-        const { billProvider, paymentChannel, purchaseOptions, user } = options;
+        const {
+            billProvider,
+            paymentChannel,
+            purchaseOptions,
+            user,
+            billService,
+        } = options;
 
         //TODO: compute commission for agent and merchant here
 
@@ -321,7 +332,7 @@ export class CableTVBillService {
                 paymentReference: paymentReference,
                 paymentStatus: PaymentStatus.PENDING,
                 packageType: purchaseOptions.packageType,
-                shortDescription: TransactionShortDescription.CABLE_TV_PAYMENT,
+                shortDescription: `${billService?.name ?? "Cable TV"} Payment`,
                 serviceTransactionCode: purchaseOptions.accessToken,
                 senderIdentifier: purchaseOptions.smartCardNumber,
                 billServiceSlug: purchaseOptions.billService,

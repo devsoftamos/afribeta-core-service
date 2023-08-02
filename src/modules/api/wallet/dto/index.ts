@@ -1,7 +1,10 @@
 import {
+    IsBooleanString,
+    IsDateString,
     IsEnum,
     IsInt,
     IsNumberString,
+    IsOptional,
     IsString,
     Length,
 } from "class-validator";
@@ -88,4 +91,26 @@ export class CreateVendorWalletDto {
 export class PaymentReferenceDto {
     @IsString()
     reference: string;
+}
+
+export class ListWalletTransactionDto {
+    @IsOptional()
+    @IsBooleanString()
+    pagination: string;
+
+    @IsOptional()
+    @IsNumberString()
+    page: number;
+
+    @IsOptional()
+    @IsNumberString()
+    limit: number;
+
+    @IsOptional()
+    @IsDateString()
+    startDate: string;
+
+    @IsOptional()
+    @IsDateString()
+    endDate: string;
 }

@@ -3,7 +3,9 @@ import { PrismaService } from "@/modules/core/prisma/services";
 import { PaystackService } from "@/modules/workflow/payment/providers/paystack/services";
 import { HttpStatus, Injectable } from "@nestjs/common";
 import {
+    PaymentChannel,
     PaymentStatus,
+    Prisma,
     Transaction,
     TransactionFlow,
     TransactionStatus,
@@ -20,6 +22,7 @@ import {
     InitializeWalletFundingDto,
     InitializeWithdrawalDto,
     InitiateWalletCreationDto,
+    ListWalletTransactionDto,
     PaymentProvider,
     PaymentReferenceDto,
     TransferToOtherWalletDto,
@@ -45,7 +48,12 @@ import {
     WalletFundProvider,
 } from "../interfaces";
 import logger from "moment-logger";
-import { ApiResponse, buildResponse } from "@/utils/api-response-util";
+import {
+    ApiResponse,
+    buildResponse,
+    Data,
+    DataWithPagination,
+} from "@/utils/api-response-util";
 import {
     TransactionNotFoundException,
     TransactionShortDescription,
@@ -57,7 +65,7 @@ import {
     DB_TRANSACTION_TIMEOUT,
     paystackVirtualAccountBank,
 } from "@/config";
-import { generateId } from "@/utils";
+import { generateId, PaginationMeta } from "@/utils";
 import { ProvidusService } from "@/modules/workflow/payment/providers/providus/services";
 
 @Injectable()
@@ -904,6 +912,91 @@ export class WalletService {
         return buildResponse({
             message: "Wallet transfer transaction successfully verified",
             data: data,
+        });
+    }
+
+    async listWalletTransactions(
+        options: ListWalletTransactionDto,
+        user: User
+    ): Promise<ApiResponse<DataWithPagination>> {
+        const meta: Partial<PaginationMeta> = {};
+
+        const queryOptions: Prisma.TransactionFindManyArgs = {
+            orderBy: { createdAt: "desc" },
+            where: {
+                userId: user.id,
+                status: TransactionStatus.SUCCESS,
+                OR: [
+                    {
+                        type: {
+                            in: [
+                                TransactionType.TRANSFER_FUND,
+                                TransactionType.WALLET_FUND,
+                            ],
+                        },
+                    },
+                    {
+                        paymentChannel: PaymentChannel.WALLET,
+                    },
+                ],
+            },
+            select: {
+                id: true,
+                amount: true,
+                flow: true,
+                shortDescription: true,
+                createdAt: true,
+                updatedAt: true,
+            },
+        };
+
+        if (options.startDate && options.endDate) {
+            queryOptions.where = {
+                ...queryOptions.where,
+                createdAt: {
+                    gte: new Date(options.startDate),
+                    lte: new Date(options.endDate),
+                },
+            };
+        }
+
+        if (options.pagination) {
+            const page = +options.page ?? 1;
+            const limit = +options.limit ?? 10;
+            const offset = (page - 1) * limit;
+            queryOptions.skip = offset;
+            queryOptions.take = limit;
+            const count = await this.prisma.transaction.count({
+                where: queryOptions.where,
+            });
+            meta.totalCount = count;
+            meta.page = page;
+            meta.perPage = limit;
+        }
+
+        const transactions = await this.prisma.transaction.findMany(
+            queryOptions
+        );
+        if (options.pagination) {
+            meta.pageCount = transactions.length;
+        }
+
+        const credit = transactions
+            .filter((trans) => trans.flow == TransactionFlow.IN)
+            .reduce((acc, hash) => acc + hash.amount, 0);
+
+        const debit = transactions
+            .filter((trans) => trans.flow == TransactionFlow.OUT)
+            .reduce((acc, hash) => acc + hash.amount, 0);
+
+        return buildResponse<DataWithPagination>({
+            message: "Wallet transactions successfully retrieved",
+            data: {
+                credit: credit,
+                debit: debit,
+                meta: meta,
+                records: transactions,
+            },
         });
     }
 }

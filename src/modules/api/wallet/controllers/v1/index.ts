@@ -18,6 +18,7 @@ import {
     InitializeWalletFundingDto,
     InitializeWithdrawalDto,
     InitiateWalletCreationDto,
+    ListWalletTransactionDto,
     PaymentReferenceDto,
     TransferToOtherWalletDto,
     VerifyWalletDto,
@@ -139,6 +140,18 @@ export class WalletController {
     ) {
         return await this.walletService.verifyWalletToWalletTransfer(
             paymentReferenceDto,
+            user
+        );
+    }
+
+    @Get("transaction")
+    async listWalletTransactions(
+        @Query(ValidationPipe)
+        listWalletTransactionDto: ListWalletTransactionDto,
+        @User() user: UserModel
+    ) {
+        return await this.walletService.listWalletTransactions(
+            listWalletTransactionDto,
             user
         );
     }

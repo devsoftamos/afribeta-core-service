@@ -1,12 +1,12 @@
-import { ApiResponse } from "./interfaces";
+import { ApiResponse, Data } from "./interfaces";
 export * from "./interfaces";
 
-export const buildResponse = (
-    options: Omit<ApiResponse, "success">
-): ApiResponse => {
+export function buildResponse<TData extends Data = Data>(
+    options: Omit<ApiResponse<TData>, "success">
+): ApiResponse<TData> {
     return {
         success: true,
         message: options.message,
         data: options.data ?? {},
     };
-};
+}

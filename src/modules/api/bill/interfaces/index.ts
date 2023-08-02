@@ -1,5 +1,6 @@
 import {
     BillProvider,
+    BillService,
     PaymentChannel,
     PaymentStatus,
     Transaction,
@@ -41,6 +42,7 @@ export interface BillPurchaseInitializationHandlerOptions<PurchaseOptions> {
     billProvider: BillProvider;
     paymentChannel: PaymentChannel;
     wallet?: Wallet;
+    billService?: BillService;
 }
 
 export interface CompleteBillPurchaseUserOptions {
