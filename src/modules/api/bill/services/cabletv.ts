@@ -16,10 +16,7 @@ import {
     User,
     UserType,
 } from "@prisma/client";
-import {
-    TransactionNotFoundException,
-    TransactionShortDescription,
-} from "../../transaction";
+import { TransactionNotFoundException } from "../../transaction";
 import { UserNotFoundException } from "../../user";
 import {
     InsufficientWalletBalanceException,

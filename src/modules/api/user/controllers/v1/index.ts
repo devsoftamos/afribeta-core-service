@@ -96,9 +96,9 @@ export class UserController {
     @UseGuards(AbilitiesGuard)
     @CheckAbilities(new CreateAgentAbility())
     async createAgent(
-        @Body(ValidationPipe) CreateAgentDto: CreateAgentDto,
+        @Body(ValidationPipe) createAgentDto: CreateAgentDto,
         @User() user: UserModel
     ) {
-        return await this.userService.createAgent(CreateAgentDto, user);
+        return await this.userService.createAgent(createAgentDto, user);
     }
 }
