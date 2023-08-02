@@ -33,7 +33,7 @@ export class AbilitiesGuard implements CanActivate {
         const ability = await this.abilityFactory.createForUser(user);
 
         try {
-            for (let rule of rules) {
+            for (const rule of rules) {
                 ForbiddenError.from(ability).throwUnlessCan(
                     rule.action,
                     rule.subject
