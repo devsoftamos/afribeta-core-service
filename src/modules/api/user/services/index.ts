@@ -4,6 +4,7 @@ import { forwardRef, HttpStatus, Inject, Injectable } from "@nestjs/common";
 import { Prisma, User } from "@prisma/client";
 import { AuthService } from "../../auth/services";
 import {
+    CreateAgentDto,
     CreateTransactionPinDto,
     UpdateProfileDto,
     UpdateProfilePasswordDto,
@@ -240,5 +241,7 @@ export class UserService {
         });
     }
 
-    //async createAgent(options: CreateAgentDto, user: User) {}
+    async createAgent(options: CreateAgentDto, user: User) {
+        console.log(options, user);
+    }
 }

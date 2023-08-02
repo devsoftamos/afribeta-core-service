@@ -1,5 +1,8 @@
 import { RequestWithUser } from "@/modules/api/auth";
 import { AuthGuard } from "@/modules/api/auth/guard";
+import { CreateAgentAbility } from "@/modules/core/ability";
+import { CheckAbilities } from "@/modules/core/ability/decorator";
+import { AbilitiesGuard } from "@/modules/core/ability/guards";
 import {
     Body,
     Controller,
@@ -15,6 +18,7 @@ import {
 import { User as UserModel } from "@prisma/client";
 import { User } from "../../decorators";
 import {
+    CreateAgentDto,
     CreateTransactionPinDto,
     UpdateProfileDto,
     UpdateProfilePasswordDto,
@@ -86,5 +90,15 @@ export class UserController {
         @User() user: UserModel
     ) {
         return await this.userService.updateProfile(updateProfileDto, user);
+    }
+
+    @Post("agent")
+    @UseGuards(AbilitiesGuard)
+    @CheckAbilities(new CreateAgentAbility())
+    async createAgent(
+        @Body(ValidationPipe) CreateAgentDto: CreateAgentDto,
+        @User() user: UserModel
+    ) {
+        return await this.userService.createAgent(CreateAgentDto, user);
     }
 }
