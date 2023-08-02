@@ -980,12 +980,19 @@ export class WalletService {
         if (options.pagination) {
             meta.pageCount = transactions.length;
         }
+        const trans = await this.prisma.transaction.findMany({
+            where: queryOptions.where,
+            select: {
+                amount: true,
+                flow: true,
+            },
+        });
 
-        const credit = transactions
+        const credit = trans
             .filter((trans) => trans.flow == TransactionFlow.IN)
             .reduce((acc, hash) => acc + hash.amount, 0);
 
-        const debit = transactions
+        const debit = trans
             .filter((trans) => trans.flow == TransactionFlow.OUT)
             .reduce((acc, hash) => acc + hash.amount, 0);
 
