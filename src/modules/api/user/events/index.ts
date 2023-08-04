@@ -1,17 +1,13 @@
 import { EventEmitter } from "events";
 
-import { forwardRef, Inject, Injectable } from "@nestjs/common";
-import { UserService } from "../../user/services";
-import { AgentCreationEventOptions, UserEventMap } from "../interfaces";
+import { Injectable } from "@nestjs/common";
+import { UserEventMap } from "../interfaces";
 
 @Injectable()
 export class UserEvent extends EventEmitter {
-    constructor(
-        @Inject(forwardRef(() => UserService))
-        private userService: UserService
-    ) {
+    constructor() {
+        // private userService: UserService // @Inject(forwardRef(() => UserService))
         super();
-        this.on("agent-creation", this.onAgentCreation);
     }
 
     emit<K extends keyof UserEventMap>(
@@ -26,10 +22,5 @@ export class UserEvent extends EventEmitter {
         listener: (payload: UserEventMap[K]) => void
     ) {
         return super.on(eventName, listener);
-    }
-
-    async onAgentCreation(_options: AgentCreationEventOptions) {
-        //handle async process
-        this.userService;
     }
 }
