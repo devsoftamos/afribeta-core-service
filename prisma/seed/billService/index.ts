@@ -1,24 +1,24 @@
 const airtime = [
     {
-        name: "MTN",
+        name: "MTN Airtime",
         slug: "mtn-airtime",
         type: "AIRTIME",
         icon: "https://afribeta.s3.amazonaws.com/MTN.png",
     },
     {
-        name: "Glo",
+        name: "Glo Airtime",
         slug: "glo-airtime",
         type: "AIRTIME",
         icon: "https://afribeta.s3.amazonaws.com/Glo.png",
     },
     {
-        name: "Etisalat",
+        name: "Etisalat Airtime",
         slug: "etisalat-airtime",
         type: "AIRTIME",
         icon: "https://afribeta.s3.amazonaws.com/etisalat.png",
     },
     {
-        name: "Airtel",
+        name: "Airtel Airtime",
         slug: "airtel-airtime",
         type: "AIRTIME",
         icon: "https://afribeta.s3.amazonaws.com/airtel.png",
@@ -27,25 +27,25 @@ const airtime = [
 
 const data = [
     {
-        name: "MTN",
+        name: "MTN Data",
         slug: "mtn-data",
         type: "DATA",
         icon: "https://afribeta.s3.amazonaws.com/MTN.png",
     },
     {
-        name: "Glo",
+        name: "Glo Data",
         slug: "glo-data",
         type: "DATA",
         icon: "https://afribeta.s3.amazonaws.com/Glo.png",
     },
     {
-        name: "Etisalat",
+        name: "Etisalat Data",
         slug: "etisalat-data",
         type: "DATA",
         icon: "https://afribeta.s3.amazonaws.com/etisalat.png",
     },
     {
-        name: "Airtel",
+        name: "Airtel Data",
         slug: "airtel-data",
         type: "DATA",
         icon: "https://afribeta.s3.amazonaws.com/airtel.png",
@@ -155,25 +155,25 @@ const electricity = [
 
 const internet = [
     {
-        name: "MTN",
+        name: "MTN Internet",
         slug: "mtn-internet",
         type: "INTERNET",
         icon: "https://afribeta.s3.amazonaws.com/MTN.png",
     },
     {
-        name: "Glo",
+        name: "Glo Internet",
         slug: "glo-internet",
         type: "INTERNET",
         icon: "https://afribeta.s3.amazonaws.com/Glo.png",
     },
     {
-        name: "Etisalat",
+        name: "Etisalat Internet",
         slug: "etisalat-internet",
         type: "INTERNET",
         icon: "https://afribeta.s3.amazonaws.com/etisalat.png",
     },
     {
-        name: "Airtel",
+        name: "Airtel Internet",
         slug: "airtel-internet",
         type: "INTERNET",
         icon: "https://afribeta.s3.amazonaws.com/airtel.png",

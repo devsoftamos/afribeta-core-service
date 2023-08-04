@@ -13,8 +13,8 @@ import {
     UserNotFoundException,
 } from "@/modules/api/user";
 import * as bcrypt from "bcryptjs";
-import { Prisma, Role, UserType } from "@prisma/client";
-import { customAlphabet, urlAlphabet } from "nanoid";
+import { Prisma, Role, User, UserType } from "@prisma/client";
+import { customAlphabet } from "nanoid";
 import {
     InvalidCredentialException,
     InvalidEmailVerificationCodeException,
@@ -27,9 +27,15 @@ import { ApiResponse, buildResponse } from "@/utils/api-response-util";
 import { SmsService } from "@/modules/core/sms/services";
 import { PrismaService } from "@/modules/core/prisma/services";
 import { EmailService } from "@/modules/core/email/services";
-import { passwordResetTemplate, verifyEmailTemplate } from "@/config";
+import {
+    agentVerifyEmailTemplate,
+    passwordResetTemplate,
+    verifyEmailTemplate,
+} from "@/config";
 import { SendinblueEmailException } from "@calculusky/transactional-email";
 import logger from "moment-logger";
+import { generateId } from "@/utils";
+import { AgentVerifyEmailParams } from "../interfaces";
 
 @Injectable()
 export class AuthService {
@@ -78,9 +84,10 @@ export class AuthService {
             });
 
             const phoneNumber = `234${options.phone.trim().substring(1)}`;
-            const emailResp = await this.emailService.brevo.send({
-                to: [{ email: email }],
+            const emailResp = await this.emailService.send({
+                to: { email: email },
                 subject: "Verify Your Email",
+                provider: "sendinblue",
                 templateId: verifyEmailTemplate,
                 params: {
                     code: verificationCode,
@@ -98,6 +105,7 @@ export class AuthService {
                     })
                     .catch(() => false);
             }
+
             return buildResponse({
                 message: `An email verification code has been sent to your email, ${options.email}`,
             });
@@ -126,7 +134,9 @@ export class AuthService {
     }
 
     async signUp(options: SignUpDto, ip: string): Promise<ApiResponse> {
-        const user = await this.userService.findUserByEmail(options.email);
+        const user = await this.userService.findUserByEmail(
+            options.email.trim()
+        );
         if (user) {
             throw new DuplicateUserException(
                 "An account already exist with this email. Please login",
@@ -179,7 +189,7 @@ export class AuthService {
             email: verificationData.email,
             phone: options.phone.trim(),
             userType: options.userType,
-            identifier: customAlphabet(urlAlphabet, 16)(),
+            identifier: generateId({ type: "identifier" }),
             password: hashedPassword,
             ipAddress: ip,
             isMerchantUpgradable: options.userType == "AGENT" ? true : false,
@@ -258,9 +268,10 @@ export class AuthService {
             },
         });
 
-        await this.emailService.brevo
+        await this.emailService
             .send({
                 to: [{ email: options.email }],
+                provider: "sendinblue",
                 subject: "Reset Your Password",
                 templateId: passwordResetTemplate,
                 params: {
@@ -313,5 +324,91 @@ export class AuthService {
         return buildResponse({
             message: `Password successfully updated. Kindly login`,
         });
+    }
+
+    async sendAgentAccountVerificationEmail(
+        options: SendVerificationCodeDto,
+        user: User
+    ): Promise<ApiResponse> {
+        try {
+            const verificationCode = customAlphabet("1234567890", 4)();
+            const email = options.email.toLowerCase().trim();
+
+            const agent = await this.userService.findUserByEmail(email);
+            if (agent) {
+                throw new DuplicateUserException(
+                    "Account already verified. Kindly login",
+                    HttpStatus.BAD_REQUEST
+                );
+            }
+
+            await this.prisma.accountVerificationRequest.upsert({
+                where: {
+                    email: email,
+                },
+                create: {
+                    code: verificationCode,
+                    email: email,
+                },
+                update: {
+                    code: verificationCode,
+                },
+            });
+
+            const phoneNumber = `234${options.phone.trim().substring(1)}`;
+            const emailResp =
+                await this.emailService.send<AgentVerifyEmailParams>({
+                    to: { email: email },
+                    subject: "Verify Your Email",
+                    provider: "sendinblue",
+                    templateId: agentVerifyEmailTemplate,
+                    params: {
+                        code: verificationCode,
+                        firstName: options.firstName,
+                        merchantName: `${user.firstName} ${user.lastName}`,
+                        merchantEmail: user.email,
+                    },
+                });
+
+            if (emailResp) {
+                await this.smsService.termii
+                    .send({
+                        to: phoneNumber,
+                        sms: `Hi, a confirmation code has been triggered by an Afribeta Merchant, ${
+                            user.firstName
+                        } ${
+                            user.lastName
+                        } to your email, ${options.email.trim()}. Kindly send back the code to the merchant to complete your Afribeta Agent Account creation.`,
+                        type: "plain",
+                        channel: "generic",
+                    })
+                    .catch(() => false);
+            }
+
+            return buildResponse({
+                message: `An email verification code has been sent to the agent's email, ${options.email}`,
+            });
+        } catch (error) {
+            logger.error(error);
+            switch (true) {
+                case error instanceof DuplicateUserException: {
+                    throw error;
+                }
+
+                case error instanceof SendinblueEmailException: {
+                    throw new SendVerificationEmailException(
+                        "Error from email provider. Please try again",
+                        HttpStatus.INTERNAL_SERVER_ERROR
+                    );
+                }
+
+                default: {
+                    throw new SendVerificationEmailException(
+                        "Unable to send email verification",
+                        HttpStatus.INTERNAL_SERVER_ERROR
+                    );
+                }
+            }
+        }
     }
 }

@@ -1,6 +1,6 @@
 import {
     IsEnum,
-    IsInt,
+    IsNumber,
     IsOptional,
     IsPhoneNumber,
     IsString,
@@ -13,7 +13,7 @@ export class PurchasePowerDto extends PurchaseBillDto {
     @IsString()
     billService: string;
 
-    @IsInt()
+    @IsNumber()
     amount: number;
 
     @IsEnum(MeterType)

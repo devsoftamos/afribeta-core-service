@@ -11,27 +11,40 @@ export class AbilityFactory {
     async createForUser(user: User) {
         const role = await this.prisma.role.findUnique({
             where: {
-                id: user.id,
+                id: user.roleId,
             },
             select: {
                 id: true,
-                permissions: true,
+                slug: true,
+                permissions: {
+                    select: { permission: { select: { name: true } } },
+                },
             },
         });
+        let permissions = [];
+        if (role.permissions) {
+            permissions = role.permissions.map((p) => p.permission.name);
+        }
         const { can, cannot, build } = new AbilityBuilder<AppAbility>(
             createPrismaAbility
         );
 
-        console.log(user, "****USER******", role);
+        can(Action.CreateAgent, "User");
+        can(Action.ViewAgent, "User", {
+            createdById: user.id,
+        });
 
-        if (user.userType != UserType.MERCHANT) {
+        //Agent Management
+        if (!permissions.includes(Action.CreateAgent)) {
             cannot(Action.CreateAgent, "User").because(
-                "You do not have sufficient permission to create agent"
+                "Your account type does not have sufficient permission to create agent"
             );
         }
 
-        if (user.userType == UserType.MERCHANT) {
-            can(Action.CreateAgent, "User");
+        if (!permissions.includes(Action.ViewAgent)) {
+            cannot(Action.ViewAgent, "User").because(
+                "Your account type does not have sufficient permission to view agent"
+            );
         }
 
         return build();

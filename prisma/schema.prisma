@@ -50,7 +50,7 @@ model User {
   merchantUpgradeStatus MerchantUpgradeStatus?
   transactionPin        String?
   roleId                Int
-  ipAddress             String
+  ipAddress             String?
   notificationToken     String?
   cacNumber             String?
   utilityDocumentUrl    String?
@@ -148,13 +148,13 @@ model Role {
 
 //Permission
 model Permission {
-  id        Int              @id @default(autoincrement())
-  name      String           @unique
-  slug      String           @unique
-  domain    String
-  createdAt DateTime         @default(now())
-  updatedAt DateTime         @updatedAt
-  roles     RolePermission[]
+  id                 Int              @id @default(autoincrement())
+  name               String           @unique
+  description        String
+  isCustomAssignable Boolean          @default(true)
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+  roles              RolePermission[]
 
   @@map("Permissions")
 }

@@ -15,10 +15,13 @@ export enum Action {
     Read = "read",
     Update = "update",
     Delete = "delete",
-    CreateAgent = "create_agent",
+    CreateAgent = "agent.create",
+    ViewAgent = "agent.view",
 }
 
 export interface RequiredRule {
     action: Action;
     subject: Subjects;
+    fields?: string[];
+    conditions?: Record<string, any>;
 }

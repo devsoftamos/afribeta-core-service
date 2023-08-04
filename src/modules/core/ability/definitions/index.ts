@@ -4,3 +4,8 @@ export class CreateAgentAbility implements RequiredRule {
     action: Action = Action.CreateAgent;
     subject: Subjects = "User";
 }
+
+export class ViewAgentAbility implements RequiredRule {
+    action: Action = Action.ViewAgent;
+    subject: Subjects = "User";
+}

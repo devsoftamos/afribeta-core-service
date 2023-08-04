@@ -1,5 +1,5 @@
 import { NetworkDataProvider } from "@/modules/workflow/billPayment";
-import { IsEnum, IsInt, IsString } from "class-validator";
+import { IsEnum, IsNumber, IsString } from "class-validator";
 import { PurchaseBillDto } from ".";
 
 export class GetDataBundleDto {
@@ -17,7 +17,7 @@ export class PurchaseDataDto extends PurchaseBillDto {
     @IsString()
     packageType: string;
 
-    @IsInt()
+    @IsNumber()
     price: number;
 
     @IsEnum(NetworkDataProvider)

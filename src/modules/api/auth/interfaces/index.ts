@@ -14,3 +14,10 @@ interface PaystackHeader {
 }
 
 export type RequestFromPaystack = Request & { headers: PaystackHeader };
+
+export interface AgentVerifyEmailParams {
+    firstName: string;
+    code: string;
+    merchantName: string;
+    merchantEmail: string;
+}

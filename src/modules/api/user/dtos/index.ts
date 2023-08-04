@@ -3,9 +3,11 @@ import {
     ArrayMinSize,
     IsArray,
     IsBase64,
+    IsBooleanString,
     IsDecimal,
     IsEmail,
     IsNotEmpty,
+    IsNumber,
     IsNumberString,
     IsOptional,
     IsPhoneNumber,
@@ -72,11 +74,11 @@ export class UpdateProfileDto {
     photo: string;
 }
 
-export class CommissionOptions {
+export class BillServiceCommissionOptions {
     @IsString()
     billServiceSlug: string;
 
-    @IsDecimal()
+    @IsNumber()
     percentage: number;
 }
 export class CreateAgentDto {
@@ -96,8 +98,33 @@ export class CreateAgentDto {
     phone: string;
 
     @ValidateNested({ each: true })
-    @Type(() => CommissionOptions)
+    @Type(() => BillServiceCommissionOptions)
     @ArrayMinSize(1)
     @IsArray()
-    commissions: CommissionOptions[];
+    billServiceCommissions: BillServiceCommissionOptions[];
+
+    @IsString()
+    verificationCode: string;
+
+    @IsOptional()
+    @IsString()
+    localGovernmentArea: string;
+
+    @IsOptional()
+    @IsString()
+    state: string;
+}
+
+export class ListMerchantAgentsDto {
+    @IsOptional()
+    @IsBooleanString()
+    pagination: string;
+
+    @IsOptional()
+    @IsNumberString()
+    page: number;
+
+    @IsOptional()
+    @IsNumberString()
+    limit: number;
 }

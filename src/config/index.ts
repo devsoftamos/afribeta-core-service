@@ -81,6 +81,14 @@ const runtimeEnvironment: RequiredEnvironment[] = [
         name: "PAYSTACK_VIRTUAL_ACCOUNT_BANK",
         type: RequiredEnvironmentTypes.String,
     },
+    {
+        name: "AGENT_POST_ACCOUNT_CREATE_TEMPLATE",
+        type: RequiredEnvironmentTypes.String,
+    },
+    {
+        name: "AGENT_VERIFY_EMAIL_TEMPLATE",
+        type: RequiredEnvironmentTypes.String,
+    },
 ];
 
 validate(runtimeEnvironment);
@@ -103,6 +111,10 @@ export const jwtSecret: string = process.env.JWT_SECRET;
 //email templates
 export const verifyEmailTemplate: number = +process.env.VERIFY_EMAIL_TEMPLATE;
 export const passwordResetTemplate = +process.env.PASSWORD_RESET_TEMPLATE;
+export const agentVerifyEmailTemplate: number =
+    +process.env.AGENT_VERIFY_EMAIL_TEMPLATE;
+export const agentPostAccountCreateTemplate: number =
+    +process.env.AGENT_POST_ACCOUNT_CREATE_TEMPLATE;
 
 //payment
 export const paystackSecretKey: string = process.env.PAYSTACK_SECRET_KEY;

@@ -8,7 +8,9 @@ import { billProviderDataBundleNetworks } from "./billProviderDataBundleNetwork"
 import { billProviderElectricDiscos } from "./billProviderElectricDisco";
 import { billProviderInternetNetworks } from "./billProviderInternetNetwork";
 import { billServiceData } from "./billService";
+import { permissions } from "./permission";
 import { roles } from "./role";
+import { rolePermissions } from "./rolePermission";
 
 async function main() {
     for (let provider of billProviders) {
@@ -103,6 +105,29 @@ async function main() {
             where: { slug: role.slug },
             update: {},
             create: role,
+        });
+    }
+
+    //Permission
+    for (let permission of permissions) {
+        await prisma.permission.upsert({
+            where: { name: permission.name },
+            update: {},
+            create: permission,
+        });
+    }
+
+    //Role Permissions
+    for (let rolePermission of rolePermissions) {
+        await prisma.rolePermission.upsert({
+            where: {
+                roleId_permissionId: {
+                    permissionId: rolePermission.permissionId,
+                    roleId: rolePermission.roleId,
+                },
+            },
+            update: {},
+            create: rolePermission,
         });
     }
 }

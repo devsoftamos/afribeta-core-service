@@ -15,3 +15,11 @@ export class IncorrectPasswordException extends HttpException {
 export class TransactionPinException extends HttpException {
     name = "TransactionPinException";
 }
+
+export class InvalidAgentCommissionAssignment extends HttpException {
+    name: string = "InvalidAgentCommissionAssignment";
+}
+
+export class AgentCreationException extends HttpException {
+    name: string = "AgentCreationException";
+}

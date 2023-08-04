@@ -1,6 +1,6 @@
 import { RequestWithUser } from "@/modules/api/auth";
 import { AuthGuard } from "@/modules/api/auth/guard";
-import { CreateAgentAbility } from "@/modules/core/ability";
+import { CreateAgentAbility, ViewAgentAbility } from "@/modules/core/ability";
 import { CheckAbilities } from "@/modules/core/ability/decorator";
 import { AbilitiesGuard } from "@/modules/core/ability/guards";
 import {
@@ -9,6 +9,8 @@ import {
     Get,
     HttpCode,
     HttpStatus,
+    Param,
+    ParseIntPipe,
     Patch,
     Post,
     Req,
@@ -20,6 +22,7 @@ import { User } from "../../decorators";
 import {
     CreateAgentDto,
     CreateTransactionPinDto,
+    ListMerchantAgentsDto,
     UpdateProfileDto,
     UpdateProfilePasswordDto,
     UpdateTransactionPinDto,
@@ -100,5 +103,33 @@ export class UserController {
         @User() user: UserModel
     ) {
         return await this.userService.createAgent(createAgentDto, user);
+    }
+
+    @Get("agent")
+    @UseGuards(AbilitiesGuard)
+    @CheckAbilities(new ViewAgentAbility())
+    async getMerchantAgents(
+        @Body(ValidationPipe) listMerchantAgentsDto: ListMerchantAgentsDto,
+        @User() user: UserModel
+    ) {
+        return await this.userService.getMerchantAgents(
+            listMerchantAgentsDto,
+            user
+        );
+    }
+
+    @Get("agent/:id")
+    @UseGuards(AbilitiesGuard)
+    @CheckAbilities(new ViewAgentAbility())
+    async getSingleAgent(
+        @Param("id", ParseIntPipe) id: number,
+        @User() user: UserModel
+    ) {
+        return await this.userService.getSingleAgent(id, user);
+    }
+
+    @Get("commission")
+    async getUserBillCommissions(@User() user: UserModel) {
+        return await this.userService.getServiceCommissions(user);
     }
 }

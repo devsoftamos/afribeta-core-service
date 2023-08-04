@@ -1,6 +1,12 @@
 export const permissions = [
     {
-        name: "Manage Agents",
-        slug: "manage-agents",
+        name: "agent.create",
+        description: "Create Agent",
+        isCustomAssignable: false,
+    },
+    {
+        name: "agent.view",
+        description: "View Agent",
+        isCustomAssignable: false,
     },
 ];

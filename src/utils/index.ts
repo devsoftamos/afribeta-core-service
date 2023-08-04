@@ -1,4 +1,4 @@
-import { customAlphabet } from "nanoid";
+import { customAlphabet, urlAlphabet } from "nanoid";
 import { TransactionIdOption } from "./interfaces";
 
 export * from "./api-response-util";
@@ -25,6 +25,9 @@ export const generateId = (options: TransactionIdOption): string => {
 
         case "numeric": {
             return customAlphabet(numeric, length)();
+        }
+        case "identifier": {
+            return customAlphabet(urlAlphabet, 16)();
         }
 
         default:
