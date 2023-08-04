@@ -4,7 +4,6 @@ import {
     IsArray,
     IsBase64,
     IsBooleanString,
-    IsDecimal,
     IsEmail,
     IsNotEmpty,
     IsNumber,

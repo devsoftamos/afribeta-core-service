@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import { User, UserType } from "@prisma/client";
+import { User } from "@prisma/client";
 import { AbilityBuilder } from "@casl/ability";
 import { createPrismaAbility } from "@casl/prisma";
 import { Action, AppAbility } from "../interfaces";

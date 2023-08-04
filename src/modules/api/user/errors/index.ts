@@ -17,9 +17,9 @@ export class TransactionPinException extends HttpException {
 }
 
 export class InvalidAgentCommissionAssignment extends HttpException {
-    name: string = "InvalidAgentCommissionAssignment";
+    name = "InvalidAgentCommissionAssignment";
 }
 
 export class AgentCreationException extends HttpException {
-    name: string = "AgentCreationException";
+    name = "AgentCreationException";
 }

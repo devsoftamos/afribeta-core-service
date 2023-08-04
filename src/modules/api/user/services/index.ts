@@ -393,7 +393,7 @@ export class UserService {
                 },
             });
 
-        for (let billCommission of options.billServiceCommissions) {
+        for (const billCommission of options.billServiceCommissions) {
             const merchantServiceCommission = merchantBillCommissions.find(
                 (bc) => bc.billServiceSlug == billCommission.billServiceSlug
             );
