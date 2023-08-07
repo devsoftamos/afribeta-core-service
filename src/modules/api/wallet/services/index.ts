@@ -663,7 +663,7 @@ export class WalletService {
             })
             .catch(() => false);
 
-        const virtualAccountsCreateManyOptions: Prisma.Enumerable<Prisma.VirtualBankAccountCreateManyInput> =
+        const virtualAccountCreateManyOptions: Prisma.Enumerable<Prisma.VirtualBankAccountCreateManyInput> =
             [];
 
         if (providusAccountDetail) {
@@ -678,7 +678,7 @@ export class WalletService {
                     userId: user.id,
                     slug: this.providusService.bankDetails.slug,
                 };
-            virtualAccountsCreateManyOptions.push(providusCreateOptions);
+            virtualAccountCreateManyOptions.push(providusCreateOptions);
         }
         if (fsdh360BankAccountDetail) {
             const account =
@@ -692,7 +692,7 @@ export class WalletService {
                     userId: user.id,
                     slug: this.fsdh360BankService.bankDetails.slug,
                 };
-            virtualAccountsCreateManyOptions.push(fsdhCreateOptions);
+            virtualAccountCreateManyOptions.push(fsdhCreateOptions);
         }
         if (squadGTBankAccountDetail) {
             const account =
@@ -706,27 +706,42 @@ export class WalletService {
                     userId: user.id,
                     slug: this.squadGTBankService.bankDetails.slug,
                 };
-            virtualAccountsCreateManyOptions.push(gtBankCreateOptions);
+            virtualAccountCreateManyOptions.push(gtBankCreateOptions);
         }
 
         //create record
-        const walletNumber = customAlphabet("1234567890ABCDEFGH", 10)();
-        await this.prisma
-            .$transaction(async (tx) => {
-                await tx.wallet.create({
-                    data: { userId: user.id, walletNumber: walletNumber },
-                });
+        if (virtualAccountCreateManyOptions.length) {
+            const walletNumber = customAlphabet("1234567890ABCDEFGH", 10)();
+            await this.prisma
+                .$transaction(async (tx) => {
+                    await tx.wallet.create({
+                        data: { userId: user.id, walletNumber: walletNumber },
+                    });
 
-                await tx.virtualBankAccount.createMany({
-                    data: virtualAccountsCreateManyOptions,
+                    await tx.virtualBankAccount.createMany({
+                        data: virtualAccountCreateManyOptions,
+                    });
+                    await tx.user.update({
+                        where: {
+                            id: user.id,
+                        },
+                        data: {
+                            isKycVerified: true,
+                        },
+                    });
+                })
+                .catch((err) => {
+                    throw new WalletCreationException(
+                        err.message,
+                        HttpStatus.INTERNAL_SERVER_ERROR
+                    );
                 });
-            })
-            .catch((err) => {
-                throw new WalletCreationException(
-                    err.message,
-                    HttpStatus.INTERNAL_SERVER_ERROR
-                );
-            });
+        } else {
+            throw new WalletCreationException(
+                "Wallet creation failed",
+                HttpStatus.INTERNAL_SERVER_ERROR
+            );
+        }
 
         return buildResponse({
             message: "Wallet successfully created",
