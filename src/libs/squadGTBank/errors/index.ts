@@ -1,8 +1,8 @@
 export class SquadGtBankError extends Error {
-    name: string = "SquadGtBankError";
+    name = "SquadGtBankError";
     status: number;
 }
 
 export class SquadGtBankVirtualAccountError extends SquadGtBankError {
-    name: string = "SquadGtBankVirtualAccountError";
+    name = "SquadGtBankVirtualAccountError";
 }

@@ -1,4 +1,4 @@
-export * from "./virtualAccount"
+export * from "./virtualAccount";
 
 export interface SquadGTBankOptions {
     baseUrl: string;
