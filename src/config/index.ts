@@ -7,6 +7,8 @@ import validate, {
 import { PaystackOptions } from "@/libs/paystack";
 import { IRechargeOptions } from "@/libs/iRecharge";
 import { ProvidusOptions } from "@/libs/providus";
+import { SquadGTBankOptions } from "@/libs/squadGTBank/interfaces";
+import { FSDH360BankOptions } from "@/libs/fsdh360Bank/interfaces";
 
 export * from "./constants";
 
@@ -89,6 +91,38 @@ const runtimeEnvironment: RequiredEnvironment[] = [
         name: "AGENT_VERIFY_EMAIL_TEMPLATE",
         type: RequiredEnvironmentTypes.String,
     },
+    {
+        name: "SQUAD_GTBANK_BASE_URL",
+        type: RequiredEnvironmentTypes.String,
+    },
+    {
+        name: "SQUAD_GTBANK_PRIVATE_KEY",
+        type: RequiredEnvironmentTypes.String,
+    },
+    {
+        name: "SQUAD_GTBANK_BENEFICIARY_ACCOUNT_NUMBER",
+        type: RequiredEnvironmentTypes.String,
+    },
+    {
+        name: "FSDH360_BASE_URL",
+        type: RequiredEnvironmentTypes.String,
+    },
+    {
+        name: "FSDH360_CLIENT_ID",
+        type: RequiredEnvironmentTypes.String,
+    },
+    {
+        name: "FSDH360_CLIENT_SECRET",
+        type: RequiredEnvironmentTypes.String,
+    },
+    {
+        name: "FSDH360_TOKEN_URL",
+        type: RequiredEnvironmentTypes.String,
+    },
+    {
+        name: "FSDH360_MERCHANT_ACCOUNT_NUMBER",
+        type: RequiredEnvironmentTypes.String,
+    },
 ];
 
 validate(runtimeEnvironment);
@@ -142,4 +176,21 @@ export const providusConfiguration: ProvidusOptions = {
     authSignature: process.env.PROVIDUS_AUTH_SIGNATURE,
     baseUrl: process.env.BASE_URL,
     clientId: process.env.CLIENT_ID,
+};
+
+//GtBank
+export const squadGtBankOptions: SquadGTBankOptions = {
+    apiKey: process.env.SQUAD_GTBANK_BASE_URL,
+    baseUrl: process.env.SQUAD_GTBANK_PRIVATE_KEY,
+    beneficiaryAccountNumber:
+        process.env.SQUAD_GTBANK_BENEFICIARY_ACCOUNT_NUMBER,
+};
+
+//FSDH360
+export const fsdh360BankOptions: FSDH360BankOptions = {
+    baseUrl: process.env.FSDH360_BASE_URL,
+    tokenUrl: process.env.FSDH360_TOKEN_URL,
+    clientId: process.env.FSDH360_CLIENT_ID,
+    clientSecret: process.env.FSDH360_CLIENT_SECRET,
+    merchantAccountNumber: process.env.FSDH360_MERCHANT_ACCOUNT_NUMBER,
 };

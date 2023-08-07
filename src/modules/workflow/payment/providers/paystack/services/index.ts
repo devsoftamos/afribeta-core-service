@@ -1,5 +1,5 @@
 import {
-    AssignDynamicVirtualAccountWithValidationOptions,
+    AssignDedicatedVirtualAccountWithValidationOptions,
     Paystack,
     PaystackError,
 } from "@/libs/paystack";
@@ -37,8 +37,8 @@ import logger from "moment-logger";
 export class PaystackService {
     constructor(private paystack: Paystack, private prisma: PrismaService) {}
 
-    async assignDynamicValidatedVirtualAccount(
-        options: AssignDynamicVirtualAccountWithValidationOptions
+    async assignDedicatedValidatedVirtualAccount(
+        options: AssignDedicatedVirtualAccountWithValidationOptions
     ) {
         try {
             const resp =

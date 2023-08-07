@@ -1,4 +1,4 @@
-import { AssignDynamicVirtualAccountWithValidationOptions } from "@/libs/paystack";
+import { AssignDedicatedVirtualAccountWithValidationOptions } from "@/libs/paystack";
 import { PrismaService } from "@/modules/core/prisma/services";
 import { PaystackService } from "@/modules/workflow/payment/providers/paystack/services";
 import { HttpStatus, Injectable } from "@nestjs/common";
@@ -158,7 +158,7 @@ export class WalletService {
             );
         }
 
-        const paystackDynamicVirtualAccountCreationOptions: AssignDynamicVirtualAccountWithValidationOptions =
+        const paystackDynamicVirtualAccountCreationOptions: AssignDedicatedVirtualAccountWithValidationOptions =
             {
                 bvn: options.bvn,
                 account_number: options.accountNumber,
@@ -172,7 +172,7 @@ export class WalletService {
                     paystackVirtualAccountBank ?? ("wema-bank" as any),
             };
 
-        await this.paystackService.assignDynamicValidatedVirtualAccount(
+        await this.paystackService.assignDedicatedValidatedVirtualAccount(
             paystackDynamicVirtualAccountCreationOptions
         );
         return buildResponse({

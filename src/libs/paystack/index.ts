@@ -7,7 +7,7 @@ import {
     PaystackValidationError,
 } from "./errors";
 import {
-    AssignDynamicVirtualAccountWithValidationOptions,
+    AssignDedicatedVirtualAccountWithValidationOptions,
     BankListOptions,
     BankListResponseData,
     PaystackOptions,
@@ -59,9 +59,9 @@ export class Paystack {
 
             default: {
                 const err = new PaystackGenericError(
-                    error.response.data.message
+                    error.response?.data?.message
                 );
-                err.status = error.response.status;
+                err.status = error.response?.status;
                 throw err;
             }
         }
@@ -78,10 +78,10 @@ export class Paystack {
      * @description This method creates, validates and assigns dynamic virtual account to a customer
      */
     async assignDynamicValidatedVirtualAccount(
-        options: AssignDynamicVirtualAccountWithValidationOptions
+        options: AssignDedicatedVirtualAccountWithValidationOptions
     ) {
         try {
-            const requestOptions: AxiosRequestConfig<AssignDynamicVirtualAccountWithValidationOptions> =
+            const requestOptions: AxiosRequestConfig<AssignDedicatedVirtualAccountWithValidationOptions> =
                 {
                     url: "/dedicated_account/assign",
                     method: "POST",
