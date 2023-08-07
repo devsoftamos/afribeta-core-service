@@ -66,6 +66,9 @@ import {
 } from "@/config";
 import { generateId, PaginationMeta } from "@/utils";
 import { ProvidusService } from "@/modules/workflow/payment/providers/providus/services";
+import { FSDH360BankService } from "@/modules/workflow/payment/providers/fsdh360Bank/services";
+import { SquadGTBankService } from "@/modules/workflow/payment/providers/squadGTBank/services";
+import { CreateVirtualAccountResponse } from "@/modules/workflow/payment/interfaces";
 
 @Injectable()
 export class WalletService {
@@ -73,7 +76,9 @@ export class WalletService {
         private prisma: PrismaService,
         private paystackService: PaystackService,
         private userService: UserService,
-        private providusService: ProvidusService
+        private providusService: ProvidusService,
+        private fsdh360BankService: FSDH360BankService,
+        private squadGTBankService: SquadGTBankService
     ) {}
 
     async processWebhookWalletAndVirtualAccountCreation(
@@ -635,16 +640,73 @@ export class WalletService {
             );
         }
 
-        const accountDetail = await this.providusService.createVirtualAccount({
-            accountName: `${user.firstName} ${user.lastName}`,
-            bvn: options.bvn,
-        });
+        const providusAccountDetail = await this.providusService
+            .createVirtualAccount({
+                accountName: `${user.firstName} ${user.lastName}`,
+                bvn: options.bvn,
+            })
+            .catch(() => false);
 
-        if (!accountDetail) {
-            throw new WalletCreationException(
-                "Failed to create wallet. Kindly try again",
-                HttpStatus.NOT_IMPLEMENTED
-            );
+        const fsdh360BankAccountDetail = await this.fsdh360BankService
+            .createVirtualAccount({
+                accountName: `${user.firstName} ${user.lastName}`,
+                bvn: options.bvn,
+            })
+            .catch(() => false);
+
+        const squadGTBankAccountDetail = await this.squadGTBankService
+            .createVirtualAccount({
+                accountName: `${user.firstName} ${user.lastName}`,
+                bvn: options.bvn,
+                phone: user.phone,
+                userIdentifier: user.identifier,
+            })
+            .catch(() => false);
+
+        const virtualAccountsCreateManyOptions: Prisma.Enumerable<Prisma.VirtualBankAccountCreateManyInput> =
+            [];
+
+        if (providusAccountDetail) {
+            const account =
+                providusAccountDetail as CreateVirtualAccountResponse;
+            const providusCreateOptions: Prisma.VirtualBankAccountUncheckedCreateInput =
+                {
+                    accountName: account.accountName,
+                    accountNumber: account.accountNumber,
+                    bankName: this.providusService.bankDetails.name,
+                    provider: VirtualAccountProvider.PROVIDUS,
+                    userId: user.id,
+                    slug: this.providusService.bankDetails.slug,
+                };
+            virtualAccountsCreateManyOptions.push(providusCreateOptions);
+        }
+        if (fsdh360BankAccountDetail) {
+            const account =
+                fsdh360BankAccountDetail as CreateVirtualAccountResponse;
+            const fsdhCreateOptions: Prisma.VirtualBankAccountUncheckedCreateInput =
+                {
+                    accountName: account.accountName,
+                    accountNumber: account.accountNumber,
+                    bankName: this.fsdh360BankService.bankDetails.name,
+                    provider: VirtualAccountProvider.FSDH360,
+                    userId: user.id,
+                    slug: this.fsdh360BankService.bankDetails.slug,
+                };
+            virtualAccountsCreateManyOptions.push(fsdhCreateOptions);
+        }
+        if (squadGTBankAccountDetail) {
+            const account =
+                squadGTBankAccountDetail as CreateVirtualAccountResponse;
+            const gtBankCreateOptions: Prisma.VirtualBankAccountUncheckedCreateInput =
+                {
+                    accountName: account.accountName,
+                    accountNumber: account.accountNumber,
+                    bankName: this.squadGTBankService.bankDetails.name,
+                    provider: VirtualAccountProvider.GTBANK,
+                    userId: user.id,
+                    slug: this.squadGTBankService.bankDetails.slug,
+                };
+            virtualAccountsCreateManyOptions.push(gtBankCreateOptions);
         }
 
         //create record
@@ -655,15 +717,8 @@ export class WalletService {
                     data: { userId: user.id, walletNumber: walletNumber },
                 });
 
-                await tx.virtualBankAccount.create({
-                    data: {
-                        accountName: accountDetail.accountName,
-                        accountNumber: accountDetail.accountNumber,
-                        bankName: "Providus",
-                        provider: VirtualAccountProvider.PROVIDUS,
-                        userId: user.id,
-                        slug: "providus",
-                    },
+                await tx.virtualBankAccount.createMany({
+                    data: virtualAccountsCreateManyOptions,
                 });
             })
             .catch((err) => {

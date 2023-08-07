@@ -29,13 +29,23 @@ export interface VerifyTransactionResponse {
     status: VerifyTransactionStatus;
 }
 
-export interface CreateVirtualAccountOptions {
+export type CreateVirtualAccountOptions<T = Record<string, any>> = {
     bvn: string;
     accountName: string;
     bankName?: string;
-}
+} & T;
+
+export type GTBankExtraVirtualAccountOptions = {
+    phone: string;
+    userIdentifier: string;
+};
 
 export interface CreateVirtualAccountResponse {
     accountName: string;
     accountNumber: string;
+}
+
+export interface BankDetails {
+    name: string;
+    slug: string;
 }

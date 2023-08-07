@@ -40,12 +40,6 @@ export class FSDH360Bank {
                 },
             };
             const { data } = await Axios<GetTokenResponse>(requestOptions);
-            // const axios: AxiosInstance = Axios.create({
-            //     baseURL: this.instanceOptions.baseUrl,
-            //     headers: {
-            //         Authorization: `Bearer ${data.access_token}`,
-            //     },
-            // });
             this.authToken = data.access_token;
             return data.access_token;
         } catch (error) {

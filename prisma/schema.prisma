@@ -102,6 +102,7 @@ enum VirtualAccountProvider {
   PROVIDUS
   GTBANK
   POLARIS
+  FSDH360
 }
 
 model VirtualBankAccount {

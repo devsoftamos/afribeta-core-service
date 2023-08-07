@@ -47,7 +47,8 @@ export class SquadGTBank {
                 throw error;
             }
             const err = new SquadGtBankVirtualAccountError(
-                error.response.data.message
+                error.response?.data?.message ??
+                    "Failed to create GTBank virtual account"
             );
             err.status = error.response.status;
             throw err;

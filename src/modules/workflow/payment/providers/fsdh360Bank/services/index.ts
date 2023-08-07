@@ -1,4 +1,4 @@
-import { Providus, ProvidusError } from "@/libs/providus";
+import { FSDH360Bank, FSDH360BankError } from "@/libs/fsdh360Bank";
 import { HttpStatus, Injectable } from "@nestjs/common";
 import {
     BankDetails,
@@ -7,43 +7,44 @@ import {
 } from "../../../interfaces";
 import logger from "moment-logger";
 import {
-    providusVirtualAccountException,
-    ProvidusWorkflowException,
+    FSDH360BankException,
+    FSDH360BankVirtualAccountException,
 } from "../errors";
+import { COMPANY_NAME } from "@/config";
 
 @Injectable()
-export class ProvidusService {
-    constructor(private providus: Providus) {}
+export class FSDH360BankService {
+    constructor(private fsdh360Bank: FSDH360Bank) {}
 
-    public bankDetails: BankDetails = {
-        name: "Providus Bank Plc",
-        slug: "providus-bank-plc",
+    bankDetails: BankDetails = {
+        name: "FSDH Merchant Bank",
+        slug: "fsdh-merchant-bank",
     };
 
     async createVirtualAccount(
         options: CreateVirtualAccountOptions
     ): Promise<CreateVirtualAccountResponse> {
         try {
-            const account = await this.providus.createReservedVirtualAccount({
-                account_name: options.accountName,
-                bvn: options.bvn ?? "",
+            const account = await this.fsdh360Bank.createStaticVirtualAccount({
+                accountName: options.accountName,
+                bvn: options.bvn,
             });
             return {
-                accountName: account.account_name,
-                accountNumber: account.account_number,
+                accountName: `${COMPANY_NAME}-${account.accountName}`,
+                accountNumber: account.accountNumber,
             };
         } catch (error) {
             logger.error(error);
             switch (true) {
-                case error instanceof ProvidusError: {
-                    throw new providusVirtualAccountException(
+                case error instanceof FSDH360BankError: {
+                    throw new FSDH360BankVirtualAccountException(
                         error.message,
                         HttpStatus.INTERNAL_SERVER_ERROR
                     );
                 }
 
                 default: {
-                    throw new ProvidusWorkflowException(
+                    throw new FSDH360BankException(
                         error.message,
                         HttpStatus.INTERNAL_SERVER_ERROR
                     );
