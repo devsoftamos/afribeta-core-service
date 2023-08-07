@@ -21,9 +21,6 @@ export class FSDH360Bank {
 
     private axios: AxiosInstance = Axios.create({
         baseURL: this.instanceOptions.baseUrl,
-        headers: {
-            Authorization: `Bearer ${data.access_token}`,
-        },
     });
 
     private authToken: string;
