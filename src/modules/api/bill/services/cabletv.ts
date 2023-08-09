@@ -603,6 +603,9 @@ export class CableTVBillService {
 
             return buildResponse({
                 message: "Cable TV purchase successful",
+                data: {
+                    reference: options.reference,
+                },
             });
         } catch (error) {
             switch (true) {
