@@ -149,7 +149,7 @@ const electricity = [
         slug: "aba-power",
         abbrev: "AP",
         type: "ELECTRICITY",
-        icon: "",
+        icon: "https://afribeta.s3.amazonaws.com/aba.png",
     },
 ];
 

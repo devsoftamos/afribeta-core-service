@@ -29,7 +29,6 @@ export class Sms<Provider extends SmsProviders> {
 
             default: {
                 return (await this.handleTermii(options)) as unknown as R;
-                //return (await this.handlerEbulk()) as unknown as R;
             }
         }
     }

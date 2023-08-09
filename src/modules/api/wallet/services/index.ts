@@ -642,21 +642,21 @@ export class WalletService {
 
         const providusAccountDetail = await this.providusService
             .createVirtualAccount({
-                accountName: `${user.firstName} ${user.lastName}`,
+                accountName: `${user.businessName}`,
                 bvn: options.bvn,
             })
             .catch(() => false);
 
         const fsdh360BankAccountDetail = await this.fsdh360BankService
             .createVirtualAccount({
-                accountName: `${user.firstName} ${user.lastName}`,
+                accountName: `${user.businessName}`,
                 bvn: options.bvn,
             })
             .catch(() => false);
 
         const squadGTBankAccountDetail = await this.squadGTBankService
             .createVirtualAccount({
-                accountName: `${user.firstName} ${user.lastName}`,
+                accountName: `${user.businessName}`,
                 bvn: options.bvn,
                 phone: user.phone,
                 userIdentifier: user.identifier,

@@ -35,8 +35,9 @@ enum MerchantUpgradeStatus {
 model User {
   id                    Int                    @id @default(autoincrement())
   identifier            String                 @unique
-  firstName             String
-  lastName              String
+  firstName             String?
+  lastName              String?
+  businessName          String?
   email                 String                 @unique
   phone                 String
   password              String

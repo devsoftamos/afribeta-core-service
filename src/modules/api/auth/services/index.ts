@@ -13,7 +13,13 @@ import {
     UserNotFoundException,
 } from "@/modules/api/user";
 import * as bcrypt from "bcryptjs";
-import { Prisma, Role, User, UserType } from "@prisma/client";
+import {
+    MerchantUpgradeStatus,
+    Prisma,
+    Role,
+    User,
+    UserType,
+} from "@prisma/client";
 import { customAlphabet } from "nanoid";
 import {
     InvalidCredentialException,
@@ -184,19 +190,62 @@ export class AuthService {
         }
 
         const createUserOptions: Prisma.UserUncheckedCreateInput = {
-            firstName: options.firstName,
-            lastName: options.lastName,
             email: verificationData.email,
             phone: options.phone.trim(),
             userType: options.userType,
             identifier: generateId({ type: "identifier" }),
             password: hashedPassword,
             ipAddress: ip,
-            isMerchantUpgradable: options.userType == "AGENT" ? true : false,
-            merchantUpgradeStatus:
-                options.userType == "AGENT" ? "TO_BE_UPGRADED" : null,
             roleId: role?.id,
         };
+
+        if (options.userType == UserType.AGENT) {
+            if (!options.businessName) {
+                throw new InvalidCredentialException(
+                    "businessName field is required for the account type",
+                    HttpStatus.BAD_REQUEST
+                );
+            }
+
+            if (!options.state) {
+                throw new InvalidCredentialException(
+                    "state field is required for the account type",
+                    HttpStatus.BAD_REQUEST
+                );
+            }
+
+            if (!options.localGovernmentArea) {
+                throw new InvalidCredentialException(
+                    "localGovernmentArea field is required for the account type",
+                    HttpStatus.BAD_REQUEST
+                );
+            }
+
+            createUserOptions.businessName = options.businessName;
+            createUserOptions.state = options.state;
+            createUserOptions.localGovernmentArea = options.localGovernmentArea;
+            createUserOptions.isMerchantUpgradable = true;
+            createUserOptions.merchantUpgradeStatus =
+                MerchantUpgradeStatus.TO_BE_UPGRADED;
+        }
+
+        if (options.userType == UserType.CUSTOMER) {
+            if (!options.firstName) {
+                throw new InvalidCredentialException(
+                    "firstName field is required for the account type",
+                    HttpStatus.BAD_REQUEST
+                );
+            }
+
+            if (!options.lastName) {
+                throw new InvalidCredentialException(
+                    "lastName field is required for the account type",
+                    HttpStatus.BAD_REQUEST
+                );
+            }
+            createUserOptions.firstName = options.firstName;
+            createUserOptions.lastName = options.lastName;
+        }
 
         const createdUser = await this.prisma.user.create({
             data: createUserOptions,
