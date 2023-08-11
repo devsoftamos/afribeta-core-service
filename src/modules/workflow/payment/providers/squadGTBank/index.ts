@@ -11,7 +11,7 @@ import { SquadGTBankService } from "./services";
             useFactory() {
                 const squadGTBank = new SquadGTBank({
                     baseUrl: squadGtBankOptions.baseUrl,
-                    apiKey: squadGtBankOptions.apiKey,
+                    secretKey: squadGtBankOptions.secretKey,
                     beneficiaryAccountNumber:
                         squadGtBankOptions.beneficiaryAccountNumber,
                 });

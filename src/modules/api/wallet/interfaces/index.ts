@@ -25,6 +25,9 @@ export enum WalletFundProvider {
     PAYSTACK = "PAYSTACK",
     PROVIDUS = "PROVIDUS",
     WALLET = "WALLET",
+    GTBANK = "GTBANK",
+    POLARIS = "POLARIS",
+    FSDH360 = "FSDH360",
 }
 
 export interface ProcessWalletFundOptions {

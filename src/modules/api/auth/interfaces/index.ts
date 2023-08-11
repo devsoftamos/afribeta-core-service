@@ -13,7 +13,13 @@ interface PaystackHeader {
     ["x-paystack-signature"]: string;
 }
 
+interface SquadGTBankHeader {
+    ["x-squad-signature"]: string;
+}
+
 export type RequestFromPaystack = Request & { headers: PaystackHeader };
+
+export type RequestFromSquadGTBank = Request & { headers: SquadGTBankHeader };
 
 export interface AgentVerifyEmailParams {
     firstName: string;

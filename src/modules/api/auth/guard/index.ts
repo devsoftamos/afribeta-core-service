@@ -1,4 +1,4 @@
-import { jwtSecret, paystackSecretKey } from "@/config";
+import { jwtSecret, paystackSecretKey, squadGtBankOptions } from "@/config";
 import {
     CanActivate,
     ExecutionContext,
@@ -17,6 +17,7 @@ import {
 import {
     DataStoredInToken,
     RequestFromPaystack,
+    RequestFromSquadGTBank,
     RequestWithUser,
 } from "../interfaces";
 import { Observable } from "rxjs";
@@ -98,6 +99,27 @@ export class PaystackWebhookGuard implements CanActivate {
             .digest("hex");
 
         if (hash == request.headers["x-paystack-signature"]) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+}
+
+@Injectable()
+export class SquadGTBankWebhookGuard implements CanActivate {
+    canActivate(
+        context: ExecutionContext
+    ): boolean | Promise<boolean> | Observable<boolean> {
+        const request = context
+            .switchToHttp()
+            .getRequest() as RequestFromSquadGTBank;
+
+        const hash = createHmac("sha512", squadGtBankOptions.secretKey)
+            .update(JSON.stringify(request.body))
+            .digest("hex");
+
+        if (hash == request.headers["x-squad-signature"]) {
             return true;
         } else {
             return false;

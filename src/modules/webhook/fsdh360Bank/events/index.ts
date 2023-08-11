@@ -1,11 +1,11 @@
 import { Injectable } from "@nestjs/common";
 import { EventEmitter } from "events";
 import { EventBody, WebhookEventMap } from "../interfaces";
-import { PaystackWebhookService } from "../services";
+import { FSDH360BankWebhookService } from "../services";
 
 @Injectable()
-export class PaystackWebhookEvent extends EventEmitter {
-    constructor(private paystackWebhookService: PaystackWebhookService) {
+export class FSDH360BankWebhookEvent extends EventEmitter {
+    constructor(private fsdh360BankWebhookService: FSDH360BankWebhookService) {
         super();
         this.on("process-webhook-event", this.processor);
     }
@@ -24,6 +24,6 @@ export class PaystackWebhookEvent extends EventEmitter {
     }
 
     async processor(eventBody: EventBody) {
-        await this.paystackWebhookService.processWebhookEvent(eventBody);
+        await this.fsdh360BankWebhookService.processWebhookEvent(eventBody);
     }
 }

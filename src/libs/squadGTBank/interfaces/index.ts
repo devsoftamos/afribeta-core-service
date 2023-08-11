@@ -2,7 +2,7 @@ export * from "./virtualAccount";
 
 export interface SquadGTBankOptions {
     baseUrl: string;
-    apiKey: string;
+    secretKey: string;
     beneficiaryAccountNumber?: string;
 }
 

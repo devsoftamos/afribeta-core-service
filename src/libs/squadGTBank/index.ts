@@ -12,7 +12,7 @@ export class SquadGTBank {
     private axios: AxiosInstance = Axios.create({
         baseURL: this.instanceOptions.baseUrl,
         headers: {
-            Authorization: `Bearer ${this.instanceOptions.apiKey}`,
+            Authorization: `Bearer ${this.instanceOptions.secretKey}`,
         },
     });
     constructor(protected instanceOptions: SquadGTBankOptions) {}

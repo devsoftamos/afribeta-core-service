@@ -249,6 +249,9 @@ enum PaymentChannel {
   PAYSTACK_CHANNEL //Any of the paystack channels: card, ussd etc
   PAYSTACK_VIRTUAL_ACCOUNT_TRANSFER
   PROVIDUS_VIRTUAL_ACCOUNT_TRANSFER
+  GTBANK_VIRTUAL_ACCOUNT_TRANSFER
+  FSDH360_VIRTUAL_ACCOUNT_TRANSFER
+  POLARIS_VIRTUAL_ACCOUNT_TRANSFER
 }
 
 enum WalletFundTransactionFlow {
@@ -372,21 +375,22 @@ enum BillType {
 }
 
 model BillService {
-  id                    Int                             @id @default(autoincrement())
-  name                  String
-  slug                  String                          @unique
-  type                  BillType
-  abbrev                String?
-  icon                  String
-  createdAt             DateTime                        @default(now())
-  updatedAt             DateTime                        @updatedAt
-  electricBillProviders BillProviderElectricDisco[]
-  transactions          Transaction[]
-  dataBundleProviders   BillProviderDataBundleNetwork[]
-  airtimeProviders      BillProviderAirtimeNetwork[]
-  cableTVProviders      BillProviderCableTVNetwork[]
-  internetProviders     BillProviderInternetNetwork[]
-  commissions           UserCommission[]
+  id                       Int                             @id @default(autoincrement())
+  name                     String
+  slug                     String                          @unique
+  type                     BillType
+  abbrev                   String?
+  icon                     String
+  baseCommissionPercentage Float
+  createdAt                DateTime                        @default(now())
+  updatedAt                DateTime                        @updatedAt
+  electricBillProviders    BillProviderElectricDisco[]
+  transactions             Transaction[]
+  dataBundleProviders      BillProviderDataBundleNetwork[]
+  airtimeProviders         BillProviderAirtimeNetwork[]
+  cableTVProviders         BillProviderCableTVNetwork[]
+  internetProviders        BillProviderInternetNetwork[]
+  commissions              UserCommission[]
 
   @@map("BillServices")
 }

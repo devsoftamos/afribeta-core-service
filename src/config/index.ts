@@ -180,7 +180,7 @@ export const providusConfiguration: ProvidusOptions = {
 
 //GtBank
 export const squadGtBankOptions: SquadGTBankOptions = {
-    apiKey: process.env.SQUAD_GTBANK_PRIVATE_KEY,
+    secretKey: process.env.SQUAD_GTBANK_PRIVATE_KEY,
     baseUrl: process.env.SQUAD_GTBANK_BASE_URL,
     beneficiaryAccountNumber:
         process.env.SQUAD_GTBANK_BENEFICIARY_ACCOUNT_NUMBER,
