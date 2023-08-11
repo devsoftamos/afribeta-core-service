@@ -352,6 +352,10 @@ export class WalletService {
             }
         }
 
+        const reference = generateId({
+            type: "reference",
+        });
+
         switch (options.paymentProvider) {
             case PaymentProvider.PAYSTACK: {
                 await this.paystackService.initializeTransfer({
@@ -363,9 +367,13 @@ export class WalletService {
                     bankName: options.bankName,
                     userId: user.id,
                     userType: user.userType,
+                    reference: reference,
                 });
                 return buildResponse({
                     message: "Transfer successfully initiated",
+                    data: {
+                        reference: reference,
+                    },
                 });
             }
 

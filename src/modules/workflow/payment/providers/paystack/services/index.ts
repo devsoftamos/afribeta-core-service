@@ -157,9 +157,6 @@ export class PaystackService {
             }
 
             //initiate transfer
-            const reference = generateId({
-                type: "reference",
-            });
             const transactionId = generateId({
                 type: "transaction",
             });
@@ -181,7 +178,7 @@ export class PaystackService {
                         destinationBankAccountName: options.accountName,
                         destinationBankName: options.bankName,
                         destinationBankAccountNumber: options.accountNumber,
-                        paymentReference: reference,
+                        paymentReference: options.reference,
                         shortDescription:
                             TransactionShortDescription.TRANSFER_FUND,
                     },
@@ -209,7 +206,7 @@ export class PaystackService {
                     amount: options.amount * 100,
                     recipient: generateRecipient.data.recipient_code,
                     source: "balance",
-                    reference: reference,
+                    reference: options.reference,
                     reason: "Wallet withdrawal",
                 });
             });
