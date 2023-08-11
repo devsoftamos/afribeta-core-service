@@ -64,5 +64,5 @@ export class DuplicateCableTVPurchaseException extends HttpException {
 }
 
 export class ComputeBillCommissionException extends HttpException {
-    name: string = "ComputeBillCommissionException";
+    name = "ComputeBillCommissionException";
 }
