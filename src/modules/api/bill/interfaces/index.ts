@@ -78,10 +78,15 @@ export interface BillPurchaseFailure {
     transaction: Transaction;
 }
 export type BillPaymentFailure = BillPurchaseFailure;
+export interface ComputeBillCommissionOptions {
+    transactionId: number;
+    userType: UserType;
+}
 
 export interface BillEventMap {
     "payment-failure": BillPaymentFailure;
     "bill-purchase-failure": BillPurchaseFailure;
+    "compute-bill-commission": ComputeBillCommissionOptions;
 }
 
 export type VerifyPurchase<TBillData> = {

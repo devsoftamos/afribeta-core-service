@@ -234,8 +234,16 @@ export class AirtimeBillService {
                 provider: purchaseOptions.billProvider,
             };
 
-        await this.prisma.transaction.create({
+        const transaction = await this.prisma.transaction.create({
             data: transactionCreateOptions,
+            select: {
+                id: true,
+            },
+        });
+
+        this.billEvent.emit("compute-bill-commission", {
+            transactionId: transaction.id,
+            userType: user.userType,
         });
 
         return {

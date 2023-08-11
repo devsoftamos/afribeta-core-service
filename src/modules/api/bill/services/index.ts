@@ -5,6 +5,7 @@ import {
     TransactionStatus,
     TransactionType,
     User,
+    UserType,
 } from "@prisma/client";
 import {
     BillPaymentFailure,
@@ -17,12 +18,16 @@ import { PowerBillService } from "./power";
 import { DataBillService } from "./data";
 import { PrismaService } from "@/modules/core/prisma/services";
 import { DB_TRANSACTION_TIMEOUT } from "@/config";
-import { WalletChargeException } from "../errors";
+import {
+    ComputeBillCommissionException,
+    WalletChargeException,
+} from "../errors";
 import { AirtimeBillService } from "./airtime";
 import { InternetBillService } from "./internet";
 import { CableTVBillService } from "./cabletv";
 import { PaginationDto } from "../dtos";
 import { ApiResponse, buildResponse, PaginationMeta } from "@/utils";
+import { TransactionNotFoundException } from "../../transaction";
 
 @Injectable()
 export class BillService {
@@ -227,5 +232,194 @@ export class BillService {
             message: "Bill history successfully retrieved",
             data: result,
         });
+    }
+
+    async computeBillCommissionHandler(transactionId: number) {
+        try {
+            const transaction = await this.prisma.transaction.findUnique({
+                where: {
+                    id: transactionId,
+                },
+                select: {
+                    id: true,
+                    userId: true,
+                    type: true,
+                    amount: true,
+                    billService: {
+                        select: {
+                            slug: true,
+                            baseCommissionPercentage: true,
+                        },
+                    },
+                },
+            });
+
+            if (!transaction) {
+                throw new ComputeBillCommissionException(
+                    "Failed to compute and bill payment commission. transaction not found",
+                    HttpStatus.NOT_FOUND
+                );
+            }
+
+            const vendorTypes = [UserType.MERCHANT, UserType.AGENT];
+            const user = await this.prisma.user.findUnique({
+                where: {
+                    id: transaction.userId,
+                },
+                select: {
+                    id: true,
+                    userType: true,
+                    identifier: true,
+                    creator: {
+                        select: {
+                            id: true,
+                        },
+                    },
+                },
+            });
+
+            if (!user) {
+                throw new ComputeBillCommissionException(
+                    "Failed to compute and bill payment commission. user not found",
+                    HttpStatus.NOT_FOUND
+                );
+            }
+
+            if (!vendorTypes.includes(user.userType as any)) {
+                throw new ComputeBillCommissionException(
+                    "Failed to assign bill payment commission. User must be merchant or agent",
+                    HttpStatus.NOT_IMPLEMENTED
+                );
+            }
+
+            const billPurchaseTransactions = [
+                TransactionType.AIRTIME_PURCHASE,
+                TransactionType.AIRTIME_TO_CASH,
+                TransactionType.CABLETV_BILL,
+                TransactionType.DATA_PURCHASE,
+                TransactionType.ELECTRICITY_BILL,
+                TransactionType.INTERNET_BILL,
+            ];
+
+            if (!billPurchaseTransactions.includes(transaction.type as any)) {
+                throw new ComputeBillCommissionException(
+                    "Transaction type must include any of the bill payment transaction",
+                    HttpStatus.NOT_IMPLEMENTED
+                );
+            }
+
+            let agentCommission = 0;
+            let merchantCommission = 0;
+            const baseCommission =
+                transaction.billService.baseCommissionPercentage *
+                transaction.amount;
+
+            //compute for agents with merchant
+            if (user.creator) {
+                const [agentCommissionConfig, merchantCommissionConfig] =
+                    await Promise.all([
+                        this.prisma.userCommission.findUnique({
+                            where: {
+                                userId_billServiceSlug: {
+                                    userId: user.id,
+                                    billServiceSlug:
+                                        transaction.billService.slug,
+                                },
+                            },
+                        }),
+                        this.prisma.userCommission.findUnique({
+                            where: {
+                                userId_billServiceSlug: {
+                                    userId: user.creator.id,
+                                    billServiceSlug:
+                                        transaction.billService.slug,
+                                },
+                            },
+                        }),
+                    ]);
+
+                //Merchant's agent with no commission assigned to
+                if (!merchantCommissionConfig) {
+                    throw new ComputeBillCommissionException(
+                        `Bill service commission with slug ${transaction.billService.slug} not assigned to userType, ${user.userType} with user identifier, ${user.identifier}`,
+                        HttpStatus.NOT_FOUND
+                    );
+                }
+
+                if (!agentCommissionConfig) {
+                    merchantCommission =
+                        merchantCommissionConfig.percentage *
+                        transaction.amount;
+                    const companyCommission =
+                        baseCommission - merchantCommission;
+
+                    await this.prisma.transaction.update({
+                        where: {
+                            id: transaction.id,
+                        },
+                        data: {
+                            merchantCommission: merchantCommission,
+                            companyCommission: companyCommission,
+                        },
+                    });
+                }
+
+                //Merchant's agent with commission assigned to
+                if (agentCommissionConfig) {
+                    agentCommission =
+                        agentCommissionConfig.percentage * transaction.amount; //depends on merchant
+                    merchantCommission =
+                        merchantCommissionConfig.percentage *
+                        transaction.amount;
+                    const companyCommission =
+                        baseCommission - merchantCommission;
+                    await this.prisma.transaction.update({
+                        where: {
+                            id: transaction.id,
+                        },
+                        data: {
+                            merchantCommission: merchantCommission,
+                            companyCommission: companyCommission,
+                            commission: agentCommission,
+                        },
+                    });
+                }
+            } else {
+                //Merchant and upgradable-agent-merchant
+                const commissionConfig =
+                    await this.prisma.userCommission.findUnique({
+                        where: {
+                            userId_billServiceSlug: {
+                                userId: user.id,
+                                billServiceSlug: transaction.billService.slug,
+                            },
+                        },
+                    });
+
+                if (!commissionConfig) {
+                    throw new ComputeBillCommissionException(
+                        `Bill service commission with slug ${transaction.billService.slug} not assigned to userType, ${user.userType} with user identifier, ${user.identifier}`,
+                        HttpStatus.NOT_FOUND
+                    );
+                }
+
+                const commission =
+                    commissionConfig.percentage * transaction.amount;
+
+                const companyCommission = baseCommission - commission;
+
+                await this.prisma.transaction.update({
+                    where: {
+                        id: transaction.id,
+                    },
+                    data: {
+                        commission: commission,
+                        companyCommission: companyCommission,
+                    },
+                });
+            }
+        } catch (error) {
+            logger.error(error);
+        }
     }
 }

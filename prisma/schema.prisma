@@ -298,9 +298,9 @@ model Transaction {
   paymentChannel               PaymentChannel?
   token                        String?
   units                        String?
-  commission                   Float?
-  merchantCommission           Float?
-  companyCommission            Float?
+  commission                   Float?            @default(0)
+  merchantCommission           Float?            @default(0)
+  companyCommission            Float?            @default(0)
   serviceTransactionCode       String?
   serviceTransactionCode2      String?
 

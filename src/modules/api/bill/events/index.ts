@@ -3,9 +3,11 @@ import {
     BillEventMap,
     BillPaymentFailure,
     BillPurchaseFailure,
+    ComputeBillCommissionOptions,
 } from "../interfaces";
 import { forwardRef, Inject, Injectable } from "@nestjs/common";
 import { BillService } from "../services";
+import { UserType } from "@prisma/client";
 
 @Injectable()
 export class BillEvent extends EventEmitter {
@@ -16,6 +18,7 @@ export class BillEvent extends EventEmitter {
         super();
         this.on("payment-failure", this.onPaymentFailure);
         this.on("bill-purchase-failure", this.onBillPurchaseFailure);
+        this.on("compute-bill-commission", this.onComputeBillCommission);
     }
 
     emit<K extends keyof BillEventMap>(
@@ -32,25 +35,22 @@ export class BillEvent extends EventEmitter {
         return super.on(eventName, listener);
     }
 
-    once<K extends keyof BillEventMap>(
-        eventName: K,
-        listener: (payload: BillEventMap[K]) => void
-    ) {
-        return super.on(eventName, listener);
-    }
-
-    off<K extends keyof BillEventMap>(
-        eventName: K,
-        listener: (payload: BillEventMap[K]) => void
-    ) {
-        return super.off(eventName, listener);
-    }
-
     async onPaymentFailure(options: BillPaymentFailure) {
         await this.billService.paymentFailureHandler(options);
     }
 
     async onBillPurchaseFailure(options: BillPurchaseFailure) {
         await this.billService.billPurchaseFailureHandler(options);
+    }
+
+    async onComputeBillCommission(options: ComputeBillCommissionOptions) {
+        if (
+            options.userType == UserType.MERCHANT ||
+            options.userType == UserType.AGENT
+        ) {
+            await this.billService.computeBillCommissionHandler(
+                options.transactionId
+            );
+        }
     }
 }

@@ -62,3 +62,7 @@ export class CableTVPurchaseException extends HttpException {
 export class DuplicateCableTVPurchaseException extends HttpException {
     name = "DuplicateCableTVPurchaseException";
 }
+
+export class ComputeBillCommissionException extends HttpException {
+    name: string = "ComputeBillCommissionException";
+}
