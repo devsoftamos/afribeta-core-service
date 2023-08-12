@@ -1,4 +1,7 @@
-import { agentPostAccountCreateTemplate } from "@/config";
+import {
+    agentPostAccountCreateTemplate,
+    DB_TRANSACTION_TIMEOUT,
+} from "@/config";
 import { EmailService } from "@/modules/core/email/services";
 import { PrismaService } from "@/modules/core/prisma/services";
 import { generateId } from "@/utils";
@@ -331,30 +334,33 @@ export class UserService {
         };
 
         await this.prisma
-            .$transaction(async (tx) => {
-                const user = await tx.user.create({
-                    data: createAgentOptions,
-                });
+            .$transaction(
+                async (tx) => {
+                    const user = await tx.user.create({
+                        data: createAgentOptions,
+                    });
 
-                await tx.accountVerificationRequest.delete({
-                    where: { email: verificationData.email },
-                });
+                    await tx.accountVerificationRequest.delete({
+                        where: { email: verificationData.email },
+                    });
 
-                await this.emailService.send<AgentPostAccountCreateEmailParams>(
-                    {
-                        provider: "sendinblue",
-                        subject: "Account Successfully Created",
-                        to: { email: verificationData.email },
-                        templateId: agentPostAccountCreateTemplate,
-                        params: {
-                            email: verificationData.email,
-                            firstName: options.firstName,
-                            password: password,
-                        },
-                    }
-                );
-                return user;
-            })
+                    await this.emailService.send<AgentPostAccountCreateEmailParams>(
+                        {
+                            provider: "sendinblue",
+                            subject: "Account Successfully Created",
+                            to: { email: verificationData.email },
+                            templateId: agentPostAccountCreateTemplate,
+                            params: {
+                                email: verificationData.email,
+                                firstName: options.firstName,
+                                password: password,
+                            },
+                        }
+                    );
+                    return user;
+                },
+                { timeout: DB_TRANSACTION_TIMEOUT }
+            )
             .catch((error) => {
                 logger.error(error);
                 switch (true) {

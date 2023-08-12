@@ -408,7 +408,7 @@ export class AuthService {
             const emailResp =
                 await this.emailService.send<AgentVerifyEmailParams>({
                     to: { email: email },
-                    subject: "Verify Your Email",
+                    subject: "Agent Email Verification",
                     provider: "sendinblue",
                     templateId: agentVerifyEmailTemplate,
                     params: {

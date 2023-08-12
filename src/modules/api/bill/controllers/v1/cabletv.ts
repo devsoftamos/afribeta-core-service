@@ -19,6 +19,7 @@ import {
     GetTVBouquetDto,
     PurchaseTVDto,
 } from "../../dtos/cabletv";
+import { InitializeBillPaymentGuard } from "../../guard";
 import { CableTVBillService } from "../../services/cabletv";
 
 @UseGuards(AuthGuard)
@@ -51,6 +52,7 @@ export class CableTVBillController {
 
     @HttpCode(HttpStatus.OK)
     @Post("initialize-cabletv-purchase")
+    @UseGuards(InitializeBillPaymentGuard)
     async initializeCableTVPurchase(
         @Body(ValidationPipe)
         purchaseCableTVDto: PurchaseTVDto,

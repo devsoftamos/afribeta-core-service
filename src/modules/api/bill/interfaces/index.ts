@@ -83,10 +83,14 @@ export interface ComputeBillCommissionOptions {
     userType: UserType;
 }
 
+export interface PayBillCommissionOptions
+    extends ComputeBillCommissionOptions {}
+
 export interface BillEventMap {
     "payment-failure": BillPaymentFailure;
     "bill-purchase-failure": BillPurchaseFailure;
     "compute-bill-commission": ComputeBillCommissionOptions;
+    "pay-bill-commission": PayBillCommissionOptions;
 }
 
 export type VerifyPurchase<TBillData> = {

@@ -444,12 +444,10 @@ export class InternetBillService {
                             },
                         });
 
-                        //TODO: for agent and merchant, credit wallet commission balance
-                        if (
-                            options.user.userType == UserType.MERCHANT ||
-                            options.user.userType == UserType.AGENT
-                        ) {
-                        }
+                        this.billEvent.emit("pay-bill-commission", {
+                            transactionId: options.transaction.id,
+                            userType: options.user.userType,
+                        });
                     },
                     {
                         timeout: DB_TRANSACTION_TIMEOUT,

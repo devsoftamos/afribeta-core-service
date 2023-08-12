@@ -14,6 +14,7 @@ import {
 import { User as UserModel } from "@prisma/client";
 import { PaymentReferenceDto } from "../../dtos";
 import { PurchaseAirtimeDto } from "../../dtos/airtime";
+import { InitializeBillPaymentGuard } from "../../guard";
 import { AirtimeBillService } from "../../services/airtime";
 
 @UseGuards(AuthGuard)
@@ -25,6 +26,7 @@ export class AirtimeBillController {
 
     @HttpCode(HttpStatus.OK)
     @Post("initialize-airtime-purchase")
+    @UseGuards(InitializeBillPaymentGuard)
     async initializeDataPurchase(
         @Body(ValidationPipe)
         purchaseAirtimeDto: PurchaseAirtimeDto,

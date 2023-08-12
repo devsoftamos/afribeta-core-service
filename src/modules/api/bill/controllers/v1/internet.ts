@@ -19,6 +19,7 @@ import {
     GetSmileDeviceInfoDto,
     PurchaseInternetDto,
 } from "../../dtos/internet";
+import { InitializeBillPaymentGuard } from "../../guard";
 import { InternetBillService } from "../../services/internet";
 
 @UseGuards(AuthGuard)
@@ -44,6 +45,7 @@ export class InternetBillController {
 
     @HttpCode(HttpStatus.OK)
     @Post("initialize-internet-purchase")
+    @UseGuards(InitializeBillPaymentGuard)
     async initializeDataPurchase(
         @Body(ValidationPipe)
         purchaseInternetDto: PurchaseInternetDto,

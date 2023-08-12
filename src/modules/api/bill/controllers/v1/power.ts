@@ -15,6 +15,7 @@ import {
 import { User as UserModel } from "@prisma/client";
 import { PaymentReferenceDto } from "../../dtos";
 import { GetMeterInfoDto, PurchasePowerDto } from "../../dtos/power";
+import { InitializeBillPaymentGuard } from "../../guard";
 import { PowerBillService } from "../../services/power";
 
 @UseGuards(AuthGuard)
@@ -31,6 +32,7 @@ export class PowerBillController {
 
     @HttpCode(HttpStatus.OK)
     @Post("initialize-power-purchase")
+    @UseGuards(InitializeBillPaymentGuard)
     async initializePowerPurchase(
         @Body(ValidationPipe)
         purchasePowerDto: PurchasePowerDto,

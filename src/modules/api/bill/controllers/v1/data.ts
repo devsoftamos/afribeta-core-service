@@ -15,6 +15,7 @@ import {
 import { User as UserModel } from "@prisma/client";
 import { PaymentReferenceDto } from "../../dtos";
 import { GetDataBundleDto, PurchaseDataDto } from "../../dtos/data";
+import { InitializeBillPaymentGuard } from "../../guard";
 import { DataBillService } from "../../services/data";
 
 @UseGuards(AuthGuard)
@@ -33,6 +34,7 @@ export class DataBillController {
 
     @HttpCode(HttpStatus.OK)
     @Post("initialize-data-purchase")
+    @UseGuards(InitializeBillPaymentGuard)
     async initializeDataPurchase(
         @Body(ValidationPipe)
         purchaseDataDto: PurchaseDataDto,

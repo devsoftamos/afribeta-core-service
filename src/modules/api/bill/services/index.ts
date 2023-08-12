@@ -1,11 +1,14 @@
 import { forwardRef, HttpStatus, Inject, Injectable } from "@nestjs/common";
 import {
+    PaymentChannel,
     PaymentStatus,
     Prisma,
+    TransactionFlow,
     TransactionStatus,
     TransactionType,
     User,
     UserType,
+    WalletFundTransactionFlow,
 } from "@prisma/client";
 import {
     BillPaymentFailure,
@@ -20,14 +23,23 @@ import { PrismaService } from "@/modules/core/prisma/services";
 import { DB_TRANSACTION_TIMEOUT } from "@/config";
 import {
     ComputeBillCommissionException,
+    PayBillCommissionException,
     WalletChargeException,
 } from "../errors";
 import { AirtimeBillService } from "./airtime";
 import { InternetBillService } from "./internet";
 import { CableTVBillService } from "./cabletv";
 import { PaginationDto } from "../dtos";
-import { ApiResponse, buildResponse, PaginationMeta } from "@/utils";
-import { TransactionNotFoundException } from "../../transaction";
+import {
+    ApiResponse,
+    buildResponse,
+    generateId,
+    PaginationMeta,
+} from "@/utils";
+import {
+    TransactionNotFoundException,
+    TransactionShortDescription,
+} from "../../transaction";
 
 @Injectable()
 export class BillService {
@@ -417,6 +429,171 @@ export class BillService {
                         companyCommission: companyCommission,
                     },
                 });
+            }
+        } catch (error) {
+            logger.error(error);
+        }
+    }
+
+    //credits the merchant/agent wallet commission balance on a successful bill payment
+    async payBillCommissionHandler(transactionId: number) {
+        try {
+            const transaction = await this.prisma.transaction.findUnique({
+                where: {
+                    id: transactionId,
+                },
+                select: {
+                    id: true,
+                    userId: true,
+                    type: true,
+                    amount: true,
+                    commission: true,
+                    merchantCommission: true,
+                },
+            });
+
+            if (!transaction) {
+                throw new PayBillCommissionException(
+                    "Failed to credit wallet for the bill commission. Transaction not found",
+                    HttpStatus.NOT_FOUND
+                );
+            }
+
+            const user = await this.prisma.user.findUnique({
+                where: {
+                    id: transaction.userId,
+                },
+                select: {
+                    id: true,
+                    creator: {
+                        select: {
+                            id: true,
+                        },
+                    },
+                },
+            });
+
+            if (!user) {
+                throw new PayBillCommissionException(
+                    "Failed to credit wallet for the bill commission. merchant/agent user not found",
+                    HttpStatus.NOT_FOUND
+                );
+            }
+
+            if (transaction.commission || transaction.merchantCommission) {
+                const transactionCreateOptions = {
+                    amount: transaction.commission,
+                    flow: TransactionFlow.IN,
+                    status: TransactionStatus.SUCCESS,
+                    totalAmount: transaction.commission,
+                    type: TransactionType.WALLET_FUND,
+                    userId: user.id,
+                    paymentStatus: PaymentStatus.SUCCESS,
+                    walletFundTransactionFlow:
+                        WalletFundTransactionFlow.FROM_PAID_COMMISSION,
+
+                    shortDescription:
+                        TransactionShortDescription.COMMISSION_PAID,
+                    paymentChannel: PaymentChannel.SYSTEM,
+                    provider: PaymentChannel.SYSTEM,
+                };
+
+                //Agent and Merchant
+                if (transaction.commission && transaction.merchantCommission) {
+                    await this.prisma.$transaction(
+                        async (tx) => {
+                            //agent
+                            await tx.wallet.update({
+                                where: {
+                                    userId: user.id,
+                                },
+                                data: {
+                                    commissionBalance: {
+                                        increment: transaction.commission,
+                                    },
+                                },
+                            });
+
+                            //merchant
+                            await tx.wallet.update({
+                                where: {
+                                    userId: user.creator.id,
+                                },
+                                data: {
+                                    commissionBalance: {
+                                        increment: transaction.commission,
+                                    },
+                                },
+                            });
+
+                            const transactionId = generateId({
+                                type: "transaction",
+                            });
+
+                            const agentTransactionRecord: Prisma.TransactionUncheckedCreateInput =
+                                {
+                                    ...transactionCreateOptions,
+                                    userId: user.id,
+                                    transactionId: transactionId,
+                                    paymentReference: generateId({
+                                        type: "reference",
+                                    }),
+                                };
+
+                            const merchantTransactionRecord: Prisma.TransactionUncheckedCreateInput =
+                                {
+                                    ...transactionCreateOptions,
+                                    userId: user.creator.id,
+                                    transactionId: transactionId,
+                                    paymentReference: generateId({
+                                        type: "reference",
+                                    }),
+                                };
+
+                            await tx.transaction.createMany({
+                                data: [
+                                    agentTransactionRecord,
+                                    merchantTransactionRecord,
+                                ],
+                            });
+                        },
+                        { timeout: DB_TRANSACTION_TIMEOUT }
+                    );
+                } else {
+                    //Merchant/upgradable-merchant-agent
+                    await this.prisma.$transaction(
+                        async (tx) => {
+                            await tx.wallet.update({
+                                where: {
+                                    userId: user.id,
+                                },
+                                data: {
+                                    commissionBalance: {
+                                        increment: transaction.commission,
+                                    },
+                                },
+                            });
+
+                            const transactionId = generateId({
+                                type: "transaction",
+                            });
+
+                            const transactionRecord: Prisma.TransactionUncheckedCreateInput =
+                                {
+                                    ...transactionCreateOptions,
+                                    transactionId: transactionId,
+                                    paymentReference: generateId({
+                                        type: "reference",
+                                    }),
+                                };
+
+                            await tx.transaction.create({
+                                data: transactionRecord,
+                            });
+                        },
+                        { timeout: DB_TRANSACTION_TIMEOUT }
+                    );
+                }
             }
         } catch (error) {
             logger.error(error);

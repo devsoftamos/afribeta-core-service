@@ -4,6 +4,7 @@ import {
     BillPaymentFailure,
     BillPurchaseFailure,
     ComputeBillCommissionOptions,
+    PayBillCommissionOptions,
 } from "../interfaces";
 import { forwardRef, Inject, Injectable } from "@nestjs/common";
 import { BillService } from "../services";
@@ -19,6 +20,7 @@ export class BillEvent extends EventEmitter {
         this.on("payment-failure", this.onPaymentFailure);
         this.on("bill-purchase-failure", this.onBillPurchaseFailure);
         this.on("compute-bill-commission", this.onComputeBillCommission);
+        this.on("pay-bill-commission", this.onPayBillCommission);
     }
 
     emit<K extends keyof BillEventMap>(
@@ -49,6 +51,17 @@ export class BillEvent extends EventEmitter {
             options.userType == UserType.AGENT
         ) {
             await this.billService.computeBillCommissionHandler(
+                options.transactionId
+            );
+        }
+    }
+
+    async onPayBillCommission(options: PayBillCommissionOptions) {
+        if (
+            options.userType == UserType.MERCHANT ||
+            options.userType == UserType.AGENT
+        ) {
+            await this.billService.payBillCommissionHandler(
                 options.transactionId
             );
         }
