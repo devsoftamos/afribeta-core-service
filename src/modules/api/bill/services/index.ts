@@ -36,10 +36,7 @@ import {
     generateId,
     PaginationMeta,
 } from "@/utils";
-import {
-    TransactionNotFoundException,
-    TransactionShortDescription,
-} from "../../transaction";
+import { TransactionShortDescription } from "../../transaction";
 
 @Injectable()
 export class BillService {

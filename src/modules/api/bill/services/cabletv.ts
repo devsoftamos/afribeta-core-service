@@ -14,7 +14,6 @@ import {
     TransactionStatus,
     TransactionType,
     User,
-    UserType,
 } from "@prisma/client";
 import { TransactionNotFoundException } from "../../transaction";
 import { UserNotFoundException } from "../../user";
