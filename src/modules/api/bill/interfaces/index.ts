@@ -83,8 +83,7 @@ export interface ComputeBillCommissionOptions {
     userType: UserType;
 }
 
-export interface PayBillCommissionOptions
-    extends ComputeBillCommissionOptions {}
+export type PayBillCommissionOptions = ComputeBillCommissionOptions;
 
 export interface BillEventMap {
     "payment-failure": BillPaymentFailure;

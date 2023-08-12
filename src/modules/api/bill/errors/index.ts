@@ -68,5 +68,5 @@ export class ComputeBillCommissionException extends HttpException {
 }
 
 export class PayBillCommissionException extends HttpException {
-    name: string = "PayBillCommissionException";
+    name = "PayBillCommissionException";
 }
