@@ -9,6 +9,7 @@ import { SquadGTBankWebhookModule } from "./squadGTBank";
     imports: [
         ProvidusWebhookModule,
         PaystackWebhookModule,
+        SquadGTBankWebhookModule,
         RouterModule.register([
             {
                 path: "webhook",

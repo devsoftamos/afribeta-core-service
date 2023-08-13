@@ -39,11 +39,10 @@ export class SquadGTBankWebhookService {
             }
 
             await this.walletService.processWalletFunding({
-                amount: eventBody.principal_amount,
+                amount: +eventBody.principal_amount,
                 status: TransactionStatus.SUCCESS,
                 userId: user.id,
                 paymentChannel: PaymentChannel.GTBANK_VIRTUAL_ACCOUNT_TRANSFER,
-
                 paymentReference: eventBody.transaction_reference,
                 paymentStatus: PaymentStatus.SUCCESS,
                 walletFundTransactionFlow: WalletFundTransactionFlow.SELF_FUND,
