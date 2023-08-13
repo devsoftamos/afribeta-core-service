@@ -513,6 +513,7 @@ export class WalletService {
                 HttpStatus.BAD_REQUEST
             );
         }
+        const paymentReference = generateId({ type: "reference" });
 
         //DB transaction
         await this.prisma.$transaction(async (tx) => {
@@ -556,7 +557,6 @@ export class WalletService {
             });
 
             //benefactor
-            const paymentReference = generateId({ type: "reference" });
             await tx.transaction.create({
                 data: {
                     amount: options.amount,
@@ -579,6 +579,9 @@ export class WalletService {
 
         return buildResponse({
             message: `You have successfully transferred ${options.amount} to wallet number ${beneficiaryWallet.walletNumber}`,
+            data: {
+                reference: paymentReference,
+            },
         });
     }
 
