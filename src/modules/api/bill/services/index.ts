@@ -320,7 +320,7 @@ export class BillService {
             let agentCommission = 0;
             let merchantCommission = 0;
             const baseCommission =
-                transaction.billService.baseCommissionPercentage *
+                (transaction.billService.baseCommissionPercentage / 100) *
                 transaction.amount;
 
             //compute for agents with merchant
@@ -354,13 +354,17 @@ export class BillService {
                         HttpStatus.NOT_FOUND
                     );
                 }
-
+                //merchant commission compute
                 if (!agentCommissionConfig) {
-                    merchantCommission =
-                        merchantCommissionConfig.percentage *
-                        transaction.amount;
-                    const companyCommission =
-                        baseCommission - merchantCommission;
+                    merchantCommission = parseFloat(
+                        (
+                            (merchantCommissionConfig.percentage / 100) *
+                            transaction.amount
+                        ).toFixed(2)
+                    );
+                    const companyCommission = parseFloat(
+                        (baseCommission - merchantCommission).toFixed(2)
+                    );
 
                     await this.prisma.transaction.update({
                         where: {
@@ -375,19 +379,34 @@ export class BillService {
 
                 //Merchant's agent with commission assigned to
                 if (agentCommissionConfig) {
-                    agentCommission =
-                        agentCommissionConfig.percentage * transaction.amount; //depends on merchant
-                    merchantCommission =
-                        merchantCommissionConfig.percentage *
-                        transaction.amount;
-                    const companyCommission =
-                        baseCommission - merchantCommission;
+                    merchantCommission = parseFloat(
+                        (
+                            (merchantCommissionConfig.percentage / 100) *
+                            transaction.amount
+                        ).toFixed(2)
+                    );
+
+                    agentCommission = parseFloat(
+                        (
+                            (agentCommissionConfig.percentage / 100) *
+                            transaction.amount
+                        ).toFixed(2)
+                    );
+
+                    const merchantFinalCommission = parseFloat(
+                        (merchantCommission - agentCommission).toFixed(2)
+                    );
+
+                    const companyCommission = parseFloat(
+                        (baseCommission - merchantCommission).toFixed(2)
+                    );
+
                     await this.prisma.transaction.update({
                         where: {
                             id: transaction.id,
                         },
                         data: {
-                            merchantCommission: merchantCommission,
+                            merchantCommission: merchantFinalCommission,
                             companyCommission: companyCommission,
                             commission: agentCommission,
                         },
@@ -412,10 +431,16 @@ export class BillService {
                     );
                 }
 
-                const commission =
-                    commissionConfig.percentage * transaction.amount;
+                const commission = parseFloat(
+                    (
+                        (commissionConfig.percentage / 100) *
+                        transaction.amount
+                    ).toFixed(2)
+                );
 
-                const companyCommission = baseCommission - commission;
+                const companyCommission = parseFloat(
+                    (baseCommission - commission).toFixed(2)
+                );
 
                 await this.prisma.transaction.update({
                     where: {
@@ -518,7 +543,8 @@ export class BillService {
                                 },
                                 data: {
                                     commissionBalance: {
-                                        increment: transaction.commission,
+                                        increment:
+                                            transaction.merchantCommission,
                                     },
                                 },
                             });
@@ -540,6 +566,8 @@ export class BillService {
                             const merchantTransactionRecord: Prisma.TransactionUncheckedCreateInput =
                                 {
                                     ...transactionCreateOptions,
+                                    amount: transaction.merchantCommission,
+                                    totalAmount: transaction.merchantCommission,
                                     userId: user.creator.id,
                                     transactionId: transactionId,
                                     paymentReference: generateId({
