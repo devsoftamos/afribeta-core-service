@@ -651,23 +651,27 @@ export class WalletService {
             );
         }
 
+        const accountName = user.createdById
+            ? `${user.firstName} ${user.lastName}`
+            : `${user.businessName}`;
+
         const providusAccountDetail = await this.providusService
             .createVirtualAccount({
-                accountName: `${user.businessName}`,
+                accountName: accountName,
                 bvn: options.bvn,
             })
             .catch(() => false);
 
         const fsdh360BankAccountDetail = await this.fsdh360BankService
             .createVirtualAccount({
-                accountName: `${user.businessName}`,
+                accountName: accountName,
                 bvn: options.bvn,
             })
             .catch(() => false);
 
         const squadGTBankAccountDetail = await this.squadGTBankService
             .createVirtualAccount({
-                accountName: `${user.businessName}`,
+                accountName: accountName,
                 bvn: options.bvn,
                 phone: user.phone,
                 userIdentifier: user.identifier,

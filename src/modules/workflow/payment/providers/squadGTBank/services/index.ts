@@ -12,6 +12,7 @@ import {
     SquadGTBankVirtualAccountException,
 } from "../errors";
 import { SquadGTBank } from "@/libs/squadGTBank";
+import { COMPANY_NAME } from "@/config";
 
 @Injectable()
 export class SquadGTBankService {
@@ -28,7 +29,7 @@ export class SquadGTBankService {
         try {
             const account =
                 await this.squadGTBankBank.createBusinessVirtualAccount({
-                    business_name: options.accountName,
+                    business_name: `${COMPANY_NAME}-${options.accountName}`,
                     bvn: options.bvn,
                     customer_identifier: options.userIdentifier,
                     mobile_num: options.phone,
@@ -42,7 +43,7 @@ export class SquadGTBankService {
             }
 
             return {
-                accountName: options.accountName,
+                accountName: `${COMPANY_NAME}-${options.accountName}`,
                 accountNumber: account.data.virtual_account_number,
             };
         } catch (error) {
