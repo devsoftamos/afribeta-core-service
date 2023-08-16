@@ -52,6 +52,7 @@ import { DB_TRANSACTION_TIMEOUT } from "@/config";
 import { BillEvent } from "../events";
 import { PaymentProvider, PaymentReferenceDto } from "../dtos";
 import { BillService } from ".";
+import { SmsService } from "@/modules/core/sms/services";
 
 @Injectable()
 export class PowerBillService {
@@ -60,7 +61,8 @@ export class PowerBillService {
         private prisma: PrismaService,
         @Inject(forwardRef(() => BillService))
         private billService: BillService,
-        private billEvent: BillEvent
+        private billEvent: BillEvent,
+        private smsService: SmsService
     ) {}
 
     async getElectricDiscos(): Promise<ApiResponse> {
@@ -256,8 +258,6 @@ export class PowerBillService {
             length: 12,
         });
 
-        //TODO: compute commission for agent and merchant here
-
         //record transaction
         const transactionCreateOptions: Prisma.TransactionUncheckedCreateInput =
             {
@@ -374,7 +374,7 @@ export class PowerBillService {
             const user: CompleteBillPurchaseUserOptions =
                 await this.prisma.user.findUnique({
                     where: { id: transaction.userId },
-                    select: { email: true, userType: true },
+                    select: { email: true, userType: true, phone: true },
                 });
             if (!user) {
                 throw new UserNotFoundException(
@@ -467,6 +467,15 @@ export class PowerBillService {
                         timeout: DB_TRANSACTION_TIMEOUT,
                     }
                 );
+
+                await this.smsService.termii
+                    .send({
+                        to: options.user.phone,
+                        sms: `Hi, your meter token and units are: ${vendPowerResp.meterToken} and ${vendPowerResp.units} respectively`,
+                        type: "plain",
+                        channel: "generic",
+                    })
+                    .catch(() => false);
 
                 return {
                     meterToken: vendPowerResp.meterToken,
@@ -577,6 +586,7 @@ export class PowerBillService {
                 user: {
                     email: user.email,
                     userType: user.userType,
+                    phone: user.phone,
                 },
                 isWalletPayment: true,
             });

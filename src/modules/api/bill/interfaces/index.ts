@@ -48,6 +48,7 @@ export interface BillPurchaseInitializationHandlerOptions<PurchaseOptions> {
 export interface CompleteBillPurchaseUserOptions {
     email: string;
     userType: UserType;
+    phone?: string;
 }
 
 export interface CompleteBillPurchaseTransactionOptions {
