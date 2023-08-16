@@ -120,6 +120,7 @@ model VirtualBankAccount {
   user          User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, provider])
+  @@unique([accountNumber, provider])
   @@index([accountNumber, provider])
   @@map("VirtualBankAccounts")
 }

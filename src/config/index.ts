@@ -123,6 +123,10 @@ const runtimeEnvironment: RequiredEnvironment[] = [
         name: "FSDH360_MERCHANT_ACCOUNT_NUMBER",
         type: RequiredEnvironmentTypes.String,
     },
+    {
+        name: "FSDH360_API_KEY_AUTH",
+        type: RequiredEnvironmentTypes.String,
+    },
 ];
 
 validate(runtimeEnvironment);
@@ -194,3 +198,4 @@ export const fsdh360BankOptions: FSDH360BankOptions = {
     clientSecret: process.env.FSDH360_CLIENT_SECRET,
     merchantAccountNumber: process.env.FSDH360_MERCHANT_ACCOUNT_NUMBER,
 };
+export const fsdh360ApiKeyAuth = process.env.FSDH360_API_KEY_AUTH;

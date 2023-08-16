@@ -206,14 +206,17 @@ export class WalletService {
 
     //self wallet fund handler
     async handleSelfWalletFund(options: ProcessWalletFundOptions) {
-        const transaction = await this.prisma.transaction.findFirst({
+        const transaction = await this.prisma.transaction.findUnique({
             where: {
                 paymentReference: options.paymentReference,
-                paymentStatus: PaymentStatus.SUCCESS,
+            },
+            select: {
+                id: true,
+                paymentStatus: true,
             },
         });
 
-        if (transaction) {
+        if (transaction && transaction.paymentStatus == PaymentStatus.SUCCESS) {
             throw new DuplicateSelfFundWalletTransaction(
                 "Wallet fund transaction already completed",
                 HttpStatus.BAD_REQUEST

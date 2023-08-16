@@ -1,4 +1,9 @@
-import { jwtSecret, paystackSecretKey, squadGtBankOptions } from "@/config";
+import {
+    fsdh360ApiKeyAuth,
+    jwtSecret,
+    paystackSecretKey,
+    squadGtBankOptions,
+} from "@/config";
 import {
     CanActivate,
     ExecutionContext,
@@ -16,6 +21,7 @@ import {
 } from "../errors";
 import {
     DataStoredInToken,
+    RequestFromFSDH360Bank,
     RequestFromPaystack,
     RequestFromSquadGTBank,
     RequestWithUser,
@@ -120,6 +126,23 @@ export class SquadGTBankWebhookGuard implements CanActivate {
             .digest("hex");
 
         if (hash == request.headers["x-squad-signature"]) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+}
+
+@Injectable()
+export class FSDH360BankWebhookGuard implements CanActivate {
+    canActivate(
+        context: ExecutionContext
+    ): boolean | Promise<boolean> | Observable<boolean> {
+        const request = context
+            .switchToHttp()
+            .getRequest() as RequestFromFSDH360Bank;
+
+        if (fsdh360ApiKeyAuth == request.headers["api-key-auth"]) {
             return true;
         } else {
             return false;

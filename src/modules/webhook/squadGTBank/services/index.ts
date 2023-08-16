@@ -25,7 +25,7 @@ export class SquadGTBankWebhookService {
         }
     }
 
-    //handle wallet funding from paystack virtual bank account transfer
+    //handle wallet funding from gtbank virtual bank account transfer
     async processWalletFunding(eventBody: EventBody) {
         try {
             const user = await this.userService.findUserByIdentifier(

@@ -27,3 +27,9 @@ export interface AgentVerifyEmailParams {
     merchantName: string;
     merchantEmail: string;
 }
+
+interface FSDH360BankHeader {
+    "api-key-auth": string;
+}
+
+export type RequestFromFSDH360Bank = Request & { headers: FSDH360BankHeader };
