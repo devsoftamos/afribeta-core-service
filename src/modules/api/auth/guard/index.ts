@@ -1,5 +1,6 @@
 import {
     fsdh360ApiKeyAuth,
+    fsdh360Ips,
     jwtSecret,
     paystackSecretKey,
     squadGtBankOptions,
@@ -142,7 +143,10 @@ export class FSDH360BankWebhookGuard implements CanActivate {
             .switchToHttp()
             .getRequest() as RequestFromFSDH360Bank;
 
-        if (fsdh360ApiKeyAuth == request.headers["api-key-auth"]) {
+        if (
+            fsdh360ApiKeyAuth == request.headers["api-key-auth"] &&
+            fsdh360Ips.includes(request.ip)
+        ) {
             return true;
         } else {
             return false;
