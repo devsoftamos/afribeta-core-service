@@ -236,7 +236,7 @@ export class CableTVBillService {
             return buildResponse({
                 message: "Cable TV purchase payment successfully initialized",
                 data: {
-                    amount: options.price,
+                    amount: options.price + options.serviceCharge,
                     email: user.email,
                     reference: resp.paymentReference,
                 },
@@ -318,7 +318,9 @@ export class CableTVBillService {
                 amount: purchaseOptions.price,
                 flow: TransactionFlow.OUT,
                 status: TransactionStatus.PENDING,
-                totalAmount: purchaseOptions.price,
+                totalAmount:
+                    purchaseOptions.price +
+                    options.purchaseOptions.serviceCharge,
                 transactionId: generateId({ type: "transaction" }),
                 type: TransactionType.CABLETV_BILL,
                 userId: user.id,
@@ -336,6 +338,7 @@ export class CableTVBillService {
                 serviceTransactionCode2: purchaseOptions.tvCode,
                 receiverIdentifier: purchaseOptions.phone,
                 description: purchaseOptions.narration,
+                serviceCharge: options.purchaseOptions.serviceCharge,
             };
 
         const transaction = await this.prisma.transaction.create({
@@ -584,9 +587,9 @@ export class CableTVBillService {
             );
         }
 
-        //record payment
+        //charge wallet and update payment status
         await this.billService.walletChargeHandler({
-            amount: transaction.amount,
+            amount: transaction.totalAmount,
             transactionId: transaction.id,
             walletId: wallet.id,
         });

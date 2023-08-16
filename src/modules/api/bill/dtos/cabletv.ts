@@ -12,6 +12,9 @@ export class PurchaseTVDto extends PurchaseBillDto {
     @IsString()
     phone: string;
 
+    @IsNumber()
+    serviceCharge: number;
+
     @IsString()
     smartCardNumber: string;
 

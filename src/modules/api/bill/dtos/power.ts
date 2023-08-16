@@ -16,6 +16,9 @@ export class PurchasePowerDto extends PurchaseBillDto {
     @IsNumber()
     amount: number;
 
+    @IsNumber()
+    serviceCharge: number;
+
     @IsEnum(MeterType)
     meterType: MeterType;
 

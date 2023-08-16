@@ -192,7 +192,7 @@ export class PowerBillService {
             return buildResponse({
                 message: "Power payment successfully initialized",
                 data: {
-                    amount: options.amount,
+                    amount: options.amount + options.serviceCharge,
                     email: user.email,
                     reference: resp.paymentReference,
                 },
@@ -283,6 +283,7 @@ export class PowerBillService {
                 billServiceSlug: purchaseOptions.billService,
                 provider: purchaseOptions.billProvider,
                 serviceTransactionCode2: purchaseOptions.meterCode,
+                serviceCharge: purchaseOptions.serviceCharge,
             };
 
         switch (billProvider.slug) {
@@ -540,7 +541,7 @@ export class PowerBillService {
             );
         }
 
-        if (wallet.mainBalance < transaction.amount) {
+        if (wallet.mainBalance < transaction.totalAmount) {
             this.billEvent.emit("payment-failure", {
                 transaction: transaction,
             });
@@ -571,9 +572,9 @@ export class PowerBillService {
             );
         }
 
-        //record payment
+        //charge wallet and update payment status
         await this.billService.walletChargeHandler({
-            amount: transaction.amount,
+            amount: transaction.totalAmount,
             transactionId: transaction.id,
             walletId: wallet.id,
         });
