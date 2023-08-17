@@ -7,7 +7,7 @@ import { FSDH360BankWebhookService } from "../services";
 export class FSDH360BankWebhookEvent extends EventEmitter {
     constructor(private fsdh360BankWebhookService: FSDH360BankWebhookService) {
         super();
-        this.on("process-webhook-event", this.processor);
+        this.on("process-webhook-events", this.processor);
     }
     emit<K extends keyof WebhookEventMap>(
         eventName: K,
@@ -23,7 +23,7 @@ export class FSDH360BankWebhookEvent extends EventEmitter {
         return super.on(eventName, listener);
     }
 
-    async processor(eventBody: EventBody) {
-        await this.fsdh360BankWebhookService.processWebhookEvent(eventBody);
+    async processor(eventBodies: EventBody[]) {
+        await this.fsdh360BankWebhookService.processWebhookEvent(eventBodies);
     }
 }

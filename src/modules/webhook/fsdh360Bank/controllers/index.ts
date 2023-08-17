@@ -23,8 +23,11 @@ export class FSDH360BankWebhookController {
 
     @HttpCode(HttpStatus.OK)
     @Post()
-    async processWebhook(@Body() eventBody: EventBody) {
-        this.fsdh360BankWebhookEvent.emit("process-webhook-event", eventBody);
-        return [eventBody.transactionId];
+    async processWebhook(@Body() eventBodies: EventBody[]) {
+        this.fsdh360BankWebhookEvent.emit(
+            "process-webhook-events",
+            eventBodies
+        );
+        return eventBodies.map((eb) => eb.transactionId);
     }
 }

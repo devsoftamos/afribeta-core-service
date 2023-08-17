@@ -18,5 +18,5 @@ export interface EventBody {
 }
 
 export interface WebhookEventMap {
-    "process-webhook-event": EventBody;
+    "process-webhook-events": EventBody[];
 }

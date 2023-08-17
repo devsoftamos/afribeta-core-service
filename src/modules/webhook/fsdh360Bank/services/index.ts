@@ -20,40 +20,45 @@ export class FSDH360BankWebhookService {
         private prisma: PrismaService
     ) {}
 
-    async processWebhookEvent(eventBody: EventBody) {
-        await this.processWalletFunding(eventBody);
+    async processWebhookEvent(eventBodies: EventBody[]) {
+        await this.processWalletFunding(eventBodies);
     }
 
-    private async processWalletFunding(eventBody: EventBody) {
-        try {
-            const virtualAccount =
-                await this.prisma.virtualBankAccount.findUnique({
-                    where: {
-                        accountNumber_provider: {
-                            accountNumber: eventBody.virtualAccountNumber,
-                            provider: VirtualAccountProvider.FSDH360,
+    private async processWalletFunding(eventBodies: EventBody[]) {
+        for (let i = 0; i < eventBodies.length; i++) {
+            try {
+                const eventBody = eventBodies[i];
+                const virtualAccount =
+                    await this.prisma.virtualBankAccount.findUnique({
+                        where: {
+                            accountNumber_provider: {
+                                accountNumber: eventBody.virtualAccountNumber,
+                                provider: VirtualAccountProvider.FSDH360,
+                            },
                         },
-                    },
-                });
+                    });
 
-            if (!virtualAccount) {
-                throw new VirtualAccountNotFoundException(
-                    "Failed to process FSDH360 webhook virtual account funding. User virtual account not found",
-                    HttpStatus.NOT_FOUND
-                );
+                if (!virtualAccount) {
+                    throw new VirtualAccountNotFoundException(
+                        "Failed to process FSDH360 webhook virtual account funding. User virtual account not found",
+                        HttpStatus.NOT_FOUND
+                    );
+                }
+                await this.walletService.processWalletFunding({
+                    amount: eventBody.amount,
+                    status: TransactionStatus.SUCCESS,
+                    userId: virtualAccount.userId,
+                    paymentChannel:
+                        PaymentChannel.FSDH360_VIRTUAL_ACCOUNT_TRANSFER,
+                    paymentReference: eventBody.transactionId,
+                    paymentStatus: PaymentStatus.SUCCESS,
+                    walletFundTransactionFlow:
+                        WalletFundTransactionFlow.SELF_FUND,
+                    provider: WalletFundProvider.FSDH360,
+                });
+            } catch (error) {
+                logger.error(error);
             }
-            await this.walletService.processWalletFunding({
-                amount: eventBody.amount,
-                status: TransactionStatus.SUCCESS,
-                userId: virtualAccount.userId,
-                paymentChannel: PaymentChannel.FSDH360_VIRTUAL_ACCOUNT_TRANSFER,
-                paymentReference: eventBody.transactionId,
-                paymentStatus: PaymentStatus.SUCCESS,
-                walletFundTransactionFlow: WalletFundTransactionFlow.SELF_FUND,
-                provider: WalletFundProvider.FSDH360,
-            });
-        } catch (error) {
-            logger.error(error);
         }
     }
 }
