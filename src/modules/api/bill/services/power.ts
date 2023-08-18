@@ -347,6 +347,7 @@ export class PowerBillService {
                         billPaymentReference: true,
                         paymentChannel: true,
                         serviceTransactionCode2: true,
+                        meterType: true,
                     },
                 });
 
@@ -469,14 +470,16 @@ export class PowerBillService {
                     }
                 );
 
-                await this.smsService.termii
-                    .send({
-                        to: options.user.phone,
-                        sms: `Hi, your meter token and units are: ${vendPowerResp.meterToken} and ${vendPowerResp.units} respectively`,
-                        type: "plain",
-                        channel: "generic",
-                    })
-                    .catch(() => false);
+                if (options.transaction.meterType == MeterType.PREPAID) {
+                    await this.smsService.termii
+                        .send({
+                            to: options.user.phone,
+                            sms: `Hi, your meter token and units are: ${vendPowerResp.meterToken} and ${vendPowerResp.units} respectively`,
+                            type: "plain",
+                            channel: "generic",
+                        })
+                        .catch(() => false);
+                }
 
                 return {
                     meterToken: vendPowerResp.meterToken,

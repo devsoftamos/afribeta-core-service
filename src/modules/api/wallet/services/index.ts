@@ -237,7 +237,6 @@ export class WalletService {
         //Handle DB transactions
         await this.prisma.$transaction(
             async (tx) => {
-                //update wallet idf status is success
                 await tx.wallet.update({
                     where: { userId: options.userId },
                     data: {
@@ -272,6 +271,7 @@ export class WalletService {
                         walletFundTransactionFlow:
                             options.walletFundTransactionFlow,
                         provider: options.provider,
+                        serviceCharge: options.serviceCharge ?? 0, //for banks providing virtual account, the charge is just for reconciliation
                     },
                 });
             },

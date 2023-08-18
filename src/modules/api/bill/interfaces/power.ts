@@ -5,6 +5,7 @@ export interface CompletePowerPurchaseTransactionOptions
     serviceTransactionCode: string;
     serviceTransactionCode2: string;
     accountId: string;
+    meterType: string;
 }
 
 export interface PowerPurchaseInitializationHandlerOutput {
