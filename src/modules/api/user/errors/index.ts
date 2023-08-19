@@ -25,5 +25,5 @@ export class AgentCreationException extends HttpException {
 }
 
 export class UserKycException extends HttpException {
-    name: string = "UserKycException";
+    name = "UserKycException";
 }
