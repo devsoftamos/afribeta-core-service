@@ -32,6 +32,12 @@ enum MerchantUpgradeStatus {
   DECLINED
 }
 
+enum IdentificationMeans {
+  NIN
+  VOTERS_CARD
+  INTERNATIONAL_PASSPORT
+}
+
 model User {
   id                    Int                    @id @default(autoincrement())
   identifier            String                 @unique
@@ -53,14 +59,13 @@ model User {
   roleId                Int
   ipAddress             String?
   notificationToken     String?
-  cacNumber             String?
-  utilityDocumentUrl    String?
   isVerified            Boolean                @default(true) //email verification
-  isKycVerified         Boolean                @default(false)
+  isKycCreated          Boolean?               @default(false)
+  isWalletCreated       Boolean                @default(false) //for wallet
   isDeleted             Boolean?               @default(false)
   createdAt             DateTime               @default(now())
   updatedAt             DateTime               @updatedAt
-  bank                  Bank?
+  banks                 Bank[]
   createdUsers          User[]                 @relation(name: "creatorAndCreatedUser")
   creator               User?                  @relation(name: "creatorAndCreatedUser", fields: [createdById], references: [id])
   role                  Role                   @relation(fields: [roleId], references: [id])
@@ -71,8 +76,27 @@ model User {
   receiverTransactions  Transaction[]          @relation(name: "receiverToTransaction")
   virtualBankAccount    VirtualBankAccount[]
   commissions           UserCommission[]
+  kycInformation        KycInformation?
 
   @@map("Users")
+}
+
+model KycInformation {
+  id                             Int                  @id @default(autoincrement())
+  userId                         Int                  @unique
+  cacNumber                      String?
+  cacDocumentUrl                 String?
+  identificationMeans            IdentificationMeans?
+  identificationMeansDocumentUrl String?
+  nextOfKinName                  String?
+  nextOfKinPhone                 String?
+  nextOfKinAddress               String?
+  address                        String?              @db.Text
+  createdAt                      DateTime             @default(now())
+  updatedAt                      DateTime             @updatedAt
+  user                           User                 @relation(fields: [userId], references: [id])
+
+  @@map("KycInformation")
 }
 
 //Bank
@@ -82,18 +106,17 @@ enum BankCodeprovider {
 }
 
 model Bank {
-  id               Int              @id @default(autoincrement())
-  userId           Int              @unique
-  bankName         String
-  accountName      String
-  accountNumber    String
-  bankCode         String
-  slug             String?
-  bankCodeProvider BankCodeprovider @default(PROVIDUS)
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
-  user             User             @relation(fields: [userId], references: [id])
+  id            Int      @id @default(autoincrement())
+  userId        Int      @unique
+  bankName      String
+  accountName   String
+  accountNumber String
+  bankCode      String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  user          User     @relation(fields: [userId], references: [id])
 
+  @@index([userId])
   @@map("Banks")
 }
 

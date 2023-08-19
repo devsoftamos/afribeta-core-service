@@ -7,6 +7,7 @@ import { AllExceptionsFilter } from "@/core/exception/http";
 import { classValidatorPipeInstance } from "@/core/pipe";
 import { PrismaService } from "@/modules/core/prisma/services";
 import * as morgan from "morgan";
+import { json } from "express";
 
 export interface CreateServerOptions {
     port: number;
@@ -39,6 +40,7 @@ export default async (
     app.use(helmet());
     app.enableCors(corsOptions);
     app.use(morgan(options.production ? "combined" : "dev"));
+    app.use(json({ limit: "100mb" }));
 
     app.enableVersioning({
         type: VersioningType.URI,

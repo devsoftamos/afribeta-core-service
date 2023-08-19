@@ -21,6 +21,7 @@ import { User as UserModel } from "@prisma/client";
 import { User } from "../../decorators";
 import {
     CreateAgentDto,
+    CreateKycDto,
     CreateTransactionPinDto,
     ListMerchantAgentsDto,
     UpdateProfileDto,
@@ -131,5 +132,13 @@ export class UserController {
     @Get("commission")
     async getUserBillCommissions(@User() user: UserModel) {
         return await this.userService.getServiceCommissions(user);
+    }
+
+    @Post("kyc")
+    async createKyc(
+        @Body(ValidationPipe) kycDto: CreateKycDto,
+        @User() user: UserModel
+    ) {
+        return await this.userService.createKyc(kycDto, user);
     }
 }

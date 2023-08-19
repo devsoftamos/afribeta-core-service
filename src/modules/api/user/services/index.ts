@@ -16,6 +16,7 @@ import {
 import { AuthService } from "../../auth/services";
 import {
     CreateAgentDto,
+    CreateKycDto,
     CreateTransactionPinDto,
     ListMerchantAgentsDto,
     UpdateProfileDto,
@@ -29,6 +30,7 @@ import {
     IncorrectPasswordException,
     InvalidAgentCommissionAssignment,
     TransactionPinException,
+    UserKycException,
     UserNotFoundException,
 } from "../errors";
 import {
@@ -37,6 +39,7 @@ import {
 } from "../interfaces";
 import logger from "moment-logger";
 import { SendinblueEmailException } from "@calculusky/transactional-email";
+import { S3Service } from "@/modules/core/upload/services/s3";
 
 @Injectable()
 export class UserService {
@@ -44,7 +47,8 @@ export class UserService {
         private prisma: PrismaService,
         @Inject(forwardRef(() => AuthService))
         private authService: AuthService,
-        private emailService: EmailService
+        private emailService: EmailService,
+        private s3Service: S3Service
     ) {}
 
     async createUser(options: Prisma.UserCreateInput) {
@@ -459,6 +463,72 @@ export class UserService {
         return buildResponse({
             message: "Bill service commissions successfully retrieved",
             data: billCommissions,
+        });
+    }
+
+    private async uploadKycImage(file: string): Promise<string> {
+        const date = Date.now();
+        const directory = "kycInfo";
+        const key = `${directory}/kyc-image-${date}.webp`;
+        const body = Buffer.from(file, "base64");
+
+        return await this.s3Service.uploadCompressedImage({
+            key,
+            body: body,
+            format: "webp",
+            quality: 100,
+            width: 320,
+        });
+    }
+
+    async createKyc(options: CreateKycDto, user: User): Promise<ApiResponse> {
+        if (user.isKycCreated) {
+            throw new UserKycException(
+                "KYC already submitted",
+                HttpStatus.BAD_REQUEST
+            );
+        }
+
+        if (!user.isWalletCreated) {
+            throw new UserKycException(
+                "Setup wallet KYC before proceeding",
+                HttpStatus.BAD_REQUEST
+            );
+        }
+
+        const [cacImageUrl, idUrl] = await Promise.all([
+            this.uploadKycImage(options.cacImageFile),
+            this.uploadKycImage(options.identificationMeansImageFile),
+        ]);
+
+        const userUpdateOptions: Prisma.UserUpdateInput = {
+            isKycCreated: true,
+            banks: {
+                create: options.banks,
+            },
+            kycInformation: {
+                create: {
+                    address: options.address,
+                    cacNumber: options.cacNumber,
+                    identificationMeans: options.identificationMeans,
+                    identificationMeansDocumentUrl: idUrl,
+                    cacDocumentUrl: cacImageUrl,
+                    nextOfKinAddress: options.nextOfKinAddress,
+                    nextOfKinName: options.nextOfKinName,
+                    nextOfKinPhone: options.nextOfKinPhone,
+                },
+            },
+        };
+
+        await this.prisma.user.update({
+            where: {
+                id: user.id,
+            },
+            data: userUpdateOptions,
+        });
+
+        return buildResponse({
+            message: "KYC successfully saved",
         });
     }
 }

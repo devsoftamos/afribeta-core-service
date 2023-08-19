@@ -1,4 +1,4 @@
-import { IsEnum, IsString } from "class-validator";
+import { IsEnum, IsString, Length } from "class-validator";
 
 export enum BankProvider {
     PAYSTACK = "paystack",
@@ -19,4 +19,19 @@ export class ResolveBankAccountDto {
 
     @IsString()
     bankCode: string;
+}
+
+export class CreateBankDto {
+    @IsString()
+    bankName: string;
+
+    @IsString()
+    bankCode: string;
+
+    @IsString()
+    @Length(10, 10)
+    accountNumber: string;
+
+    @IsString()
+    accountName: string;
 }

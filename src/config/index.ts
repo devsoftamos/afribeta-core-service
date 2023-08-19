@@ -131,6 +131,22 @@ const runtimeEnvironment: RequiredEnvironment[] = [
         name: "FSDH360_IPS",
         type: RequiredEnvironmentTypes.String,
     },
+    {
+        name: "AWS_ACCESS_KEY_ID",
+        type: RequiredEnvironmentTypes.String,
+    },
+    {
+        name: "AWS_SECRET_ACCESS_KEY",
+        type: RequiredEnvironmentTypes.String,
+    },
+    {
+        name: "AWS_REGION",
+        type: RequiredEnvironmentTypes.String,
+    },
+    {
+        name: "AWS_S3_BUCKET",
+        type: RequiredEnvironmentTypes.String,
+    },
 ];
 
 validate(runtimeEnvironment);
@@ -164,12 +180,13 @@ export const paystackSecretKey: string = process.env.PAYSTACK_SECRET_KEY;
 export const paystackVirtualAccountBank: string =
     process.env.PAYSTACK_VIRTUAL_ACCOUNT_BANK;
 
-export const showStack = process.env.STACK_MODE == "show_error_stack";
-
 export const paystackConfiguration: PaystackOptions = {
     baseUrl: process.env.PAYSTACK_BASE_URL,
     secretKey: process.env.PAYSTACK_SECRET_KEY,
 };
+
+//Error stack
+export const showStack = process.env.STACK_MODE == "show_error_stack";
 
 //IRecharge
 export const iRechargeOptions: IRechargeOptions = {
@@ -204,3 +221,18 @@ export const fsdh360BankOptions: FSDH360BankOptions = {
 };
 export const fsdh360ApiKeyAuth = process.env.FSDH360_API_KEY_AUTH;
 export const fsdh360Ips = process.env.FSDH360_IPS.split(",");
+
+//AWS
+export interface AWSConfiguration {
+    accessKeyId: string;
+    secretAccessKey: string;
+    region: string;
+    s3Bucket: string;
+}
+
+export const awsConfiguration: AWSConfiguration = {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    region: process.env.AWS_REGION,
+    s3Bucket: process.env.AWS_S3_BUCKET,
+};

@@ -132,7 +132,8 @@ export class WalletService {
                         id: user.id,
                     },
                     data: {
-                        isKycVerified: true,
+                        isWalletCreated: true,
+                        isKycCreated: true,
                     },
                 });
             });
@@ -728,6 +729,13 @@ export class WalletService {
         }
 
         //create record
+        const userUpdateData: Prisma.UserUpdateInput = {
+            isWalletCreated: true,
+        };
+        if (!user.isMerchantUpgradable) {
+            userUpdateData.isKycCreated = true;
+        }
+
         if (virtualAccountCreateManyOptions.length) {
             const walletNumber = customAlphabet("1234567890ABCDEFGH", 10)();
             await this.prisma
@@ -743,9 +751,7 @@ export class WalletService {
                         where: {
                             id: user.id,
                         },
-                        data: {
-                            isKycVerified: true,
-                        },
+                        data: userUpdateData,
                     });
                 })
                 .catch((err) => {

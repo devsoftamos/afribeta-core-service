@@ -1,3 +1,4 @@
+import { IdentificationMeans } from "@prisma/client";
 import { Type } from "class-transformer";
 import {
     ArrayMinSize,
@@ -5,6 +6,7 @@ import {
     IsBase64,
     IsBooleanString,
     IsEmail,
+    IsEnum,
     IsNotEmpty,
     IsNumber,
     IsNumberString,
@@ -14,6 +16,7 @@ import {
     Length,
     ValidateNested,
 } from "class-validator";
+import { CreateBankDto } from "../../bank/dtos";
 
 export class GetUserByIdentifierDto {
     @IsString()
@@ -126,4 +129,45 @@ export class ListMerchantAgentsDto {
     @IsOptional()
     @IsNumberString()
     limit: number;
+}
+
+export class CreateKycDto {
+    @IsString()
+    address: string;
+
+    @IsString()
+    nextOfKinName: string;
+
+    @IsPhoneNumber("NG")
+    @Length(11, 11, {
+        message: "Next of Kin Phone number must be valid containing 11 digits",
+    })
+    nextOfKinPhone: string;
+
+    @IsString()
+    nextOfKinAddress: string;
+
+    @IsString()
+    cacNumber: string;
+
+    @IsNotEmpty()
+    @IsBase64({
+        message: "CAC image file must be a valid base64 plain text",
+    })
+    cacImageFile: string;
+
+    @IsEnum(IdentificationMeans)
+    identificationMeans: IdentificationMeans;
+
+    @IsNotEmpty()
+    @IsBase64({
+        message: "Identification image file must be a valid base64 plain text",
+    })
+    identificationMeansImageFile: string;
+
+    @ValidateNested({ each: true })
+    @Type(() => CreateBankDto)
+    @ArrayMinSize(1)
+    @IsArray()
+    banks: CreateBankDto[];
 }

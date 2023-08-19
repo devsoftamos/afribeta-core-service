@@ -23,3 +23,7 @@ export class InvalidAgentCommissionAssignment extends HttpException {
 export class AgentCreationException extends HttpException {
     name = "AgentCreationException";
 }
+
+export class UserKycException extends HttpException {
+    name: string = "UserKycException";
+}
