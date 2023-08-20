@@ -45,8 +45,8 @@ export class FSDH360BankWebhookService {
                     );
                 }
                 await this.walletService.processWalletFunding({
-                    amount: eventBody.amount + eventBody.charge, //customer original deposit
-                    serviceCharge: eventBody.charge,
+                    amount: eventBody.amount,
+                    serviceCharge: eventBody.charge, //bank charge
                     status: TransactionStatus.SUCCESS,
                     userId: virtualAccount.userId,
                     paymentChannel:

@@ -234,6 +234,7 @@ export class WalletService {
                 HttpStatus.NOT_FOUND
             );
         }
+        options.serviceCharge = options.serviceCharge ?? 0;
 
         //Handle DB transactions
         await this.prisma.$transaction(
@@ -258,7 +259,7 @@ export class WalletService {
                         amount: options.amount,
                         userId: options.userId,
                         status: options.status,
-                        totalAmount: options.amount,
+                        totalAmount: options.amount + options.serviceCharge,
                         flow: TransactionFlow.IN,
                         type: TransactionType.WALLET_FUND,
                         paymentStatus: options.paymentStatus,
@@ -272,7 +273,7 @@ export class WalletService {
                         walletFundTransactionFlow:
                             options.walletFundTransactionFlow,
                         provider: options.provider,
-                        serviceCharge: options.serviceCharge ?? 0, //for banks providing virtual account, the charge is just for reconciliation
+                        serviceCharge: options.serviceCharge, //for banks providing virtual account, the charge is just for reconciliation
                     },
                 });
             },

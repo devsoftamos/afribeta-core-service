@@ -24,7 +24,7 @@ export class ProvidusWebhookService {
     async processWalletFunding(eventBody: EventBody, user: UserIdentifier) {
         try {
             await this.walletService.processWalletFunding({
-                amount: +eventBody.transactionAmount,
+                amount: +eventBody.settledAmount,
                 status: TransactionStatus.SUCCESS,
                 userId: user.id,
                 paymentChannel:
@@ -33,6 +33,8 @@ export class ProvidusWebhookService {
                 paymentStatus: PaymentStatus.SUCCESS,
                 walletFundTransactionFlow: WalletFundTransactionFlow.SELF_FUND,
                 provider: WalletFundProvider.PROVIDUS,
+                serviceCharge:
+                    +eventBody.transactionAmount - +eventBody.settledAmount,
             });
 
             const resp: APIWebhookResponse = {
