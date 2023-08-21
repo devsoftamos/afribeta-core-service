@@ -290,7 +290,14 @@ export class AuthService {
 
         return buildResponse({
             message: "Login successful",
-            data: { accessToken, meta: { isKycCreated: user.isKycCreated } },
+            data: {
+                accessToken,
+                meta: {
+                    kycStatus: user.kycStatus,
+                    isWalletCreated: user.isWalletCreated,
+                    userType: user.userType,
+                },
+            },
         });
     }
 

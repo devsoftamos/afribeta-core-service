@@ -4,10 +4,10 @@ import {
 } from "@/config";
 import { EmailService } from "@/modules/core/email/services";
 import { PrismaService } from "@/modules/core/prisma/services";
-import { generateId } from "@/utils";
+import { generateId, PaginationMeta } from "@/utils";
 import { ApiResponse, buildResponse } from "@/utils/api-response-util";
 import { forwardRef, HttpStatus, Inject, Injectable } from "@nestjs/common";
-import { Prisma, User, UserType } from "@prisma/client";
+import { KYC_STATUS, Prisma, User, UserType } from "@prisma/client";
 import {
     InvalidEmailVerificationCodeException,
     SendVerificationEmailException,
@@ -426,13 +426,56 @@ export class UserService {
     }
 
     async getMerchantAgents(options: ListMerchantAgentsDto, user: User) {
-        console.log(options);
-        const users = await this.prisma.user.findMany({
+        const meta: Partial<PaginationMeta> = {};
+
+        const queryOptions: Prisma.UserFindManyArgs = {
+            orderBy: { createdAt: "desc" },
             where: {
                 createdById: user.id,
             },
+            select: {
+                firstName: true,
+                lastName: true,
+                wallet: {
+                    select: {
+                        mainBalance: true,
+                    },
+                },
+            },
+        };
+
+        if (options.searchName) {
+            queryOptions.where.firstName = { search: options.searchName };
+            queryOptions.where.lastName = { search: options.searchName };
+        }
+
+        //pagination
+        if (options.pagination) {
+            const page = +options.page || 1;
+            const limit = +options.limit || 10;
+            const offset = (page - 1) * limit;
+            queryOptions.skip = offset;
+            queryOptions.take = limit;
+            const count = await this.prisma.user.count({
+                where: queryOptions.where,
+            });
+            meta.totalCount = count;
+            meta.page = page;
+            meta.perPage = limit;
+        }
+
+        const users = await this.prisma.user.findMany(queryOptions);
+        if (options.pagination) {
+            meta.pageCount = users.length;
+        }
+
+        return buildResponse({
+            message: "Agents successfully retrieved",
+            data: {
+                meta: meta,
+                records: users,
+            },
         });
-        return users;
     }
 
     async getSingleAgent(id: number, user: User) {
@@ -482,16 +525,9 @@ export class UserService {
     }
 
     async createKyc(options: CreateKycDto, user: User): Promise<ApiResponse> {
-        if (user.isKycCreated) {
+        if (user.kycStatus) {
             throw new UserKycException(
                 "KYC already submitted",
-                HttpStatus.BAD_REQUEST
-            );
-        }
-
-        if (!user.isWalletCreated) {
-            throw new UserKycException(
-                "Setup wallet KYC before proceeding",
                 HttpStatus.BAD_REQUEST
             );
         }
@@ -502,7 +538,7 @@ export class UserService {
         ]);
 
         const userUpdateOptions: Prisma.UserUpdateInput = {
-            isKycCreated: true,
+            kycStatus: KYC_STATUS.PENDING,
             banks: {
                 create: options.banks,
             },

@@ -2,8 +2,9 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider      = "prisma-client-js"
-  binaryTargets = ["native", "rhel-openssl-1.0.x"]
+  provider        = "prisma-client-js"
+  binaryTargets   = ["native", "rhel-openssl-1.0.x"]
+  previewFeatures = ["fullTextSearch", "fulltextIndex"]
 }
 
 datasource db {
@@ -38,6 +39,11 @@ enum IdentificationMeans {
   INTERNATIONAL_PASSPORT
 }
 
+enum KYC_STATUS {
+  PENDING
+  APPROVED
+}
+
 model User {
   id                    Int                    @id @default(autoincrement())
   identifier            String                 @unique
@@ -60,7 +66,7 @@ model User {
   ipAddress             String?
   notificationToken     String?
   isVerified            Boolean                @default(true) //email verification
-  isKycCreated          Boolean?               @default(false)
+  kycStatus             KYC_STATUS?
   isWalletCreated       Boolean                @default(false) //for wallet
   isDeleted             Boolean?               @default(false)
   createdAt             DateTime               @default(now())
@@ -78,6 +84,7 @@ model User {
   commissions           UserCommission[]
   kycInformation        KycInformation?
 
+  @@fulltext([firstName, lastName])
   @@map("Users")
 }
 

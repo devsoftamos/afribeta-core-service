@@ -13,6 +13,7 @@ import {
     ParseIntPipe,
     Patch,
     Post,
+    Query,
     Req,
     UseGuards,
     ValidationPipe,
@@ -110,7 +111,7 @@ export class UserController {
     @UseGuards(AbilitiesGuard)
     @CheckAbilities(new ViewAgentAbility())
     async getMerchantAgents(
-        @Body(ValidationPipe) listMerchantAgentsDto: ListMerchantAgentsDto,
+        @Query(ValidationPipe) listMerchantAgentsDto: ListMerchantAgentsDto,
         @User() user: UserModel
     ) {
         return await this.userService.getMerchantAgents(

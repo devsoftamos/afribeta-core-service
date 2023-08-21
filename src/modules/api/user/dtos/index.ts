@@ -129,6 +129,10 @@ export class ListMerchantAgentsDto {
     @IsOptional()
     @IsNumberString()
     limit: number;
+
+    @IsOptional()
+    @IsString()
+    searchName: string;
 }
 
 export class CreateKycDto {

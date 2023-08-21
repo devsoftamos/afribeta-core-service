@@ -9,6 +9,7 @@ import { IRechargeOptions } from "@/libs/iRecharge";
 import { ProvidusOptions } from "@/libs/providus";
 import { SquadGTBankOptions } from "@/libs/squadGTBank/interfaces";
 import { FSDH360BankOptions } from "@/libs/fsdh360Bank/interfaces";
+import { PolarisBankOptions } from "@/libs/polarisBank/interfaces";
 
 export * from "./constants";
 
@@ -147,6 +148,18 @@ const runtimeEnvironment: RequiredEnvironment[] = [
         name: "AWS_S3_BUCKET",
         type: RequiredEnvironmentTypes.String,
     },
+    // {
+    //     name: "POLARIS_API_KEY",
+    //     type: RequiredEnvironmentTypes.String,
+    // },
+    // {
+    //     name: "POLARIS_CLIENT_SECRET",
+    //     type: RequiredEnvironmentTypes.String,
+    // },
+    // {
+    //     name: "POLARIS_BASE_URL",
+    //     type: RequiredEnvironmentTypes.String,
+    // },
 ];
 
 validate(runtimeEnvironment);
@@ -235,4 +248,11 @@ export const awsConfiguration: AWSConfiguration = {
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
     region: process.env.AWS_REGION,
     s3Bucket: process.env.AWS_S3_BUCKET,
+};
+
+//polaris bank
+export const polarisBankOptions: PolarisBankOptions = {
+    apiKey: process.env.POLARIS_API_KEY,
+    clientSecret: process.env.POLARIS_CLIENT_SECRET,
+    baseUrl: process.env.POLARIS_BASE_URL,
 };
