@@ -8,6 +8,7 @@ import { classValidatorPipeInstance } from "@/core/pipe";
 import { PrismaService } from "@/modules/core/prisma/services";
 import * as morgan from "morgan";
 import { json } from "express";
+import { frontendDevOrigin, manualEnvironment } from "@/config";
 
 export interface CreateServerOptions {
     port: number;
@@ -21,17 +22,14 @@ export default async (
     const app = await NestFactory.create(AppModule, {
         //logger: false,
     });
-    const whitelist = options.whitelistedDomains ?? [];
+
+    let whitelist = options.whitelistedDomains ?? [];
+    if (manualEnvironment == "development") {
+        whitelist = whitelist.concat(frontendDevOrigin as any);
+    }
 
     const corsOptions: CorsOptions = {
-        origin: async (origin, callback) => {
-            if (!origin) return callback(null, true);
-
-            if (whitelist.indexOf(origin) !== -1) {
-                return callback(null, true);
-            }
-            callback(new Error(`Not allowed by CORS - ${origin}`));
-        },
+        origin: whitelist,
         allowedHeaders: ["Authorization", "X-Requested-With", "Content-Type"],
         methods: ["GET", "PUT", "POST", "PATCH", "DELETE", "OPTIONS"],
         credentials: true,

@@ -201,6 +201,9 @@ export const paystackConfiguration: PaystackOptions = {
 //Error stack
 export const showStack = process.env.STACK_MODE == "show_error_stack";
 
+//manual env
+export const manualEnvironment = process.env.MANUAL_ENVIRONMENT;
+
 //IRecharge
 export const iRechargeOptions: IRechargeOptions = {
     privateKey: process.env.IRECHARGE_PRIVATE_KEY,
@@ -256,3 +259,5 @@ export const polarisBankOptions: PolarisBankOptions = {
     clientSecret: process.env.POLARIS_CLIENT_SECRET,
     baseUrl: process.env.POLARIS_BASE_URL,
 };
+
+export const frontendDevOrigin = [/^http:\/\/localhost:\d+$/];
