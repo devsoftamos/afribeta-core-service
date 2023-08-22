@@ -167,5 +167,4 @@ export class CreateKycDto {
         message: "Identification image file must be a valid base64 plain text",
     })
     identificationMeansImageFile: string;
-
 }

@@ -9,5 +9,5 @@ export class VirtualAccountNotFoundException extends HttpException {
 }
 
 export class DuplicateBankAccountException extends HttpException {
-    name: string = "DuplicateBankAccountException";
+    name = "DuplicateBankAccountException";
 }
