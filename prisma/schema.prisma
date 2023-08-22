@@ -107,14 +107,14 @@ model KycInformation {
 }
 
 //Bank
-enum BankCodeprovider {
-  PAYSTACK
-  PROVIDUS
-}
+// enum BankCodeprovider {
+//   PAYSTACK
+//   PROVIDUS
+// }
 
 model Bank {
   id            Int      @id @default(autoincrement())
-  userId        Int      @unique
+  userId        Int
   bankName      String
   accountName   String
   accountNumber String
@@ -123,6 +123,7 @@ model Bank {
   updatedAt     DateTime @updatedAt
   user          User     @relation(fields: [userId], references: [id])
 
+  @@unique([userId, accountNumber, bankCode])
   @@index([userId])
   @@map("Banks")
 }

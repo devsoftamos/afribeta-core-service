@@ -1,4 +1,4 @@
-import { IsEnum, IsString, Length } from "class-validator";
+import { IsEnum, IsNumberString, IsString, Length } from "class-validator";
 
 export enum BankProvider {
     PAYSTACK = "paystack",
@@ -28,8 +28,8 @@ export class CreateBankDto {
     @IsString()
     bankCode: string;
 
-    @IsString()
-    @Length(10, 10)
+    @IsNumberString()
+    @Length(10, 10, { message: "Account number must be 10 characters" })
     accountNumber: string;
 
     @IsString()

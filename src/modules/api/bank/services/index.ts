@@ -5,10 +5,11 @@ import { HttpStatus, Injectable } from "@nestjs/common";
 import { User } from "@prisma/client";
 import {
     BankProvider,
+    CreateBankDto,
     GetPaymentProviderBanksDto,
     ResolveBankAccountDto,
 } from "../dtos";
-import { InvalidBankProvider } from "../errors";
+import { DuplicateBankAccountException, InvalidBankProvider } from "../errors";
 
 @Injectable()
 export class BankService {
@@ -95,5 +96,38 @@ export class BankService {
                 );
             }
         }
+    }
+
+    async createBank(options: CreateBankDto, user: User) {
+        const bank = await this.prisma.bank.findUnique({
+            where: {
+                userId_accountNumber_bankCode: {
+                    userId: user.id,
+                    accountNumber: options.accountNumber,
+                    bankCode: options.bankCode,
+                },
+            },
+        });
+        if (bank) {
+            throw new DuplicateBankAccountException(
+                "Bank account already exist",
+                HttpStatus.BAD_REQUEST
+            );
+        }
+
+        const createdBank = await this.prisma.bank.create({
+            data: {
+                accountName: options.accountName,
+                accountNumber: options.accountNumber,
+                bankCode: options.bankCode,
+                bankName: options.bankName,
+                userId: user.id,
+            },
+        });
+
+        return buildResponse({
+            message: "Bank details successfully saved",
+            data: createdBank,
+        });
     }
 }

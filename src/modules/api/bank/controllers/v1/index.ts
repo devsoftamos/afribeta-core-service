@@ -1,14 +1,20 @@
 import { AuthGuard } from "@/modules/api/auth/guard";
 import { User } from "@/modules/api/user";
 import {
+    Body,
     Controller,
     Get,
+    Post,
     Query,
     UseGuards,
     ValidationPipe,
 } from "@nestjs/common";
-import { User as UserEntity } from "@prisma/client";
-import { GetPaymentProviderBanksDto, ResolveBankAccountDto } from "../../dtos";
+import { User as UserModel } from "@prisma/client";
+import {
+    CreateBankDto,
+    GetPaymentProviderBanksDto,
+    ResolveBankAccountDto,
+} from "../../dtos";
 import { BankService } from "../../services";
 
 @Controller({
@@ -27,7 +33,7 @@ export class BankController {
 
     @UseGuards(AuthGuard)
     @Get("virtual-account")
-    async getVirtualBankAccount(@User() user: UserEntity) {
+    async getVirtualBankAccount(@User() user: UserModel) {
         return await this.bankService.getVirtualBankAccounts(user);
     }
 
@@ -37,5 +43,14 @@ export class BankController {
         resolveBankAccountDto: ResolveBankAccountDto
     ) {
         return await this.bankService.resolveBankAccount(resolveBankAccountDto);
+    }
+
+    @UseGuards(AuthGuard)
+    @Post()
+    async createBank(
+        @Body(ValidationPipe) createBankDto: CreateBankDto,
+        @User() user: UserModel
+    ) {
+        return await this.bankService.createBank(createBankDto, user);
     }
 }

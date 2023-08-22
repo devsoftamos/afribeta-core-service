@@ -40,6 +40,7 @@ import {
 import logger from "moment-logger";
 import { SendinblueEmailException } from "@calculusky/transactional-email";
 import { S3Service } from "@/modules/core/upload/services/s3";
+import { customAlphabet } from "nanoid";
 
 @Injectable()
 export class UserService {
@@ -318,7 +319,7 @@ export class UserService {
                 slug: "agent",
             },
         });
-
+        const walletNumber = customAlphabet("1234567890ABCDEFGH", 10)();
         const createAgentOptions: Prisma.UserUncheckedCreateInput = {
             email: verificationData.email,
             firstName: options.firstName,
@@ -335,6 +336,11 @@ export class UserService {
             },
             localGovernmentArea: options.localGovernmentArea,
             state: options.state,
+            wallet: {
+                create: {
+                    walletNumber: walletNumber,
+                },
+            },
         };
 
         await this.prisma
@@ -539,9 +545,6 @@ export class UserService {
 
         const userUpdateOptions: Prisma.UserUpdateInput = {
             kycStatus: KYC_STATUS.PENDING,
-            banks: {
-                create: options.banks,
-            },
             kycInformation: {
                 create: {
                     address: options.address,

@@ -16,7 +16,6 @@ import {
     Length,
     ValidateNested,
 } from "class-validator";
-import { CreateBankDto } from "../../bank/dtos";
 
 export class GetUserByIdentifierDto {
     @IsString()
@@ -169,9 +168,4 @@ export class CreateKycDto {
     })
     identificationMeansImageFile: string;
 
-    @ValidateNested({ each: true })
-    @Type(() => CreateBankDto)
-    @ArrayMinSize(1)
-    @IsArray()
-    banks: CreateBankDto[];
 }
