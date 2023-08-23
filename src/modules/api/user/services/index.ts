@@ -316,7 +316,7 @@ export class UserService {
         const hashedPassword = await this.authService.hashPassword(password);
         const role = await this.prisma.role.findUnique({
             where: {
-                slug: "agent",
+                slug: "non-upgradable-agent",
             },
         });
         const walletNumber = customAlphabet("1234567890ABCDEFGH", 10)();
