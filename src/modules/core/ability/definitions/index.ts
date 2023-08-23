@@ -1,4 +1,3 @@
-import { subject } from "@casl/ability";
 import { Action, RequiredRule, Subjects } from "../interfaces";
 
 export class CreateAgentAbility implements RequiredRule {
