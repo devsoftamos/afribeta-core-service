@@ -29,10 +29,18 @@ export class AbilityFactory {
             createPrismaAbility
         );
 
+        // console.log(user.id, "*******");
+
         can(Action.CreateAgent, "User");
+        can(Action.ViewAgent, "User");
         can(Action.ViewAgent, "User", {
             createdById: user.id,
         });
+        cannot(Action.ViewAgent, "User", {
+            createdById: { not: user.id },
+        }).because(
+            "Insufficient permission! You can only view resources of your agent"
+        );
 
         //Agent Management
         if (!permissions.includes(Action.CreateAgent)) {
@@ -43,7 +51,7 @@ export class AbilityFactory {
 
         if (!permissions.includes(Action.ViewAgent)) {
             cannot(Action.ViewAgent, "User").because(
-                "Your account type does not have sufficient permission to view agent"
+                "Your account type does not have sufficient permission to view agent resource"
             );
         }
 

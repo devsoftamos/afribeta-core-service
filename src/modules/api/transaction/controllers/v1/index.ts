@@ -1,8 +1,13 @@
 import { AuthGuard } from "@/modules/api/auth/guard";
 import { User } from "@/modules/api/user";
+import { ViewAgentAbility } from "@/modules/core/ability";
+import { CheckAbilities } from "@/modules/core/ability/decorator";
+import { AbilitiesGuard } from "@/modules/core/ability/guards";
 import {
     Controller,
     Get,
+    Param,
+    ParseIntPipe,
     Query,
     UseGuards,
     ValidationPipe,
@@ -35,6 +40,21 @@ export class TransactionController {
         return await this.transactionService.transactionHistory(
             transactionHistoryDto,
             user
+        );
+    }
+
+    @Get("agent/:id/history")
+    @UseGuards(AbilitiesGuard)
+    @CheckAbilities(new ViewAgentAbility())
+    async MerchantAgentTransactionHistory(
+        @Query(ValidationPipe) transactionHistoryDto: TransactionHistoryDto,
+        @User() user: UserModel,
+        @Param("id", ParseIntPipe) id: number
+    ) {
+        return await this.transactionService.viewOwnAgentTransactionHistory(
+            transactionHistoryDto,
+            user,
+            id
         );
     }
 }

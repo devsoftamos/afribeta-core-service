@@ -9,4 +9,16 @@ export const permissions = [
         description: "View Agent",
         isCustomAssignable: false,
     },
+
+    {
+        name: "agent.fund",
+        description: "Fund Agent Wallet",
+        isCustomAssignable: false,
+    },
+
+    {
+        name: "agent.transaction.view",
+        description: "View Agent Transaction",
+        isCustomAssignable: false,
+    },
 ];

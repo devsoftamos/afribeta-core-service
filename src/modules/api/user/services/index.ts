@@ -41,6 +41,10 @@ import logger from "moment-logger";
 import { SendinblueEmailException } from "@calculusky/transactional-email";
 import { S3Service } from "@/modules/core/upload/services/s3";
 import { customAlphabet } from "nanoid";
+import { AbilityFactory } from "@/modules/core/ability/services";
+import { Action } from "@/modules/core/ability/interfaces";
+import { ForbiddenError, subject } from "@casl/ability";
+import { InsufficientPermissionException } from "@/modules/core/ability/errors";
 
 @Injectable()
 export class UserService {
@@ -49,7 +53,8 @@ export class UserService {
         @Inject(forwardRef(() => AuthService))
         private authService: AuthService,
         private emailService: EmailService,
-        private s3Service: S3Service
+        private s3Service: S3Service,
+        private abilityFactory: AbilityFactory
     ) {}
 
     async createUser(options: Prisma.UserCreateInput) {
@@ -486,6 +491,19 @@ export class UserService {
     }
 
     async getSingleAgent(id: number, user: User) {
+        try {
+            const ability = await this.abilityFactory.createForUser(user);
+            ForbiddenError.from(ability).throwUnlessCan(
+                Action.ViewAgent,
+                subject("User", { createdById: id } as any)
+            );
+        } catch (error) {
+            throw new InsufficientPermissionException(
+                error.message,
+                HttpStatus.FORBIDDEN
+            );
+        }
+
         return await this.prisma.user.findFirst({
             where: {
                 id: id,

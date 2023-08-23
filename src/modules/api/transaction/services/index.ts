@@ -1,9 +1,14 @@
+import { InsufficientPermissionException } from "@/modules/core/ability/errors";
+import { Action } from "@/modules/core/ability/interfaces";
+import { AbilityFactory } from "@/modules/core/ability/services";
 import { PrismaService } from "@/modules/core/prisma/services";
 import { PaystackService } from "@/modules/workflow/payment/providers/paystack/services";
 import { PaginationMeta } from "@/utils";
 import { ApiResponse, buildResponse } from "@/utils/api-response-util";
+import { ForbiddenError, subject } from "@casl/ability";
 import { forwardRef, HttpStatus, Inject, Injectable } from "@nestjs/common";
 import { Prisma, User } from "@prisma/client";
+import { UserNotFoundException } from "../../user";
 import {
     TransactionHistoryDto,
     VerifyTransactionDto,
@@ -16,7 +21,8 @@ export class TransactionService {
     constructor(
         private prisma: PrismaService,
         @Inject(forwardRef(() => PaystackService))
-        private paystackService: PaystackService
+        private paystackService: PaystackService,
+        private abilityFactory: AbilityFactory
     ) {}
 
     async getTransactionByPaymentReference(reference: string) {
@@ -50,7 +56,11 @@ export class TransactionService {
         }
     }
 
-    async transactionHistory(options: TransactionHistoryDto, user: User) {
+    async transactionHistory(
+        options: TransactionHistoryDto,
+        user: User,
+        userId?: number
+    ) {
         const meta: Partial<PaginationMeta> = {};
 
         const queryOptions: Prisma.TransactionFindManyArgs = {
@@ -75,6 +85,10 @@ export class TransactionService {
                 updatedAt: true,
             },
         };
+
+        if (userId) {
+            queryOptions.where.userId = userId;
+        }
 
         //pagination
         if (options.pagination) {
@@ -106,5 +120,42 @@ export class TransactionService {
             message: "Transaction history successfully retrieved",
             data: result,
         });
+    }
+
+    async viewOwnAgentTransactionHistory(
+        options: TransactionHistoryDto,
+        user: User,
+        userId: number
+    ) {
+        const agent = await this.prisma.user.findUnique({
+            where: {
+                id: userId,
+            },
+            select: {
+                createdById: true,
+            },
+        });
+
+        if (!agent) {
+            throw new UserNotFoundException(
+                "Agent could not be found",
+                HttpStatus.NOT_FOUND
+            );
+        }
+
+        try {
+            const ability = await this.abilityFactory.createForUser(user);
+            ForbiddenError.from(ability).throwUnlessCan(
+                Action.ViewAgent,
+                subject("User", { createdById: agent.createdById } as any)
+            );
+        } catch (error) {
+            throw new InsufficientPermissionException(
+                error.message,
+                HttpStatus.FORBIDDEN
+            );
+        }
+
+        return await this.transactionHistory(options, user, userId);
     }
 }

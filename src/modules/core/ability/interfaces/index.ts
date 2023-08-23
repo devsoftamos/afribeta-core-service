@@ -22,6 +22,4 @@ export enum Action {
 export interface RequiredRule {
     action: Action;
     subject: Subjects;
-    fields?: string[];
-    conditions?: Record<string, any>;
 }

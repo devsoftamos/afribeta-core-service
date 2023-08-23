@@ -121,7 +121,6 @@ export class UserController {
     }
 
     @Get("agent/:id")
-    @UseGuards(AbilitiesGuard)
     @CheckAbilities(new ViewAgentAbility())
     async getSingleAgent(
         @Param("id", ParseIntPipe) id: number,
