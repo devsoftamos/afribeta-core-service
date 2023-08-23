@@ -29,5 +29,5 @@ export class UserKycException extends HttpException {
 }
 
 export class InvalidUserException extends HttpException {
-    name: string = "InvalidUserException";
+    name = "InvalidUserException";
 }
