@@ -568,7 +568,7 @@ export class UserService {
         });
 
         return buildResponse({
-            message: "KYC successfully saved",
+            message: "KYC successfully submitted for approval",
         });
     }
 }
