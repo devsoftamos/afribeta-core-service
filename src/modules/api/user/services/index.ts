@@ -79,6 +79,7 @@ export class UserService {
             select: {
                 firstName: true,
                 lastName: true,
+                businessName: true,
                 email: true,
                 identifier: true,
                 phone: true,
