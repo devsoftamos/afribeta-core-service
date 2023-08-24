@@ -446,6 +446,7 @@ export class UserService {
                 createdById: user.id,
             },
             select: {
+                id: true,
                 firstName: true,
                 lastName: true,
                 wallet: {
