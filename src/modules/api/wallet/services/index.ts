@@ -636,6 +636,7 @@ export class WalletService {
         options: CreateVendorWalletDto,
         user: User
     ): Promise<ApiResponse> {
+        console.log(user.id);
         const wallet = await this.prisma.wallet.findUnique({
             where: { userId: user.id },
         });
@@ -655,9 +656,13 @@ export class WalletService {
             );
         }
 
-        const accountName = user.createdById
+        let accountName = user.createdById
             ? `${user.firstName} ${user.lastName}`
             : `${user.businessName}`;
+
+        if (accountName.trim().split(" ").length < 2) {
+            accountName = `${accountName} ${accountName}`;
+        }
 
         const providusAccountDetail = await this.providusService
             .createVirtualAccount({
