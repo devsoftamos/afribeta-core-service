@@ -337,6 +337,7 @@ export class UserService {
             userType: UserType.AGENT,
             createdById: user.id,
             isMerchantUpgradable: false,
+            isWalletCreated: true,
             commissions: {
                 create: options.billServiceCommissions,
             },
