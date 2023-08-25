@@ -7,4 +7,12 @@ export const rolePermissions = [
         roleId: 3, //merchant
         permissionId: 2, //agent.create
     },
+    {
+        roleId: 3, //merchant
+        permissionId: 3, //fund.agent
+    },
+    {
+        roleId: 6, //merchant's agent
+        permissionId: 4, //agent.create
+    },
 ];

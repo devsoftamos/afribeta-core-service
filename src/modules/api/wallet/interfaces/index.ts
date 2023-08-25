@@ -62,6 +62,7 @@ export interface VerifyWalletTransaction {
     user: {
         firstName: string;
         lastName: string;
+        businessName?: string
     };
     createdAt: Date;
     updatedAt: Date;
@@ -85,5 +86,14 @@ export interface VerifyWalletToWalletTransferTransaction
         walletNumber: string;
         name: string;
         bankName: string;
+    };
+}
+
+export interface VerifySubAgentWalletFundTransaction
+    extends VerifyWalletTransaction {
+    agent: {
+        firstName: string;
+        lastName: string;
+        walletNumber: string;
     };
 }

@@ -3,6 +3,7 @@ import {
     IsDateString,
     IsEnum,
     IsInt,
+    IsNumber,
     IsNumberString,
     IsOptional,
     IsString,
@@ -113,4 +114,12 @@ export class ListWalletTransactionDto {
     @IsOptional()
     @IsDateString()
     endDate: string;
+}
+
+export class FundSubAgentDto {
+    @IsInt()
+    agentId: number;
+
+    @IsNumber()
+    amount: number;
 }

@@ -17,8 +17,8 @@ export const permissions = [
     },
 
     {
-        name: "agent.transaction.view",
-        description: "View Agent Transaction",
+        name: "fund.request",
+        description: "Request fund from merchant",
         isCustomAssignable: false,
     },
 ];

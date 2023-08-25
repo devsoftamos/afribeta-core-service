@@ -17,6 +17,8 @@ export enum Action {
     Delete = "delete",
     CreateAgent = "agent.create",
     ViewAgent = "agent.view",
+    FundAgent = "agent.fund",
+    FundRequest = "fund.request",
 }
 
 export interface RequiredRule {

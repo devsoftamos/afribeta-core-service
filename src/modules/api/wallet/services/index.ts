@@ -19,6 +19,7 @@ import { UserNotFoundException } from "@/modules/api/user";
 import { UserService } from "@/modules/api/user/services";
 import {
     CreateVendorWalletDto,
+    FundSubAgentDto,
     InitializeWalletFundingDto,
     InitializeWithdrawalDto,
     InitiateWalletCreationDto,
@@ -42,6 +43,7 @@ import {
     CreateWalletAAndVirtualAccount,
     ProcessWalletFundOptions,
     ProcessWalletWithdrawalOptions,
+    VerifySubAgentWalletFundTransaction,
     VerifyWalletToBankTransferTransaction,
     VerifyWalletToWalletTransferTransaction,
     VerifyWalletTransaction,
@@ -69,6 +71,10 @@ import { ProvidusService } from "@/modules/workflow/payment/providers/providus/s
 import { FSDH360BankService } from "@/modules/workflow/payment/providers/fsdh360Bank/services";
 import { SquadGTBankService } from "@/modules/workflow/payment/providers/squadGTBank/services";
 import { CreateVirtualAccountResponse } from "@/modules/workflow/payment/interfaces";
+import { AbilityFactory } from "@/modules/core/ability/services";
+import { ForbiddenError, subject } from "@casl/ability";
+import { Action } from "@/modules/core/ability/interfaces";
+import { InsufficientPermissionException } from "@/modules/core/ability/errors";
 
 @Injectable()
 export class WalletService {
@@ -78,7 +84,8 @@ export class WalletService {
         private userService: UserService,
         private providusService: ProvidusService,
         private fsdh360BankService: FSDH360BankService,
-        private squadGTBankService: SquadGTBankService
+        private squadGTBankService: SquadGTBankService,
+        private abilityFactory: AbilityFactory
     ) {}
 
     async processWebhookWalletAndVirtualAccountCreation(
@@ -557,6 +564,8 @@ export class WalletService {
                     walletFundTransactionFlow:
                         WalletFundTransactionFlow.FROM_BENEFACTOR,
                     shortDescription: TransactionShortDescription.WALLET_FUNDED,
+                    paymentChannel: PaymentChannel.WALLET,
+                    paymentStatus: PaymentStatus.SUCCESS,
                 },
             });
 
@@ -577,6 +586,7 @@ export class WalletService {
                     shortDescription: TransactionShortDescription.WALLET_FUNDED,
                     paymentReference: paymentReference,
                     paymentStatus: PaymentStatus.SUCCESS,
+                    paymentChannel: PaymentChannel.WALLET,
                 },
             });
         });
@@ -1101,4 +1111,239 @@ export class WalletService {
             },
         });
     }
+
+    async fundSubAgent(options: FundSubAgentDto, user: User) {
+        const agent = await this.prisma.user.findUnique({
+            where: {
+                id: options.agentId,
+            },
+        });
+
+        if (!agent) {
+            throw new UserNotFoundException(
+                "Agent account not found",
+                HttpStatus.NOT_FOUND
+            );
+        }
+
+        try {
+            const ability = await this.abilityFactory.createForUser(user);
+            ForbiddenError.from(ability).throwUnlessCan(
+                Action.FundAgent,
+                subject("User", { createdById: agent.createdById } as any)
+            );
+        } catch (error) {
+            throw new InsufficientPermissionException(
+                error.message,
+                HttpStatus.FORBIDDEN
+            );
+        }
+
+        const [merchantWallet, agentWallet] = await Promise.all([
+            this.prisma.wallet.findUnique({
+                where: {
+                    userId: user.id,
+                },
+            }),
+            this.prisma.wallet.findUnique({
+                where: {
+                    userId: options.agentId,
+                },
+            }),
+        ]);
+
+        if (!merchantWallet) {
+            throw new WalletNotFoundException(
+                "Failed to fund agent. Wallet not found. Kindly setup your wallet",
+                HttpStatus.NOT_FOUND
+            );
+        }
+
+        if (!agentWallet) {
+            throw new WalletNotFoundException(
+                "Agent wallet not found",
+                HttpStatus.NOT_FOUND
+            );
+        }
+
+        if (merchantWallet.mainBalance < options.amount) {
+            throw new InsufficientWalletBalanceException(
+                "Insufficient wallet balance",
+                HttpStatus.BAD_REQUEST
+            );
+        }
+
+        const paymentReference = generateId({ type: "reference" });
+        await this.prisma.$transaction(
+            async (tx) => {
+                await tx.wallet.update({
+                    where: {
+                        id: merchantWallet.id,
+                    },
+                    data: {
+                        mainBalance: {
+                            decrement: options.amount,
+                        },
+                    },
+                });
+                await tx.wallet.update({
+                    where: {
+                        id: agentWallet.id,
+                    },
+                    data: {
+                        mainBalance: {
+                            increment: options.amount,
+                        },
+                    },
+                });
+
+                const transactionId = generateId({ type: "transaction" });
+
+                //agent
+                await tx.transaction.create({
+                    data: {
+                        amount: options.amount,
+                        flow: TransactionFlow.IN,
+                        status: TransactionStatus.SUCCESS,
+                        totalAmount: options.amount,
+                        transactionId: transactionId,
+                        type: TransactionType.WALLET_FUND,
+                        receiverId: options.agentId,
+                        userId: options.agentId,
+                        senderId: user.id,
+                        walletFundTransactionFlow:
+                            WalletFundTransactionFlow.FROM_MERCHANT,
+                        shortDescription:
+                            TransactionShortDescription.WALLET_FUNDED,
+                        paymentChannel: PaymentChannel.WALLET,
+                        paymentStatus: PaymentStatus.SUCCESS,
+                    },
+                });
+
+                //merchant
+                await tx.transaction.create({
+                    data: {
+                        amount: options.amount,
+                        flow: TransactionFlow.OUT,
+                        status: TransactionStatus.SUCCESS,
+                        totalAmount: options.amount,
+                        transactionId: transactionId,
+                        type: TransactionType.WALLET_FUND,
+                        receiverId: options.agentId,
+                        userId: user.id,
+                        senderId: user.id,
+                        walletFundTransactionFlow:
+                            WalletFundTransactionFlow.TO_AGENT,
+                        shortDescription:
+                            TransactionShortDescription.WALLET_FUNDED,
+                        paymentReference: paymentReference,
+                        paymentStatus: PaymentStatus.SUCCESS,
+                        paymentChannel: PaymentChannel.WALLET,
+                    },
+                });
+            },
+            {
+                timeout: DB_TRANSACTION_TIMEOUT,
+            }
+        );
+
+        return buildResponse({
+            message: "Wallet funding successful",
+            data: {
+                reference: paymentReference,
+            },
+        });
+    }
+
+    async verifySubAgentFunding(options: PaymentReferenceDto, user: User) {
+        const transaction = await this.prisma.transaction.findUnique({
+            where: {
+                paymentReference: options.reference,
+            },
+            select: {
+                type: true,
+                status: true,
+                userId: true,
+                paymentReference: true,
+                amount: true,
+                paymentChannel: true,
+                paymentStatus: true,
+                serviceCharge: true,
+                createdAt: true,
+                updatedAt: true,
+                transactionId: true,
+                receiverIdentifier: true,
+                flow: true,
+                walletFundTransactionFlow: true,
+                receiver: {
+                    select: {
+                        firstName: true,
+                        lastName: true,
+                        wallet: {
+                            select: {
+                                walletNumber: true,
+                            },
+                        },
+                    },
+                },
+            },
+        });
+
+        if (!transaction) {
+            throw new TransactionNotFoundException(
+                "Payment reference not found",
+                HttpStatus.NOT_FOUND
+            );
+        }
+
+        if (transaction.userId != user.id) {
+            throw new TransactionNotFoundException(
+                "Reference not found",
+                HttpStatus.NOT_FOUND
+            );
+        }
+
+        if (
+            !(
+                transaction.type == TransactionType.WALLET_FUND &&
+                transaction.walletFundTransactionFlow ==
+                    WalletFundTransactionFlow.TO_AGENT
+            )
+        ) {
+            throw new TransactionTypeException(
+                "Invalid reference type",
+                HttpStatus.BAD_REQUEST
+            );
+        }
+
+        const data: VerifySubAgentWalletFundTransaction = {
+            status: transaction.status,
+            paymentStatus: transaction.paymentStatus,
+            amount: transaction.amount,
+            serviceCharge: transaction.serviceCharge,
+            flow: transaction.flow,
+            reference: transaction.paymentReference,
+            transactionId: transaction.transactionId,
+            type: transaction.type,
+            user: {
+                firstName: user.firstName,
+                lastName: user.lastName,
+                businessName: user.businessName,
+            },
+            agent: {
+                firstName: transaction.receiver.firstName,
+                lastName: transaction.receiver.lastName,
+                walletNumber: transaction.receiver.wallet.walletNumber,
+            },
+            createdAt: transaction.createdAt,
+            updatedAt: transaction.updatedAt,
+        };
+
+        return buildResponse({
+            message: "Agent Wallet fund transaction successfully verified",
+            data: data,
+        });
+    }
+
+    //async requestWalletFund() {}
 }

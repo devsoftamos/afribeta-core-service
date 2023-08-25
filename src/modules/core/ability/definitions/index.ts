@@ -9,3 +9,8 @@ export class ViewAgentAbility implements RequiredRule {
     action: Action = Action.ViewAgent;
     subject: Subjects = "User";
 }
+
+export class FundAgentAbility implements RequiredRule {
+    action: Action = Action.FundAgent;
+    subject: Subjects = "User";
+}

@@ -1,5 +1,8 @@
 import { AuthGuard } from "@/modules/api/auth/guard";
 import { User } from "@/modules/api/user";
+import { FundAgentAbility } from "@/modules/core/ability";
+import { CheckAbilities } from "@/modules/core/ability/decorator";
+import { AbilitiesGuard } from "@/modules/core/ability/guards";
 import {
     Body,
     Controller,
@@ -15,6 +18,7 @@ import {
 import { User as UserModel } from "@prisma/client";
 import {
     CreateVendorWalletDto,
+    FundSubAgentDto,
     InitializeWalletFundingDto,
     InitializeWithdrawalDto,
     InitiateWalletCreationDto,
@@ -152,6 +156,31 @@ export class WalletController {
     ) {
         return await this.walletService.listWalletTransactions(
             listWalletTransactionDto,
+            user
+        );
+    }
+
+    //Fund sub agent
+    @HttpCode(HttpStatus.OK)
+    @UseGuards(AbilitiesGuard)
+    @CheckAbilities(new FundAgentAbility())
+    @Post("merchant/agent/fund")
+    async transferToOSubAgentWallet(
+        @Body(ValidationPipe)
+        fundSubAgentDto: FundSubAgentDto,
+        @User() user: UserModel
+    ) {
+        return await this.walletService.fundSubAgent(fundSubAgentDto, user);
+    }
+
+    @Get("merchant/agent/fund/verify/:reference")
+    async verifySubAgentFunding(
+        @Param(ValidationPipe)
+        paymentReferenceDto: PaymentReferenceDto,
+        @User() user: UserModel
+    ) {
+        return await this.walletService.verifySubAgentFunding(
+            paymentReferenceDto,
             user
         );
     }

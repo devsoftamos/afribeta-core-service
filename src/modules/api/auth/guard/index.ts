@@ -144,8 +144,8 @@ export class FSDH360BankWebhookGuard implements CanActivate {
             .getRequest() as RequestFromFSDH360Bank;
 
         if (
-            fsdh360ApiKeyAuth == request.headers["api-key-auth"]
-            // && fsdh360Ips.includes(request.ip)
+            fsdh360ApiKeyAuth == request.headers["api-key-auth"] &&
+            fsdh360Ips.includes(request.ip)
         ) {
             return true;
         } else {
