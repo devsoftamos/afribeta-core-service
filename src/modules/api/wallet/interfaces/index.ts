@@ -62,7 +62,7 @@ export interface VerifyWalletTransaction {
     user: {
         firstName: string;
         lastName: string;
-        businessName?: string
+        businessName?: string;
     };
     createdAt: Date;
     updatedAt: Date;
