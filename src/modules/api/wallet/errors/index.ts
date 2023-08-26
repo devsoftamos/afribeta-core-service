@@ -37,5 +37,5 @@ export class WalletDebitException extends HttpException {
 }
 
 export class WalletGenericException extends HttpException {
-    name: string = "WalletGenericException";
+    name = "WalletGenericException";
 }
