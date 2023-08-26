@@ -36,6 +36,7 @@ export class AbilityFactory {
         can(Action.FundAgent, "User");
         can(Action.ViewAgent, "User", { createdById: user.id });
         can(Action.FundAgent, "User", { createdById: user.id });
+        can(Action.FundRequest, "User");
 
         cannot(Action.ViewAgent, "User", {
             createdById: { not: user.id },
@@ -61,6 +62,11 @@ export class AbilityFactory {
         if (!permissions.includes(Action.FundAgent)) {
             cannot(Action.FundAgent, "User").because(
                 "Your account type does not have sufficient permission to fund agent"
+            );
+        }
+        if (!permissions.includes(Action.FundRequest)) {
+            cannot(Action.FundRequest, "User").because(
+                "Your account type does not have sufficient permission for fund request"
             );
         }
 

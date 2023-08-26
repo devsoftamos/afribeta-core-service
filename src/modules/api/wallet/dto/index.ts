@@ -123,3 +123,20 @@ export class FundSubAgentDto {
     @IsNumber()
     amount: number;
 }
+
+export class RequestWalletFundingDto {
+    @IsInt()
+    amount: number;
+}
+
+export enum AUTHORIZE_WALLET_FUND_REQUEST_TYPE {
+    APPROVE = "APPROVE",
+    DECLINE = "DECLINE",
+}
+export class AuthorizeFundRequestDto {
+    @IsInt()
+    notificationId: number;
+
+    @IsEnum(AUTHORIZE_WALLET_FUND_REQUEST_TYPE)
+    authorizeType: AUTHORIZE_WALLET_FUND_REQUEST_TYPE;
+}

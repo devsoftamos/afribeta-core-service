@@ -13,13 +13,15 @@ enum UserType {
 }
 
 export class SignUpDto {
-    @IsOptional()
     @IsString()
     firstName: string;
 
-    @IsOptional()
     @IsString()
     lastName: string;
+
+    @IsOptional()
+    @IsString()
+    middleName: string;
 
     @IsOptional()
     @IsString()

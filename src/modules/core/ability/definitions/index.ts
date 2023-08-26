@@ -14,3 +14,8 @@ export class FundAgentAbility implements RequiredRule {
     action: Action = Action.FundAgent;
     subject: Subjects = "User";
 }
+
+export class FundRequestAbility implements RequiredRule {
+    action: Action = Action.FundRequest;
+    subject: Subjects = "User";
+}

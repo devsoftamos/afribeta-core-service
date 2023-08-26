@@ -40,7 +40,7 @@ import {
 } from "@/config";
 import { SendinblueEmailException } from "@calculusky/transactional-email";
 import logger from "moment-logger";
-import { generateId } from "@/utils";
+import { formatName, generateId } from "@/utils";
 import { AgentVerifyEmailParams } from "../interfaces";
 
 @Injectable()
@@ -97,7 +97,7 @@ export class AuthService {
                 templateId: verifyEmailTemplate,
                 params: {
                     code: verificationCode,
-                    firstName: options.firstName,
+                    firstName: formatName(options.firstName),
                 },
             });
 
@@ -197,6 +197,9 @@ export class AuthService {
             password: hashedPassword,
             ipAddress: ip,
             roleId: role?.id,
+            firstName: formatName(options.firstName),
+            lastName: formatName(options.lastName),
+            middleName: options.middleName && formatName(options.middleName),
         };
 
         if (options.userType == UserType.AGENT) {
@@ -227,24 +230,6 @@ export class AuthService {
             createUserOptions.isMerchantUpgradable = true;
             createUserOptions.merchantUpgradeStatus =
                 MerchantUpgradeStatus.TO_BE_UPGRADED;
-        }
-
-        if (options.userType == UserType.CUSTOMER) {
-            if (!options.firstName) {
-                throw new InvalidCredentialException(
-                    "firstName field is required for the account type",
-                    HttpStatus.BAD_REQUEST
-                );
-            }
-
-            if (!options.lastName) {
-                throw new InvalidCredentialException(
-                    "lastName field is required for the account type",
-                    HttpStatus.BAD_REQUEST
-                );
-            }
-            createUserOptions.firstName = options.firstName;
-            createUserOptions.lastName = options.lastName;
         }
 
         const createdUser = await this.prisma.user.create({

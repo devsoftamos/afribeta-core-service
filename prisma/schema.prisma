@@ -45,44 +45,47 @@ enum KYC_STATUS {
 }
 
 model User {
-  id                    Int                    @id @default(autoincrement())
-  identifier            String                 @unique
-  firstName             String?
-  lastName              String?
-  businessName          String?
-  email                 String                 @unique
-  phone                 String
-  password              String
-  userType              UserType
-  photo                 String?
-  status                Status                 @default(ENABLED)
-  state                 String?
-  localGovernmentArea   String?
-  createdById           Int?
-  isMerchantUpgradable  Boolean                @default(false)
-  merchantUpgradeStatus MerchantUpgradeStatus?
-  transactionPin        String?
-  roleId                Int
-  ipAddress             String?
-  notificationToken     String?
-  isVerified            Boolean                @default(true) //email verification
-  kycStatus             KYC_STATUS?
-  isWalletCreated       Boolean                @default(false) //for wallet
-  isDeleted             Boolean?               @default(false)
-  createdAt             DateTime               @default(now())
-  updatedAt             DateTime               @updatedAt
-  banks                 Bank[]
-  createdUsers          User[]                 @relation(name: "creatorAndCreatedUser")
-  creator               User?                  @relation(name: "creatorAndCreatedUser", fields: [createdById], references: [id])
-  role                  Role                   @relation(fields: [roleId], references: [id])
-  wallet                Wallet?
-  passwordResetRequest  PasswordResetRequest?
-  transactions          Transaction[]          @relation(name: "userToTransaction")
-  senderTransactions    Transaction[]          @relation(name: "senderToTransaction")
-  receiverTransactions  Transaction[]          @relation(name: "receiverToTransaction")
-  virtualBankAccount    VirtualBankAccount[]
-  commissions           UserCommission[]
-  kycInformation        KycInformation?
+  id                          Int                    @id @default(autoincrement())
+  identifier                  String                 @unique
+  firstName                   String?
+  lastName                    String?
+  middleName                  String?
+  businessName                String?
+  email                       String                 @unique
+  phone                       String
+  password                    String
+  userType                    UserType
+  photo                       String?
+  status                      Status                 @default(ENABLED)
+  state                       String?
+  localGovernmentArea         String?
+  createdById                 Int?
+  isMerchantUpgradable        Boolean                @default(false)
+  merchantUpgradeStatus       MerchantUpgradeStatus?
+  transactionPin              String?
+  roleId                      Int
+  ipAddress                   String?
+  notificationToken           String?
+  isVerified                  Boolean                @default(true) //email verification
+  kycStatus                   KYC_STATUS?
+  isWalletCreated             Boolean                @default(false) //for wallet
+  isDeleted                   Boolean?               @default(false)
+  createdAt                   DateTime               @default(now())
+  updatedAt                   DateTime               @updatedAt
+  banks                       Bank[]
+  createdUsers                User[]                 @relation(name: "creatorAndCreatedUser")
+  creator                     User?                  @relation(name: "creatorAndCreatedUser", fields: [createdById], references: [id])
+  role                        Role                   @relation(fields: [roleId], references: [id])
+  wallet                      Wallet?
+  passwordResetRequest        PasswordResetRequest?
+  transactions                Transaction[]          @relation(name: "userToTransaction")
+  senderTransactions          Transaction[]          @relation(name: "senderToTransaction")
+  receiverTransactions        Transaction[]          @relation(name: "receiverToTransaction")
+  virtualBankAccount          VirtualBankAccount[]
+  commissions                 UserCommission[]
+  kycInformation              KycInformation?
+  notifications               Notification[]         @relation(name: "userToNotification")
+  agentTriggeredNotifications Notification[]         @relation(name: "agentDetailInNotification")
 
   @@fulltext([firstName, lastName])
   @@map("Users")
@@ -223,18 +226,29 @@ model Wallet {
 //Notification
 enum NotificationType {
   WALLET_FUND_REQUEST
+  MESSAGE
+}
+
+enum NotificationStatus {
+  PENDING
+  APPROVED
+  DECLINED
 }
 
 model Notification {
-  id            Int              @id @default(autoincrement())
-  title         String
-  description   String?
-  transactionId Int?
-  userId        Int
-  isRead        Boolean          @default(false)
-  type          NotificationType
-  createdAt     DateTime         @default(now())
-  updatedAt     DateTime         @updatedAt
+  id        Int                 @id @default(autoincrement())
+  title     String?
+  message   String?
+  isRead    Boolean?            @default(false)
+  userId    Int
+  agentId   Int?
+  amount    Int?
+  type      NotificationType?   @default(MESSAGE)
+  status    NotificationStatus?
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+  user      User                @relation(name: "userToNotification", fields: [userId], references: [id])
+  agent     User?               @relation(name: "agentDetailInNotification", fields: [agentId], references: [id])
 
   @@map("Notifications")
 }

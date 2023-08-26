@@ -1,6 +1,6 @@
 import { AuthGuard } from "@/modules/api/auth/guard";
 import { User } from "@/modules/api/user";
-import { FundAgentAbility } from "@/modules/core/ability";
+import { FundAgentAbility, FundRequestAbility } from "@/modules/core/ability";
 import { CheckAbilities } from "@/modules/core/ability/decorator";
 import { AbilitiesGuard } from "@/modules/core/ability/guards";
 import {
@@ -17,6 +17,7 @@ import {
 } from "@nestjs/common";
 import { User as UserModel } from "@prisma/client";
 import {
+    AuthorizeFundRequestDto,
     CreateVendorWalletDto,
     FundSubAgentDto,
     InitializeWalletFundingDto,
@@ -24,6 +25,7 @@ import {
     InitiateWalletCreationDto,
     ListWalletTransactionDto,
     PaymentReferenceDto,
+    RequestWalletFundingDto,
     TransferToOtherWalletDto,
     VerifyWalletDto,
 } from "../../dto";
@@ -164,7 +166,7 @@ export class WalletController {
     @HttpCode(HttpStatus.OK)
     @UseGuards(AbilitiesGuard)
     @CheckAbilities(new FundAgentAbility())
-    @Post("merchant/agent/fund")
+    @Post("merchant/fund-agent")
     async transferToOSubAgentWallet(
         @Body(ValidationPipe)
         fundSubAgentDto: FundSubAgentDto,
@@ -181,6 +183,34 @@ export class WalletController {
     ) {
         return await this.walletService.verifySubAgentFunding(
             paymentReferenceDto,
+            user
+        );
+    }
+
+    @HttpCode(HttpStatus.OK)
+    @Post("agent/fund-request")
+    @UseGuards(AbilitiesGuard)
+    @CheckAbilities(new FundRequestAbility())
+    async requestWalletFunding(
+        @Body(ValidationPipe) requestWalletFundingDto: RequestWalletFundingDto,
+        @User() user: UserModel
+    ) {
+        return await this.walletService.requestWalletFunding(
+            requestWalletFundingDto,
+            user
+        );
+    }
+
+    @HttpCode(HttpStatus.OK)
+    @Post("merchant/agent/authorize-fund-request")
+    @UseGuards(AbilitiesGuard)
+    @CheckAbilities(new FundAgentAbility())
+    async authorizeFundRequest(
+        @Body(ValidationPipe) authorizeFundRequestDto: AuthorizeFundRequestDto,
+        @User() user: UserModel
+    ) {
+        return await this.walletService.authorizeFundRequest(
+            authorizeFundRequestDto,
             user
         );
     }

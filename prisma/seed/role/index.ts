@@ -20,7 +20,7 @@ export const roles = [
         slug: "admin",
     },
     {
-        name: "Non Upgradable Agent",
-        slug: "non-upgradable-agent",
+        name: "Sub Agent",
+        slug: "sub-agent",
     },
 ];

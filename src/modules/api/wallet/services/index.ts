@@ -3,6 +3,8 @@ import { PrismaService } from "@/modules/core/prisma/services";
 import { PaystackService } from "@/modules/workflow/payment/providers/paystack/services";
 import { HttpStatus, Injectable } from "@nestjs/common";
 import {
+    NotificationStatus,
+    NotificationType,
     PaymentChannel,
     PaymentStatus,
     Prisma,
@@ -18,6 +20,8 @@ import {
 import { UserNotFoundException } from "@/modules/api/user";
 import { UserService } from "@/modules/api/user/services";
 import {
+    AuthorizeFundRequestDto,
+    AUTHORIZE_WALLET_FUND_REQUEST_TYPE,
     CreateVendorWalletDto,
     FundSubAgentDto,
     InitializeWalletFundingDto,
@@ -26,6 +30,7 @@ import {
     ListWalletTransactionDto,
     PaymentProvider,
     PaymentReferenceDto,
+    RequestWalletFundingDto,
     TransferToOtherWalletDto,
     VerifyWalletDto,
 } from "../dto";
@@ -38,9 +43,12 @@ import {
     InvalidWalletWithdrawalPaymentProvider,
     InsufficientWalletBalanceException,
     DuplicateWalletWithdrawalTransaction,
+    WalletGenericException,
 } from "../errors";
 import {
     CreateWalletAAndVirtualAccount,
+    FundSubAgentHandlerOptions,
+    FundSubAgentHandlerResponse,
     ProcessWalletFundOptions,
     ProcessWalletWithdrawalOptions,
     VerifySubAgentWalletFundTransaction,
@@ -75,6 +83,11 @@ import { AbilityFactory } from "@/modules/core/ability/services";
 import { ForbiddenError, subject } from "@casl/ability";
 import { Action } from "@/modules/core/ability/interfaces";
 import { InsufficientPermissionException } from "@/modules/core/ability/errors";
+import {
+    InvalidNotificationTypeException,
+    NotificationNotFoundException,
+    NotificationGenericException,
+} from "../../notification";
 
 @Injectable()
 export class WalletService {
@@ -666,13 +679,14 @@ export class WalletService {
             );
         }
 
-        let accountName = user.createdById
-            ? `${user.firstName} ${user.lastName}`
-            : `${user.businessName}`;
+        // let accountName = user.createdById
+        //     ? `${user.firstName} ${user.lastName}`
+        //     : `${user.businessName}`;
+        const accountName = `${user.firstName} ${user.lastName}`;
 
-        if (accountName.trim().split(" ").length < 2) {
-            accountName = `${accountName} ${accountName}`;
-        }
+        // if (accountName.trim().split(" ").length < 2) {
+        //     accountName = `${accountName} ${accountName}`;
+        // }
 
         const providusAccountDetail = await this.providusService
             .createVirtualAccount({
@@ -1113,6 +1127,19 @@ export class WalletService {
     }
 
     async fundSubAgent(options: FundSubAgentDto, user: User) {
+        const resp = await this.fundSubAgentHandler(options, user);
+        return buildResponse({
+            message: "Wallet funding successful",
+            data: {
+                reference: resp.paymentReference,
+            },
+        });
+    }
+
+    async fundSubAgentHandler(
+        options: FundSubAgentHandlerOptions,
+        user: User
+    ): Promise<FundSubAgentHandlerResponse> {
         const agent = await this.prisma.user.findUnique({
             where: {
                 id: options.agentId,
@@ -1161,7 +1188,7 @@ export class WalletService {
 
         if (!agentWallet) {
             throw new WalletNotFoundException(
-                "Agent wallet not found",
+                "Failed to fund agent. Agent Wallet not found. Kindly setup your agent wallet",
                 HttpStatus.NOT_FOUND
             );
         }
@@ -1241,18 +1268,26 @@ export class WalletService {
                         paymentChannel: PaymentChannel.WALLET,
                     },
                 });
+
+                //notification record update
+                if (options.notificationRecord) {
+                    await tx.notification.update({
+                        where: {
+                            id: options.notificationRecord.id,
+                        },
+                        data: {
+                            status: NotificationStatus.APPROVED,
+                        },
+                    });
+                }
             },
             {
                 timeout: DB_TRANSACTION_TIMEOUT,
             }
         );
-
-        return buildResponse({
-            message: "Wallet funding successful",
-            data: {
-                reference: paymentReference,
-            },
-        });
+        return {
+            paymentReference: paymentReference,
+        };
     }
 
     async verifySubAgentFunding(options: PaymentReferenceDto, user: User) {
@@ -1345,5 +1380,105 @@ export class WalletService {
         });
     }
 
-    //async requestWalletFund() {}
+    async requestWalletFunding(options: RequestWalletFundingDto, user: User) {
+        const merchant = await this.prisma.user.findUnique({
+            where: {
+                id: user.createdById,
+            },
+        });
+
+        if (!merchant) {
+            throw new UserNotFoundException(
+                "Merchant account not found",
+                HttpStatus.NOT_FOUND
+            );
+        }
+
+        await this.prisma.notification.create({
+            data: {
+                userId: merchant.id,
+                agentId: user.id,
+                amount: options.amount,
+                status: NotificationStatus.PENDING,
+                type: NotificationType.WALLET_FUND_REQUEST,
+            },
+        });
+
+        return buildResponse({
+            message: "Fund request successfully sent",
+        });
+    }
+
+    async authorizeFundRequest(options: AuthorizeFundRequestDto, user: User) {
+        const notification = await this.prisma.notification.findUnique({
+            where: {
+                id: options.notificationId,
+            },
+        });
+
+        if (!notification || notification.userId != user.id) {
+            throw new NotificationNotFoundException(
+                "Failed to authorize fund request. Request not found",
+                HttpStatus.NOT_FOUND
+            );
+        }
+
+        if (notification.type != NotificationType.WALLET_FUND_REQUEST) {
+            throw new InvalidNotificationTypeException(
+                "Invalid notification type",
+                HttpStatus.BAD_REQUEST
+            );
+        }
+
+        if (notification.status != NotificationStatus.PENDING) {
+            throw new NotificationGenericException(
+                "Request already authorized",
+                HttpStatus.BAD_REQUEST
+            );
+        }
+
+        const declineFundWalletRequestHandler = async () => {
+            await this.prisma.notification.update({
+                where: {
+                    id: notification.id,
+                },
+                data: {
+                    status: NotificationStatus.DECLINED,
+                },
+            });
+
+            return buildResponse({
+                message: "Request successfully declined",
+            });
+        };
+
+        switch (options.authorizeType) {
+            case AUTHORIZE_WALLET_FUND_REQUEST_TYPE.DECLINE: {
+                return await declineFundWalletRequestHandler();
+            }
+            case AUTHORIZE_WALLET_FUND_REQUEST_TYPE.APPROVE: {
+                const resp = await this.fundSubAgentHandler(
+                    {
+                        agentId: notification.agentId,
+                        amount: notification.amount,
+                        notificationRecord: notification,
+                    },
+                    user
+                );
+                return buildResponse({
+                    message: "Request successfully approved",
+                    data: {
+                        reference: resp.paymentReference,
+                    },
+                });
+            }
+
+            default: {
+                throw new WalletGenericException(
+                    "Invalid wallet fund request authorize type",
+                    HttpStatus.BAD_REQUEST
+                );
+            }
+        }
+    }
 }

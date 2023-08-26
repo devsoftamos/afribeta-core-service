@@ -1,4 +1,5 @@
 import {
+    Notification,
     PaymentChannel,
     Prisma,
     TransactionFlow,
@@ -96,4 +97,14 @@ export interface VerifySubAgentWalletFundTransaction
         lastName: string;
         walletNumber: string;
     };
+}
+
+export interface FundSubAgentHandlerResponse {
+    paymentReference: string;
+}
+
+export interface FundSubAgentHandlerOptions {
+    agentId: number;
+    amount: number;
+    notificationRecord?: Notification;
 }
