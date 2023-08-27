@@ -31,6 +31,7 @@ import {
     ListWalletTransactionDto,
     PaymentProvider,
     PaymentReferenceDto,
+    PayoutRequestDto,
     RequestWalletFundingDto,
     TransferToOtherWalletDto,
     VerifyWalletDto,
@@ -73,6 +74,7 @@ import { customAlphabet } from "nanoid";
 import {
     AFRIBETA_WALLET_NAME,
     DB_TRANSACTION_TIMEOUT,
+    PAYOUT_PERCENT_CHARGE,
     paystackVirtualAccountBank,
 } from "@/config";
 import { generateId, PaginationMeta } from "@/utils";
@@ -1553,6 +1555,72 @@ export class WalletService {
 
         return buildResponse({
             message: "Main wallet successfully funded",
+        });
+    }
+
+    async payoutRequest(options: PayoutRequestDto, user: User) {
+        const wallet = await this.prisma.wallet.findUnique({
+            where: {
+                userId: user.id,
+            },
+        });
+
+        if (!wallet) {
+            throw new WalletNotFoundException(
+                "Wallet not found. Kindly activate your wallet",
+                HttpStatus.NOT_FOUND
+            );
+        }
+
+        if (wallet.commissionBalance < options.amount) {
+            throw new InsufficientWalletBalanceException(
+                "Insufficient commission balance",
+                HttpStatus.BAD_REQUEST
+            );
+        }
+
+        const serviceCharge = parseFloat(
+            ((PAYOUT_PERCENT_CHARGE / 100) * options.amount).toFixed(2)
+        );
+        const payableAmount = options.amount - serviceCharge;
+
+        await this.prisma.$transaction(
+            async (tx) => {
+                await tx.wallet.update({
+                    where: {
+                        userId: user.id,
+                    },
+                    data: {
+                        commissionBalance: {
+                            decrement: options.amount,
+                        },
+                    },
+                });
+
+                await tx.transaction.create({
+                    data: {
+                        amount: payableAmount,
+                        flow: TransactionFlow.OUT,
+                        status: TransactionStatus.PENDING,
+                        totalAmount: options.amount,
+                        transactionId: generateId({ type: "transaction" }),
+                        type: TransactionType.PAYOUT,
+                        paymentChannel: PaymentChannel.MANUAL,
+                        paymentReference: generateId({ type: "reference" }),
+                        serviceCharge: serviceCharge,
+                        userId: user.id,
+                        shortDescription: TransactionShortDescription.PAYOUT,
+                        paymentStatus: PaymentStatus.PENDING,
+                    },
+                });
+            },
+            {
+                timeout: DB_TRANSACTION_TIMEOUT,
+            }
+        );
+
+        return buildResponse({
+            message: "payout request successfully sent",
         });
     }
 }

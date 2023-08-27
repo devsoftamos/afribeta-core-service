@@ -4,6 +4,7 @@ import {
     FundAgentAbility,
     FundRequestAbility,
     FundWalletFromCommissionAbility,
+    PayoutRequestAbility,
 } from "@/modules/core/ability";
 import { CheckAbilities } from "@/modules/core/ability/decorator";
 import { AbilitiesGuard } from "@/modules/core/ability/guards";
@@ -30,6 +31,7 @@ import {
     InitiateWalletCreationDto,
     ListWalletTransactionDto,
     PaymentReferenceDto,
+    PayoutRequestDto,
     RequestWalletFundingDto,
     TransferToOtherWalletDto,
     VerifyWalletDto,
@@ -233,5 +235,16 @@ export class WalletController {
             fundWalletFromCommissionBalanceDto,
             user
         );
+    }
+
+    @HttpCode(HttpStatus.OK)
+    @Post("payout-request")
+    @UseGuards(AbilitiesGuard)
+    @CheckAbilities(new PayoutRequestAbility())
+    async payoutRequest(
+        @Body(ValidationPipe) payoutRequestDto: PayoutRequestDto,
+        @User() user: UserModel
+    ) {
+        return await this.walletService.payoutRequest(payoutRequestDto, user);
     }
 }

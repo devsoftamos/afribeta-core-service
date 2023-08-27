@@ -142,3 +142,5 @@ export class AuthorizeFundRequestDto {
 }
 
 export class FundWalletFromCommissionBalanceDto extends RequestWalletFundingDto {}
+
+export class PayoutRequestDto extends RequestWalletFundingDto {}

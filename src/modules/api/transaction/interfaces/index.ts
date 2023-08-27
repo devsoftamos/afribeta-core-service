@@ -7,6 +7,7 @@ export enum TransactionShortDescription {
     INTERNET_PURCHASE = "Internet Purchase",
     CABLE_TV_PAYMENT = "Cable TV Payment",
     COMMISSION_PAID = "Commission Paid",
+    PAYOUT = "Payout",
 }
 
 export enum TransferServiceProvider {

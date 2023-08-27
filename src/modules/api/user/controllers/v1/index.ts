@@ -9,8 +9,6 @@ import {
     Get,
     HttpCode,
     HttpStatus,
-    Param,
-    ParseIntPipe,
     Patch,
     Post,
     Query,

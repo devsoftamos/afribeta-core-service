@@ -275,6 +275,7 @@ export class UserService {
     }
 
     async createAgent(options: CreateAgentDto, user: User) {
+        // console.log(user);
         //check for duplicate agent
         const email = options.email.trim();
         const userAgent = await this.prisma.user.findUnique({
@@ -322,7 +323,7 @@ export class UserService {
         const hashedPassword = await this.authService.hashPassword(password);
         const role = await this.prisma.role.findUnique({
             where: {
-                slug: "non-upgradable-agent",
+                slug: "sub-agent",
             },
         });
         const walletNumber = customAlphabet("1234567890ABCDEFGH", 10)();
@@ -349,6 +350,7 @@ export class UserService {
                 },
             },
         };
+        // return {};
 
         await this.prisma
             .$transaction(

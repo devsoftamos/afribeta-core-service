@@ -12,11 +12,11 @@ export const rolePermissions = [
         permissionId: 3, //fund.agent
     },
     {
-        roleId: 6, //merchant's agent
+        roleId: 6, //sub agent
         permissionId: 4, //agent.create
     },
     {
-        roleId: 6, //merchant's agent
+        roleId: 6, //sub agent
         permissionId: 5, //agent.create
     },
     {
@@ -25,6 +25,10 @@ export const rolePermissions = [
     },
     {
         roleId: 3, //merchant
+        permissionId: 6, //payout.request
+    },
+    {
+        roleId: 1, //merchant
         permissionId: 6, //payout.request
     },
 ];

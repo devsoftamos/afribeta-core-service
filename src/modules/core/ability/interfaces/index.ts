@@ -21,6 +21,7 @@ export enum Action {
     FundAgent = "agent.fund",
     FundRequest = "fund.request",
     FundWalletFromCommission = "wallet.commission.fund.main",
+    PayoutRequest = "payout.request",
 }
 
 export interface RequiredRule {

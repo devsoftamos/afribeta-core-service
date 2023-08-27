@@ -275,6 +275,7 @@ enum TransactionType {
   INTERNET_BILL
   CABLETV_BILL
   AIRTIME_PURCHASE
+  PAYOUT
 }
 
 enum TransactionFlow {
@@ -299,6 +300,7 @@ enum PaymentChannel {
   FSDH360_VIRTUAL_ACCOUNT_TRANSFER
   POLARIS_VIRTUAL_ACCOUNT_TRANSFER
   SYSTEM
+  MANUAL
 }
 
 enum WalletFundTransactionFlow {
