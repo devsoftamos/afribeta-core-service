@@ -1,6 +1,10 @@
 import { AuthGuard } from "@/modules/api/auth/guard";
 import { User } from "@/modules/api/user";
-import { FundAgentAbility, FundRequestAbility, FundWalletFromCommissionAbility } from "@/modules/core/ability";
+import {
+    FundAgentAbility,
+    FundRequestAbility,
+    FundWalletFromCommissionAbility,
+} from "@/modules/core/ability";
 import { CheckAbilities } from "@/modules/core/ability/decorator";
 import { AbilitiesGuard } from "@/modules/core/ability/guards";
 import {
