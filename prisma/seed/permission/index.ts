@@ -21,4 +21,14 @@ export const permissions = [
         description: "Request fund from merchant",
         isCustomAssignable: false,
     },
+    {
+        name: "wallet.commission.fund.main",
+        description: "Fund main wallet from commission wallet",
+        isCustomAssignable: false,
+    },
+    {
+        name: "payout.request",
+        description: "Request payout",
+        isCustomAssignable: false,
+    },
 ];

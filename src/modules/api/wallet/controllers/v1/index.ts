@@ -1,6 +1,6 @@
 import { AuthGuard } from "@/modules/api/auth/guard";
 import { User } from "@/modules/api/user";
-import { FundAgentAbility, FundRequestAbility } from "@/modules/core/ability";
+import { FundAgentAbility, FundRequestAbility, FundWalletFromCommissionAbility } from "@/modules/core/ability";
 import { CheckAbilities } from "@/modules/core/ability/decorator";
 import { AbilitiesGuard } from "@/modules/core/ability/guards";
 import {
@@ -20,6 +20,7 @@ import {
     AuthorizeFundRequestDto,
     CreateVendorWalletDto,
     FundSubAgentDto,
+    FundWalletFromCommissionBalanceDto,
     InitializeWalletFundingDto,
     InitializeWithdrawalDto,
     InitiateWalletCreationDto,
@@ -211,6 +212,21 @@ export class WalletController {
     ) {
         return await this.walletService.authorizeFundRequest(
             authorizeFundRequestDto,
+            user
+        );
+    }
+
+    @HttpCode(HttpStatus.OK)
+    @Post("commission/fund-main-wallet")
+    @UseGuards(AbilitiesGuard)
+    @CheckAbilities(new FundWalletFromCommissionAbility())
+    async fundWalletFromCommissionBalance(
+        @Body(ValidationPipe)
+        fundWalletFromCommissionBalanceDto: FundWalletFromCommissionBalanceDto,
+        @User() user: UserModel
+    ) {
+        return await this.walletService.fundWalletFromCommissionBalance(
+            fundWalletFromCommissionBalanceDto,
             user
         );
     }

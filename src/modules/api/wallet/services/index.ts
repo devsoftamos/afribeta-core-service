@@ -24,6 +24,7 @@ import {
     AUTHORIZE_WALLET_FUND_REQUEST_TYPE,
     CreateVendorWalletDto,
     FundSubAgentDto,
+    FundWalletFromCommissionBalanceDto,
     InitializeWalletFundingDto,
     InitializeWithdrawalDto,
     InitiateWalletCreationDto,
@@ -1480,5 +1481,78 @@ export class WalletService {
                 );
             }
         }
+    }
+
+    async fundWalletFromCommissionBalance(
+        options: FundWalletFromCommissionBalanceDto,
+        user: User
+    ) {
+        const wallet = await this.prisma.wallet.findUnique({
+            where: {
+                userId: user.id,
+            },
+        });
+
+        if (!wallet) {
+            throw new WalletNotFoundException(
+                "Wallet not found. Kindly activate your wallet",
+                HttpStatus.NOT_FOUND
+            );
+        }
+
+        if (wallet.commissionBalance < options.amount) {
+            throw new InsufficientWalletBalanceException(
+                "Insufficient commission balance",
+                HttpStatus.BAD_REQUEST
+            );
+        }
+
+        const paymentReference = generateId({ type: "reference" });
+        const transactionId = generateId({ type: "transaction" });
+        await this.prisma.$transaction(
+            async (tx) => {
+                await tx.wallet.update({
+                    where: {
+                        id: wallet.id,
+                    },
+                    data: {
+                        commissionBalance: {
+                            decrement: options.amount,
+                        },
+                        mainBalance: {
+                            increment: options.amount,
+                        },
+                    },
+                });
+
+                await tx.transaction.create({
+                    data: {
+                        amount: options.amount,
+                        flow: TransactionFlow.IN,
+                        status: TransactionStatus.SUCCESS,
+                        totalAmount: options.amount,
+                        transactionId: transactionId,
+                        type: TransactionType.WALLET_FUND,
+                        receiverId: user.id,
+                        userId: user.id,
+                        senderId: user.id,
+                        walletFundTransactionFlow:
+                            WalletFundTransactionFlow.COMMISSION_BALANCE_TO_MAIN_BALANCE,
+                        shortDescription:
+                            TransactionShortDescription.WALLET_FUNDED,
+                        paymentReference: paymentReference,
+                        paymentStatus: PaymentStatus.SUCCESS,
+                        paymentChannel: PaymentChannel.WALLET,
+                    },
+                });
+            },
+            {
+                timeout: DB_TRANSACTION_TIMEOUT,
+            }
+        );
+
+        return buildResponse({
+            message: "Main wallet successfully funded",
+        });
     }
 }

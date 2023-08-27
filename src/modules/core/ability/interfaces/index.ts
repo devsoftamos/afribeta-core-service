@@ -1,10 +1,11 @@
-import { User, Transaction } from "@prisma/client";
+import { User, Transaction, Wallet } from "@prisma/client";
 import { PureAbility } from "@casl/ability";
 import { PrismaQuery, Subjects as PrismaSubjects } from "@casl/prisma";
 
 export type Subjects = PrismaSubjects<{
     User: User;
     Transaction: Transaction;
+    Wallet: Wallet;
 }>;
 
 export type AppAbility = PureAbility<[string, Subjects], PrismaQuery>;
@@ -19,6 +20,7 @@ export enum Action {
     ViewAgent = "agent.view",
     FundAgent = "agent.fund",
     FundRequest = "fund.request",
+    FundWalletFromCommission = "wallet.commission.fund.main",
 }
 
 export interface RequiredRule {

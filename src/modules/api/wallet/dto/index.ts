@@ -140,3 +140,5 @@ export class AuthorizeFundRequestDto {
     @IsEnum(AUTHORIZE_WALLET_FUND_REQUEST_TYPE)
     authorizeType: AUTHORIZE_WALLET_FUND_REQUEST_TYPE;
 }
+
+export class FundWalletFromCommissionBalanceDto extends RequestWalletFundingDto {}

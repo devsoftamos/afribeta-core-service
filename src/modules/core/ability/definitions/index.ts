@@ -19,3 +19,8 @@ export class FundRequestAbility implements RequiredRule {
     action: Action = Action.FundRequest;
     subject: Subjects = "User";
 }
+
+export class FundWalletFromCommissionAbility implements RequiredRule {
+    action: Action = Action.FundWalletFromCommission;
+    subject: Subjects = "Wallet";
+}

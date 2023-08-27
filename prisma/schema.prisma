@@ -308,6 +308,7 @@ enum WalletFundTransactionFlow {
   FROM_BENEFACTOR
   SELF_FUND
   FROM_PAID_COMMISSION
+  COMMISSION_BALANCE_TO_MAIN_BALANCE
 }
 
 enum PaymentStatus {
@@ -369,19 +370,6 @@ model Transaction {
   @@index([type])
   @@map("Transactions")
 }
-
-//Commission
-// model Commission {
-//   id        Int              @id @default(autoincrement())
-//   name      String
-//   slug      String           @unique
-//   baseRate  Float
-//   createdAt DateTime         @default(now())
-//   updatedAt DateTime         @updatedAt
-//   users     UserCommission[]
-
-//   @@map("Commissions")
-// }
 
 model UserCommission {
   userId          Int

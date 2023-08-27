@@ -29,7 +29,7 @@ export class AbilityFactory {
             createPrismaAbility
         );
 
-        // console.log(user.id, "*******");
+        console.log(user.id, "*******", permissions);
 
         can(Action.CreateAgent, "User");
         can(Action.ViewAgent, "User");
@@ -37,6 +37,7 @@ export class AbilityFactory {
         can(Action.ViewAgent, "User", { createdById: user.id });
         can(Action.FundAgent, "User", { createdById: user.id });
         can(Action.FundRequest, "User");
+        can(Action.FundWalletFromCommission, "Wallet");
 
         cannot(Action.ViewAgent, "User", {
             createdById: { not: user.id },
@@ -67,6 +68,11 @@ export class AbilityFactory {
         if (!permissions.includes(Action.FundRequest)) {
             cannot(Action.FundRequest, "User").because(
                 "Your account type does not have sufficient permission for fund request"
+            );
+        }
+        if (!permissions.includes(Action.FundWalletFromCommission)) {
+            cannot(Action.FundWalletFromCommission, "Wallet").because(
+                "Your account type does not have sufficient permission to fund wallet from commission wallet"
             );
         }
 
