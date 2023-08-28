@@ -108,3 +108,5 @@ export interface FundSubAgentHandlerOptions {
     amount: number;
     notificationRecord?: Notification;
 }
+
+export interface PayoutRequestTransaction extends VerifyWalletTransaction {}

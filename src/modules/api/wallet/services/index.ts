@@ -51,6 +51,7 @@ import {
     CreateWalletAAndVirtualAccount,
     FundSubAgentHandlerOptions,
     FundSubAgentHandlerResponse,
+    PayoutRequestTransaction,
     ProcessWalletFundOptions,
     ProcessWalletWithdrawalOptions,
     VerifySubAgentWalletFundTransaction,
@@ -1621,6 +1622,72 @@ export class WalletService {
 
         return buildResponse({
             message: "payout request successfully sent",
+        });
+    }
+
+    async verifyPayoutRequest(options: PaymentReferenceDto, user: User) {
+        const transaction = await this.prisma.transaction.findUnique({
+            where: {
+                paymentReference: options.reference,
+            },
+            select: {
+                type: true,
+                status: true,
+                userId: true,
+                paymentReference: true,
+                amount: true,
+                paymentChannel: true,
+                paymentStatus: true,
+                serviceCharge: true,
+                createdAt: true,
+                updatedAt: true,
+                transactionId: true,
+                walletFundTransactionFlow: true,
+                flow: true,
+            },
+        });
+
+        if (!transaction) {
+            throw new TransactionNotFoundException(
+                "Payment reference not found",
+                HttpStatus.NOT_FOUND
+            );
+        }
+
+        if (transaction.userId != user.id) {
+            throw new TransactionNotFoundException(
+                "Reference not found",
+                HttpStatus.NOT_FOUND
+            );
+        }
+
+        if (transaction.type != TransactionType.PAYOUT) {
+            throw new TransactionTypeException(
+                "Invalid reference type",
+                HttpStatus.BAD_REQUEST
+            );
+        }
+
+        const data: PayoutRequestTransaction = {
+            status: transaction.status,
+            paymentStatus: transaction.paymentStatus,
+            amount: transaction.amount,
+            serviceCharge: transaction.serviceCharge,
+            flow: transaction.flow,
+            reference: transaction.paymentReference,
+            transactionId: transaction.transactionId,
+            type: transaction.type,
+            user: {
+                firstName: user.firstName,
+                lastName: user.lastName,
+            },
+            createdAt: transaction.createdAt,
+            updatedAt: transaction.updatedAt,
+        };
+
+        return buildResponse({
+            message: "Payout request transaction successfully verified",
+            data: data,
         });
     }
 }

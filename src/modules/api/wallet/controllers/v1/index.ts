@@ -247,4 +247,16 @@ export class WalletController {
     ) {
         return await this.walletService.payoutRequest(payoutRequestDto, user);
     }
+
+    @Get("payout/verify/:reference")
+    async verifyPayoutRequest(
+        @Param(ValidationPipe)
+        paymentReferenceDto: PaymentReferenceDto,
+        @User() user: UserModel
+    ) {
+        return await this.walletService.verifyPayoutRequest(
+            paymentReferenceDto,
+            user
+        );
+    }
 }
