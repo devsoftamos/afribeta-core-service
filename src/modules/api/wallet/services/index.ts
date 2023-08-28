@@ -1644,6 +1644,7 @@ export class WalletService {
                 transactionId: true,
                 walletFundTransactionFlow: true,
                 flow: true,
+                totalAmount: true,
             },
         });
 
@@ -1673,6 +1674,7 @@ export class WalletService {
             paymentStatus: transaction.paymentStatus,
             amount: transaction.amount,
             serviceCharge: transaction.serviceCharge,
+            totalAmount: transaction.totalAmount,
             flow: transaction.flow,
             reference: transaction.paymentReference,
             transactionId: transaction.transactionId,

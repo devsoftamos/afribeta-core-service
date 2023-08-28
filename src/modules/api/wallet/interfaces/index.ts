@@ -59,6 +59,7 @@ export interface VerifyWalletTransaction {
     status: TransactionStatus;
     paymentStatus: PaymentStatus;
     transactionId: string;
+    totalAmount?: number;
     reference: string;
     user: {
         firstName: string;
@@ -109,4 +110,6 @@ export interface FundSubAgentHandlerOptions {
     notificationRecord?: Notification;
 }
 
-export type PayoutRequestTransaction = VerifyWalletTransaction;
+export interface PayoutRequestTransaction extends VerifyWalletTransaction {
+
+}
