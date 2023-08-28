@@ -2,6 +2,7 @@ import { Module } from "@nestjs/common";
 import { AuthModule } from "./auth";
 import { BankModule } from "./bank";
 import { BillModule } from "./bill";
+import { LocationModule } from "./location";
 import { NotificationModule } from "./notification";
 import { TransactionModule } from "./transaction";
 import { UserModule } from "./user";
@@ -18,6 +19,7 @@ import { WebExtension } from "./webExtension";
         TransactionModule,
         BillModule,
         NotificationModule,
+        LocationModule,
     ],
 })
 export class APIModule {}

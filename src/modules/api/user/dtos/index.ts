@@ -7,6 +7,7 @@ import {
     IsBooleanString,
     IsEmail,
     IsEnum,
+    IsInt,
     IsNotEmpty,
     IsNumber,
     IsNumberString,
@@ -98,6 +99,7 @@ export class CreateAgentDto {
     })
     phone: string;
 
+    @IsOptional()
     @ValidateNested({ each: true })
     @Type(() => BillServiceCommissionOptions)
     @ArrayMinSize(1)
@@ -107,13 +109,11 @@ export class CreateAgentDto {
     @IsString()
     verificationCode: string;
 
-    @IsOptional()
-    @IsString()
-    localGovernmentArea: string;
+    @IsInt()
+    localGovernmentAreaId: number;
 
-    @IsOptional()
-    @IsString()
-    state: string;
+    @IsInt()
+    stateId: number;
 }
 
 export class ListMerchantAgentsDto {

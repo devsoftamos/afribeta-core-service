@@ -210,23 +210,24 @@ export class AuthService {
                 );
             }
 
-            if (!options.state) {
+            if (!options.stateId) {
                 throw new InvalidCredentialException(
-                    "state field is required for the account type",
+                    "stateId field is required for the account type",
                     HttpStatus.BAD_REQUEST
                 );
             }
 
-            if (!options.localGovernmentArea) {
+            if (!options.localGovernmentAreaId) {
                 throw new InvalidCredentialException(
-                    "localGovernmentArea field is required for the account type",
+                    "localGovernmentAreaId field is required for the account type",
                     HttpStatus.BAD_REQUEST
                 );
             }
 
             createUserOptions.businessName = options.businessName;
-            createUserOptions.state = options.state;
-            createUserOptions.localGovernmentArea = options.localGovernmentArea;
+            createUserOptions.stateId = options.stateId;
+            createUserOptions.localGovernmentAreaId =
+                options.localGovernmentAreaId;
             createUserOptions.isMerchantUpgradable = true;
             createUserOptions.merchantUpgradeStatus =
                 MerchantUpgradeStatus.TO_BE_UPGRADED;

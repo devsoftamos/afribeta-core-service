@@ -10,11 +10,7 @@ import {
     ValidationPipe,
 } from "@nestjs/common";
 import { User as UserModel } from "@prisma/client";
-import {
-    CreateBankDto,
-    GetPaymentProviderBanksDto,
-    ResolveBankAccountDto,
-} from "../../dtos";
+import { CreateBankDto, ResolveBankAccountDto } from "../../dtos";
 import { BankService } from "../../services";
 
 @Controller({
@@ -24,11 +20,8 @@ export class BankController {
     constructor(private readonly bankService: BankService) {}
 
     @Get()
-    async getBankList(
-        @Query(ValidationPipe)
-        getPaymentProviderBanksDto: GetPaymentProviderBanksDto
-    ) {
-        return await this.bankService.getBankList(getPaymentProviderBanksDto);
+    async getBankList() {
+        return await this.bankService.getBankList();
     }
 
     @UseGuards(AuthGuard)

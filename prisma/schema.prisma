@@ -57,8 +57,8 @@ model User {
   userType                    UserType
   photo                       String?
   status                      Status                 @default(ENABLED)
-  state                       String?
-  localGovernmentArea         String?
+  stateId                     Int?
+  localGovernmentAreaId       Int?
   createdById                 Int?
   isMerchantUpgradable        Boolean                @default(false)
   merchantUpgradeStatus       MerchantUpgradeStatus?
@@ -72,7 +72,7 @@ model User {
   isDeleted                   Boolean?               @default(false)
   createdAt                   DateTime               @default(now())
   updatedAt                   DateTime               @updatedAt
-  banks                       Bank[]
+  bankAccounts                BankAccount[]
   createdUsers                User[]                 @relation(name: "creatorAndCreatedUser")
   creator                     User?                  @relation(name: "creatorAndCreatedUser", fields: [createdById], references: [id])
   role                        Role                   @relation(fields: [roleId], references: [id])
@@ -86,6 +86,8 @@ model User {
   kycInformation              KycInformation?
   notifications               Notification[]         @relation(name: "userToNotification")
   agentTriggeredNotifications Notification[]         @relation(name: "agentDetailInNotification")
+  state                       State?                 @relation(fields: [stateId], references: [id])
+  lga                         LocalGovernmentArea?   @relation(fields: [localGovernmentAreaId], references: [id])
 
   @@fulltext([firstName, lastName])
   @@map("Users")
@@ -115,7 +117,7 @@ model KycInformation {
 //   PROVIDUS
 // }
 
-model Bank {
+model BankAccount {
   id            Int      @id @default(autoincrement())
   userId        Int
   bankName      String
@@ -128,7 +130,7 @@ model Bank {
 
   @@unique([userId, accountNumber, bankCode])
   @@index([userId])
-  @@map("Banks")
+  @@map("BankAccounts")
 }
 
 //Virtual Bank Account
@@ -493,4 +495,38 @@ model BillProviderInternetNetwork {
 
   @@id([billServiceSlug, billProviderSlug])
   @@map("BillProviderInternetNetworks")
+}
+
+model State {
+  id   Int                   @id @default(autoincrement())
+  name String
+  slug String                @unique
+  lga  LocalGovernmentArea[]
+  user User[]
+
+  @@map("States")
+}
+
+model LocalGovernmentArea {
+  id      Int    @id @default(autoincrement())
+  name    String
+  stateId Int
+  state   State  @relation(fields: [stateId], references: [id])
+  user    User[]
+
+  @@unique([name, stateId])
+  @@map("LocalGovernmentAreas")
+}
+
+model Bank {
+  id        Int      @id @default(autoincrement())
+  name      String
+  slug      String   @unique
+  code      String   @unique
+  longCode  String?
+  logo      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("Banks")
 }

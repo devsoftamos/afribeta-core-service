@@ -5,11 +5,6 @@ export enum BankProvider {
     PROVIDUS = "providus",
 }
 
-export class GetPaymentProviderBanksDto {
-    @IsEnum(BankProvider)
-    provider: BankProvider;
-}
-
 export class ResolveBankAccountDto {
     @IsEnum(BankProvider)
     provider: BankProvider;

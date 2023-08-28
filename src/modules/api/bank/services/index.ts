@@ -3,12 +3,7 @@ import { PaystackService } from "@/modules/workflow/payment/providers/paystack/s
 import { ApiResponse, buildResponse } from "@/utils/api-response-util";
 import { HttpStatus, Injectable } from "@nestjs/common";
 import { User } from "@prisma/client";
-import {
-    BankProvider,
-    CreateBankDto,
-    GetPaymentProviderBanksDto,
-    ResolveBankAccountDto,
-} from "../dtos";
+import { BankProvider, CreateBankDto, ResolveBankAccountDto } from "../dtos";
 import { DuplicateBankAccountException, InvalidBankProvider } from "../errors";
 
 @Injectable()
@@ -18,33 +13,18 @@ export class BankService {
         private paystackService: PaystackService
     ) {}
 
-    async getBankList(
-        options: GetPaymentProviderBanksDto
-    ): Promise<ApiResponse> {
-        switch (options.provider) {
-            case BankProvider.PAYSTACK: {
-                const data = await this.paystackService.getBankList();
-                return buildResponse({
-                    message: "Bank list successfully retrieved",
-                    data: data,
-                });
-            }
-            case BankProvider.PROVIDUS: {
-                //TODO: update providus here
-                const data = await this.paystackService.getBankList();
-                return buildResponse({
-                    message: "Bank list successfully retrieved",
-                    data: data,
-                });
-            }
-
-            default: {
-                throw new InvalidBankProvider(
-                    "Please select a valid bank provider",
-                    HttpStatus.BAD_REQUEST
-                );
-            }
-        }
+    async getBankList(): Promise<ApiResponse> {
+        const banks = await this.prisma.bank.findMany({
+            select: {
+                name: true,
+                code: true,
+                logo: true,
+            },
+        });
+        return buildResponse({
+            message: "Bank list successfully retrieved",
+            data: banks,
+        });
     }
 
     async getVirtualBankAccounts(user: User): Promise<ApiResponse> {
@@ -99,7 +79,7 @@ export class BankService {
     }
 
     async createBank(options: CreateBankDto, user: User) {
-        const bank = await this.prisma.bank.findUnique({
+        const bank = await this.prisma.bankAccount.findUnique({
             where: {
                 userId_accountNumber_bankCode: {
                     userId: user.id,
@@ -115,7 +95,7 @@ export class BankService {
             );
         }
 
-        const createdBank = await this.prisma.bank.create({
+        const createdBank = await this.prisma.bankAccount.create({
             data: {
                 accountName: options.accountName,
                 accountNumber: options.accountNumber,

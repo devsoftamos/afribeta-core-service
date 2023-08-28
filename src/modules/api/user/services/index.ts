@@ -314,10 +314,12 @@ export class UserService {
         }
 
         //validate commissions
-        await this.validateAgentCommissionAssignment({
-            merchantId: user.id,
-            billServiceCommissions: options.billServiceCommissions,
-        });
+        if (options.billServiceCommissions) {
+            await this.validateAgentCommissionAssignment({
+                merchantId: user.id,
+                billServiceCommissions: options.billServiceCommissions,
+            });
+        }
 
         const password = generateId({ type: "custom_lower_case", length: 8 });
         const hashedPassword = await this.authService.hashPassword(password);
@@ -339,11 +341,8 @@ export class UserService {
             createdById: user.id,
             isMerchantUpgradable: false,
             isWalletCreated: true,
-            commissions: {
-                create: options.billServiceCommissions,
-            },
-            localGovernmentArea: options.localGovernmentArea,
-            state: options.state,
+            localGovernmentAreaId: options.localGovernmentAreaId,
+            stateId: options.stateId,
             wallet: {
                 create: {
                     walletNumber: walletNumber,
@@ -351,6 +350,12 @@ export class UserService {
             },
         };
         // return {};
+
+        if (options.billServiceCommissions) {
+            createAgentOptions.commissions = {
+                create: options.billServiceCommissions,
+            };
+        }
 
         await this.prisma
             .$transaction(

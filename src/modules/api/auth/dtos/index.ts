@@ -1,6 +1,7 @@
 import {
     IsEmail,
     IsEnum,
+    IsInt,
     IsOptional,
     IsPhoneNumber,
     IsString,
@@ -35,12 +36,12 @@ export class SignUpDto {
     phone: string;
 
     @IsOptional()
-    @IsString()
-    localGovernmentArea: string;
+    @IsInt()
+    localGovernmentAreaId: number;
 
     @IsOptional()
-    @IsString()
-    state: string;
+    @IsInt()
+    stateId: number;
 
     @IsString()
     password: string;
