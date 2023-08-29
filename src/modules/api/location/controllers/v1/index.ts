@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Query, ValidationPipe } from "@nestjs/common";
+import { Controller, Get, Param, ValidationPipe } from "@nestjs/common";
 import { GetLgasByStateDto } from "../../dtos";
 import { LocationService } from "../../services";
 
