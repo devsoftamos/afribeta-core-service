@@ -11,3 +11,7 @@ export class VirtualAccountNotFoundException extends HttpException {
 export class DuplicateBankAccountException extends HttpException {
     name = "DuplicateBankAccountException";
 }
+
+export class BankAccountNotFoundException extends HttpException {
+    name: string = "BankAccountNotFoundException";
+}

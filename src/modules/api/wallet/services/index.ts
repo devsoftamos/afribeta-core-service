@@ -92,6 +92,7 @@ import {
     NotificationNotFoundException,
     NotificationGenericException,
 } from "../../notification";
+import { BankAccountNotFoundException } from "../../bank";
 
 @Injectable()
 export class WalletService {
@@ -1560,11 +1561,18 @@ export class WalletService {
     }
 
     async payoutRequest(options: PayoutRequestDto, user: User) {
-        const wallet = await this.prisma.wallet.findUnique({
-            where: {
-                userId: user.id,
-            },
-        });
+        const [wallet, bankAccount] = await Promise.all([
+            this.prisma.wallet.findUnique({
+                where: {
+                    userId: user.id,
+                },
+            }),
+            this.prisma.bankAccount.findUnique({
+                where: {
+                    userId: user.id,
+                },
+            }),
+        ]);
 
         if (!wallet) {
             throw new WalletNotFoundException(
@@ -1577,6 +1585,13 @@ export class WalletService {
             throw new InsufficientWalletBalanceException(
                 "Insufficient commission balance",
                 HttpStatus.BAD_REQUEST
+            );
+        }
+
+        if (!bankAccount) {
+            throw new BankAccountNotFoundException(
+                "Bank account not found. Kindly add a bank account to receive payment",
+                HttpStatus.NOT_FOUND
             );
         }
 

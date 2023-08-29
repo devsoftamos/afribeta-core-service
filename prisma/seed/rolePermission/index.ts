@@ -28,7 +28,28 @@ export const rolePermissions = [
         permissionId: 6, //payout.request
     },
     {
-        roleId: 1, //merchant
+        roleId: 1, //agent
         permissionId: 6, //payout.request
+    },
+
+    //
+
+    {
+        roleId: 3, //merchant
+        permissionId: 7, ///bank_account.create
+    },
+    {
+        roleId: 1, //agent
+        permissionId: 7, //bank_account.create
+    },
+
+    //
+    {
+        roleId: 3, //merchant
+        permissionId: 8, //bank_account.read
+    },
+    {
+        roleId: 1, //agent
+        permissionId: 8, ///bank_account.read
     },
 ];

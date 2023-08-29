@@ -39,6 +39,8 @@ export class AbilityFactory {
         can(Action.FundRequest, "User");
         can(Action.FundWalletFromCommission, "Wallet");
         can(Action.PayoutRequest, "User");
+        can(Action.ReadBankAccount, "BankAccount");
+        can(Action.CreateBankAccount, "BankAccount");
 
         cannot(Action.ViewAgent, "User", {
             createdById: { not: user.id },
@@ -82,7 +84,16 @@ export class AbilityFactory {
                 "Your account type does not have sufficient permission for payout request"
             );
         }
-
+        if (!permissions.includes(Action.ReadBankAccount)) {
+            cannot(Action.ReadBankAccount, "BankAccount").because(
+                "Your account type does not have sufficient permission to view bank account"
+            );
+        }
+        if (!permissions.includes(Action.CreateBankAccount)) {
+            cannot(Action.ReadBankAccount, "BankAccount").because(
+                "Your account type does not have sufficient permission to create bank account"
+            );
+        }
         return build();
     }
 }

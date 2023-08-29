@@ -4,7 +4,11 @@ import { ApiResponse, buildResponse } from "@/utils/api-response-util";
 import { HttpStatus, Injectable } from "@nestjs/common";
 import { User } from "@prisma/client";
 import { BankProvider, CreateBankDto, ResolveBankAccountDto } from "../dtos";
-import { DuplicateBankAccountException, InvalidBankProvider } from "../errors";
+import {
+    BankAccountNotFoundException,
+    DuplicateBankAccountException,
+    InvalidBankProvider,
+} from "../errors";
 
 @Injectable()
 export class BankService {
@@ -108,6 +112,34 @@ export class BankService {
         return buildResponse({
             message: "Bank details successfully saved",
             data: createdBank,
+        });
+    }
+
+    async getBankAccount(user: User) {
+        //console.log(user, "****user***");
+        const account = await this.prisma.bankAccount.findUnique({
+            where: {
+                userId: user.id,
+            },
+            select: {
+                id: true,
+                bankCode: true,
+                bankName: true,
+                accountName: true,
+                accountNumber: true,
+            },
+        });
+
+        if (!account) {
+            throw new BankAccountNotFoundException(
+                "Bank account not found. Kindly add a bank account to receive payment",
+                HttpStatus.NOT_FOUND
+            );
+        }
+
+        return buildResponse({
+            message: "Bank account successfully retrieved",
+            data: account,
         });
     }
 }

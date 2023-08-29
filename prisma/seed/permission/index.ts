@@ -31,4 +31,14 @@ export const permissions = [
         description: "Request payout",
         isCustomAssignable: false,
     },
+    {
+        name: "bank_account.create",
+        description: "Create bank account",
+        isCustomAssignable: false,
+    },
+    {
+        name: "bank_account.read",
+        description: "View own bank account",
+        isCustomAssignable: false,
+    },
 ];

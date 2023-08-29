@@ -1,6 +1,12 @@
 import { AuthGuard } from "@/modules/api/auth/guard";
 import { User } from "@/modules/api/user";
 import {
+    CreateBankAccountAbility,
+    ReadBankAccountAbility,
+} from "@/modules/core/ability";
+import { CheckAbilities } from "@/modules/core/ability/decorator";
+import { AbilitiesGuard } from "@/modules/core/ability/guards";
+import {
     Body,
     Controller,
     Get,
@@ -38,12 +44,20 @@ export class BankController {
         return await this.bankService.resolveBankAccount(resolveBankAccountDto);
     }
 
-    @UseGuards(AuthGuard)
     @Post()
+    @UseGuards(AuthGuard, AbilitiesGuard)
+    @CheckAbilities(new CreateBankAccountAbility())
     async createBank(
         @Body(ValidationPipe) createBankDto: CreateBankDto,
         @User() user: UserModel
     ) {
         return await this.bankService.createBank(createBankDto, user);
+    }
+
+    @Get("account")
+    @UseGuards(AuthGuard, AbilitiesGuard)
+    @CheckAbilities(new ReadBankAccountAbility())
+    async getBankAccount(@User() user: UserModel) {
+        return await this.bankService.getBankAccount(user);
     }
 }

@@ -29,3 +29,13 @@ export class PayoutRequestAbility implements RequiredRule {
     action: Action = Action.PayoutRequest;
     subject: Subjects = "User";
 }
+
+export class CreateBankAccountAbility implements RequiredRule {
+    action: Action = Action.CreateBankAccount;
+    subject: Subjects = "BankAccount";
+}
+
+export class ReadBankAccountAbility implements RequiredRule {
+    action: Action = Action.ReadBankAccount;
+    subject: Subjects = "BankAccount";
+}
