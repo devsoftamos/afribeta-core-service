@@ -1599,6 +1599,7 @@ export class WalletService {
             ((PAYOUT_PERCENT_CHARGE / 100) * options.amount).toFixed(2)
         );
         const payableAmount = options.amount - serviceCharge;
+        const paymentReference = generateId({ type: "reference" });
 
         await this.prisma.$transaction(
             async (tx) => {
@@ -1622,7 +1623,7 @@ export class WalletService {
                         transactionId: generateId({ type: "transaction" }),
                         type: TransactionType.PAYOUT,
                         paymentChannel: PaymentChannel.MANUAL,
-                        paymentReference: generateId({ type: "reference" }),
+                        paymentReference: paymentReference,
                         serviceCharge: serviceCharge,
                         userId: user.id,
                         shortDescription: TransactionShortDescription.PAYOUT,
@@ -1637,6 +1638,9 @@ export class WalletService {
 
         return buildResponse({
             message: "payout request successfully sent",
+            data: {
+                reference: paymentReference,
+            },
         });
     }
 
