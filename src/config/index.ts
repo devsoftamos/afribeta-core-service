@@ -10,6 +10,7 @@ import { ProvidusOptions } from "@/libs/providus";
 import { SquadGTBankOptions } from "@/libs/squadGTBank/interfaces";
 import { FSDH360BankOptions } from "@/libs/fsdh360Bank/interfaces";
 import { PolarisBankOptions } from "@/libs/polarisBank/interfaces";
+import { BuyPowerOptions } from "@/libs/buyPower";
 
 export * from "./constants";
 
@@ -148,6 +149,15 @@ const runtimeEnvironment: RequiredEnvironment[] = [
         name: "AWS_S3_BUCKET",
         type: RequiredEnvironmentTypes.String,
     },
+    {
+        name: "BUYPOWER_BASE_URL",
+        type: RequiredEnvironmentTypes.String,
+    },
+    {
+        name: "BUYPOWER_TOKEN",
+        type: RequiredEnvironmentTypes.String,
+    },
+
     // {
     //     name: "POLARIS_API_KEY",
     //     type: RequiredEnvironmentTypes.String,
@@ -258,6 +268,12 @@ export const polarisBankOptions: PolarisBankOptions = {
     apiKey: process.env.POLARIS_API_KEY,
     clientSecret: process.env.POLARIS_CLIENT_SECRET,
     baseUrl: process.env.POLARIS_BASE_URL,
+};
+
+//buypower
+export const buyPowerOptions: BuyPowerOptions = {
+    baseUrl: process.env.BUYPOWER_BASE_URL,
+    token: process.env.BUYPOWER_TOKEN,
 };
 
 export const frontendDevOrigin = [/^http:\/\/localhost:\d+$/];
