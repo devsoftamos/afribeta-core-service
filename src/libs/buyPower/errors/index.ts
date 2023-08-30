@@ -1,4 +1,4 @@
 export class BuyPowerError extends Error {
-    name: string = "BuyPowerError";
+    name = "BuyPowerError";
     status: number;
 }

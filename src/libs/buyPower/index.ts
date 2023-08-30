@@ -1,4 +1,4 @@
-import Axios, { AxiosError, AxiosInstance, AxiosRequestConfig } from "axios";
+import Axios, { AxiosInstance, AxiosRequestConfig } from "axios";
 import { BuyPowerError } from "./errors";
 import { BuyPowerOptions, BuyPowerResponse } from "./interfaces";
 import { Power } from "./interfaces";
