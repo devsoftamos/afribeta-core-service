@@ -53,6 +53,8 @@ import { BillEvent } from "../events";
 import { PaymentProvider, PaymentReferenceDto } from "../dtos";
 import { BillService } from ".";
 import { SmsService } from "@/modules/core/sms/services";
+import { SMS } from "@/modules/core/sms";
+import { SmsMessage, smsMessage } from "@/core/smsMessage";
 
 @Injectable()
 export class PowerBillService {
@@ -471,12 +473,18 @@ export class PowerBillService {
                 );
 
                 if (options.transaction.meterType == MeterType.PREPAID) {
-                    await this.smsService.termii
-                        .send({
-                            to: options.user.phone,
-                            sms: `Hi, your meter token and units are: ${vendPowerResp.meterToken} and ${vendPowerResp.units} respectively`,
-                            type: "plain",
-                            channel: "generic",
+                    await this.smsService
+                        .send<SMS.TermiiProvider>({
+                            provider: "termii",
+                            phone: options.user.phone,
+                            message: smsMessage({
+                                template:
+                                    SmsMessage.Template.PREPAID_METER_VEND,
+                                data: {
+                                    token: vendPowerResp.meterToken,
+                                    units: vendPowerResp.units,
+                                },
+                            }),
                         })
                         .catch(() => false);
                 }

@@ -11,6 +11,7 @@ import { SquadGTBankOptions } from "@/libs/squadGTBank/interfaces";
 import { FSDH360BankOptions } from "@/libs/fsdh360Bank/interfaces";
 import { PolarisBankOptions } from "@/libs/polarisBank/interfaces";
 import { BuyPowerOptions } from "@/libs/buyPower";
+import { Termii } from "@/libs/sms";
 
 export * from "./constants";
 
@@ -157,6 +158,14 @@ const runtimeEnvironment: RequiredEnvironment[] = [
         name: "BUYPOWER_TOKEN",
         type: RequiredEnvironmentTypes.String,
     },
+    {
+        name: "TERMII_BASE_URL",
+        type: RequiredEnvironmentTypes.String,
+    },
+    {
+        name: "TERMII_SMS_SENDER",
+        type: RequiredEnvironmentTypes.String,
+    },
 
     // {
     //     name: "POLARIS_API_KEY",
@@ -182,9 +191,6 @@ export const port: number = parseInt(process.env.PORT ?? "4000");
 
 //email
 export const brevoApiKey: string = process.env.BREVO_API_KEY;
-
-//sms
-export const termiiApiKey: string = process.env.TERMII_API_KEY;
 
 //jwt
 export const jwtSecret: string = process.env.JWT_SECRET;
@@ -274,6 +280,13 @@ export const polarisBankOptions: PolarisBankOptions = {
 export const buyPowerOptions: BuyPowerOptions = {
     baseUrl: process.env.BUYPOWER_BASE_URL,
     token: process.env.BUYPOWER_TOKEN,
+};
+
+//sms
+export const termiiSmsOptions: Termii.SmsOptions = {
+    baseUrl: process.env.TERMII_BASE_URL,
+    apiKey: process.env.TERMII_API_KEY,
+    sender: process.env.TERMII_SMS_SENDER,
 };
 
 export const frontendDevOrigin = [/^http:\/\/localhost:\d+$/];

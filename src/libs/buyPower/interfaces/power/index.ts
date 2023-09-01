@@ -38,3 +38,7 @@ export interface GetMeterInfoResponseData {
     tariff: string;
     tariffClass: string;
 }
+
+export interface VendPowerOptions {
+    orderId: number;
+}

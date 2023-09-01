@@ -42,6 +42,8 @@ import { SendinblueEmailException } from "@calculusky/transactional-email";
 import logger from "moment-logger";
 import { formatName, generateId } from "@/utils";
 import { AgentVerifyEmailParams } from "../interfaces";
+import { SMS } from "@/modules/core/sms";
+import { SmsMessage, smsMessage } from "@/core/smsMessage";
 
 @Injectable()
 export class AuthService {
@@ -102,12 +104,18 @@ export class AuthService {
             });
 
             if (emailResp) {
-                await this.smsService.termii
-                    .send({
-                        to: phoneNumber,
-                        sms: `Hi, a confirmation code has been sent to your email, ${options.email.trim()}. Kindly verify your account with the code.`,
+                await this.smsService
+                    .send<SMS.TermiiProvider>({
+                        provider: "termii",
+                        phone: phoneNumber,
                         type: "plain",
                         channel: "generic",
+                        message: smsMessage({
+                            template: SmsMessage.Template.VERIFY_EMAIL,
+                            data: {
+                                email: options.email,
+                            },
+                        }),
                     })
                     .catch(() => false);
             }
@@ -354,10 +362,10 @@ export class AuthService {
                 HttpStatus.NOT_FOUND
             );
         }
-        const newHarshedPassword = await this.hashPassword(options.newPassword);
+        const newHashedPassword = await this.hashPassword(options.newPassword);
         await this.prisma.user.update({
             where: { id: user.id },
-            data: { password: newHarshedPassword },
+            data: { password: newHashedPassword },
         });
         await this.prisma.passwordResetRequest.delete({
             where: { code: resetData.code },
@@ -413,16 +421,18 @@ export class AuthService {
                 });
 
             if (emailResp) {
-                await this.smsService.termii
-                    .send({
-                        to: phoneNumber,
-                        sms: `Hi, a confirmation code has been triggered by an Afribeta Merchant, ${
-                            user.firstName
-                        } ${
-                            user.lastName
-                        } to your email, ${options.email.trim()}. Kindly send back the code to the merchant to complete your Afribeta Agent Account creation.`,
-                        type: "plain",
-                        channel: "generic",
+                await this.smsService
+                    .send<SMS.TermiiProvider>({
+                        provider: "termii",
+                        phone: phoneNumber,
+                        message: smsMessage({
+                            template: SmsMessage.Template.SUBAGENT_VERIFY_EMAIL,
+                            data: {
+                                email: options.email,
+                                merchantFirstName: user.firstName,
+                                merchantLastName: user.lastName,
+                            },
+                        }),
                     })
                     .catch(() => false);
             }
