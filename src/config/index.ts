@@ -10,8 +10,8 @@ import { ProvidusOptions } from "@/libs/providus";
 import { SquadGTBankOptions } from "@/libs/squadGTBank/interfaces";
 import { FSDH360BankOptions } from "@/libs/fsdh360Bank/interfaces";
 import { PolarisBankOptions } from "@/libs/polarisBank/interfaces";
-import { BuyPowerOptions } from "@/libs/buyPower";
 import { Termii } from "@/libs/sms";
+import { IBuyPower } from "@/libs/buyPower";
 
 export * from "./constants";
 
@@ -277,7 +277,7 @@ export const polarisBankOptions: PolarisBankOptions = {
 };
 
 //buypower
-export const buyPowerOptions: BuyPowerOptions = {
+export const buyPowerOptions: IBuyPower.BuyPowerOptions = {
     baseUrl: process.env.BUYPOWER_BASE_URL,
     token: process.env.BUYPOWER_TOKEN,
 };

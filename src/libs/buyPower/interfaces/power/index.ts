@@ -1,3 +1,5 @@
+import { PaymentType } from "..";
+
 export enum Disco {
     ABUJA = "ABUJA",
     EKO = "EKO",
@@ -40,5 +42,37 @@ export interface GetMeterInfoResponseData {
 }
 
 export interface VendPowerOptions {
-    orderId: number;
+    orderId: string;
+    meter: string;
+    disco: Disco;
+    phone: string;
+    paymentType: PaymentType;
+    vendType: MeterType;
+    vertical?: "ELECTRICITY";
+    amount: number;
+    email?: string;
+    name?: string;
+}
+
+export interface VendPowerResponseData {
+    id: number;
+    amountGenerated: number;
+    tariff: null;
+    debtAmount: number;
+    debtRemaining: number;
+    disco: Disco;
+    freeUnits: 0;
+    orderId: string;
+    receiptNo: string;
+    tax: number;
+    vendTime?: string;
+    token: string;
+    totalAmountPaid: number;
+    units: string;
+    vendAmount: number;
+    vendRef: string;
+    responseCode: number;
+    responseMessage: string;
+    demandCategory?: "NMD" | "MD";
+    assetProvider?: string;
 }

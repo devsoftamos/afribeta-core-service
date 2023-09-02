@@ -21,4 +21,4 @@ export * as SMS from "./interfaces";
     ],
     exports: [SmsService],
 })
-export class SMSModule {}
+export class SmsModule {}
