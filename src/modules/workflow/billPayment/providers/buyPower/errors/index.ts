@@ -1,7 +1,7 @@
 import { HttpException } from "@nestjs/common";
 
 export class BuyPowerVendInProgressError extends HttpException {
-    name: string = "BuyPowerVendInProgressError";
+    name = "BuyPowerVendInProgressError";
 }
 
 //Power
@@ -10,42 +10,41 @@ export class BuyPowerPowerException extends HttpException {
 }
 
 export class BuyPowerVendPowerException extends BuyPowerPowerException {
-    name: string = "BuyPowerVendPowerException";
+    name = "BuyPowerVendPowerException";
 }
-
 
 //Airtime
 export class BuyPowerAirtimeException extends HttpException {
-    name: string = "BuyPowerAirtimeException";
+    name = "BuyPowerAirtimeException";
 }
 
 export class BuyPowerVendAirtimeException extends BuyPowerAirtimeException {
-    name: string = "BuyPowerVendAirtimeException";
+    name = "BuyPowerVendAirtimeException";
 }
 
 //data
 export class BuyPowerDataException extends HttpException {
-    name: string = "BuyPowerDataException";
+    name = "BuyPowerDataException";
 }
 
 export class BuyPowerVendDataException extends BuyPowerAirtimeException {
-    name: string = "BuyPowerVendDataException";
+    name = "BuyPowerVendDataException";
 }
 
 //internet
 export class BuyPowerInternetException extends HttpException {
-    name: string = "BuyPowerInternetException";
+    name = "BuyPowerInternetException";
 }
 
 export class BuyPowerVendInternetException extends BuyPowerInternetException {
-    name: string = "BuyPowerVendInternetException";
+    name = "BuyPowerVendInternetException";
 }
 
 //cable tv
 export class BuyPowerCableTVException extends HttpException {
-    name: string = "BuyPowerCableTVException";
+    name = "BuyPowerCableTVException";
 }
 
 export class BuyPowerVendCableTVException extends BuyPowerCableTVException {
-    name: string = "BuyPowerVendCableTVException";
+    name = "BuyPowerVendCableTVException";
 }

@@ -43,6 +43,7 @@ export interface VendPowerOptions {
 export interface VendPowerResponse {
     units: string;
     meterToken: string;
+    demandCategory?: "MD" | "NMD";
 }
 
 export enum NetworkDataProvider {

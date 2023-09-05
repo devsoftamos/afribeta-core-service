@@ -140,16 +140,10 @@ export class BuyPowerWorkflowService implements BillPaymentWorkflow {
                 vendType: options.meterType,
             });
 
-            if (!resp || !resp.data) {
-                throw new BuyPowerVendPowerException(
-                    "Unable to vend power. No response from upstream provider",
-                    HttpStatus.INTERNAL_SERVER_ERROR
-                );
-            }
-
             return {
                 meterToken: resp.data.token,
                 units: resp.data.units,
+                demandCategory: resp.data.demandCategory,
             };
         } catch (error) {
             logger.error(error);
@@ -213,13 +207,6 @@ export class BuyPowerWorkflowService implements BillPaymentWorkflow {
                 vtuNumber: options.vtuNumber,
                 phone: options.vtuNumber,
             });
-
-            if (!resp || !resp.data) {
-                throw new BuyPowerVendAirtimeException(
-                    "Unable to vend airtime. No response from upstream provider",
-                    HttpStatus.INTERNAL_SERVER_ERROR
-                );
-            }
 
             return {
                 networkProviderReference: resp.data.vendRef.toString(),
@@ -285,13 +272,6 @@ export class BuyPowerWorkflowService implements BillPaymentWorkflow {
                 tariffClass: options.dataCode,
                 network: this.resolveDataNetworkName(options.vtuNetwork),
             });
-
-            if (!resp || !resp.data) {
-                throw new BuyPowerVendDataException(
-                    "Unable to vend data. No response from upstream provider",
-                    HttpStatus.INTERNAL_SERVER_ERROR
-                );
-            }
 
             return {
                 networkProviderReference: resp.data.vendRef.toString(),
@@ -359,13 +339,6 @@ export class BuyPowerWorkflowService implements BillPaymentWorkflow {
                 network: this.resolveInternetNetworkName(options.vtuNetwork),
             });
 
-            if (!resp || !resp.data) {
-                throw new BuyPowerVendInternetException(
-                    "Unable to vend internet. No response from upstream provider",
-                    HttpStatus.INTERNAL_SERVER_ERROR
-                );
-            }
-
             return {
                 networkProviderReference: resp.data.vendRef.toString(),
                 amount: resp.data.totalAmountPaid,
@@ -429,13 +402,6 @@ export class BuyPowerWorkflowService implements BillPaymentWorkflow {
                 network: this.resolveTVNetworkName(options.tvNetwork),
             });
 
-            if (!resp || !resp.data) {
-                throw new BuyPowerVendCableTVException(
-                    "Unable to vend cable TV. No response from upstream provider",
-                    HttpStatus.INTERNAL_SERVER_ERROR
-                );
-            }
-
             return {
                 vendRef: resp.data.vendRef.toString(),
             };
@@ -484,7 +450,7 @@ export class BuyPowerWorkflowService implements BillPaymentWorkflow {
                     );
                 }
 
-                let bouquets = resp.data.map((bundle) => {
+                const bouquets = resp.data.map((bundle) => {
                     return {
                         code: bundle.code,
                         price: bundle.price,
