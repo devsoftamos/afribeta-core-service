@@ -26,3 +26,15 @@ export interface VendAirtimeResponseData {
     disco: VtuNetwork;
     vendRef: number;
 }
+
+export interface VendAirtimeInputOptions {
+    orderId: string;
+    vtuNumber: string;
+    vtuNetwork: VtuNetwork;
+    phone: string;
+    paymentType?: PaymentType;
+    vertical?: "VTU";
+    amount: number;
+    email?: string;
+    name?: string;
+}

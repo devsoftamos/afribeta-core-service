@@ -9,4 +9,9 @@ export const billProviders = [
         isActive: true,
         slug: "ikeja-electric",
     },
+    {
+        name: "BuyPower",
+        isActive: true,
+        slug: "buypower",
+    },
 ];

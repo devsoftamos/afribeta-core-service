@@ -393,6 +393,7 @@ model BillProvider {
   name         String
   slug         String                          @unique
   isActive     Boolean?                        @default(true)
+  isDefault    Boolean?                        @default(false)
   createdAt    DateTime                        @default(now())
   updatedAt    DateTime                        @updatedAt
   transactions Transaction[]

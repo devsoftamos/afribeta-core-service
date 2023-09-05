@@ -55,6 +55,7 @@ import { BillService } from ".";
 import { SmsService } from "@/modules/core/sms/services";
 import { SMS } from "@/modules/core/sms";
 import { SmsMessage, smsMessage } from "@/core/smsMessage";
+import { BuyPowerWorkflowService } from "@/modules/workflow/billPayment/providers/buyPower/services";
 
 @Injectable()
 export class PowerBillService {
@@ -64,7 +65,8 @@ export class PowerBillService {
         @Inject(forwardRef(() => BillService))
         private billService: BillService,
         private billEvent: BillEvent,
-        private smsService: SmsService
+        private smsService: SmsService,
+        private buyPowerWorkflowService: BuyPowerWorkflowService
     ) {}
 
     async getElectricDiscos(): Promise<ApiResponse> {
@@ -104,14 +106,27 @@ export class PowerBillService {
             discos = this.formatDiscosOutput(ikejaDiscos);
         }
 
-        const randomBillProvider = await this.prisma.billProvider.findFirst({
+        //priority on default provider
+        let randomBillProvider = await this.prisma.billProvider.findFirst({
             where: {
                 isActive: true,
+                isDefault: true,
                 slug: {
                     not: BillProviderSlugForPower.IKEJA_ELECTRIC,
                 },
             },
         });
+
+        if (!randomBillProvider) {
+            randomBillProvider = await this.prisma.billProvider.findFirst({
+                where: {
+                    isActive: true,
+                    slug: {
+                        not: BillProviderSlugForPower.IKEJA_ELECTRIC,
+                    },
+                },
+            });
+        }
 
         if (randomBillProvider) {
             queryOptions.where.billProviderSlug = randomBillProvider.slug;
@@ -739,6 +754,19 @@ export class PowerBillService {
                 });
             }
             case BillProviderSlugForPower.IKEJA_ELECTRIC: {
+            }
+
+            case BillProviderSlugForPower.BUYPOWER: {
+                const resp = await this.buyPowerWorkflowService.getMeterInfo({
+                    discoCode: options.meterCode,
+                    meterNumber: options.meterNumber,
+                    reference: reference,
+                    meterType: options.meterType,
+                });
+                return buildResponse({
+                    message: "Meter successfully retrieved",
+                    data: resp,
+                });
             }
 
             default: {

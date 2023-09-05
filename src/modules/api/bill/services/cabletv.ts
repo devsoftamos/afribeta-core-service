@@ -71,11 +71,19 @@ export class CableTVBillService {
 
     async getTVNetworks() {
         let networks = [];
-        const billProvider = await this.prisma.billProvider.findFirst({
+        let billProvider = await this.prisma.billProvider.findFirst({
             where: {
                 isActive: true,
+                isDefault: true,
             },
         });
+        if (!billProvider) {
+            billProvider = await this.prisma.billProvider.findFirst({
+                where: {
+                    isActive: true,
+                },
+            });
+        }
         if (billProvider) {
             const providerNetworks =
                 await this.prisma.billProviderCableTVNetwork.findMany({

@@ -16,6 +16,7 @@ export interface GetMeterInfoOptions {
     discoCode: string;
     meterNumber: string;
     reference: string;
+    meterType?: MeterType;
 }
 
 export interface GetMeterResponse {
@@ -23,7 +24,8 @@ export interface GetMeterResponse {
     customer: {
         name: string;
         address: string;
-        minimumAmount?: number;
+        minimumAmount: number;
+        maximumAmount?: number;
     };
 }
 
@@ -35,6 +37,7 @@ export interface VendPowerOptions {
     referenceId: string;
     amount: number;
     meterNumber: string;
+    meterType?: MeterType;
 }
 
 export interface VendPowerResponse {
@@ -69,6 +72,7 @@ export interface VendDataOptions {
     dataCode: string;
     referenceId: string;
     vtuEmail?: string;
+    amount?: number;
 }
 
 export interface VendDataResponse {
@@ -85,7 +89,6 @@ export interface VendAirtimeOptions {
 
 export interface VendAirtimeResponse {
     networkProviderReference: string;
-    package: string;
     amount: number;
     phone: string;
 }
@@ -111,10 +114,12 @@ export interface VendTVOptions {
     accessToken: string;
     email?: string;
     smartCardNumber: string;
+    amount?: number;
 }
 
 export interface VendTVResponse {
-    orderMessage: string;
+    orderMessage?: string;
+    vendRef: string;
 }
 
 export interface GetSmartCardInfoOptions {
@@ -153,15 +158,33 @@ export interface VendInternetOptions {
     internetCode: string;
     referenceId: string;
     vtuEmail?: string;
+    amount?: number;
 }
 
 export interface VendInternetResponse {
     networkProviderReference: string;
-    package: string;
     amount: number;
     receiver: string;
 }
 
 export interface getSmileDeviceInfoOptions {
     deviceId: string;
+}
+
+export interface BillPaymentWorkflow {
+    getMeterInfo(options: GetMeterInfoOptions): Promise<GetMeterResponse>;
+    vendPower(options: VendPowerOptions): Promise<VendPowerResponse>;
+    vendAirtime(options: VendAirtimeOptions): Promise<VendAirtimeResponse>;
+    vendData(options: VendDataOptions): Promise<VendDataResponse>;
+    vendInternet(options: VendInternetOptions): Promise<VendInternetResponse>;
+    vendTV(options: VendTVOptions): Promise<VendTVResponse>;
+    getCableTVBouquets(
+        cableTVProvider: CableTVProvider
+    ): Promise<GetDataBundleResponse[]>;
+    getDataBundles(
+        networkProvider: NetworkDataProvider
+    ): Promise<GetDataBundleResponse[]>;
+    getInternetBundles(
+        networkProvider: NetworkInternetProvider
+    ): Promise<GetInternetBundleResponse[]>;
 }

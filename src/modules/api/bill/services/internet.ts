@@ -77,12 +77,22 @@ export class InternetBillService {
         options: GetInternetBundleDto
     ): Promise<ApiResponse> {
         let internetBundles: GetInternetBundleResponse[] = [];
-        const provider = await this.prisma.billProvider.findFirst({
-            where: { isActive: true },
+        let billProvider = await this.prisma.billProvider.findFirst({
+            where: {
+                isActive: true,
+                isDefault: true,
+            },
         });
+        if (!billProvider) {
+            billProvider = await this.prisma.billProvider.findFirst({
+                where: {
+                    isActive: true,
+                },
+            });
+        }
 
-        if (provider) {
-            switch (provider.slug) {
+        if (billProvider) {
+            switch (billProvider.slug) {
                 case BillProviderSlug.IRECHARGE: {
                     const iRechargeDataBundles =
                         await this.iRechargeWorkflowService.getInternetBundles(
@@ -107,7 +117,7 @@ export class InternetBillService {
         return buildResponse({
             message: "Successfully retrieved data bundles",
             data: {
-                billProvider: provider.slug,
+                billProvider: billProvider.slug,
                 billService: options.billService,
                 bundles: internetBundles,
             },
@@ -456,7 +466,6 @@ export class InternetBillService {
                 return {
                     networkProviderReference: response.networkProviderReference,
                     amount: response.amount,
-                    package: response.package,
                     phone: response.receiver,
                 };
             }

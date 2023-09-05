@@ -15,6 +15,7 @@ export * from "./data";
 export enum BillProviderSlugForPower {
     IRECHARGE = "irecharge",
     IKEJA_ELECTRIC = "ikeja-electric",
+    BUYPOWER = "buypower",
 }
 
 export enum BillProviderSlug { //exclude ikeja electric

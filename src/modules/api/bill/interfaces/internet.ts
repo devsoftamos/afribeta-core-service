@@ -29,7 +29,6 @@ export interface CompleteInternetPurchaseTransactionOptions
 export interface CompleteInternetPurchaseOutput {
     networkProviderReference: string;
     amount: number;
-    package: string;
     phone: string;
 }
 

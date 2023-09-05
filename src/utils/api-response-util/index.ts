@@ -1,7 +1,7 @@
-import { ApiResponse, Data } from "./interfaces";
+import { ApiResponse } from "./interfaces";
 export * from "./interfaces";
 
-export function buildResponse<TData extends Data = Data>(
+export function buildResponse<TData = Record<string, any>>(
     options: Omit<ApiResponse<TData>, "success">
 ): ApiResponse<TData> {
     return {

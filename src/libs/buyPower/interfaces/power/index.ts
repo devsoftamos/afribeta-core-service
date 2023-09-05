@@ -23,7 +23,7 @@ export interface GetMeterInfoOptions {
     disco: Disco;
     vendType: MeterType;
     vertical?: "ELECTRICITY";
-    orderId: boolean;
+    orderId?: boolean;
 }
 
 export interface GetMeterInfoResponseData {

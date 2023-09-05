@@ -13,10 +13,6 @@ export class IRechargeVendPowerException extends IRechargePowerException {
     name = "IRechargeVendPowerException";
 }
 
-export class IRechargeGetMeterInfoException extends IRechargePowerException {
-    name = "IRechargeGetMeterInfoException";
-}
-
 //data
 export class IRechargeDataException extends HttpException {
     name = "IRechargeDataException";
@@ -50,12 +46,4 @@ export class IRechargeCableTVException extends HttpException {
 
 export class IRechargeVendCableTVException extends IRechargeCableTVException {
     name = "IRechargeVendCableTVException";
-}
-
-export class IRechargeGetSmileDeviceInfoException extends HttpException {
-    name = "IRechargeGetSmileDeviceInfoException";
-}
-
-export class IRechargeGetSmartCardInfoException extends HttpException {
-    name = "IRechargeGetSmartCardInfoException";
 }

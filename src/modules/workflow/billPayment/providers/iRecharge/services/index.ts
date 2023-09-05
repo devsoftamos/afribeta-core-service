@@ -8,6 +8,7 @@ import { AirtimeProvider } from "@/libs/iRecharge/interfaces/airtime";
 import { DataBundleProvider } from "@/libs/iRecharge/interfaces/data";
 import { HttpStatus, Injectable } from "@nestjs/common";
 import logger from "moment-logger";
+import { UnprocessedTransactionException } from "../../../errors";
 import {
     NetworkDataProvider,
     GetDataBundleResponse,
@@ -32,14 +33,12 @@ import {
     GetSmartCardInfoResponse,
     VendTVOptions,
     VendTVResponse,
+    BillPaymentWorkflow,
 } from "../../../interfaces";
 import {
     IRechargeAirtimeException,
     IRechargeCableTVException,
     IRechargeDataException,
-    IRechargeGetMeterInfoException,
-    IRechargeGetSmartCardInfoException,
-    IRechargeGetSmileDeviceInfoException,
     IRechargeInternetException,
     IRechargePowerException,
     IRechargeVendAirtimeException,
@@ -50,7 +49,7 @@ import {
 } from "../errors";
 
 @Injectable()
-export class IRechargeWorkflowService {
+export class IRechargeWorkflowService implements BillPaymentWorkflow {
     public provider = "irecharge";
     constructor(private iRecharge: IRecharge) {}
 
@@ -58,6 +57,24 @@ export class IRechargeWorkflowService {
         "Ikeja_Electric_Bill_Payment",
         "Ikeja_Token_Purchase",
     ];
+
+    private unprocessedTransactionCodes: string[] = [
+        "04",
+        "11",
+        "42",
+        "43",
+        "44",
+        "51",
+    ];
+
+    private handleUnprocessedTransactionError(error: IRechargeError) {
+        if (this.unprocessedTransactionCodes.includes(error.status)) {
+            throw new UnprocessedTransactionException(
+                error.message ?? "irecharge unprocessed transaction",
+                HttpStatus.INTERNAL_SERVER_ERROR
+            );
+        }
+    }
 
     async getElectricDiscos(
         provider: string
@@ -151,7 +168,7 @@ export class IRechargeWorkflowService {
             });
 
             if (!getMeterInfo || !getMeterInfo.customer) {
-                throw new IRechargeGetMeterInfoException(
+                throw new IRechargePowerException(
                     "Failed to retrieve meter information",
                     HttpStatus.INTERNAL_SERVER_ERROR
                 );
@@ -169,33 +186,19 @@ export class IRechargeWorkflowService {
             logger.error(error);
             switch (true) {
                 case error instanceof IRechargeError: {
-                    const clientErrorCodes = ["13", "14", "15", "41", "40"];
-                    if (clientErrorCodes.includes(error.status)) {
-                        throw new IRechargeGetMeterInfoException(
-                            error.message,
-                            HttpStatus.BAD_REQUEST
-                        );
-                    }
-
-                    const serverErrorCodes = ["11", "42"];
-                    if (serverErrorCodes.includes(error.status)) {
-                        throw new IRechargeGetMeterInfoException(
-                            error.message,
-                            HttpStatus.SERVICE_UNAVAILABLE
-                        );
-                    }
-
-                    throw new IRechargeGetMeterInfoException(
+                    this.handleUnprocessedTransactionError(error);
+                    throw new IRechargePowerException(
                         error.message,
-                        HttpStatus.INTERNAL_SERVER_ERROR
+                        HttpStatus.BAD_REQUEST
                     );
                 }
-                case error instanceof IRechargeGetMeterInfoException: {
+
+                case error instanceof IRechargePowerException: {
                     throw error;
                 }
 
                 default: {
-                    throw new IRechargeGetMeterInfoException(
+                    throw new IRechargePowerException(
                         "Failed to retrieve meter information. Error ocurred",
                         HttpStatus.INTERNAL_SERVER_ERROR
                     );
@@ -232,29 +235,15 @@ export class IRechargeWorkflowService {
             logger.error(error);
             switch (true) {
                 case error instanceof IRechargeError: {
-                    const clientErrorCodes = ["13", "14", "15", "41", "40"];
-                    if (clientErrorCodes.includes(error.status)) {
-                        throw new IRechargeVendPowerException(
-                            error.message,
-                            HttpStatus.BAD_REQUEST
-                        );
-                    }
-                    const serverErrorCodes = ["11", "42"];
-                    if (serverErrorCodes.includes(error.status)) {
-                        throw new IRechargeVendPowerException(
-                            error.message,
-                            HttpStatus.SERVICE_UNAVAILABLE
-                        );
-                    }
-
+                    this.handleUnprocessedTransactionError(error);
                     throw new IRechargeVendPowerException(
                         error.message,
-                        HttpStatus.INTERNAL_SERVER_ERROR
+                        HttpStatus.BAD_REQUEST
                     );
                 }
 
                 default: {
-                    throw new IRechargePowerException(
+                    throw new IRechargeVendPowerException(
                         "Failed to vend power. Error ocurred",
                         HttpStatus.INTERNAL_SERVER_ERROR
                     );
@@ -358,29 +347,15 @@ export class IRechargeWorkflowService {
             logger.error(error);
             switch (true) {
                 case error instanceof IRechargeError: {
-                    const clientErrorCodes = ["41", "40"];
-                    if (clientErrorCodes.includes(error.status)) {
-                        throw new IRechargeVendDataException(
-                            error.message,
-                            HttpStatus.BAD_REQUEST
-                        );
-                    }
-                    const serverErrorCodes = ["11", "42"];
-                    if (serverErrorCodes.includes(error.status)) {
-                        throw new IRechargeVendDataException(
-                            error.message,
-                            HttpStatus.SERVICE_UNAVAILABLE
-                        );
-                    }
-
+                    this.handleUnprocessedTransactionError(error);
                     throw new IRechargeVendDataException(
                         error.message,
-                        HttpStatus.INTERNAL_SERVER_ERROR
+                        HttpStatus.BAD_REQUEST
                     );
                 }
 
                 default: {
-                    throw new IRechargeDataException(
+                    throw new IRechargeVendDataException(
                         error.message,
                         HttpStatus.INTERNAL_SERVER_ERROR
                     );
@@ -389,7 +364,7 @@ export class IRechargeWorkflowService {
         }
     }
 
-    resolveDataNetworkName(network: NetworkDataProvider) {
+    private resolveDataNetworkName(network: NetworkDataProvider) {
         switch (network) {
             case NetworkDataProvider.AIRTEL: {
                 return DataBundleProvider.AIRTEL;
@@ -412,7 +387,7 @@ export class IRechargeWorkflowService {
         }
     }
 
-    resolveAirtimeNetworkName(network: NetworkAirtimeProvider) {
+    private resolveAirtimeNetworkName(network: NetworkAirtimeProvider) {
         switch (network) {
             case NetworkAirtimeProvider.AIRTEL: {
                 return AirtimeProvider.AIRTEL;
@@ -457,7 +432,6 @@ export class IRechargeWorkflowService {
 
             return {
                 networkProviderReference: resp.ref,
-                package: resp.order,
                 amount: resp.amount,
                 phone: resp.receiver,
             };
@@ -465,29 +439,15 @@ export class IRechargeWorkflowService {
             logger.error(error);
             switch (true) {
                 case error instanceof IRechargeError: {
-                    const clientErrorCodes = ["41", "40"];
-                    if (clientErrorCodes.includes(error.status)) {
-                        throw new IRechargeVendAirtimeException(
-                            error.message,
-                            HttpStatus.BAD_REQUEST
-                        );
-                    }
-                    const serverErrorCodes = ["11", "42"];
-                    if (serverErrorCodes.includes(error.status)) {
-                        throw new IRechargeVendAirtimeException(
-                            error.message,
-                            HttpStatus.SERVICE_UNAVAILABLE
-                        );
-                    }
-
+                    this.handleUnprocessedTransactionError(error);
                     throw new IRechargeVendAirtimeException(
                         error.message,
-                        HttpStatus.INTERNAL_SERVER_ERROR
+                        HttpStatus.BAD_REQUEST
                     );
                 }
 
                 default: {
-                    throw new IRechargeAirtimeException(
+                    throw new IRechargeVendAirtimeException(
                         error.message,
                         HttpStatus.INTERNAL_SERVER_ERROR
                     );
@@ -502,7 +462,6 @@ export class IRechargeWorkflowService {
         try {
             const fetchData = async (networkProvider: DataBundleProvider) => {
                 const resp = await this.iRecharge.getDataBundles({
-                    //same as data bundles
                     data_network: networkProvider,
                 });
 
@@ -598,36 +557,21 @@ export class IRechargeWorkflowService {
             return {
                 networkProviderReference: response.ref,
                 amount: response.amount,
-                package: response.order,
                 receiver: response.receiver,
             };
         } catch (error) {
             logger.error(error);
             switch (true) {
                 case error instanceof IRechargeError: {
-                    const clientErrorCodes = ["41", "40"];
-                    if (clientErrorCodes.includes(error.status)) {
-                        throw new IRechargeVendInternetException(
-                            error.message,
-                            HttpStatus.BAD_REQUEST
-                        );
-                    }
-                    const serverErrorCodes = ["11", "42"];
-                    if (serverErrorCodes.includes(error.status)) {
-                        throw new IRechargeVendInternetException(
-                            error.message,
-                            HttpStatus.SERVICE_UNAVAILABLE
-                        );
-                    }
-
+                    this.handleUnprocessedTransactionError(error);
                     throw new IRechargeVendInternetException(
                         error.message,
-                        HttpStatus.INTERNAL_SERVER_ERROR
+                        HttpStatus.BAD_REQUEST
                     );
                 }
 
                 default: {
-                    throw new IRechargeInternetException(
+                    throw new IRechargeVendInternetException(
                         error.message,
                         HttpStatus.INTERNAL_SERVER_ERROR
                     );
@@ -636,7 +580,7 @@ export class IRechargeWorkflowService {
         }
     }
 
-    resolveInternetNetworkName(network: NetworkInternetProvider) {
+    private resolveInternetNetworkName(network: NetworkInternetProvider) {
         switch (network) {
             case NetworkInternetProvider.AIRTEL: {
                 return DataBundleProvider.AIRTEL;
@@ -681,22 +625,15 @@ export class IRechargeWorkflowService {
             logger.error(error);
             switch (true) {
                 case error instanceof IRechargeError: {
-                    const clientErrorCodes = ["41", "12"];
-                    if (clientErrorCodes.includes(error.status)) {
-                        throw new IRechargeGetSmileDeviceInfoException(
-                            error.message,
-                            HttpStatus.BAD_REQUEST
-                        );
-                    }
-
-                    throw new IRechargeGetSmileDeviceInfoException(
+                    this.handleUnprocessedTransactionError(error);
+                    throw new IRechargeDataException(
                         error.message,
-                        HttpStatus.INTERNAL_SERVER_ERROR
+                        HttpStatus.BAD_REQUEST
                     );
                 }
 
                 default: {
-                    throw new IRechargeGetSmileDeviceInfoException(
+                    throw new IRechargeDataException(
                         error.message,
                         HttpStatus.INTERNAL_SERVER_ERROR
                     );
@@ -799,7 +736,7 @@ export class IRechargeWorkflowService {
                 tv_network: this.resolveTVNetworkName(options.tvNetwork),
             });
             if (!resp) {
-                throw new IRechargeGetSmartCardInfoException(
+                throw new IRechargeCableTVException(
                     "Unable to retrieve SmartCard Information",
                     HttpStatus.INTERNAL_SERVER_ERROR
                 );
@@ -813,33 +750,19 @@ export class IRechargeWorkflowService {
             };
         } catch (error) {
             switch (true) {
-                case error instanceof IRechargeGetSmartCardInfoException: {
+                case error instanceof IRechargeCableTVException: {
                     throw error;
                 }
                 case error instanceof IRechargeError: {
-                    const clientErrorCodes = ["13"];
-                    if (clientErrorCodes.includes(error.status)) {
-                        throw new IRechargeGetSmartCardInfoException(
-                            error.message,
-                            HttpStatus.BAD_REQUEST
-                        );
-                    }
-                    const serverErrorCodes = ["11", "42"];
-                    if (serverErrorCodes.includes(error.status)) {
-                        throw new IRechargeGetSmartCardInfoException(
-                            error.message,
-                            HttpStatus.SERVICE_UNAVAILABLE
-                        );
-                    }
-
-                    throw new IRechargeGetSmartCardInfoException(
+                    this.handleUnprocessedTransactionError(error);
+                    throw new IRechargeCableTVException(
                         error.message,
-                        HttpStatus.INTERNAL_SERVER_ERROR
+                        HttpStatus.BAD_REQUEST
                     );
                 }
 
                 default: {
-                    throw new IRechargeGetSmartCardInfoException(
+                    throw new IRechargeCableTVException(
                         "Failed to retrieve smart card information",
                         HttpStatus.INTERNAL_SERVER_ERROR
                     );
@@ -848,7 +771,7 @@ export class IRechargeWorkflowService {
         }
     }
 
-    resolveTVNetworkName(network: CableTVProvider): TVNetworkProvider {
+    private resolveTVNetworkName(network: CableTVProvider): TVNetworkProvider {
         switch (network) {
             case CableTVProvider.DSTV: {
                 return TVNetworkProvider.DSTV;
@@ -861,7 +784,7 @@ export class IRechargeWorkflowService {
             }
 
             default: {
-                throw new IRechargeCableTVException(
+                throw new IRechargeVendCableTVException(
                     "Failed to resolve iRecharge cable TV network name. Invalid TV network name or network not supported",
                     HttpStatus.INTERNAL_SERVER_ERROR
                 );
@@ -896,34 +819,21 @@ export class IRechargeWorkflowService {
             });
             return {
                 orderMessage: response.order,
+                vendRef: response.ref,
             };
         } catch (error) {
             logger.error(error);
             switch (true) {
                 case error instanceof IRechargeError: {
-                    const clientErrorCodes = ["41", "40", "12"];
-                    if (clientErrorCodes.includes(error.status)) {
-                        throw new IRechargeVendCableTVException(
-                            error.message,
-                            HttpStatus.BAD_REQUEST
-                        );
-                    }
-                    const serverErrorCodes = ["11", "42"];
-                    if (serverErrorCodes.includes(error.status)) {
-                        throw new IRechargeVendCableTVException(
-                            error.message,
-                            HttpStatus.SERVICE_UNAVAILABLE
-                        );
-                    }
-
+                    this.handleUnprocessedTransactionError(error);
                     throw new IRechargeVendCableTVException(
                         error.message,
-                        HttpStatus.INTERNAL_SERVER_ERROR
+                        HttpStatus.BAD_REQUEST
                     );
                 }
 
                 default: {
-                    throw new IRechargeCableTVException(
+                    throw new IRechargeVendCableTVException(
                         error.message,
                         HttpStatus.INTERNAL_SERVER_ERROR
                     );

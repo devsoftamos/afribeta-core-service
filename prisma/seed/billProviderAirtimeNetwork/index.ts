@@ -17,4 +17,26 @@ const iRecharge = [
     },
 ];
 
-export const billProviderAirtimeNetworks = [...iRecharge];
+const buyPower = [
+    {
+        billProviderSlug: "buypower",
+        billServiceSlug: "mtn-airtime",
+    },
+    {
+        billProviderSlug: "buypower",
+        billServiceSlug: "glo-airtime",
+    },
+    {
+        billProviderSlug: "buypower",
+        billServiceSlug: "airtel-airtime",
+    },
+    {
+        billProviderSlug: "buypower",
+        billServiceSlug: "etisalat-airtime",
+    },
+];
+
+export const billProviderAirtimeNetworks = [
+    //...iRecharge,
+    ...buyPower,
+];

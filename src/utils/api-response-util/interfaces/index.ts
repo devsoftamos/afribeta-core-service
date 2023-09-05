@@ -1,12 +1,13 @@
 import { PaginationMeta } from "@/utils/interfaces";
 
-export type Data<T = Record<string, any>> = T;
-export interface ApiResponse<D extends Data = Data> {
+export interface ApiResponse<
+    D extends Record<string, any> = Record<string, any>
+> {
     success: boolean;
     message: string;
-    data?: D | Data;
+    data?: D | Record<string, any>;
 }
-export interface DataWithPagination {
+export interface DataWithPagination<TData = Record<string, any>> {
     meta: PaginationMeta;
-    records: Data[];
+    records: TData[];
 }

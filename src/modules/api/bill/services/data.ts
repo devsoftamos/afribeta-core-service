@@ -70,12 +70,22 @@ export class DataBillService {
 
     async getDataBundles(options: GetDataBundleDto): Promise<ApiResponse> {
         let dataBundles: GetDataBundleResponse[] = [];
-        const provider = await this.prisma.billProvider.findFirst({
-            where: { isActive: true },
+        let billProvider = await this.prisma.billProvider.findFirst({
+            where: {
+                isActive: true,
+                isDefault: true,
+            },
         });
+        if (!billProvider) {
+            billProvider = await this.prisma.billProvider.findFirst({
+                where: {
+                    isActive: true,
+                },
+            });
+        }
 
-        if (provider) {
-            switch (provider.slug) {
+        if (billProvider) {
+            switch (billProvider.slug) {
                 case BillProviderSlug.IRECHARGE: {
                     const iRechargeDataBundles =
                         await this.iRechargeWorkflowService.getDataBundles(
@@ -97,7 +107,7 @@ export class DataBillService {
         return buildResponse({
             message: "Successfully retrieved data bundles",
             data: {
-                billProvider: provider.slug,
+                billProvider: billProvider.slug,
                 billService: options.billService,
                 bundles: dataBundles,
             },
@@ -330,6 +340,7 @@ export class DataBillService {
                 billProvider: billProvider,
             });
         } catch (error) {
+            logger.error(error);
             switch (true) {
                 case error instanceof IRechargeVendDataException: {
                     const transaction =
@@ -346,7 +357,6 @@ export class DataBillService {
                 default:
                     break;
             }
-            logger.error(error);
         }
     }
 
