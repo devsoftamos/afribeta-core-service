@@ -71,7 +71,7 @@ export class IRechargeWorkflowService implements BillPaymentWorkflow {
         if (this.unprocessedTransactionCodes.includes(error.status)) {
             throw new UnprocessedTransactionException(
                 error.message ?? "irecharge unprocessed transaction",
-                HttpStatus.INTERNAL_SERVER_ERROR
+                HttpStatus.NOT_IMPLEMENTED
             );
         }
     }
@@ -180,6 +180,7 @@ export class IRechargeWorkflowService implements BillPaymentWorkflow {
                     address: getMeterInfo.customer.address,
                     name: getMeterInfo.customer.name,
                     minimumAmount: +getMeterInfo.customer.minimumAmount,
+                    maximumAmount: null,
                 },
             };
         } catch (error) {

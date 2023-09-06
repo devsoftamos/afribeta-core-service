@@ -20,6 +20,7 @@ export enum BillProviderSlugForPower {
 
 export enum BillProviderSlug { //exclude ikeja electric
     IRECHARGE = "irecharge",
+    BUYPOWER = "buypower",
 }
 
 export enum BillType {

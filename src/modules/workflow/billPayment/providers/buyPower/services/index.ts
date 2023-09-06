@@ -39,16 +39,16 @@ import { UnprocessedTransactionException } from "../../../errors";
 
 @Injectable()
 export class BuyPowerWorkflowService implements BillPaymentWorkflow {
-    private buyPowerServerFailureCodes: number[] = [500, 501, 503, 422];
+    private unprocessedTransactionCodes: number[] = [500, 501, 503, 422];
     private defaultServerErrorCodes: number[] = [500, 501, 503];
 
     constructor(private buyPower: BuyPower) {}
 
     private handleUnprocessedTransactionError(error: BuyPowerError) {
-        if (this.buyPowerServerFailureCodes.includes(error.status)) {
+        if (this.unprocessedTransactionCodes.includes(error.status)) {
             throw new UnprocessedTransactionException(
                 error.message ?? "buypower unprocessed transaction",
-                HttpStatus.INTERNAL_SERVER_ERROR
+                HttpStatus.NOT_IMPLEMENTED
             );
         }
     }
@@ -83,13 +83,6 @@ export class BuyPowerWorkflowService implements BillPaymentWorkflow {
                 vendType: options.meterType,
             });
 
-            if (!resp || !resp.data) {
-                throw new BuyPowerPowerException(
-                    "Failed to retrieve meter information",
-                    HttpStatus.INTERNAL_SERVER_ERROR
-                );
-            }
-
             return {
                 customer: {
                     address: resp.data.address,
@@ -101,9 +94,6 @@ export class BuyPowerWorkflowService implements BillPaymentWorkflow {
         } catch (error) {
             logger.error(error);
             switch (true) {
-                case error instanceof BuyPowerPowerException: {
-                    throw error;
-                }
                 case error instanceof BuyPowerError: {
                     if (this.defaultServerErrorCodes.includes(error.status)) {
                         throw new BuyPowerPowerException(
@@ -114,7 +104,7 @@ export class BuyPowerWorkflowService implements BillPaymentWorkflow {
 
                     throw new BuyPowerPowerException(
                         error.message,
-                        HttpStatus.INTERNAL_SERVER_ERROR
+                        HttpStatus.BAD_REQUEST
                     );
                 }
 
@@ -501,7 +491,7 @@ export class BuyPowerWorkflowService implements BillPaymentWorkflow {
 
                     throw new BuyPowerCableTVException(
                         error.message,
-                        HttpStatus.INTERNAL_SERVER_ERROR
+                        HttpStatus.BAD_REQUEST
                     );
                 }
 
@@ -576,7 +566,7 @@ export class BuyPowerWorkflowService implements BillPaymentWorkflow {
 
                     throw new BuyPowerDataException(
                         error.message,
-                        HttpStatus.INTERNAL_SERVER_ERROR
+                        HttpStatus.BAD_REQUEST
                     );
                 }
 
@@ -651,7 +641,7 @@ export class BuyPowerWorkflowService implements BillPaymentWorkflow {
 
                     throw new BuyPowerInternetException(
                         error.message,
-                        HttpStatus.INTERNAL_SERVER_ERROR
+                        HttpStatus.BAD_REQUEST
                     );
                 }
 

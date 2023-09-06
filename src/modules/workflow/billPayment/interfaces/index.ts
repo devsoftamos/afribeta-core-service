@@ -15,7 +15,7 @@ export interface FormattedElectricDiscoData {
 export interface GetMeterInfoOptions {
     discoCode: string;
     meterNumber: string;
-    reference: string;
+    reference?: string;
     meterType?: MeterType;
 }
 
@@ -30,7 +30,7 @@ export interface GetMeterResponse {
 }
 
 export interface VendPowerOptions {
-    accessToken: string;
+    accessToken?: string;
     discoCode: string;
     accountId: string;
     email: string;

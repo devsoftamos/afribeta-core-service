@@ -56,6 +56,7 @@ import { SmsService } from "@/modules/core/sms/services";
 import { SMS } from "@/modules/core/sms";
 import { SmsMessage, smsMessage } from "@/core/smsMessage";
 import { BuyPowerWorkflowService } from "@/modules/workflow/billPayment/providers/buyPower/services";
+import { VendPowerResponse } from "@/modules/workflow/billPayment";
 
 @Injectable()
 export class PowerBillService {
@@ -315,8 +316,12 @@ export class PowerBillService {
                 transactionCreateOptions.serviceTransactionCode =
                     purchaseOptions.accessToken;
             }
+            //buypower provider
+            case BillProviderSlugForPower.BUYPOWER: {
+                break;
+            }
 
-            //Ikeja Electric
+            //Ikeja Electric provider
             case BillProviderSlugForPower.IKEJA_ELECTRIC: {
                 break;
             }
@@ -447,67 +452,38 @@ export class PowerBillService {
     async completePowerPurchase(
         options: CompleteBillPurchaseOptions<CompletePowerPurchaseTransactionOptions>
     ): Promise<CompletePowerPurchaseOutput> {
+        let vendPowerResp: VendPowerResponse;
         switch (options.billProvider.slug) {
-            case BillProviderSlug.IRECHARGE: {
+            case BillProviderSlugForPower.IRECHARGE: {
                 //TODO: AUTOMATION UPGRADE, if iRecharge service fails, check for an active provider and switch automatically
-                const vendPowerResp =
-                    await this.iRechargeWorkflowService.vendPower({
-                        accessToken: options.transaction.serviceTransactionCode, //access token from get meter info -- irecharge
-                        accountId: options.transaction.accountId,
-                        amount: options.transaction.amount,
-                        discoCode: options.transaction.serviceTransactionCode2,
-                        email: options.user.email,
-                        meterNumber: options.transaction.senderIdentifier,
-                        referenceId: options.transaction.billPaymentReference,
-                    });
-
-                await this.prisma.$transaction(
-                    async (tx) => {
-                        await tx.transaction.update({
-                            where: {
-                                id: options.transaction.id,
-                            },
-                            data: {
-                                units: vendPowerResp.units,
-                                token: vendPowerResp.meterToken,
-                                status: TransactionStatus.SUCCESS,
-                                paymentChannel: options.isWalletPayment
-                                    ? PaymentChannel.WALLET
-                                    : options.transaction.paymentChannel,
-                            },
-                        });
-
-                        this.billEvent.emit("pay-bill-commission", {
-                            transactionId: options.transaction.id,
-                            userType: options.user.userType,
-                        });
-                    },
-                    {
-                        timeout: DB_TRANSACTION_TIMEOUT,
-                    }
+                vendPowerResp = await this.iRechargeWorkflowService.vendPower({
+                    accessToken: options.transaction.serviceTransactionCode, //access token from get meter info -- irecharge
+                    accountId: options.transaction.accountId,
+                    amount: options.transaction.amount,
+                    discoCode: options.transaction.serviceTransactionCode2,
+                    email: options.user.email,
+                    meterNumber: options.transaction.senderIdentifier,
+                    referenceId: options.transaction.billPaymentReference,
+                });
+                return await this.successPurchaseHandler(
+                    options,
+                    vendPowerResp
                 );
+            }
 
-                if (options.transaction.meterType == MeterType.PREPAID) {
-                    await this.smsService
-                        .send<SMS.TermiiProvider>({
-                            provider: "termii",
-                            phone: options.user.phone,
-                            message: smsMessage({
-                                template:
-                                    SmsMessage.Template.PREPAID_METER_VEND,
-                                data: {
-                                    token: vendPowerResp.meterToken,
-                                    units: vendPowerResp.units,
-                                },
-                            }),
-                        })
-                        .catch(() => false);
-                }
-
-                return {
-                    meterToken: vendPowerResp.meterToken,
-                    units: vendPowerResp.units,
-                };
+            case BillProviderSlugForPower.BUYPOWER: {
+                vendPowerResp = await this.buyPowerWorkflowService.vendPower({
+                    accountId: options.transaction.accountId,
+                    amount: options.transaction.amount,
+                    discoCode: options.transaction.serviceTransactionCode2,
+                    email: options.user.email,
+                    meterNumber: options.transaction.senderIdentifier,
+                    referenceId: options.transaction.billPaymentReference,
+                });
+                return await this.successPurchaseHandler(
+                    options,
+                    vendPowerResp
+                );
             }
 
             default: {
@@ -517,6 +493,58 @@ export class PowerBillService {
                 );
             }
         }
+    }
+
+    async successPurchaseHandler(
+        options: CompleteBillPurchaseOptions<CompletePowerPurchaseTransactionOptions>,
+        vendPowerResp: VendPowerResponse
+    ) {
+        await this.prisma.$transaction(
+            async (tx) => {
+                await tx.transaction.update({
+                    where: {
+                        id: options.transaction.id,
+                    },
+                    data: {
+                        units: vendPowerResp.units,
+                        token: vendPowerResp.meterToken,
+                        status: TransactionStatus.SUCCESS,
+                        paymentChannel: options.isWalletPayment
+                            ? PaymentChannel.WALLET
+                            : options.transaction.paymentChannel,
+                    },
+                });
+
+                this.billEvent.emit("pay-bill-commission", {
+                    transactionId: options.transaction.id,
+                    userType: options.user.userType,
+                });
+            },
+            {
+                timeout: DB_TRANSACTION_TIMEOUT,
+            }
+        );
+
+        if (options.transaction.meterType == MeterType.PREPAID) {
+            await this.smsService
+                .send<SMS.TermiiProvider>({
+                    provider: "termii",
+                    phone: options.user.phone,
+                    message: smsMessage({
+                        template: SmsMessage.Template.PREPAID_METER_VEND,
+                        data: {
+                            token: vendPowerResp.meterToken,
+                            units: vendPowerResp.units,
+                        },
+                    }),
+                })
+                .catch(() => false);
+        }
+
+        return {
+            meterToken: vendPowerResp.meterToken,
+            units: vendPowerResp.units,
+        };
     }
 
     async walletPayment(options: PaymentReferenceDto, user: User) {
@@ -760,7 +788,6 @@ export class PowerBillService {
                 const resp = await this.buyPowerWorkflowService.getMeterInfo({
                     discoCode: options.meterCode,
                     meterNumber: options.meterNumber,
-                    reference: reference,
                     meterType: options.meterType,
                 });
                 return buildResponse({

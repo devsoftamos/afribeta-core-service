@@ -6,10 +6,16 @@ import {
     IsString,
     Length,
 } from "class-validator";
-import { PurchaseBillDto } from ".";
+import { PaymentProvider } from ".";
 import { BillProviderSlugForPower, MeterType } from "../interfaces";
 
-export class PurchasePowerDto extends PurchaseBillDto {
+export class PurchasePowerDto {
+    @IsEnum(PaymentProvider)
+    paymentProvider: PaymentProvider;
+
+    @IsEnum(BillProviderSlugForPower)
+    billProvider: BillProviderSlugForPower;
+
     @IsString()
     billService: string;
 
