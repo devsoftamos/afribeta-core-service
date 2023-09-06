@@ -453,45 +453,55 @@ export class PowerBillService {
         options: CompleteBillPurchaseOptions<CompletePowerPurchaseTransactionOptions>
     ): Promise<CompletePowerPurchaseOutput> {
         let vendPowerResp: VendPowerResponse;
-        switch (options.billProvider.slug) {
-            case BillProviderSlugForPower.IRECHARGE: {
-                //TODO: AUTOMATION UPGRADE, if iRecharge service fails, check for an active provider and switch automatically
-                vendPowerResp = await this.iRechargeWorkflowService.vendPower({
-                    accessToken: options.transaction.serviceTransactionCode, //access token from get meter info -- irecharge
-                    accountId: options.transaction.accountId,
-                    amount: options.transaction.amount,
-                    discoCode: options.transaction.serviceTransactionCode2,
-                    email: options.user.email,
-                    meterNumber: options.transaction.senderIdentifier,
-                    referenceId: options.transaction.billPaymentReference,
-                });
-                return await this.successPurchaseHandler(
-                    options,
-                    vendPowerResp
-                );
-            }
+        try {
+            switch (options.billProvider.slug) {
+                case BillProviderSlugForPower.IRECHARGE: {
+                    vendPowerResp =
+                        await this.iRechargeWorkflowService.vendPower({
+                            accessToken:
+                                options.transaction.serviceTransactionCode, //access token from get meter info -- irecharge
+                            accountId: options.transaction.accountId,
+                            amount: options.transaction.amount,
+                            discoCode:
+                                options.transaction.serviceTransactionCode2,
+                            email: options.user.email,
+                            meterNumber: options.transaction.senderIdentifier,
+                            referenceId:
+                                options.transaction.billPaymentReference,
+                        });
+                    return await this.successPurchaseHandler(
+                        options,
+                        vendPowerResp
+                    );
+                }
 
-            case BillProviderSlugForPower.BUYPOWER: {
-                vendPowerResp = await this.buyPowerWorkflowService.vendPower({
-                    accountId: options.transaction.accountId,
-                    amount: options.transaction.amount,
-                    discoCode: options.transaction.serviceTransactionCode2,
-                    email: options.user.email,
-                    meterNumber: options.transaction.senderIdentifier,
-                    referenceId: options.transaction.billPaymentReference,
-                });
-                return await this.successPurchaseHandler(
-                    options,
-                    vendPowerResp
-                );
-            }
+                case BillProviderSlugForPower.BUYPOWER: {
+                    vendPowerResp =
+                        await this.buyPowerWorkflowService.vendPower({
+                            accountId: options.transaction.accountId,
+                            amount: options.transaction.amount,
+                            discoCode:
+                                options.transaction.serviceTransactionCode2,
+                            email: options.user.email,
+                            meterNumber: options.transaction.senderIdentifier,
+                            referenceId:
+                                options.transaction.billPaymentReference,
+                        });
+                    return await this.successPurchaseHandler(
+                        options,
+                        vendPowerResp
+                    );
+                }
 
-            default: {
-                throw new PowerPurchaseException(
-                    "Failed to complete power purchase. Invalid bill provider",
-                    HttpStatus.NOT_IMPLEMENTED
-                );
+                default: {
+                    throw new PowerPurchaseException(
+                        "Failed to complete power purchase. Invalid bill provider",
+                        HttpStatus.NOT_IMPLEMENTED
+                    );
+                }
             }
+        } catch (error) {
+            //TODO: Automation
         }
     }
 

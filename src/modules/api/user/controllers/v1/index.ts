@@ -118,15 +118,6 @@ export class UserController {
         );
     }
 
-    // @Get("agent/:id")
-    // @CheckAbilities(new ViewAgentAbility())
-    // async getSingleAgent(
-    //     @Param("id", ParseIntPipe) id: number,
-    //     @User() user: UserModel
-    // ) {
-    //     return await this.userService.getSingleAgent(id, user);
-    // }
-
     @Get("commission")
     async getUserBillCommissions(@User() user: UserModel) {
         return await this.userService.getServiceCommissions(user);

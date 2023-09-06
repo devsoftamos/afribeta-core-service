@@ -457,6 +457,11 @@ export class UserService {
                 id: true,
                 firstName: true,
                 lastName: true,
+                state: {
+                    select: {
+                        name: true,
+                    },
+                },
                 wallet: {
                     select: {
                         mainBalance: true,

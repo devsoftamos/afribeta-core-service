@@ -360,6 +360,7 @@ model Transaction {
   billPaymentReference      String?
   walletFundTransactionFlow WalletFundTransactionFlow?
   billServiceSlug           String?
+  unprocessedBillProviders  Json?
 
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
