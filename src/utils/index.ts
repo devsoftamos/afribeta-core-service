@@ -1,5 +1,7 @@
 import { customAlphabet, urlAlphabet } from "nanoid";
 import { TransactionIdOption } from "./interfaces";
+import { AES } from "crypto-js";
+import { encryptSecret } from "@/config";
 
 export * from "./api-response-util";
 export * from "./interfaces";
@@ -38,4 +40,8 @@ export const generateId = (options: TransactionIdOption): string => {
 export const formatName = (name: string) => {
     const formatted = name.trim();
     return `${formatted.charAt(0).toUpperCase()}${formatted.slice(1)}`;
+};
+
+export const encrypt = (data: any) => {
+    return AES.encrypt(JSON.stringify(data), encryptSecret).toString();
 };

@@ -40,8 +40,13 @@ import {
 } from "@/config";
 import { SendinblueEmailException } from "@calculusky/transactional-email";
 import logger from "moment-logger";
-import { formatName, generateId } from "@/utils";
-import { AgentVerifyEmailParams } from "../interfaces";
+import { encrypt, formatName, generateId } from "@/utils";
+import {
+    AgentVerifyEmailParams,
+    LoginMeta,
+    LoginResponseData,
+    SignupResponseData,
+} from "../interfaces";
 import { SMS } from "@/modules/core/sms";
 import { SmsMessage, smsMessage } from "@/core/smsMessage";
 
@@ -147,7 +152,10 @@ export class AuthService {
         }
     }
 
-    async signUp(options: SignUpDto, ip: string): Promise<ApiResponse> {
+    async signUp(
+        options: SignUpDto,
+        ip: string
+    ): Promise<ApiResponse<SignupResponseData>> {
         const user = await this.userService.findUserByEmail(
             options.email.trim()
         );
@@ -258,14 +266,42 @@ export class AuthService {
         });
     }
 
-    async signIn(options: SignInDto): Promise<ApiResponse> {
-        const user = await this.userService.findUserByEmail(options.email);
+    async signIn(options: SignInDto): Promise<ApiResponse<LoginResponseData>> {
+        const user = await this.prisma.user.findUnique({
+            where: {
+                email: options.email,
+            },
+            select: {
+                identifier: true,
+                password: true,
+                kycStatus: true,
+                isWalletCreated: true,
+                userType: true,
+                role: {
+                    select: {
+                        name: true,
+                        slug: true,
+                        permissions: {
+                            select: {
+                                permission: {
+                                    select: {
+                                        name: true,
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+        });
         if (!user) {
             throw new InvalidCredentialException(
                 "Incorrect email or password",
                 HttpStatus.UNAUTHORIZED
             );
         }
+
+        const permissions = user.role.permissions.map((p) => p.permission.name);
 
         const isValidPassword = await this.comparePassword(
             options.password,
@@ -282,15 +318,22 @@ export class AuthService {
             sub: user.identifier,
         });
 
+        const loginMeta: LoginMeta = {
+            kycStatus: user.kycStatus,
+            isWalletCreated: user.isWalletCreated,
+            userType: user.userType,
+            role: {
+                name: user.role.name,
+                slug: user.role.slug,
+                permissions: permissions,
+            },
+        };
+
         return buildResponse({
             message: "Login successful",
             data: {
                 accessToken,
-                meta: {
-                    kycStatus: user.kycStatus,
-                    isWalletCreated: user.isWalletCreated,
-                    userType: user.userType,
-                },
+                meta: encrypt(loginMeta),
             },
         });
     }

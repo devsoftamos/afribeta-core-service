@@ -166,6 +166,10 @@ const runtimeEnvironment: RequiredEnvironment[] = [
         name: "TERMII_SMS_SENDER",
         type: RequiredEnvironmentTypes.String,
     },
+    {
+        name: "ENCRYPT_SECRET",
+        type: RequiredEnvironmentTypes.String,
+    },
 
     // {
     //     name: "POLARIS_API_KEY",
@@ -194,6 +198,9 @@ export const brevoApiKey: string = process.env.BREVO_API_KEY;
 
 //jwt
 export const jwtSecret: string = process.env.JWT_SECRET;
+
+//encrypt
+export const encryptSecret: string = process.env.ENCRYPT_SECRET;
 
 //email templates
 export const verifyEmailTemplate: number = +process.env.VERIFY_EMAIL_TEMPLATE;

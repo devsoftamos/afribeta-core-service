@@ -7,6 +7,6 @@ export function buildResponse<TData = Record<string, any>>(
     return {
         success: true,
         message: options.message,
-        data: options.data ?? {},
+        data: options.data ?? ({} as any),
     };
 }
