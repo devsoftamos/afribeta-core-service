@@ -1,5 +1,4 @@
 import { RequestWithUser } from "@/modules/api/auth";
-import { AuthGuard } from "@/modules/api/auth/guard";
 import { CreateAgentAbility, ViewAgentAbility } from "@/modules/core/ability";
 import { CheckAbilities } from "@/modules/core/ability/decorator";
 import { AbilitiesGuard } from "@/modules/core/ability/guards";
@@ -16,25 +15,24 @@ import {
     UseGuards,
     ValidationPipe,
 } from "@nestjs/common";
-import { AdminService } from "../../services/admin.service";
-import { ListMerchantAgentsDto } from "../../dtos";
+import { AdminUserService } from "../../services/admin";
+import { FetchMerchantAgentsDto, ListMerchantAgentsDto } from "../../dtos";
 import { User as UserModel } from "@prisma/client";
 import { User } from "../../decorators";
 
-@UseGuards(AuthGuard)
+
 @Controller({
-    path: "admin",
+    path: "admin/user",
 })
 
-export class AdminController {
-    constructor(private readonly adminService: AdminService) {}
+export class AdminUserController {
+    constructor(private readonly adminService: AdminUserService) { }
 
     @Get("merchants")
-    @UseGuards(AbilitiesGuard)
     async fetchMerchants(
-        @Query(ValidationPipe) listMerchantAgentsDto: ListMerchantAgentsDto,
+        @Query(ValidationPipe) listMerchantAgentsDto: FetchMerchantAgentsDto,
         @User() user: UserModel
-    ){
+    ) {
         return this.adminService.fetchAMerchant(
             listMerchantAgentsDto,
             user

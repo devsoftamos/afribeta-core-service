@@ -18,6 +18,13 @@ import {
     ValidateNested,
 } from "class-validator";
 
+enum MerchantUpgradeStatus {
+    PENDING = 'PENDING',
+    TO_BE_UPGRADED = 'TO_BE_UPGRADED',
+    UPGRADED = 'UPGRADED',
+    DECLINED = 'DECLINED'
+  }
+
 export class GetUserByIdentifierDto {
     @IsString()
     id: string;
@@ -134,6 +141,17 @@ export class ListMerchantAgentsDto {
     searchName: string;
 }
 
+export class FetchMerchantAgentsDto {
+    @IsOptional()
+    @IsNumberString()
+    page: number;
+
+    @IsOptional()
+    @IsEnum(MerchantUpgradeStatus)
+    merchantStatus: MerchantUpgradeStatus
+
+
+}
 
 
 export class CreateKycDto {
