@@ -153,9 +153,12 @@ export class BuyPower {
     }
 
     async vendPower(
-        options: Optional<VendPowerOptions, "paymentType">
-    ): Promise<BuyPowerResponse<Power.VendPowerResponseData>> {
+        options: Optional<VendPowerOptions, "paymentType"> //: Promise<BuyPowerResponse<Power.VendPowerResponseData>>
+    ) {
         try {
+            // const error = new BuyPowerError("unable to vend power");
+            // error.status = 500;
+            // throw error;
             const requestOptions: AxiosRequestConfig<VendPowerOptions> = {
                 url: "/vend",
                 method: "POST",

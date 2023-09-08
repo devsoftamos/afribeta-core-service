@@ -1,5 +1,21 @@
 import { HttpException } from "@nestjs/common";
 
+export class BillProviderNotFoundException extends HttpException {
+    name = "BillProviderNotFoundException";
+}
+export class InvalidBillProviderException extends HttpException {
+    name = "InvalidBillProviderException";
+}
+
+export class InvalidBillTypePaymentReference extends HttpException {
+    name = "InvalidBillTypePaymentReference";
+}
+
+//power
+export class PowerPurchaseInitializationHandlerException extends HttpException {
+    name = "PowerPurchaseInitializationHandlerException";
+}
+
 export class PowerPurchaseException extends HttpException {
     name = "PowerPurchaseException";
 }
@@ -8,18 +24,11 @@ export class DuplicatePowerPurchaseException extends HttpException {
     name = "DuplicatePowerPurchaseException";
 }
 
-export class BillProviderNotFoundException extends HttpException {
-    name = "BillProviderNotFoundException";
+export class BillProviderDiscoNotFound extends HttpException {
+    name = "BillProviderDiscoNotFound";
 }
 
-export class PowerPurchaseInitializationHandlerException extends HttpException {
-    name = "PowerPurchaseInitializationHandlerException";
-}
-
-export class InvalidBillTypePaymentReference extends HttpException {
-    name = "InvalidBillTypePaymentReference";
-}
-
+//data
 export class DataPurchaseException extends HttpException {
     name = "DataPurchaseException";
 }
@@ -30,10 +39,6 @@ export class DuplicateDataPurchaseException extends HttpException {
 
 export class WalletChargeException extends HttpException {
     name = "WalletChargeException";
-}
-
-export class InvalidBillProviderException extends HttpException {
-    name = "InvalidBillProviderException";
 }
 
 //Airtime

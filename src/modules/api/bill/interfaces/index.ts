@@ -78,9 +78,9 @@ export interface WalletChargeHandler {
 }
 
 export interface BillPurchaseFailure {
-    transaction: Transaction;
+    transactionId: number;
 }
-export type BillPaymentFailure = BillPurchaseFailure;
+export interface BillPaymentFailure extends BillPurchaseFailure {}
 export interface ComputeBillCommissionOptions {
     transactionId: number;
     userType: UserType;

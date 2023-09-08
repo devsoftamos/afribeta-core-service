@@ -1,8 +1,16 @@
 import { PrismaService } from "@/modules/core/prisma/services";
 import { IRechargeWorkflowService } from "@/modules/workflow/billPayment/providers/iRecharge/services";
 import { ApiResponse, buildResponse, generateId } from "@/utils";
-import { forwardRef, HttpStatus, Inject, Injectable } from "@nestjs/common";
 import {
+    forwardRef,
+    HttpException,
+    HttpStatus,
+    Inject,
+    Injectable,
+} from "@nestjs/common";
+import {
+    BillProvider,
+    BillProviderElectricDisco,
     PaymentChannel,
     PaymentStatus,
     Prisma,
@@ -24,6 +32,7 @@ import {
     InvalidBillTypePaymentReference,
     WalletChargeException,
     InvalidBillProviderException,
+    BillProviderDiscoNotFound,
 } from "../errors";
 import {
     CompletePowerPurchaseOutput,
@@ -56,7 +65,12 @@ import { SmsService } from "@/modules/core/sms/services";
 import { SMS } from "@/modules/core/sms";
 import { SmsMessage, smsMessage } from "@/core/smsMessage";
 import { BuyPowerWorkflowService } from "@/modules/workflow/billPayment/providers/buyPower/services";
-import { VendPowerResponse } from "@/modules/workflow/billPayment";
+import {
+    UnprocessedTransactionException,
+    VendPowerFailureException,
+    VendPowerResponse,
+} from "@/modules/workflow/billPayment";
+import { BuyPowerVendInProgressError } from "@/modules/workflow/billPayment/providers/buyPower";
 
 @Injectable()
 export class PowerBillService {
@@ -370,6 +384,7 @@ export class PowerBillService {
                         paymentChannel: true,
                         serviceTransactionCode2: true,
                         meterType: true,
+                        billServiceSlug: true,
                     },
                 });
 
@@ -437,7 +452,7 @@ export class PowerBillService {
                             },
                         });
                     this.billEvent.emit("bill-purchase-failure", {
-                        transaction: transaction,
+                        transactionId: transaction.id,
                     });
                 }
 
@@ -486,7 +501,10 @@ export class PowerBillService {
                             meterNumber: options.transaction.senderIdentifier,
                             referenceId:
                                 options.transaction.billPaymentReference,
+                            meterType: options.transaction
+                                .meterType as MeterType,
                         });
+
                     return await this.successPurchaseHandler(
                         options,
                         vendPowerResp
@@ -494,14 +512,17 @@ export class PowerBillService {
                 }
 
                 default: {
-                    throw new PowerPurchaseException(
+                    throw new VendPowerFailureException(
                         "Failed to complete power purchase. Invalid bill provider",
                         HttpStatus.NOT_IMPLEMENTED
                     );
                 }
             }
         } catch (error) {
-            //TODO: Automation
+            return await this.powerVendFailureAndAutoProviderSwitchHandler(
+                options,
+                error
+            );
         }
     }
 
@@ -607,7 +628,7 @@ export class PowerBillService {
 
         if (wallet.mainBalance < transaction.totalAmount) {
             this.billEvent.emit("payment-failure", {
-                transaction: transaction,
+                transactionId: transaction.id,
             });
             throw new InsufficientWalletBalanceException(
                 "Insufficient wallet balance",
@@ -679,13 +700,13 @@ export class PowerBillService {
             switch (true) {
                 case error instanceof IRechargeVendPowerException: {
                     this.billEvent.emit("bill-purchase-failure", {
-                        transaction: transaction,
+                        transactionId: transaction.id,
                     });
                     throw error;
                 }
                 case error instanceof WalletChargeException: {
                     this.billEvent.emit("payment-failure", {
-                        transaction: transaction,
+                        transactionId: transaction.id,
                     });
                     throw error;
                 }
@@ -776,8 +797,7 @@ export class PowerBillService {
 
     async getMeterInfo(options: GetMeterInfoDto): Promise<ApiResponse> {
         const reference = generateId({
-            type: "numeric",
-            length: 12,
+            type: "irecharge_ref",
         });
         switch (options.billProvider) {
             case BillProviderSlugForPower.IRECHARGE: {
@@ -810,6 +830,190 @@ export class PowerBillService {
                 throw new InvalidBillProviderException(
                     "Invalid bill provider",
                     HttpStatus.BAD_REQUEST
+                );
+            }
+        }
+    }
+
+    async powerVendFailureAndAutoProviderSwitchHandler(
+        options: CompleteBillPurchaseOptions<CompletePowerPurchaseTransactionOptions>,
+        error: HttpException
+    ): Promise<CompletePowerPurchaseOutput> {
+        const handleUnprocessedTransaction = async () => {
+            //handle buypower
+            const handleBuyPowerSwitch = async (
+                billProvider: BillProvider,
+                billProviderDiscoInfo: BillProviderElectricDisco
+            ) => {
+                const vendPowerResp =
+                    await this.buyPowerWorkflowService.vendPower({
+                        accountId: options.transaction.accountId,
+                        amount: options.transaction.amount,
+                        discoCode: billProviderDiscoInfo.prepaidMeterCode,
+
+                        email: options.user.email,
+                        meterNumber: options.transaction.senderIdentifier,
+                        referenceId: options.transaction.billPaymentReference,
+                    });
+
+                await this.prisma.transaction.update({
+                    where: {
+                        id: options.transaction.id,
+                    },
+                    data: {
+                        serviceTransactionCode2:
+                            billProviderDiscoInfo.prepaidMeterCode,
+                        provider: billProvider.slug,
+                        billProviderId: billProvider.id,
+                        serviceTransactionCode: null,
+                    },
+                });
+
+                return await this.successPurchaseHandler(
+                    options,
+                    vendPowerResp
+                );
+            };
+
+            //handle iRecharge
+            const handleIRechargeSwitch = async (
+                billProvider: BillProvider,
+                billProviderDiscoInfo: BillProviderElectricDisco
+            ) => {
+                //generate meter token
+                const discoCode =
+                    options.transaction.meterType == MeterType.PREPAID
+                        ? billProviderDiscoInfo.prepaidMeterCode
+                        : billProviderDiscoInfo.postpaidMeterCode;
+
+                const meterInfo =
+                    await this.iRechargeWorkflowService.getMeterInfo({
+                        meterNumber: options.transaction.senderIdentifier,
+                        reference: generateId({
+                            type: "irecharge_ref",
+                        }),
+                        discoCode: discoCode,
+                    });
+
+                const vendPowerResp =
+                    await this.iRechargeWorkflowService.vendPower({
+                        accessToken: meterInfo.accessToken, //
+                        accountId: options.transaction.accountId,
+                        amount: options.transaction.amount,
+                        discoCode: discoCode, //
+                        email: options.user.email,
+                        meterNumber: options.transaction.senderIdentifier,
+                        referenceId: options.transaction.billPaymentReference,
+                    });
+
+                await this.prisma.transaction.update({
+                    where: {
+                        id: options.transaction.id,
+                    },
+                    data: {
+                        serviceTransactionCode2: discoCode,
+                        serviceTransactionCode: meterInfo.accessToken,
+                        provider: billProvider.slug,
+                        billProviderId: billProvider.id,
+                    },
+                });
+
+                return await this.successPurchaseHandler(
+                    options,
+                    vendPowerResp
+                );
+            };
+
+            //
+            const billProviders = await this.prisma.billProvider.findMany({
+                where: {
+                    isActive: true,
+                    id: { not: options.billProvider.id },
+                    slug: {
+                        not: BillProviderSlugForPower.IKEJA_ELECTRIC,
+                    },
+                },
+            });
+            if (!billProviders.length) {
+                throw new VendPowerFailureException(
+                    error.message ?? "Failed to vend power",
+                    HttpStatus.NOT_IMPLEMENTED
+                );
+            }
+
+            //switch automation
+            for (let billProvider of billProviders) {
+                try {
+                    const billProviderDiscoInfo =
+                        await this.prisma.billProviderElectricDisco.findUnique({
+                            where: {
+                                billServiceSlug_billProviderSlug: {
+                                    billProviderSlug: billProvider.slug,
+                                    billServiceSlug:
+                                        options.transaction.billServiceSlug,
+                                },
+                            },
+                        });
+
+                    if (!billProviderDiscoInfo) {
+                        throw new BillProviderDiscoNotFound(
+                            `Failed to automate power purchase switch for ${billProvider.name} provider. No corresponding disco found`,
+                            HttpStatus.NOT_FOUND
+                        );
+                    }
+
+                    switch (billProvider.slug) {
+                        case BillProviderSlugForPower.BUYPOWER: {
+                            return await handleBuyPowerSwitch(
+                                billProvider,
+                                billProviderDiscoInfo
+                            );
+                        }
+                        case BillProviderSlugForPower.IRECHARGE: {
+                            return await handleIRechargeSwitch(
+                                billProvider,
+                                billProviderDiscoInfo
+                            );
+                        }
+
+                        default: {
+                            throw new VendPowerFailureException(
+                                error.message ?? "Failed to vend power",
+                                HttpStatus.NOT_IMPLEMENTED
+                            );
+                        }
+                    }
+                } catch (error) {
+                    switch (true) {
+                        case error instanceof BuyPowerVendInProgressError: {
+                            //TODO
+                        }
+
+                        default: {
+                            logger.error(error);
+                            break;
+                        }
+                    }
+                }
+            }
+        };
+
+        //
+
+        switch (true) {
+            case error instanceof UnprocessedTransactionException: {
+                return await handleUnprocessedTransaction();
+            }
+
+            case error instanceof BuyPowerVendInProgressError: {
+                //TODO:handle buypower
+                break;
+            }
+
+            default: {
+                throw new VendPowerFailureException(
+                    error.message ?? "Failed to vend power",
+                    HttpStatus.NOT_IMPLEMENTED
                 );
             }
         }

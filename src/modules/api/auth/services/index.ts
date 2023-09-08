@@ -53,7 +53,6 @@ import { SmsMessage, smsMessage } from "@/core/smsMessage";
 @Injectable()
 export class AuthService {
     constructor(
-        private userService: UserService,
         private jwtService: JwtService,
         private smsService: SmsService,
         private prisma: PrismaService,
@@ -75,7 +74,9 @@ export class AuthService {
             const verificationCode = customAlphabet("1234567890", 4)();
             const email = options.email.toLowerCase().trim();
 
-            const user = await this.userService.findUserByEmail(email);
+            const user = await this.prisma.user.findUnique({
+                where: { email: email },
+            });
             if (user) {
                 throw new DuplicateUserException(
                     "Account already verified. Kindly login",
@@ -156,9 +157,9 @@ export class AuthService {
         options: SignUpDto,
         ip: string
     ): Promise<ApiResponse<SignupResponseData>> {
-        const user = await this.userService.findUserByEmail(
-            options.email.trim()
-        );
+        const user = await this.prisma.user.findUnique({
+            where: { email: options.email.trim() },
+        });
         if (user) {
             throw new DuplicateUserException(
                 "An account already exist with this email. Please login",
@@ -339,7 +340,9 @@ export class AuthService {
     }
 
     async passwordResetRequest(options: PasswordResetRequestDto) {
-        const user = await this.userService.findUserByEmail(options.email);
+        const user = await this.prisma.user.findUnique({
+            where: { email: options.email },
+        });
         if (!user) {
             throw new UserNotFoundException(
                 "There is no account registered with this email address. Please Sign Up",
@@ -398,7 +401,9 @@ export class AuthService {
                 HttpStatus.BAD_REQUEST
             );
         }
-        const user = await this.userService.findUserById(resetData.userId);
+        const user = await this.prisma.user.findUnique({
+            where: { id: resetData.userId },
+        });
         if (!user) {
             throw new UserNotFoundException(
                 "Account not found",
@@ -427,7 +432,9 @@ export class AuthService {
             const verificationCode = customAlphabet("1234567890", 4)();
             const email = options.email.toLowerCase().trim();
 
-            const agent = await this.userService.findUserByEmail(email);
+            const agent = await this.prisma.user.findUnique({
+                where: { email: options.email },
+            });
             if (agent) {
                 throw new DuplicateUserException(
                     "Account already verified. Kindly login",
