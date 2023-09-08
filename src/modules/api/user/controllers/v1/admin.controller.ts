@@ -29,9 +29,8 @@ import { User } from "../../decorators";
 export class AdminController {
     constructor(private readonly adminService: AdminService) {}
 
-    @Get('merchants')
+    @Get("merchants")
     @UseGuards(AbilitiesGuard)
-    @CheckAbilities(new ViewAgentAbility())
     async fetchMerchants(
         @Query(ValidationPipe) listMerchantAgentsDto: ListMerchantAgentsDto,
         @User() user: UserModel

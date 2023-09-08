@@ -25,39 +25,13 @@ export class AdminService{
 
         const meta: Partial<PaginationMeta> = {};
 
-        const queryOptions: Prisma.UserFindManyArgs = {
-            orderBy: { createdAt: "desc" },
-            where: {
-                createdById: user.id,
-            },
-            select: {
-                id: true,
-                firstName: true,
-                lastName: true,
-                businessName: true,
-                email: true,
-                phone: true,
-                state: {
-                    select: {
-                        name: true,
-                        lga: true
-                    },
-                }
-            },
-        };
+        let limit;
+        let offset;
 
-        if (options.searchName) {
-            queryOptions.where.firstName = { search: options.searchName };
-            queryOptions.where.lastName = { search: options.searchName };
-        }
-
-        //pagination
         if (options.pagination) {
             const page = +options.page || 1;
-            const limit = +options.limit || 10;
-            const offset = (page - 1) * limit;
-            queryOptions.skip = offset;
-            queryOptions.take = limit;
+             limit = +options.limit || 10;
+             offset = (page - 1) * limit;
             const count = await this.prisma.user.count({
                 where: queryOptions.where,
             });
@@ -66,12 +40,55 @@ export class AdminService{
             meta.perPage = limit;
         }
 
-        const merchants = await this.prisma.user.findMany(queryOptions);
-        if (options.pagination) {
-            meta.pageCount = merchants.length;
-        }
-        
+      
 
+        const merchants = await this.prisma.user.findMany({
+            skip: offset,
+            take: limit,
+            where:{
+                OR: [
+                    {
+                        firstName: options.searchName,
+                    },
+                    {
+                        lastName: options.searchName
+                    },
+
+                ],
+               
+                    OR: [
+                        {
+                           userType: 'AGENT'
+                        },
+
+                        {
+                            userType: 'MERCHANT'
+                        }
+                    ]
+                
+            },
+            select:{
+                businessName: true,
+                email: true,
+                firstName: true,
+                lastName: true,
+                phone: true,
+                state: {
+                    select: {
+                        name: true
+                    }
+                },
+                lga: {
+                    select: {
+                        name: true
+                    }
+                }
+
+            }
+        });
+        
+        //pagination
+        
         return buildResponse({
             message: "Merchants retrieved successfully",
             data: merchants,
