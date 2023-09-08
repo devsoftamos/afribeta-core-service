@@ -1,5 +1,4 @@
 import { HttpStatus, Injectable } from "@nestjs/common";
-import { UserService } from "@/modules/api/user/services";
 import { JwtService } from "@nestjs/jwt";
 import {
     SignUpDto,

@@ -942,7 +942,7 @@ export class PowerBillService {
             }
 
             //switch automation
-            for (let billProvider of billProviders) {
+            for (const billProvider of billProviders) {
                 try {
                     const billProviderDiscoInfo =
                         await this.prisma.billProviderElectricDisco.findUnique({

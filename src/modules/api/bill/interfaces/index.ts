@@ -3,7 +3,6 @@ import {
     BillService,
     PaymentChannel,
     PaymentStatus,
-    Transaction,
     TransactionType,
     User,
     UserType,
@@ -80,7 +79,7 @@ export interface WalletChargeHandler {
 export interface BillPurchaseFailure {
     transactionId: number;
 }
-export interface BillPaymentFailure extends BillPurchaseFailure {}
+export type BillPaymentFailure = BillPurchaseFailure;
 export interface ComputeBillCommissionOptions {
     transactionId: number;
     userType: UserType;
