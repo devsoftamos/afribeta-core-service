@@ -25,26 +25,21 @@ export class AdminService{
 
         const meta: Partial<PaginationMeta> = {};
 
-        let limit;
-        let offset;
+        const pageSize = 2;
 
-        if (options.pagination) {
-            const page = +options.page || 1;
-             limit = +options.limit || 10;
-             offset = (page - 1) * limit;
-            const count = await this.prisma.user.count({
-                where: queryOptions.where,
-            });
-            meta.totalCount = count;
-            meta.page = page;
-            meta.perPage = limit;
-        }
+        let pageNumber;
+        if (options.page === undefined) {
+            pageNumber = 0;
+        } else {
+            pageNumber = Number(options.page) - 1;
+        };
+
+    const pagination = pageNumber * pageSize;
 
       
 
         const merchants = await this.prisma.user.findMany({
-            skip: offset,
-            take: limit,
+           
             where:{
                 OR: [
                     {
@@ -56,14 +51,11 @@ export class AdminService{
 
                 ],
                
-                    OR: [
+                    AND: [
                         {
-                           userType: 'AGENT'
+                           userType: 'AGENT' || 'MERCHANT'
                         },
 
-                        {
-                            userType: 'MERCHANT'
-                        }
                     ]
                 
             },
