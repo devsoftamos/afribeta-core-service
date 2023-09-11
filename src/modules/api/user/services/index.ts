@@ -645,13 +645,14 @@ export class UserService {
         }
 
         switch (options.merchantStatus) {
-            case MerchantStatusType.APPROVED_MERCHANTS:{
-                queryOptions.where.userType =  UserType.MERCHANT;
+            case MerchantStatusType.APPROVED_MERCHANTS: {
+                queryOptions.where.userType = UserType.MERCHANT;
                 break;
             }
-            case MerchantStatusType.MERCHANT_TO_BE_UPGRADED:{
-                queryOptions.where.userType =  UserType.AGENT;
-                queryOptions.where.merchantUpgradeStatus = MerchantUpgradeStatus.TO_BE_UPGRADED;
+            case MerchantStatusType.AGENT_TO_BE_UPGRADED: {
+                queryOptions.where.userType = UserType.AGENT;
+                queryOptions.where.merchantUpgradeStatus =
+                    MerchantUpgradeStatus.TO_BE_UPGRADED;
                 break;
             }
         }

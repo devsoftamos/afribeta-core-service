@@ -19,11 +19,11 @@ import {
 } from "class-validator";
 
 enum MerchantUpgradeStatus {
-    PENDING = 'PENDING',
-    TO_BE_UPGRADED = 'TO_BE_UPGRADED',
-    UPGRADED = 'UPGRADED',
-    DECLINED = 'DECLINED'
-  }
+    PENDING = "PENDING",
+    TO_BE_UPGRADED = "TO_BE_UPGRADED",
+    UPGRADED = "UPGRADED",
+    DECLINED = "DECLINED",
+}
 
 export class GetUserByIdentifierDto {
     @IsString()
@@ -32,7 +32,7 @@ export class GetUserByIdentifierDto {
 
 export enum MerchantStatusType {
     APPROVED_MERCHANTS = "approvedMerchants",
-    MERCHANT_TO_BE_UPGRADED = "merchantsToBeUpgraded",
+    AGENT_TO_BE_UPGRADED = "agentsToBeUpgraded",
 }
 
 export class UpdateProfilePasswordDto {
@@ -147,7 +147,6 @@ export class ListMerchantAgentsDto {
 }
 
 export class FetchMerchantAgentsDto {
-
     @IsOptional()
     @IsBooleanString()
     pagination: string;
@@ -166,9 +165,7 @@ export class FetchMerchantAgentsDto {
 
     @IsEnum(MerchantStatusType)
     merchantStatus: MerchantStatusType;
-
 }
-
 
 export class CreateKycDto {
     @IsString()
