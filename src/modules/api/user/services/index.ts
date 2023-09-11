@@ -26,6 +26,7 @@ import {
     CreateTransactionPinDto,
     FetchMerchantAgentsDto,
     ListMerchantAgentsDto,
+    MerchantStatusType,
     UpdateProfileDto,
     UpdateProfilePasswordDto,
     UpdateTransactionPinDto,
@@ -644,15 +645,15 @@ export class UserService {
         }
 
         switch (options.merchantStatus) {
-            case "approvedMerchants":
-                queryOptions.where.userType = { equals: UserType.MERCHANT };
+            case MerchantStatusType.APPROVED_MERCHANTS:{
+                queryOptions.where.userType =  UserType.MERCHANT;
                 break;
-            case "toBeUpgraded":
-                queryOptions.where.userType = { equals: UserType.AGENT };
-                queryOptions.where.merchantUpgradeStatus = {
-                    equals: MerchantUpgradeStatus.TO_BE_UPGRADED,
-                };
+            }
+            case MerchantStatusType.MERCHANT_TO_BE_UPGRADED:{
+                queryOptions.where.userType =  UserType.AGENT;
+                queryOptions.where.merchantUpgradeStatus = MerchantUpgradeStatus.TO_BE_UPGRADED;
                 break;
+            }
         }
 
         if (options.pagination) {
@@ -665,7 +666,6 @@ export class UserService {
                 where: queryOptions.where,
             });
             paginationMeta.totalCount = count;
-            paginationMeta.pageCount = page;
             paginationMeta.perPage = limit;
         }
 

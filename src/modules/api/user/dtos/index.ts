@@ -30,6 +30,11 @@ export class GetUserByIdentifierDto {
     id: string;
 }
 
+export enum MerchantStatusType {
+    APPROVED_MERCHANTS = "approvedMerchants",
+    MERCHANT_TO_BE_UPGRADED = "merchantsToBeUpgraded",
+}
+
 export class UpdateProfilePasswordDto {
     @IsString()
     oldPassword: string;
@@ -159,8 +164,8 @@ export class FetchMerchantAgentsDto {
     @IsString()
     searchName: string;
 
-    @IsString()
-    merchantStatus: string;
+    @IsEnum(MerchantStatusType)
+    merchantStatus: MerchantStatusType;
 
 }
 
