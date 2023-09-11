@@ -126,6 +126,8 @@ export class BuyPower {
             },
         };
 
+        console.log(requestOptions, "*****");
+
         const response = await this.axios(requestOptions);
         switch (response.status) {
             case 202: {
@@ -153,35 +155,34 @@ export class BuyPower {
     }
 
     async vendPower(
-        options: Optional<VendPowerOptions, "paymentType"> //: Promise<BuyPowerResponse<Power.VendPowerResponseData>>
-    ) {
+        options: Optional<VendPowerOptions, "paymentType">
+    ): Promise<BuyPowerResponse<Power.VendPowerResponseData>> {
         try {
-            // const error = new BuyPowerError("unable to vend power");
-            // error.status = 500;
-            // throw error;
-            const requestOptions: AxiosRequestConfig<VendPowerOptions> = {
-                url: "/vend",
-                method: "POST",
-                data: {
-                    amount: options.amount,
-                    disco: options.disco,
-                    meter: options.meter,
-                    orderId: options.orderId,
-                    paymentType: options.paymentType ?? "ONLINE",
-                    phone: options.phone,
-                    vendType: options.vendType,
-                    email: options.email,
-                    name: options.name,
-                    vertical: "ELECTRICITY",
-                },
-            };
-            const response = await this.axios(requestOptions);
+            // const requestOptions: AxiosRequestConfig<VendPowerOptions> = {
+            //     url: "/vend",
+            //     method: "POST",
+            //     data: {
+            //         amount: options.amount,
+            //         disco: options.disco,
+            //         meter: options.meter,
+            //         orderId: options.orderId,
+            //         paymentType: options.paymentType ?? "ONLINE",
+            //         phone: options.phone,
+            //         vendType: options.vendType,
+            //         email: options.email,
+            //         name: options.name,
+            //         vertical: "ELECTRICITY",
+            //     },
+            // };
+            // const response = await this.axios(requestOptions);
+
+            const response = { status: 202, data: { data: { delay: [120] } } };
 
             if (this.reQueryStatuses.includes(response.status)) {
                 const responseData = await this.reQuery<
                     BuyPowerResponse<Power.VendPowerResponseData>
                 >({
-                    orderId: options.orderId,
+                    orderId: "135EE81DAAA59E11648532v", // options.orderId,
                     delay: response.data.data?.delay as any,
                 });
                 if (!responseData.data) {
@@ -198,7 +199,7 @@ export class BuyPower {
                 throw error;
             }
 
-            return response.data;
+            return response.data as any;
         } catch (error) {
             this.handleError(error);
         }

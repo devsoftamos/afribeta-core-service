@@ -504,6 +504,8 @@ export class PowerBillService {
                             meterType: options.transaction
                                 .meterType as MeterType,
                         });
+                    console.log(vendPowerResp, "#######");
+                    return;
 
                     return await this.successPurchaseHandler(
                         options,
