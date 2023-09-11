@@ -7,7 +7,13 @@ import { PrismaService } from "@/modules/core/prisma/services";
 import { generateId, PaginationMeta } from "@/utils";
 import { ApiResponse, buildResponse } from "@/utils/api-response-util";
 import { forwardRef, HttpStatus, Inject, Injectable } from "@nestjs/common";
-import { KYC_STATUS, Prisma, User, UserType } from "@prisma/client";
+import {
+    KYC_STATUS,
+    Prisma,
+    User,
+    UserType,
+    MerchantUpgradeStatus,
+} from "@prisma/client";
 import {
     InvalidEmailVerificationCodeException,
     SendVerificationEmailException,
@@ -18,6 +24,7 @@ import {
     CreateAgentDto,
     CreateKycDto,
     CreateTransactionPinDto,
+    FetchMerchantAgentsDto,
     ListMerchantAgentsDto,
     UpdateProfileDto,
     UpdateProfilePasswordDto,
@@ -601,6 +608,78 @@ export class UserService {
 
         return buildResponse({
             message: "KYC successfully submitted for approval",
+        });
+    }
+
+    async fetchMerchants(options: FetchMerchantAgentsDto) {
+        const paginationMeta: Partial<PaginationMeta> = {};
+
+        const queryOptions: Prisma.UserFindManyArgs = {
+            orderBy: { createdAt: "desc" },
+            where: {},
+            select: {
+                lastName: true,
+                firstName: true,
+                businessName: true,
+                userType: true,
+                email: true,
+                phone: true,
+                merchantUpgradeStatus: true,
+                state: {
+                    select: {
+                        name: true,
+                    },
+                },
+                lga: {
+                    select: {
+                        name: true,
+                    },
+                },
+            },
+        };
+
+        if (options.searchName) {
+            queryOptions.where.lastName = { search: options.searchName };
+            queryOptions.where.firstName = { search: options.searchName };
+        }
+
+        switch (options.merchantStatus) {
+            case "approvedMerchants":
+                queryOptions.where.userType = { equals: UserType.MERCHANT };
+                break;
+            case "toBeUpgraded":
+                queryOptions.where.userType = { equals: UserType.AGENT };
+                queryOptions.where.merchantUpgradeStatus = {
+                    equals: MerchantUpgradeStatus.TO_BE_UPGRADED,
+                };
+                break;
+        }
+
+        if (options.pagination) {
+            const page = +options.page || 1;
+            const limit = +options.limit || 10;
+            const offset = (page - 1) * limit;
+            queryOptions.skip = offset;
+            queryOptions.take = limit;
+            const count = await this.prisma.user.count({
+                where: queryOptions.where,
+            });
+            paginationMeta.totalCount = count;
+            paginationMeta.pageCount = page;
+            paginationMeta.perPage = limit;
+        }
+
+        const merchants = await this.prisma.user.findMany(queryOptions);
+        if (options.pagination) {
+            paginationMeta.pageCount = merchants.length;
+        }
+
+        return buildResponse({
+            message: "Merchants retrieved successfully",
+            data: {
+                meta: paginationMeta,
+                records: merchants,
+            },
         });
     }
 }

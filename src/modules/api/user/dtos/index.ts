@@ -142,14 +142,25 @@ export class ListMerchantAgentsDto {
 }
 
 export class FetchMerchantAgentsDto {
+
+    @IsOptional()
+    @IsBooleanString()
+    pagination: string;
+
     @IsOptional()
     @IsNumberString()
     page: number;
 
     @IsOptional()
-    @IsEnum(MerchantUpgradeStatus)
-    merchantStatus: MerchantUpgradeStatus
+    @IsNumberString()
+    limit: number;
 
+    @IsOptional()
+    @IsString()
+    searchName: string;
+
+    @IsString()
+    merchantStatus: string;
 
 }
 

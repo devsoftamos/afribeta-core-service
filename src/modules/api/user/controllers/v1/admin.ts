@@ -6,19 +6,16 @@ import {
     Body,
     Controller,
     Get,
-    HttpCode,
-    HttpStatus,
     Patch,
     Post,
     Query,
-    Req,
-    UseGuards,
     ValidationPipe,
+    Req,
 } from "@nestjs/common";
-import { AdminUserService } from "../../services/admin";
-import { FetchMerchantAgentsDto, ListMerchantAgentsDto } from "../../dtos";
+import { FetchMerchantAgentsDto} from "../../dtos";
 import { User as UserModel } from "@prisma/client";
 import { User } from "../../decorators";
+import { UserService } from "../../services";
 
 
 @Controller({
@@ -26,16 +23,14 @@ import { User } from "../../decorators";
 })
 
 export class AdminUserController {
-    constructor(private readonly adminService: AdminUserService) { }
+    constructor(private readonly usersService: UserService) { }
 
     @Get("merchants")
     async fetchMerchants(
-        @Query(ValidationPipe) listMerchantAgentsDto: FetchMerchantAgentsDto,
-        @User() user: UserModel
+        @Query(ValidationPipe) fetchMerchantsDto: FetchMerchantAgentsDto
     ) {
-        return this.adminService.fetchAMerchant(
-            listMerchantAgentsDto,
-            user
+        return this.usersService.fetchMerchants(
+            fetchMerchantsDto
         )
     }
 }
