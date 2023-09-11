@@ -150,7 +150,7 @@ export class BuyPower {
 
             //handle re-query for status code 202
             if (response.status == code202) {
-                let retry = retryCount - 1;
+                const retry = retryCount - 1;
                 for (let i = 0; i < retry; i++) {
                     response = await handleReQuery(retry);
                     if (response.status == 200) {

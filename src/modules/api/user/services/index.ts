@@ -55,7 +55,7 @@ export class UserService {
         private emailService: EmailService,
         private s3Service: S3Service,
         private abilityFactory: AbilityFactory
-    ) { }
+    ) {}
 
     async createUser(options: Prisma.UserCreateInput) {
         return await this.prisma.user.create({
@@ -269,7 +269,6 @@ export class UserService {
     }
 
     async createAgent(options: CreateAgentDto, user: User) {
-
         const email = options.email.trim();
         const userAgent = await this.prisma.user.findUnique({
             where: {
