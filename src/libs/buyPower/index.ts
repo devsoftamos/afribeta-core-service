@@ -107,49 +107,91 @@ export class BuyPower {
     }
 
     private async reQuery<R>(options: ReQueryOptions): Promise<R> {
-        const delay: number = options.delay
+        const retryCount = Array.isArray(options.delay)
+            ? options.delay.length
+            : 2;
+        const delay: number = Array.isArray(options.delay)
             ? options.delay[0] * 1000
             : 120 * 1000;
-        await setTimeout(delay);
-        const requestOptions: AxiosRequestConfig = {
-            url: `/transaction/${options.orderId}`,
-            method: "GET",
-            raxConfig: {
-                retry: options.delay ? options.delay.length : 2,
-                retryDelay: delay,
-                statusCodesToRetry: [
-                    [202, 202],
-                    [502, 502],
-                ],
-                backoffType: "static",
-                instance: this.axios,
-            },
-        };
+        const code202 = 202;
+        const code502 = 502;
+        try {
+            const handleReQuery = async (retry: number) => {
+                await setTimeout(delay);
+                const requestOptions: AxiosRequestConfig = {
+                    url: `/transaction/${options.orderId}`,
+                    method: "GET",
+                    raxConfig: {
+                        retry: retry,
+                        retryDelay: delay,
+                        statusCodesToRetry: [[code502, code502]],
+                        backoffType: "static",
+                        instance: this.axios,
+                        // onRetryAttempt(err) {
+                        //     console.log(
+                        //         err.response.status,
+                        //         "******",
+                        //         err.message
+                        //     );
+                        //     const cfg = rax.getConfig(err);
+                        //     console.log(
+                        //         `Retry attempts: ${
+                        //             cfg.currentRetryAttempt
+                        //         }, ${new Date()}`
+                        //     );
+                        // },
+                    },
+                };
 
-        console.log(requestOptions, "*****");
+                return await this.axios(requestOptions);
+            };
 
-        const response = await this.axios(requestOptions);
-        switch (response.status) {
-            case 202: {
-                const error = new BuyPowerError("Transaction in progress");
-                error.status = 202;
+            let response = await handleReQuery(retryCount);
+
+            //handle re-query for status code 202
+            if (response.status == code202) {
+                let retry = retryCount - 1;
+                for (let i = 0; i < retry; i++) {
+                    response = await handleReQuery(retry);
+                    if (response.status == 200) {
+                        break;
+                    }
+                }
+            }
+
+            switch (response.status) {
+                case code202: {
+                    const error = new BuyPowerError("Transaction in progress");
+                    error.status = code202;
+                    throw error;
+                }
+                case 200: {
+                    return {
+                        status: response.status,
+                        responseCode: response.status,
+                        data: response.data.result?.data,
+                    } as R;
+                }
+            }
+        } catch (error) {
+            if (!Axios.isAxiosError(error)) {
                 throw error;
             }
-            case 502: {
-                const error = new BuyPowerError("Transaction in progress");
-                error.status = 502;
-                throw error;
-            }
-            case 200: {
-                return response.data as R;
-            }
 
-            default: {
-                const error = new BuyPowerError(
-                    response.data?.message ?? "No response message"
-                );
-                error.status = response.status;
-                throw error;
+            switch (true) {
+                case error.response?.status == code502: {
+                    const err = new BuyPowerError("Transaction in progress");
+                    err.status = code502;
+                    throw err;
+                }
+
+                default: {
+                    const err = new BuyPowerError(
+                        error.response?.data?.message ?? "No response message"
+                    );
+                    error.status = error.response?.status ?? 500;
+                    throw err;
+                }
             }
         }
     }
@@ -158,39 +200,43 @@ export class BuyPower {
         options: Optional<VendPowerOptions, "paymentType">
     ): Promise<BuyPowerResponse<Power.VendPowerResponseData>> {
         try {
-            // const requestOptions: AxiosRequestConfig<VendPowerOptions> = {
-            //     url: "/vend",
-            //     method: "POST",
-            //     data: {
-            //         amount: options.amount,
-            //         disco: options.disco,
-            //         meter: options.meter,
-            //         orderId: options.orderId,
-            //         paymentType: options.paymentType ?? "ONLINE",
-            //         phone: options.phone,
-            //         vendType: options.vendType,
-            //         email: options.email,
-            //         name: options.name,
-            //         vertical: "ELECTRICITY",
-            //     },
-            // };
-            // const response = await this.axios(requestOptions);
+            const requestOptions: AxiosRequestConfig<VendPowerOptions> = {
+                url: "/vend",
+                method: "POST",
+                data: {
+                    amount: options.amount,
+                    disco: options.disco,
+                    meter: options.meter,
+                    orderId: options.orderId,
+                    paymentType: options.paymentType ?? "ONLINE",
+                    phone: options.phone,
+                    vendType: options.vendType,
+                    email: options.email,
+                    name: options.name,
+                    vertical: "ELECTRICITY",
+                },
+            };
+            const response = await this.axios(requestOptions);
 
-            const response = { status: 202, data: { data: { delay: [120] } } };
+            // const response = {
+            //     status: 202,
+            //     data: { data: { delay: [10, 10, 10] } },
+            // };
 
             if (this.reQueryStatuses.includes(response.status)) {
-                const responseData = await this.reQuery<
+                const reQueryResponse = await this.reQuery<
                     BuyPowerResponse<Power.VendPowerResponseData>
                 >({
-                    orderId: "135EE81DAAA59E11648532v", // options.orderId,
+                    orderId: options.orderId, //"C86A86F9801B1611664162", //"135EE81DAAA59E11648532v", // options.orderId,
                     delay: response.data.data?.delay as any,
                 });
-                if (!responseData.data) {
+
+                if (!reQueryResponse.data) {
                     const error = new BuyPowerError("unable to vend power");
                     error.status = 500;
                     throw error;
                 }
-                return responseData;
+                return reQueryResponse;
             }
 
             if (!response.data.data) {

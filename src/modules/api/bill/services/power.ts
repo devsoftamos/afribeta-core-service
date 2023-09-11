@@ -121,7 +121,7 @@ export class PowerBillService {
             discos = this.formatDiscosOutput(ikejaDiscos);
         }
 
-        //priority on default provider
+        //priority on set default provider
         let randomBillProvider = await this.prisma.billProvider.findFirst({
             where: {
                 isActive: true,
@@ -504,8 +504,6 @@ export class PowerBillService {
                             meterType: options.transaction
                                 .meterType as MeterType,
                         });
-                    console.log(vendPowerResp, "#######");
-                    return;
 
                     return await this.successPurchaseHandler(
                         options,
@@ -521,10 +519,10 @@ export class PowerBillService {
                 }
             }
         } catch (error) {
-            return await this.powerVendFailureAndAutoProviderSwitchHandler(
-                options,
-                error
-            );
+            // return await this.powerVendFailureAndAutoProviderSwitchHandler(
+            //     options,
+            //     error
+            // );
         }
     }
 

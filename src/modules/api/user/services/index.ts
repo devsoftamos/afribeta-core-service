@@ -55,7 +55,7 @@ export class UserService {
         private emailService: EmailService,
         private s3Service: S3Service,
         private abilityFactory: AbilityFactory
-    ) {}
+    ) { }
 
     async createUser(options: Prisma.UserCreateInput) {
         return await this.prisma.user.create({
@@ -249,12 +249,6 @@ export class UserService {
             phone: options.phone ?? user.phone,
         };
 
-        // if (options.photo) {
-        //     profileUpdateOptions.photo = await this.photoUploadHandler(
-        //         options.photo
-        //     );
-        // }
-
         const updatedProfile = await this.prisma.user.update({
             where: {
                 id: user.id,
@@ -275,8 +269,7 @@ export class UserService {
     }
 
     async createAgent(options: CreateAgentDto, user: User) {
-        // console.log(user);
-        //check for duplicate agent
+
         const email = options.email.trim();
         const userAgent = await this.prisma.user.findUnique({
             where: {
