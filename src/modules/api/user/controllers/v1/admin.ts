@@ -13,13 +13,12 @@ import {
     Req,
     UseGuards,
 } from "@nestjs/common";
-import { FetchMerchantAgentsDto } from "../../dtos";
+import { FetchMerchantAgentsDto, ListMerchantAgentsDto } from "../../dtos";
 import { User as UserModel } from "@prisma/client";
 import { User } from "../../decorators";
 import { UserService } from "../../services";
 import { AuthGuard } from "@/modules/api/auth/guard";
 
-@UseGuards(AuthGuard)
 @Controller({
     path: "admin/user",
 })
@@ -27,9 +26,20 @@ export class AdminUserController {
     constructor(private readonly usersService: UserService) {}
 
     @Get("merchants")
+    @UseGuards(AuthGuard)
     async fetchMerchants(
-        @Query(ValidationPipe) fetchMerchantsDto: FetchMerchantAgentsDto
+        @Query(ValidationPipe) fetchMerchantsDto: FetchMerchantAgentsDto,
+        @User() user: UserModel
     ) {
-        return this.usersService.fetchMerchants(fetchMerchantsDto);
+        return this.usersService.fetchMerchants(fetchMerchantsDto, user);
+    }
+
+    @Get("customers")
+    @UseGuards(AuthGuard)
+    async fetchCustomers(
+        @Query(ValidationPipe) fetchCustomersDto: ListMerchantAgentsDto,
+        @User() user: UserModel
+    ) {
+        return this.usersService.fetchCustomers(fetchCustomersDto, user);
     }
 }

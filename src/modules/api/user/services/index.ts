@@ -612,12 +612,14 @@ export class UserService {
         });
     }
 
-    async fetchMerchants(options: FetchMerchantAgentsDto) {
+    async fetchMerchants(options: FetchMerchantAgentsDto, user: User) {
         const paginationMeta: Partial<PaginationMeta> = {};
 
         const queryOptions: Prisma.UserFindManyArgs = {
             orderBy: { createdAt: "desc" },
-            where: {},
+            where: {
+                createdById: user.id,
+            },
             select: {
                 lastName: true,
                 firstName: true,
@@ -680,6 +682,54 @@ export class UserService {
             data: {
                 meta: paginationMeta,
                 records: merchants,
+            },
+        });
+    }
+
+    async fetchCustomers(options: ListMerchantAgentsDto, user: User) {
+        const paginationMeta: Partial<PaginationMeta> = {};
+
+        const queryOptions: Prisma.UserFindManyArgs = {
+            orderBy: { createdAt: "desc" },
+            where: {
+                createdById: user.id,
+            },
+            select: {
+                firstName: true,
+                lastName: true,
+                email: true,
+                phone: true,
+            },
+        };
+
+        if (options.searchName) {
+            queryOptions.where.firstName = { search: options.searchName };
+            queryOptions.where.lastName = { search: options.searchName };
+        }
+
+        if (options.pagination) {
+            const page = +options.page || 1;
+            const limit = +options.limit || 10;
+            const offset = (page - 1) * limit;
+            queryOptions.skip = offset;
+            queryOptions.take = limit;
+            const count = await this.prisma.user.count({
+                where: queryOptions.where,
+            });
+            paginationMeta.totalCount = count;
+            paginationMeta.perPage = limit;
+        }
+
+        const customers = await this.prisma.user.findMany(queryOptions);
+        if (options.pagination) {
+            paginationMeta.pageCount = customers.length;
+        }
+
+        return buildResponse({
+            message: "Customers retrieved successfully",
+            data: {
+                meta: paginationMeta,
+                records: customers,
             },
         });
     }
