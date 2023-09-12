@@ -621,6 +621,7 @@ export class UserService {
                 createdById: user.id,
             },
             select: {
+                id: true,
                 lastName: true,
                 firstName: true,
                 businessName: true,

@@ -1,6 +1,8 @@
 import {
     IsBooleanString,
+    IsEmail,
     IsEnum,
+    IsNumber,
     IsNumberString,
     IsOptional,
     IsString,
@@ -30,4 +32,23 @@ export class TransactionHistoryDto {
     @IsOptional()
     @IsNumberString()
     limit: string;
+}
+
+export class MerchantTransactionHistoryDto {
+
+    @IsOptional()
+    @IsBooleanString()
+    pagination: string;
+
+    @IsOptional()
+    @IsNumberString()
+    page: string;
+
+    @IsOptional()
+    @IsNumberString()
+    limit: string;
+
+    @IsEmail()
+    email: string;
+
 }
