@@ -187,6 +187,11 @@ export class TransactionService {
                 type: true,
                 amount: true,
                 createdAt: true,
+                billService: {
+                    select: {
+                        icon: true
+                    }
+                },
                 shortDescription: true,
                 paymentStatus: true,
                 provider: true,
