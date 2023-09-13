@@ -33,22 +33,3 @@ export class TransactionHistoryDto {
     @IsNumberString()
     limit: string;
 }
-
-export class MerchantTransactionHistoryDto {
-
-    @IsOptional()
-    @IsBooleanString()
-    pagination: string;
-
-    @IsOptional()
-    @IsNumberString()
-    page: string;
-
-    @IsOptional()
-    @IsNumberString()
-    limit: string;
-
-    @IsEmail()
-    email: string;
-
-}
