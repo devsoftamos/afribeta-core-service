@@ -13,11 +13,15 @@ import {
     Req,
     UseGuards,
 } from "@nestjs/common";
-import { FetchMerchantAgentsDto, ListMerchantAgentsDto, MerchantDetailsDto } from "../../dtos";
+import {
+    FetchMerchantAgentsDto,
+    ListMerchantAgentsDto,
+    MerchantDetailsDto,
+} from "../../dtos";
 import { User as UserModel } from "@prisma/client";
-import { User } from "../../decorators";
 import { UserService } from "../../services";
 import { AuthGuard } from "@/modules/api/auth/guard";
+import { User } from "../../decorators";
 
 @Controller({
     path: "admin/user",
@@ -31,7 +35,7 @@ export class AdminUserController {
         @Query(ValidationPipe) fetchMerchantsDto: FetchMerchantAgentsDto,
         @User() user: UserModel
     ) {
-        return this.usersService.fetchMerchants(fetchMerchantsDto, user);
+        return await this.usersService.fetchMerchants(fetchMerchantsDto, user);
     }
 
     @Get("customers")
@@ -40,7 +44,7 @@ export class AdminUserController {
         @Query(ValidationPipe) fetchCustomersDto: ListMerchantAgentsDto,
         @User() user: UserModel
     ) {
-        return this.usersService.fetchCustomers(fetchCustomersDto, user);
+        return await this.usersService.fetchCustomers(fetchCustomersDto, user);
     }
 
     @Get("merchant/details")
@@ -48,8 +52,18 @@ export class AdminUserController {
         @Query(ValidationPipe)
         merchantDetails: MerchantDetailsDto
     ) {
-        return this.usersService.merchantDetails(
-            merchantDetails
+        return await this.usersService.merchantDetails(merchantDetails);
+    }
+
+    @Get("merchant/view-agents")
+    @UseGuards(AuthGuard)
+    async fetchMerchantAgents(
+        @Query(ValidationPipe) fetchMerchantsAgentDto: ListMerchantAgentsDto,
+        @User() user: UserModel
+    ) {
+        return await this.usersService.getMerchantAgents(
+            fetchMerchantsAgentDto,
+            user
         );
     }
 }

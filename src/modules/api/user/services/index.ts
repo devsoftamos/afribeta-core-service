@@ -454,7 +454,11 @@ export class UserService {
         }
     }
 
-    async getMerchantAgents(options: ListMerchantAgentsDto, user: User) {
+    async getMerchantAgents(
+        options: ListMerchantAgentsDto,
+        user: User,
+        userId?: number
+    ) {
         const meta: Partial<PaginationMeta> = {};
 
         const queryOptions: Prisma.UserFindManyArgs = {
@@ -478,6 +482,11 @@ export class UserService {
                 },
             },
         };
+
+        if (userId) {
+            console.log("hello");
+            queryOptions.where.createdById = userId;
+        }
 
         if (options.searchName) {
             queryOptions.where.firstName = { search: options.searchName };
@@ -778,6 +787,4 @@ export class UserService {
             data: result,
         });
     }
-
-    
 }
