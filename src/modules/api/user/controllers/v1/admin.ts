@@ -13,7 +13,7 @@ import {
     Req,
     UseGuards,
 } from "@nestjs/common";
-import { FetchMerchantAgentsDto, ListMerchantAgentsDto, MerchantTransactionHistoryDto } from "../../dtos";
+import { FetchMerchantAgentsDto, ListMerchantAgentsDto, MerchantDetailsDto } from "../../dtos";
 import { User as UserModel } from "@prisma/client";
 import { User } from "../../decorators";
 import { UserService } from "../../services";
@@ -43,12 +43,12 @@ export class AdminUserController {
         return this.usersService.fetchCustomers(fetchCustomersDto, user);
     }
 
-    @Get("merchant-details")
-    async getMerchantTransactionHistory(
+    @Get("merchant/details")
+    async getMerchantDetails(
         @Query(ValidationPipe)
-        merchantDetails: MerchantTransactionHistoryDto
+        merchantDetails: MerchantDetailsDto
     ) {
-        return this.usersService.merchantTransactionHistory(
+        return this.usersService.merchantDetails(
             merchantDetails
         );
     }

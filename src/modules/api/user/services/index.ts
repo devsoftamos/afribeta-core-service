@@ -26,8 +26,8 @@ import {
     CreateTransactionPinDto,
     FetchMerchantAgentsDto,
     ListMerchantAgentsDto,
+    MerchantDetailsDto,
     MerchantStatusType,
-    MerchantTransactionHistoryDto,
     UpdateProfileDto,
     UpdateProfilePasswordDto,
     UpdateTransactionPinDto,
@@ -736,7 +736,7 @@ export class UserService {
         });
     }
 
-    async merchantTransactionHistory(options: MerchantTransactionHistoryDto) {
+    async merchantDetails(options: MerchantDetailsDto) {
         const userExists = await this.prisma.user.findUnique({
             where: {
                 id: +options.userId,
@@ -745,7 +745,7 @@ export class UserService {
 
         if (!userExists || userExists.userType !== UserType.MERCHANT) {
             throw new UserNotFoundException(
-                "User with the given id does not exist",
+                "Merchant account does not exist",
                 HttpStatus.NOT_FOUND
             );
         }
@@ -768,49 +768,9 @@ export class UserService {
             },
         });
 
-        const meta: Partial<PaginationMeta> = {};
-
-        const queryOptions: Prisma.TransactionFindManyArgs = {
-            orderBy: { createdAt: "desc" },
-            where: {
-                userId: userExists.id,
-            },
-            select: {
-                type: true,
-                amount: true,
-                createdAt: true,
-                shortDescription: true,
-                paymentStatus: true,
-                provider: true,
-                providerLogo: true,
-            },
-        };
-
-        if (options.pagination) {
-            const page = +options.page || 1;
-            const limit = +options.limit || 10;
-            const offset = (page - 1) * limit;
-            queryOptions.skip = offset;
-            queryOptions.take = limit;
-            const count = await this.prisma.transaction.count({
-                where: queryOptions.where,
-            });
-            meta.totalCount = count;
-            meta.page = page;
-            meta.perPage = limit;
-        }
-
-        const merchantTransactionHistory =
-            await this.prisma.transaction.findMany(queryOptions);
-        if (options.pagination) {
-            meta.pageCount = merchantTransactionHistory.length;
-        }
-
         const result = {
-            meta: meta,
             walletBalance: walletBalance,
             agentsCreated: agentsCreated._count.id,
-            records: merchantTransactionHistory,
         };
 
         return buildResponse({
@@ -818,4 +778,6 @@ export class UserService {
             data: result,
         });
     }
+
+    
 }

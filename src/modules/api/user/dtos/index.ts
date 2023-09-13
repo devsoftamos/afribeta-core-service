@@ -203,19 +203,7 @@ export class CreateKycDto {
 }
 
 
-export class MerchantTransactionHistoryDto {
-
-    @IsOptional()
-    @IsBooleanString()
-    pagination: string;
-
-    @IsOptional()
-    @IsNumberString()
-    page: string;
-
-    @IsOptional()
-    @IsNumberString()
-    limit: string;
+export class MerchantDetailsDto {
 
     @IsNumberString()
     userId: string;
