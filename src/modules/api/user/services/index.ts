@@ -626,9 +626,7 @@ export class UserService {
 
         const queryOptions: Prisma.UserFindManyArgs = {
             orderBy: { createdAt: "desc" },
-            where: {
-                createdById: user.id,
-            },
+            where: {},
             select: {
                 id: true,
                 lastName: true,
@@ -701,9 +699,7 @@ export class UserService {
 
         const queryOptions: Prisma.UserFindManyArgs = {
             orderBy: { createdAt: "desc" },
-            where: {
-                createdById: user.id,
-            },
+            where: {},
             select: {
                 firstName: true,
                 lastName: true,

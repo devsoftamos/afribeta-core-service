@@ -202,10 +202,7 @@ export class CreateKycDto {
     identificationMeansImageFile: string;
 }
 
-
 export class MerchantDetailsDto {
-
     @IsNumberString()
     userId: string;
-
 }

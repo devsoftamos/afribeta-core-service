@@ -30,7 +30,6 @@ export class AdminUserController {
     constructor(private readonly usersService: UserService) {}
 
     @Get("merchants")
-  
     async fetchMerchants(
         @Query(ValidationPipe) fetchMerchantsDto: FetchMerchantAgentsDto,
         @User() user: UserModel

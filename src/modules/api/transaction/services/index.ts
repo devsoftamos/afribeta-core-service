@@ -6,14 +6,16 @@ import { PaystackService } from "@/modules/workflow/payment/providers/paystack/s
 import { PaginationMeta } from "@/utils";
 import { ApiResponse, buildResponse } from "@/utils/api-response-util";
 import { ForbiddenError, subject } from "@casl/ability";
-import { forwardRef, HttpStatus, Inject, Injectable } from "@nestjs/common";
-import { Prisma, User, UserType } from "@prisma/client";
+import { forwardRef, HttpStatus, Inject, Injectable, NotAcceptableException } from "@nestjs/common";
+import { Prisma, User, UserType, TransactionStatus } from "@prisma/client";
 import { UserNotFoundException } from "../../user";
 import {
     MerchantTransactionHistoryDto,
     TransactionHistoryDto,
+    UpdatePayoutStatusDto,
     VerifyTransactionDto,
     VerifyTransactionProvider,
+    ViewPayoutStatusDto,
 } from "../dtos";
 import { InvalidTransactionVerificationProvider } from "../errors";
 
@@ -160,9 +162,10 @@ export class TransactionService {
         return await this.transactionHistory(options, user, userId);
     }
 
-
-    async merchantTransactionHistory(options: MerchantTransactionHistoryDto){
-
+    async merchantTransactionHistory(
+        options: MerchantTransactionHistoryDto,
+        user: User
+    ) {
         const userExists = await this.prisma.user.findUnique({
             where: {
                 id: +options.userId,
@@ -189,8 +192,8 @@ export class TransactionService {
                 createdAt: true,
                 billService: {
                     select: {
-                        icon: true
-                    }
+                        icon: true,
+                    },
                 },
                 shortDescription: true,
                 paymentStatus: true,
@@ -227,6 +230,100 @@ export class TransactionService {
         return buildResponse({
             message: "Merchant transaction history successfully retrieved",
             data: result,
+        });
+    }
+
+    async viewPayouts(options: ViewPayoutStatusDto, user: User) {
+        const paginationMeta: Partial<PaginationMeta> = {};
+
+        const queryOptions: Prisma.TransactionFindManyArgs = {
+            orderBy: { createdAt: "desc" },
+            where: {
+                type: "PAYOUT",
+            },
+            select: {
+                user: {
+                    select: {
+                        firstName: true,
+                        lastName: true,
+                        email: true,
+                    },
+                },
+                amount: true,
+                status: true,
+                paymentReference: true
+            },
+        };
+
+        switch (options.payoutStatus) {
+            case TransactionStatus.PENDING: {
+                queryOptions.where.status = TransactionStatus.PENDING;
+                break;
+            }
+            case TransactionStatus.APPROVED: {
+                queryOptions.where.status = TransactionStatus.APPROVED;
+
+                break;
+            }
+        }
+
+        if (options.pagination) {
+            const page = +options.page || 1;
+            const limit = +options.limit || 10;
+            const offset = (page - 1) * limit;
+            queryOptions.skip = offset;
+            queryOptions.take = limit;
+            const count = await this.prisma.transaction.count({
+                where: queryOptions.where,
+            });
+            paginationMeta.totalCount = count;
+            paginationMeta.perPage = limit;
+        }
+
+        const transactions = await this.prisma.transaction.findMany(
+            queryOptions
+        );
+        if (options.pagination) {
+            paginationMeta.pageCount = transactions.length;
+        }
+
+        return buildResponse({
+            message: "Payout history retrieved successfully",
+            data: {
+                meta: paginationMeta,
+                records: transactions,
+            },
+        });
+    }
+
+    async updatePayoutStatus(options: UpdatePayoutStatusDto, user: User){
+
+        const paymentReferenceExists = await this.prisma.transaction.findUnique({
+            where: {
+                paymentReference: options.paymentReference
+            }
+        });
+
+        if (!paymentReferenceExists) {
+            throw new UserNotFoundException(
+                "Transaction reference not found",
+                HttpStatus.NOT_FOUND
+            );
+        }
+
+        const updateStatus = await this.prisma.transaction.update({
+            where: {
+                paymentReference: paymentReferenceExists.paymentReference
+            },
+            data: {
+                status: options.status
+                paymentStatus: options.status 
+            },
+            
+        });
+
+        return buildResponse({
+            message: "Payout status updated successfully",
         });
 
     }
