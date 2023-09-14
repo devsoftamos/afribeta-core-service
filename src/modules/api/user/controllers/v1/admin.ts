@@ -1,14 +1,14 @@
-import { RequestWithUser } from "@/modules/api/auth";
-import { CreateAgentAbility, ViewAgentAbility } from "@/modules/core/ability";
-import { CheckAbilities } from "@/modules/core/ability/decorator";
+import { User } from "../../decorators";
 import { AbilitiesGuard } from "@/modules/core/ability/guards";
 import {
     Body,
     Controller,
+    Param,
     Get,
     Patch,
     Post,
     Query,
+    ParseIntPipe,
     ValidationPipe,
     Req,
     UseGuards,
@@ -21,8 +21,8 @@ import {
 import { User as UserModel } from "@prisma/client";
 import { UserService } from "../../services";
 import { AuthGuard } from "@/modules/api/auth/guard";
-import { User } from "../../decorators";
 
+@UseGuards(AuthGuard)
 @Controller({
     path: "admin/user",
 })
@@ -30,7 +30,7 @@ export class AdminUserController {
     constructor(private readonly usersService: UserService) {}
 
     @Get("merchants")
-    @UseGuards(AuthGuard)
+  
     async fetchMerchants(
         @Query(ValidationPipe) fetchMerchantsDto: FetchMerchantAgentsDto,
         @User() user: UserModel
@@ -39,7 +39,6 @@ export class AdminUserController {
     }
 
     @Get("customers")
-    @UseGuards(AuthGuard)
     async fetchCustomers(
         @Query(ValidationPipe) fetchCustomersDto: ListMerchantAgentsDto,
         @User() user: UserModel
@@ -55,15 +54,16 @@ export class AdminUserController {
         return await this.usersService.merchantDetails(merchantDetails);
     }
 
-    @Get("merchant/view-agents")
-    @UseGuards(AuthGuard)
+    @Get("merchant/:userId/view-agents")
     async fetchMerchantAgents(
         @Query(ValidationPipe) fetchMerchantsAgentDto: ListMerchantAgentsDto,
-        @User() user: UserModel
+        @User() user: UserModel,
+        @Param("userId", ParseIntPipe) userId: number
     ) {
         return await this.usersService.getMerchantAgents(
             fetchMerchantsAgentDto,
-            user
+            user,
+            userId
         );
     }
 }

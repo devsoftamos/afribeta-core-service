@@ -484,7 +484,6 @@ export class UserService {
         };
 
         if (userId) {
-            console.log("hello");
             queryOptions.where.createdById = userId;
         }
 
