@@ -12,10 +12,8 @@ import { UserNotFoundException } from "../../user";
 import {
     MerchantTransactionHistoryDto,
     TransactionHistoryDto,
-    UpdatePayoutStatusDto,
     VerifyTransactionDto,
     VerifyTransactionProvider,
-    ViewPayoutStatusDto,
 } from "../dtos";
 import { InvalidTransactionVerificationProvider } from "../errors";
 
@@ -233,98 +231,5 @@ export class TransactionService {
         });
     }
 
-    async viewPayouts(options: ViewPayoutStatusDto, user: User) {
-        const paginationMeta: Partial<PaginationMeta> = {};
-
-        const queryOptions: Prisma.TransactionFindManyArgs = {
-            orderBy: { createdAt: "desc" },
-            where: {
-                type: "PAYOUT",
-            },
-            select: {
-                user: {
-                    select: {
-                        firstName: true,
-                        lastName: true,
-                        email: true,
-                    },
-                },
-                amount: true,
-                status: true,
-                paymentReference: true
-            },
-        };
-
-        switch (options.payoutStatus) {
-            case TransactionStatus.PENDING: {
-                queryOptions.where.status = TransactionStatus.PENDING;
-                break;
-            }
-            case TransactionStatus.APPROVED: {
-                queryOptions.where.status = TransactionStatus.APPROVED;
-
-                break;
-            }
-        }
-
-        if (options.pagination) {
-            const page = +options.page || 1;
-            const limit = +options.limit || 10;
-            const offset = (page - 1) * limit;
-            queryOptions.skip = offset;
-            queryOptions.take = limit;
-            const count = await this.prisma.transaction.count({
-                where: queryOptions.where,
-            });
-            paginationMeta.totalCount = count;
-            paginationMeta.perPage = limit;
-        }
-
-        const transactions = await this.prisma.transaction.findMany(
-            queryOptions
-        );
-        if (options.pagination) {
-            paginationMeta.pageCount = transactions.length;
-        }
-
-        return buildResponse({
-            message: "Payout history retrieved successfully",
-            data: {
-                meta: paginationMeta,
-                records: transactions,
-            },
-        });
-    }
-
-    async updatePayoutStatus(options: UpdatePayoutStatusDto, user: User){
-
-        const paymentReferenceExists = await this.prisma.transaction.findUnique({
-            where: {
-                paymentReference: options.paymentReference
-            }
-        });
-
-        if (!paymentReferenceExists) {
-            throw new UserNotFoundException(
-                "Transaction reference not found",
-                HttpStatus.NOT_FOUND
-            );
-        }
-
-        const updateStatus = await this.prisma.transaction.update({
-            where: {
-                paymentReference: paymentReferenceExists.paymentReference
-            },
-            data: {
-                status: options.status
-                paymentStatus: options.status 
-            },
-            
-        });
-
-        return buildResponse({
-            message: "Payout status updated successfully",
-        });
-
-    }
+    
 }
