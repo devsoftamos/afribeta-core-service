@@ -16,7 +16,6 @@ import {
 import {
     FetchMerchantAgentsDto,
     ListMerchantAgentsDto,
-    MerchantDetailsDto,
 } from "../../dtos";
 import { User as UserModel } from "@prisma/client";
 import { UserService } from "../../services";
@@ -29,7 +28,7 @@ import { AuthGuard } from "@/modules/api/auth/guard";
 export class AdminUserController {
     constructor(private readonly usersService: UserService) {}
 
-    @Get("merchants")
+    @Get("merchant")
     async fetchMerchants(
         @Query(ValidationPipe) fetchMerchantsDto: FetchMerchantAgentsDto,
         @User() user: UserModel
@@ -37,7 +36,7 @@ export class AdminUserController {
         return await this.usersService.fetchMerchants(fetchMerchantsDto, user);
     }
 
-    @Get("customers")
+    @Get("customer")
     async fetchCustomers(
         @Query(ValidationPipe) fetchCustomersDto: ListMerchantAgentsDto,
         @User() user: UserModel
@@ -45,24 +44,24 @@ export class AdminUserController {
         return await this.usersService.fetchCustomers(fetchCustomersDto, user);
     }
 
-    @Get("merchant/details")
+    @Get("merchant/:id")
     async getMerchantDetails(
-        @Query(ValidationPipe)
-        merchantDetails: MerchantDetailsDto
+        @User() user: UserModel,
+        @Param("id", ParseIntPipe) id: number
     ) {
-        return await this.usersService.merchantDetails(merchantDetails);
+        return await this.usersService.merchantDetails(id, user);
     }
 
-    @Get("merchant/:userId/view-agents")
+    @Get("merchant/:id/agent")
     async fetchMerchantAgents(
         @Query(ValidationPipe) fetchMerchantsAgentDto: ListMerchantAgentsDto,
         @User() user: UserModel,
-        @Param("userId", ParseIntPipe) userId: number
+        @Param("id", ParseIntPipe) id: number
     ) {
         return await this.usersService.getMerchantAgents(
             fetchMerchantsAgentDto,
             user,
-            userId
+            id
         );
     }
 }

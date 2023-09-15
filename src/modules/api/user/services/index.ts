@@ -26,7 +26,6 @@ import {
     CreateTransactionPinDto,
     FetchMerchantAgentsDto,
     ListMerchantAgentsDto,
-    MerchantDetailsDto,
     MerchantStatusType,
     UpdateProfileDto,
     UpdateProfilePasswordDto,
@@ -457,7 +456,7 @@ export class UserService {
     async getMerchantAgents(
         options: ListMerchantAgentsDto,
         user: User,
-        userId?: number
+        id?: number
     ) {
         const meta: Partial<PaginationMeta> = {};
 
@@ -483,8 +482,8 @@ export class UserService {
             },
         };
 
-        if (userId) {
-            queryOptions.where.createdById = userId;
+        if (id) {
+            queryOptions.where.createdById = id;
         }
 
         if (options.searchName) {
@@ -740,10 +739,10 @@ export class UserService {
         });
     }
 
-    async merchantDetails(options: MerchantDetailsDto) {
+    async merchantDetails(id: number, user: User) {
         const userExists = await this.prisma.user.findUnique({
             where: {
-                id: +options.userId,
+                id: id,
             },
         });
 
