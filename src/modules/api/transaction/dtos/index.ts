@@ -53,4 +53,28 @@ export class MerchantTransactionHistoryDto {
     userId: string;
 }
 
+export class ViewPayoutStatusDto {
+    @IsOptional()
+    @IsBooleanString()
+    pagination: string;
+
+    @IsOptional()
+    @IsNumberString()
+    page: string;
+
+    @IsOptional()
+    @IsNumberString()
+    limit: string;
+
+    @IsEnum(TransactionStatus)
+    payoutStatus: TransactionStatus;
+}
+
+export class UpdatePayoutStatusDto {
+    @IsString()
+    paymentReference: string;
+
+    @IsEnum(TransactionStatus)
+    status: TransactionStatus;
+}
 
