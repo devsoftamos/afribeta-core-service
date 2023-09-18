@@ -48,7 +48,7 @@ export class AdminTransactionController {
         );
     }
 
-    @Patch("update/payout-status")
+    @Patch("payout/authorize")
     async updatePayoutStatus(
         @Body(ValidationPipe) updatePayoutStatusDto: UpdatePayoutStatusDto,
         @User() user: UserModel

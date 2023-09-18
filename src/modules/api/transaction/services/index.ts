@@ -7,11 +7,12 @@ import { PaginationMeta } from "@/utils";
 import { ApiResponse, buildResponse } from "@/utils/api-response-util";
 import { ForbiddenError, subject } from "@casl/ability";
 import { forwardRef, HttpStatus, Inject, Injectable, NotAcceptableException } from "@nestjs/common";
-import { Prisma, User, UserType, TransactionStatus } from "@prisma/client";
+import { Prisma, User, UserType, TransactionStatus, TransactionType } from "@prisma/client";
 import { UserNotFoundException } from "../../user";
 import {
     MerchantTransactionHistoryDto,
     TransactionHistoryDto,
+    UpdatePayoutStatus,
     UpdatePayoutStatusDto,
     VerifyTransactionDto,
     VerifyTransactionProvider,
@@ -239,7 +240,7 @@ export class TransactionService {
         const queryOptions: Prisma.TransactionFindManyArgs = {
             orderBy: { createdAt: "desc" },
             where: {
-                type: "PAYOUT",
+                type: TransactionType.PAYOUT,
             },
             select: {
                 user: {
@@ -311,20 +312,35 @@ export class TransactionService {
             );
         }
 
-        const updateStatus = await this.prisma.transaction.update({
+        const updateStatusOptions: Prisma.TransactionUpdateWithWhereUniqueWithoutUserInput = {
             where: {
                 paymentReference: paymentReferenceExists.paymentReference
             },
-            data: {
-                status: options.status,
-            },
-            select: {
-                destinationBankAccountName: true,
-                destinationBankAccountNumber: true,
-                amount: true
+            data:{}
+        }
+        
+        switch (options.status) {
+            case UpdatePayoutStatus.APPROVED:{
+                updateStatusOptions.data.status = UpdatePayoutStatus.APPROVED
+                break;
             }
-            
-        });
+            case UpdatePayoutStatus.DECLINED: {
+                updateStatusOptions.data.status = UpdatePayoutStatus.DECLINED
+                await this.prisma.wallet.update({
+                    where: {
+                        userId: paymentReferenceExists.userId
+                    },
+                    data: {
+                        commissionBalance: {
+                            increment: paymentReferenceExists.amount
+                        }
+                    }
+                })
+
+            }
+        };
+
+        const updateStatus = await this.prisma.transaction.update(updateStatusOptions)
 
         return buildResponse({
             message: "Payout status updated successfully",

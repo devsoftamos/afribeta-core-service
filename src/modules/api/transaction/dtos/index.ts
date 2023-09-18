@@ -14,6 +14,11 @@ export enum VerifyTransactionProvider {
     PAYSTACK = "PAYSTACK",
 }
 
+export enum UpdatePayoutStatus {
+    APPROVED = "APPROVED",
+    DECLINED = "DECLINED"
+}
+
 export class VerifyTransactionDto {
     @IsString()
     reference: string;
@@ -74,7 +79,7 @@ export class UpdatePayoutStatusDto {
     @IsString()
     paymentReference: string;
 
-    @IsEnum(TransactionStatus)
-    status: TransactionStatus;
+    @IsEnum(UpdatePayoutStatus)
+    status: UpdatePayoutStatus;
 }
 
