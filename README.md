@@ -7,23 +7,23 @@ This is the core service of Afribeta App. The API currently support all the func
 First, clone the repo to your working directory. Make sure you have pnpm globally installed on your system. Run the below command
 
 ```bash
-$ pnpm install
+$ npm install
 ```
 
 ## Install husky
 
 ```bash
-$ pnpm husky:install
+$ npm run husky:install
 ```
 
 ## Running the app
 
 ```bash
 # development/watch mode
-$ pnpm start:dev
+$ npm run start:dev
 
 # production mode
-$ pnpm start:prod
+$ npm run start:prod
 ```
 
 ## Test

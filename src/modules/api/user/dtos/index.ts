@@ -18,9 +18,21 @@ import {
     ValidateNested,
 } from "class-validator";
 
+enum MerchantUpgradeStatus {
+    PENDING = "PENDING",
+    TO_BE_UPGRADED = "TO_BE_UPGRADED",
+    UPGRADED = "UPGRADED",
+    DECLINED = "DECLINED",
+}
+
 export class GetUserByIdentifierDto {
     @IsString()
     id: string;
+}
+
+export enum MerchantStatusType {
+    APPROVED_MERCHANTS = "approvedMerchants",
+    AGENT_TO_BE_UPGRADED = "agentsToBeUpgraded",
 }
 
 export class UpdateProfilePasswordDto {
@@ -134,6 +146,27 @@ export class ListMerchantAgentsDto {
     searchName: string;
 }
 
+export class FetchMerchantAgentsDto {
+    @IsOptional()
+    @IsBooleanString()
+    pagination: string;
+
+    @IsOptional()
+    @IsNumberString()
+    page: number;
+
+    @IsOptional()
+    @IsNumberString()
+    limit: number;
+
+    @IsOptional()
+    @IsString()
+    searchName: string;
+
+    @IsEnum(MerchantStatusType)
+    merchantStatus: MerchantStatusType;
+}
+
 export class CreateKycDto {
     @IsString()
     address: string;
@@ -168,3 +201,4 @@ export class CreateKycDto {
     })
     identificationMeansImageFile: string;
 }
+

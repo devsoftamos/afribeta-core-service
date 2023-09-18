@@ -22,14 +22,12 @@ export class AbilityFactory {
             },
         });
         let permissions = [];
-        if (role.permissions) {
+        if (role.permissions.length) {
             permissions = role.permissions.map((p) => p.permission.name);
         }
         const { can, cannot, build } = new AbilityBuilder<AppAbility>(
             createPrismaAbility
         );
-
-        console.log(user.id, "*******", permissions);
 
         can(Action.CreateAgent, "User");
         can(Action.ViewAgent, "User");

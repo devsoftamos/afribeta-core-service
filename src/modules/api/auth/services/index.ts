@@ -1,5 +1,4 @@
 import { HttpStatus, Injectable } from "@nestjs/common";
-import { UserService } from "@/modules/api/user/services";
 import { JwtService } from "@nestjs/jwt";
 import {
     SignUpDto,
@@ -40,15 +39,19 @@ import {
 } from "@/config";
 import { SendinblueEmailException } from "@calculusky/transactional-email";
 import logger from "moment-logger";
-import { formatName, generateId } from "@/utils";
-import { AgentVerifyEmailParams } from "../interfaces";
+import { encrypt, formatName, generateId } from "@/utils";
+import {
+    AgentVerifyEmailParams,
+    LoginMeta,
+    LoginResponseData,
+    SignupResponseData,
+} from "../interfaces";
 import { SMS } from "@/modules/core/sms";
 import { SmsMessage, smsMessage } from "@/core/smsMessage";
 
 @Injectable()
 export class AuthService {
     constructor(
-        private userService: UserService,
         private jwtService: JwtService,
         private smsService: SmsService,
         private prisma: PrismaService,
@@ -70,7 +73,9 @@ export class AuthService {
             const verificationCode = customAlphabet("1234567890", 4)();
             const email = options.email.toLowerCase().trim();
 
-            const user = await this.userService.findUserByEmail(email);
+            const user = await this.prisma.user.findUnique({
+                where: { email: email },
+            });
             if (user) {
                 throw new DuplicateUserException(
                     "Account already verified. Kindly login",
@@ -147,10 +152,13 @@ export class AuthService {
         }
     }
 
-    async signUp(options: SignUpDto, ip: string): Promise<ApiResponse> {
-        const user = await this.userService.findUserByEmail(
-            options.email.trim()
-        );
+    async signUp(
+        options: SignUpDto,
+        ip: string
+    ): Promise<ApiResponse<SignupResponseData>> {
+        const user = await this.prisma.user.findUnique({
+            where: { email: options.email.trim() },
+        });
         if (user) {
             throw new DuplicateUserException(
                 "An account already exist with this email. Please login",
@@ -258,14 +266,42 @@ export class AuthService {
         });
     }
 
-    async signIn(options: SignInDto): Promise<ApiResponse> {
-        const user = await this.userService.findUserByEmail(options.email);
+    async signIn(options: SignInDto): Promise<ApiResponse<LoginResponseData>> {
+        const user = await this.prisma.user.findUnique({
+            where: {
+                email: options.email,
+            },
+            select: {
+                identifier: true,
+                password: true,
+                kycStatus: true,
+                isWalletCreated: true,
+                userType: true,
+                role: {
+                    select: {
+                        name: true,
+                        slug: true,
+                        permissions: {
+                            select: {
+                                permission: {
+                                    select: {
+                                        name: true,
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+        });
         if (!user) {
             throw new InvalidCredentialException(
                 "Incorrect email or password",
                 HttpStatus.UNAUTHORIZED
             );
         }
+
+        const permissions = user.role.permissions.map((p) => p.permission.name);
 
         const isValidPassword = await this.comparePassword(
             options.password,
@@ -282,21 +318,30 @@ export class AuthService {
             sub: user.identifier,
         });
 
+        const loginMeta: LoginMeta = {
+            kycStatus: user.kycStatus,
+            isWalletCreated: user.isWalletCreated,
+            userType: user.userType,
+            role: {
+                name: user.role.name,
+                slug: user.role.slug,
+                permissions: permissions,
+            },
+        };
+
         return buildResponse({
             message: "Login successful",
             data: {
                 accessToken,
-                meta: {
-                    kycStatus: user.kycStatus,
-                    isWalletCreated: user.isWalletCreated,
-                    userType: user.userType,
-                },
+                meta: encrypt(loginMeta),
             },
         });
     }
 
     async passwordResetRequest(options: PasswordResetRequestDto) {
-        const user = await this.userService.findUserByEmail(options.email);
+        const user = await this.prisma.user.findUnique({
+            where: { email: options.email },
+        });
         if (!user) {
             throw new UserNotFoundException(
                 "There is no account registered with this email address. Please Sign Up",
@@ -355,7 +400,9 @@ export class AuthService {
                 HttpStatus.BAD_REQUEST
             );
         }
-        const user = await this.userService.findUserById(resetData.userId);
+        const user = await this.prisma.user.findUnique({
+            where: { id: resetData.userId },
+        });
         if (!user) {
             throw new UserNotFoundException(
                 "Account not found",
@@ -384,7 +431,9 @@ export class AuthService {
             const verificationCode = customAlphabet("1234567890", 4)();
             const email = options.email.toLowerCase().trim();
 
-            const agent = await this.userService.findUserByEmail(email);
+            const agent = await this.prisma.user.findUnique({
+                where: { email: options.email },
+            });
             if (agent) {
                 throw new DuplicateUserException(
                     "Account already verified. Kindly login",

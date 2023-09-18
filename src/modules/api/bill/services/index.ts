@@ -150,7 +150,7 @@ export class BillService {
         try {
             await this.prisma.transaction.update({
                 where: {
-                    id: options.transaction.id,
+                    id: options.transactionId,
                 },
                 data: {
                     status: TransactionStatus.FAILED,
@@ -163,11 +163,10 @@ export class BillService {
     }
 
     async billPurchaseFailureHandler(options: BillPurchaseFailure) {
-        const { transaction } = options;
         try {
             await this.prisma.transaction.update({
                 where: {
-                    id: transaction.id,
+                    id: options.transactionId,
                 },
                 data: {
                     status: TransactionStatus.FAILED,

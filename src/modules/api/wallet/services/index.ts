@@ -1120,7 +1120,7 @@ export class WalletService {
             .filter((trans) => trans.flow == TransactionFlow.OUT)
             .reduce((acc, hash) => acc + hash.amount, 0);
 
-        return buildResponse<DataWithPagination>({
+        return buildResponse({
             message: "Wallet transactions successfully retrieved",
             data: {
                 credit: credit,

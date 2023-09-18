@@ -1,4 +1,4 @@
-import { User } from "@prisma/client";
+import { KYC_STATUS, User, UserType } from "@prisma/client";
 import { Request } from "express";
 
 export interface RequestWithUser extends Request {
@@ -33,3 +33,21 @@ interface FSDH360BankHeader {
 }
 
 export type RequestFromFSDH360Bank = Request & { headers: FSDH360BankHeader };
+
+export interface LoginMeta {
+    kycStatus: KYC_STATUS;
+    isWalletCreated: boolean;
+    userType: UserType;
+    role: {
+        name: string;
+        slug: string;
+        permissions: string[];
+    };
+}
+
+export interface SignupResponseData {
+    accessToken: string;
+}
+export interface LoginResponseData extends SignupResponseData {
+    meta: string;
+}

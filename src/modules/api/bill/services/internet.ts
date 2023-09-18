@@ -410,7 +410,7 @@ export class InternetBillService {
                             },
                         });
                     this.billEvent.emit("bill-purchase-failure", {
-                        transaction: transaction,
+                        transactionId: transaction.id,
                     });
                 }
 
@@ -529,7 +529,7 @@ export class InternetBillService {
 
         if (wallet.mainBalance < transaction.amount) {
             this.billEvent.emit("payment-failure", {
-                transaction: transaction,
+                transactionId: transaction.id,
             });
             throw new InsufficientWalletBalanceException(
                 "Insufficient wallet balance",
@@ -593,13 +593,13 @@ export class InternetBillService {
             switch (true) {
                 case error instanceof IRechargeVendInternetException: {
                     this.billEvent.emit("bill-purchase-failure", {
-                        transaction: transaction,
+                        transactionId: transaction.id,
                     });
                     throw error;
                 }
                 case error instanceof WalletChargeException: {
                     this.billEvent.emit("payment-failure", {
-                        transaction: transaction,
+                        transactionId: transaction.id,
                     });
                     throw error;
                 }
