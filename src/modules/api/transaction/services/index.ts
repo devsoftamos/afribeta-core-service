@@ -311,22 +311,29 @@ export class TransactionService {
                 HttpStatus.NOT_FOUND
             );
         }
-
-        const updateStatusOptions: Prisma.TransactionUpdateWithWhereUniqueWithoutUserInput = {
-            where: {
-                paymentReference: paymentReferenceExists.paymentReference
-            },
-            data:{}
-        }
-        
+   
         switch (options.status) {
             case UpdatePayoutStatus.APPROVED:{
-                updateStatusOptions.data.status = UpdatePayoutStatus.APPROVED
-                break;
+                 await this.prisma.transaction.update({
+                where: {
+                    paymentReference: paymentReferenceExists.paymentReference
+                },
+                data:{
+                    status: UpdatePayoutStatus.APPROVED
+                }
+              });
+              break;
             }
             case UpdatePayoutStatus.DECLINED: {
-                updateStatusOptions.data.status = UpdatePayoutStatus.DECLINED
-                await this.prisma.wallet.update({
+                const updateStatus = this.prisma.transaction.update({
+                    where: {
+                        paymentReference: paymentReferenceExists.paymentReference
+                    },
+                    data: {
+                        status: UpdatePayoutStatus.DECLINED,
+                    }
+                })
+                const refundCommission = this.prisma.wallet.update({
                     where: {
                         userId: paymentReferenceExists.userId
                     },
@@ -337,10 +344,10 @@ export class TransactionService {
                     }
                 })
 
+                await this.prisma.$transaction([updateStatus, refundCommission]);
+                break;
             }
         };
-
-        const updateStatus = await this.prisma.transaction.update(updateStatusOptions)
 
         return buildResponse({
             message: "Payout status updated successfully",
