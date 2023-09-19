@@ -9,7 +9,7 @@ export class VendFailureException extends HttpException {
 }
 
 export class VendInProgressException extends HttpException {
-    name: string = "VendInProgressException";
+    name = "VendInProgressException";
 }
 
 //power
@@ -18,7 +18,7 @@ export class VendPowerFailureException extends VendFailureException {
 }
 
 export class VendPowerInProgressException extends VendInProgressException {
-    name: string = "VendPowerInProgressException";
+    name = "VendPowerInProgressException";
 }
 
 //data
@@ -27,7 +27,7 @@ export class VendDataFailureException extends VendFailureException {
 }
 
 export class VendDataInProgressException extends VendInProgressException {
-    name: string = "VendDataInProgressException";
+    name = "VendDataInProgressException";
 }
 
 //airtime
@@ -36,5 +36,5 @@ export class VendAirtimeFailureException extends VendFailureException {
 }
 
 export class VendAirtimeInProgressException extends VendInProgressException {
-    name: string = "VendAirtimeInProgressException";
+    name = "VendAirtimeInProgressException";
 }

@@ -51,5 +51,5 @@ export class BuyPowerVendCableTVException extends BuyPowerCableTVException {
 
 //requery
 export class BuyPowerRequeryException extends HttpException {
-    name: string = "BuyPowerRequeryException";
+    name = "BuyPowerRequeryException";
 }
