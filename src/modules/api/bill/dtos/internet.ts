@@ -6,6 +6,9 @@ import { BillProviderSlug } from "../interfaces";
 export class GetInternetBundleDto {
     @IsEnum(NetworkInternetProvider)
     billService: NetworkInternetProvider;
+
+    @IsEnum(BillProviderSlug)
+    billProvider: BillProviderSlug;
 }
 
 export class PurchaseInternetDto extends PurchaseBillDto {

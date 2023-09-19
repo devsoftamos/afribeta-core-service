@@ -8,6 +8,8 @@ import { TransactionModule } from "./transaction";
 import { UserModule } from "./user";
 import { WalletModule } from "./wallet";
 import { WebExtension } from "./webExtension";
+import { BullModule } from "@nestjs/bull";
+import { redisConfiguration, redisUrl } from "@/config";
 
 @Module({
     imports: [
@@ -20,6 +22,9 @@ import { WebExtension } from "./webExtension";
         BillModule,
         NotificationModule,
         LocationModule,
+        BullModule.forRoot({
+            url: redisUrl,
+        }),
     ],
 })
 export class APIModule {}

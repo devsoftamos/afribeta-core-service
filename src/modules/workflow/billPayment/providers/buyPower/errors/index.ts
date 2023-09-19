@@ -1,7 +1,7 @@
 import { HttpException } from "@nestjs/common";
 
-export class BuyPowerVendInProgressError extends HttpException {
-    name = "BuyPowerVendInProgressError";
+export class BuyPowerVendInProgressException extends HttpException {
+    name = "BuyPowerVendInProgressException";
 }
 
 //Power
@@ -47,4 +47,9 @@ export class BuyPowerCableTVException extends HttpException {
 
 export class BuyPowerVendCableTVException extends BuyPowerCableTVException {
     name = "BuyPowerVendCableTVException";
+}
+
+//requery
+export class BuyPowerRequeryException extends HttpException {
+    name: string = "BuyPowerRequeryException";
 }

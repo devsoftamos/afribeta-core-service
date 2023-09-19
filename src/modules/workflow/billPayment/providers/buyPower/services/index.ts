@@ -26,10 +26,11 @@ import {
     BuyPowerDataException,
     BuyPowerInternetException,
     BuyPowerPowerException,
+    BuyPowerRequeryException,
     BuyPowerVendAirtimeException,
     BuyPowerVendCableTVException,
     BuyPowerVendDataException,
-    BuyPowerVendInProgressError,
+    BuyPowerVendInProgressException,
     BuyPowerVendInternetException,
     BuyPowerVendPowerException,
 } from "../errors";
@@ -56,13 +57,13 @@ export class BuyPowerWorkflowService implements BillPaymentWorkflow {
     private handlePendingTransactionError(error: BuyPowerError) {
         switch (error.status) {
             case 202: {
-                throw new BuyPowerVendInProgressError(
+                throw new BuyPowerVendInProgressException(
                     "Vending in progress",
                     HttpStatus.ACCEPTED
                 );
             }
             case 502: {
-                throw new BuyPowerVendInProgressError(
+                throw new BuyPowerVendInProgressException(
                     "Vending in progress",
                     HttpStatus.BAD_GATEWAY
                 );
@@ -118,6 +119,44 @@ export class BuyPowerWorkflowService implements BillPaymentWorkflow {
         }
     }
 
+    async reQuery(orderId: string) {
+        try {
+            const resp = await this.buyPower.reQuery({
+                orderId: orderId,
+            });
+
+            if (!resp.data) {
+                throw new BuyPowerRequeryException(
+                    "Requery operation not successful",
+                    HttpStatus.NOT_IMPLEMENTED
+                );
+            }
+
+            return resp.data;
+        } catch (error) {
+            switch (true) {
+                case error instanceof BuyPowerRequeryException: {
+                    throw error;
+                }
+
+                case error instanceof BuyPowerError: {
+                    this.handlePendingTransactionError(error);
+                    throw new BuyPowerRequeryException(
+                        error.message,
+                        error.status
+                    );
+                }
+
+                default: {
+                    throw new BuyPowerRequeryException(
+                        "Requery operation not successful",
+                        HttpStatus.INTERNAL_SERVER_ERROR
+                    );
+                }
+            }
+        }
+    }
+
     async vendPower(options: VendPowerOptions): Promise<VendPowerResponse> {
         try {
             const resp = await this.buyPower.vendPower({
@@ -136,7 +175,6 @@ export class BuyPowerWorkflowService implements BillPaymentWorkflow {
                 demandCategory: resp.data.demandCategory,
             };
         } catch (error) {
-            logger.error(error);
             switch (true) {
                 case error instanceof BuyPowerVendPowerException: {
                     throw error;

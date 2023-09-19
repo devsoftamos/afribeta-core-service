@@ -2,11 +2,21 @@ import { PrismaService } from "@/modules/core/prisma/services";
 import {
     GetDataBundleResponse,
     NetworkDataProvider,
+    VendDataFailureException,
+    VendDataResponse,
 } from "@/modules/workflow/billPayment";
 import { IRechargeWorkflowService } from "@/modules/workflow/billPayment/providers/iRecharge/services";
 import { ApiResponse, buildResponse, generateId } from "@/utils";
-import { forwardRef, HttpStatus, Inject, Injectable } from "@nestjs/common";
 import {
+    forwardRef,
+    HttpException,
+    HttpStatus,
+    Inject,
+    Injectable,
+} from "@nestjs/common";
+import {
+    BillProvider,
+    BillProviderDataBundleNetwork,
     PaymentChannel,
     PaymentStatus,
     Prisma,
@@ -34,9 +44,11 @@ import {
     InvalidBillTypePaymentReference,
     WalletChargeException,
     InvalidBillProviderException,
+    UnavailableBillProviderDataNetwork,
 } from "../errors";
 import {
     BillProviderSlug,
+    BillProviderSlugForPower,
     BillPurchaseInitializationHandlerOptions,
     CompleteBillPurchaseOptions,
     CompleteBillPurchaseUserOptions,
@@ -56,12 +68,14 @@ import { DB_TRANSACTION_TIMEOUT } from "@/config";
 import { BillService } from ".";
 import { IRechargeVendDataException } from "@/modules/workflow/billPayment/providers/iRecharge";
 import { BillEvent } from "../events";
+import { BuyPowerWorkflowService } from "@/modules/workflow/billPayment/providers/buyPower/services";
 
 @Injectable()
 export class DataBillService {
     constructor(
         private iRechargeWorkflowService: IRechargeWorkflowService,
         private prisma: PrismaService,
+        private buyPowerWorkflowService: BuyPowerWorkflowService,
 
         @Inject(forwardRef(() => BillService))
         private billService: BillService,
@@ -73,13 +87,26 @@ export class DataBillService {
         let billProvider = await this.prisma.billProvider.findFirst({
             where: {
                 isActive: true,
-                isDefault: true,
+                AND: [
+                    {
+                        slug: { not: BillProviderSlugForPower.IKEJA_ELECTRIC },
+                    },
+                    {
+                        slug: options.billProvider,
+                    },
+                ],
             },
         });
         if (!billProvider) {
             billProvider = await this.prisma.billProvider.findFirst({
                 where: {
                     isActive: true,
+                    slug: {
+                        notIn: [
+                            BillProviderSlugForPower.IKEJA_ELECTRIC,
+                            options.billProvider,
+                        ],
+                    },
                 },
             });
         }
@@ -94,12 +121,17 @@ export class DataBillService {
                     dataBundles = [...dataBundles, ...iRechargeDataBundles];
                     break;
                 }
+                case BillProviderSlug.BUYPOWER: {
+                    const buyPowerDataBundles =
+                        await this.buyPowerWorkflowService.getDataBundles(
+                            options.billService
+                        );
+                    dataBundles = [...dataBundles, ...buyPowerDataBundles];
+                    break;
+                }
 
                 default: {
-                    throw new InvalidBillProviderException(
-                        "No integration for the retrieved bill provider",
-                        HttpStatus.INTERNAL_SERVER_ERROR
-                    );
+                    break;
                 }
             }
         }
@@ -224,8 +256,6 @@ export class DataBillService {
         });
         const { billProvider, paymentChannel, purchaseOptions, user } = options;
 
-        //TODO: compute commission for agent and merchant here
-
         //record transaction
         const transactionCreateOptions: Prisma.TransactionUncheckedCreateInput =
             {
@@ -326,7 +356,6 @@ export class DataBillService {
             });
 
             if (!billProvider) {
-                //TODO: AUTOMATION UPGRADE, check for an active provider and switch automatically
                 throw new BillProviderNotFoundException(
                     "Failed to complete data purchase. Bill provider not found",
                     HttpStatus.NOT_FOUND
@@ -363,55 +392,84 @@ export class DataBillService {
     async completeDataPurchase(
         options: CompleteBillPurchaseOptions<CompleteDataPurchaseTransactionOptions>
     ): Promise<CompleteDataPurchaseOutput> {
-        switch (options.billProvider.slug) {
-            case BillProviderSlug.IRECHARGE: {
-                //TODO: AUTOMATION UPGRADE, if iRecharge service fails, check for an active provider and switch automatically
-                const response = await this.iRechargeWorkflowService.vendData({
-                    dataCode: options.transaction.serviceTransactionCode,
-                    referenceId: options.transaction.billPaymentReference,
-                    vtuNetwork: options.transaction
-                        .billServiceSlug as NetworkDataProvider,
-                    vtuNumber: options.transaction.senderIdentifier,
-                    vtuEmail: options.user.email,
+        let vendDataResp: VendDataResponse;
+        try {
+            switch (options.billProvider.slug) {
+                case BillProviderSlug.IRECHARGE: {
+                    vendDataResp = await this.iRechargeWorkflowService.vendData(
+                        {
+                            dataCode:
+                                options.transaction.serviceTransactionCode,
+                            referenceId:
+                                options.transaction.billPaymentReference,
+                            vtuNetwork: options.transaction
+                                .billServiceSlug as NetworkDataProvider,
+                            vtuNumber: options.transaction.senderIdentifier,
+                            vtuEmail: options.user.email,
+                        }
+                    );
+                    return await this.successPurchaseHandler(
+                        options,
+                        vendDataResp
+                    );
+                }
+                case BillProviderSlug.BUYPOWER: {
+                    vendDataResp = await this.buyPowerWorkflowService.vendData({
+                        dataCode: options.transaction.serviceTransactionCode,
+                        referenceId: options.transaction.billPaymentReference,
+                        vtuNetwork: options.transaction
+                            .billServiceSlug as NetworkDataProvider,
+                        vtuNumber: options.transaction.senderIdentifier,
+                        vtuEmail: options.user.email,
+                        amount: options.transaction.amount,
+                    });
+                    return await this.successPurchaseHandler(
+                        options,
+                        vendDataResp
+                    );
+                }
+
+                default: {
+                    throw new DataPurchaseException(
+                        "Failed to complete data purchase. Invalid bill provider",
+                        HttpStatus.NOT_IMPLEMENTED
+                    );
+                }
+            }
+        } catch (error) {}
+    }
+
+    async successPurchaseHandler(
+        options: CompleteBillPurchaseOptions<CompleteDataPurchaseTransactionOptions>,
+        vendDataResp: VendDataResponse
+    ): Promise<CompleteDataPurchaseOutput> {
+        await this.prisma.$transaction(
+            async (tx) => {
+                await tx.transaction.update({
+                    where: {
+                        id: options.transaction.id,
+                    },
+                    data: {
+                        status: TransactionStatus.SUCCESS,
+                        token: vendDataResp.networkProviderReference,
+                        paymentChannel: options.isWalletPayment
+                            ? PaymentChannel.WALLET
+                            : options.transaction.paymentChannel,
+                    },
                 });
 
-                await this.prisma.$transaction(
-                    async (tx) => {
-                        await tx.transaction.update({
-                            where: {
-                                id: options.transaction.id,
-                            },
-                            data: {
-                                status: TransactionStatus.SUCCESS,
-                                token: response.networkProviderReference,
-                                paymentChannel: options.isWalletPayment
-                                    ? PaymentChannel.WALLET
-                                    : options.transaction.paymentChannel,
-                            },
-                        });
-
-                        this.billEvent.emit("pay-bill-commission", {
-                            transactionId: options.transaction.id,
-                            userType: options.user.userType,
-                        });
-                    },
-                    {
-                        timeout: DB_TRANSACTION_TIMEOUT,
-                    }
-                );
-
-                return {
-                    networkProviderReference: response.networkProviderReference,
-                };
+                this.billEvent.emit("pay-bill-commission", {
+                    transactionId: options.transaction.id,
+                    userType: options.user.userType,
+                });
+            },
+            {
+                timeout: DB_TRANSACTION_TIMEOUT,
             }
-
-            default: {
-                throw new DataPurchaseException(
-                    "Failed to complete data purchase. Invalid bill provider",
-                    HttpStatus.NOT_IMPLEMENTED
-                );
-            }
-        }
+        );
+        return {
+            networkProviderReference: vendDataResp.networkProviderReference,
+        };
     }
 
     async walletPayment(options: PaymentReferenceDto, user: User) {
@@ -486,22 +544,21 @@ export class DataBillService {
         }
 
         if (!billProvider.isActive) {
-            //TODO: AUTOMATION UPGRADE, check for an active provider and switch automatically
             throw new DataPurchaseException(
                 "Bill Provider not active",
                 HttpStatus.BAD_REQUEST
             );
         }
 
-        //record payment
-        await this.billService.walletChargeHandler({
-            amount: transaction.amount,
-            transactionId: transaction.id,
-            walletId: wallet.id,
-        });
-
         //purchase
         try {
+            //charge wallet and update payment status
+            await this.billService.walletChargeHandler({
+                amount: transaction.amount,
+                transactionId: transaction.id,
+                walletId: wallet.id,
+            });
+
             const purchaseInfo = await this.completeDataPurchase({
                 billProvider: billProvider,
                 transaction: transaction,
@@ -620,11 +677,27 @@ export class DataBillService {
 
     async getDataNetworks() {
         let networks = [];
-        const billProvider = await this.prisma.billProvider.findFirst({
+        let billProvider = await this.prisma.billProvider.findFirst({
             where: {
                 isActive: true,
+                isDefault: true,
+                slug: {
+                    not: BillProviderSlugForPower.IKEJA_ELECTRIC,
+                },
             },
         });
+
+        if (!billProvider) {
+            billProvider = await this.prisma.billProvider.findFirst({
+                where: {
+                    isActive: true,
+                    slug: {
+                        not: BillProviderSlugForPower.IKEJA_ELECTRIC,
+                    },
+                },
+            });
+        }
+
         if (billProvider) {
             const providerNetworks =
                 await this.prisma.billProviderDataBundleNetwork.findMany({
@@ -666,4 +739,258 @@ export class DataBillService {
         );
         return formatted;
     }
+
+    // async autoSwitchProviderOnVendFailureHandler(
+    //     options: CompleteBillPurchaseOptions<CompleteDataPurchaseTransactionOptions>,
+    //     error: HttpException
+    // ): Promise<CompleteDataPurchaseOutput> {
+    //     const handleUnprocessedTransaction = async () => {
+    //         //handle buypower
+    //         const handleBuyPowerSwitch = async (
+    //             billProvider: BillProvider,
+    //             billProviderDiscoInfo: BillProviderDataBundleNetwork
+    //         ) => {
+    //             // const vendDataResp =
+    //             //     await this.buyPowerWorkflowService.vendPower({
+    //             //         accountId: options.transaction.accountId,
+    //             //         amount: options.transaction.amount,
+    //             //         discoCode: billProviderDiscoInfo.prepaidMeterCode,
+
+    //             //         email: options.user.email,
+    //             //         meterNumber: options.transaction.senderIdentifier,
+    //             //         referenceId: options.transaction.billPaymentReference,
+    //             //     });
+
+    //             const vendDataResp =
+    //                 await this.buyPowerWorkflowService.vendData({
+    //                     dataCode: options.transaction.serviceTransactionCode,
+    //                     referenceId: options.transaction.billPaymentReference,
+    //                     vtuNetwork: options.transaction
+    //                         .billServiceSlug as NetworkDataProvider,
+    //                     vtuNumber: options.transaction.senderIdentifier,
+    //                     vtuEmail: options.user.email,
+    //                     amount: options.transaction.amount,
+    //                 });
+
+    //             await this.prisma.transaction.update({
+    //                 where: {
+    //                     id: options.transaction.id,
+    //                 },
+    //                 data: {
+    //                     serviceTransactionCode2:
+    //                         billProviderDiscoInfo.prepaidMeterCode,
+    //                     provider: billProvider.slug,
+    //                     billProviderId: billProvider.id,
+    //                     serviceTransactionCode: null,
+    //                 },
+    //             });
+
+    //             return await this.successPurchaseHandler(options, vendDataResp);
+    //         };
+
+    //         //handle iRecharge
+    //         const handleIRechargeSwitch = async (
+    //             billProvider: BillProvider,
+    //             billProviderDiscoInfo: BillProviderElectricDisco
+    //         ) => {
+    //             //generate meter token
+    //             const discoCode =
+    //                 options.transaction.meterType == MeterType.PREPAID
+    //                     ? billProviderDiscoInfo.prepaidMeterCode
+    //                     : billProviderDiscoInfo.postpaidMeterCode;
+
+    //             const meterInfo =
+    //                 await this.iRechargeWorkflowService.getMeterInfo({
+    //                     meterNumber: options.transaction.senderIdentifier,
+    //                     reference: generateId({
+    //                         type: "irecharge_ref",
+    //                     }),
+    //                     discoCode: discoCode,
+    //                 });
+
+    //             const vendPowerResp =
+    //                 await this.iRechargeWorkflowService.vendPower({
+    //                     accessToken: meterInfo.accessToken, //
+    //                     accountId: options.transaction.accountId,
+    //                     amount: options.transaction.amount,
+    //                     discoCode: discoCode, //
+    //                     email: options.user.email,
+    //                     meterNumber: options.transaction.senderIdentifier,
+    //                     referenceId: options.transaction.billPaymentReference,
+    //                 });
+
+    //             await this.prisma.transaction.update({
+    //                 where: {
+    //                     id: options.transaction.id,
+    //                 },
+    //                 data: {
+    //                     serviceTransactionCode2: discoCode,
+    //                     serviceTransactionCode: meterInfo.accessToken,
+    //                     provider: billProvider.slug,
+    //                     billProviderId: billProvider.id,
+    //                 },
+    //             });
+
+    //             return await this.successPurchaseHandler(
+    //                 options,
+    //                 vendPowerResp
+    //             );
+    //         };
+
+    //         //check other available active providers
+    //         const billProviders = await this.prisma.billProvider.findMany({
+    //             where: {
+    //                 isActive: true,
+    //                 id: { not: options.billProvider.id },
+    //                 slug: {
+    //                     not: BillProviderSlugForPower.IKEJA_ELECTRIC,
+    //                 },
+    //             },
+    //         });
+    //         if (!billProviders.length) {
+    //             throw new VendDataFailureException(
+    //                 error.message ?? "Failed to vend data",
+    //                 HttpStatus.NOT_IMPLEMENTED
+    //             );
+    //         }
+
+    //         //switch automation
+    //         for (let i = 0; i < billProviders.length; i++) {
+    //             try {
+    //                 const billProviderDataInfo =
+    //                     await this.prisma.billProviderDataBundleNetwork.findUnique(
+    //                         {
+    //                             where: {
+    //                                 billServiceSlug_billProviderSlug: {
+    //                                     billProviderSlug: billProviders[i].slug,
+    //                                     billServiceSlug:
+    //                                         options.transaction.billServiceSlug,
+    //                                 },
+    //                             },
+    //                         }
+    //                     );
+
+    //                 if (i == billProviders.length - 1) {
+    //                     if (!billProviderDataInfo) {
+    //                         throw new UnavailableBillProviderDataNetwork(
+    //                             `Failed to vend data. The auto selected provider does not have the bill service`,
+    //                             HttpStatus.NOT_FOUND
+    //                         );
+    //                     }
+    //                 }
+
+    //                 if (billProviderDataInfo) {
+    //                     switch (billProviders[i].slug) {
+    //                         case BillProviderSlugForPower.BUYPOWER: {
+    //                             return await handleBuyPowerSwitch(
+    //                                 billProviders[i],
+    //                                 billProviderDataInfo
+    //                             );
+    //                         }
+    //                         case BillProviderSlugForPower.IRECHARGE: {
+    //                             return await handleIRechargeSwitch(
+    //                                 billProviders[i],
+    //                                 billProviderDataInfo
+    //                             );
+    //                         }
+
+    //                         default: {
+    //                             throw new VendDataFailureException(
+    //                                 error.message ?? "Failed to vend data",
+    //                                 HttpStatus.NOT_IMPLEMENTED
+    //                             );
+    //                         }
+    //                     }
+    //                 }
+    //             } catch (error) {
+    //                 logger.error(error);
+    //                 switch (true) {
+    //                     case error instanceof
+    //                         UnavailableBillProviderDataNetwork: {
+    //                         this.billEvent.emit("bill-purchase-failure", {
+    //                             transactionId: options.transaction.id,
+    //                         });
+    //                         throw new VendPowerFailureException(
+    //                             "Failed to vend data",
+    //                             HttpStatus.NOT_IMPLEMENTED
+    //                         );
+    //                     }
+
+    //                     case error instanceof BuyPowerVendInProgressException: {
+    //                         await this.buypowerReQueryQueue.add(
+    //                             BuyPowerReQueryQueue.POWER,
+    //                             {
+    //                                 orderId:
+    //                                     options.transaction
+    //                                         .billPaymentReference,
+    //                                 transactionId: options.transaction.id,
+    //                                 isWalletPayment: options.isWalletPayment,
+    //                             }
+    //                         );
+    //                         throw new VendPowerInProgressException(
+    //                             "Power vending in progress",
+    //                             HttpStatus.ACCEPTED
+    //                         );
+    //                     }
+    //                     case error instanceof UnprocessedTransactionException: {
+    //                         if (i == billProviders.length - 1) {
+    //                             this.billEvent.emit("bill-purchase-failure", {
+    //                                 transactionId: options.transaction.id,
+    //                             });
+    //                             throw new VendPowerFailureException(
+    //                                 "Failed to vend power",
+    //                                 HttpStatus.NOT_IMPLEMENTED
+    //                             );
+    //                         }
+    //                         break;
+    //                     }
+
+    //                     default: {
+    //                         if (i == billProviders.length - 1) {
+    //                             this.billEvent.emit("bill-purchase-failure", {
+    //                                 transactionId: options.transaction.id,
+    //                             });
+    //                             throw new VendPowerFailureException(
+    //                                 "Failed to vend power",
+    //                                 HttpStatus.NOT_IMPLEMENTED
+    //                             );
+    //                         }
+    //                         break;
+    //                     }
+    //                 }
+    //             }
+    //         }
+    //     };
+
+    //     switch (true) {
+    //         case error instanceof UnprocessedTransactionException: {
+    //             return await handleUnprocessedTransaction();
+    //         }
+
+    //         case error instanceof BuyPowerVendInProgressException: {
+    //             await this.buypowerReQueryQueue.add(
+    //                 BuyPowerReQueryQueue.POWER,
+    //                 {
+    //                     orderId: options.transaction.billPaymentReference,
+    //                     transactionId: options.transaction.id,
+    //                     isWalletPayment: options.isWalletPayment,
+    //                 }
+    //             );
+    //             throw new VendPowerInProgressException(
+    //                 "Power vending in progress",
+    //                 HttpStatus.ACCEPTED
+    //             );
+    //         }
+
+    //         default: {
+    //             this.billEvent.emit("bill-purchase-failure", {
+    //                 transactionId: options.transaction.id,
+    //             });
+    //             throw new VendPowerFailureException(
+    //                 error.message ?? "Failed to vend power",
+    //                 HttpStatus.NOT_IMPLEMENTED
+    //             );
+    //         }
+    //     }
+    // }
 }

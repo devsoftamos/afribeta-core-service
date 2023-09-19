@@ -274,7 +274,6 @@ export class IRechargeWorkflowService implements BillPaymentWorkflow {
                         code: bundle.code,
                         price: +bundle.price,
                         title: bundle.title,
-                        validity: bundle.validity,
                     };
                 });
             };

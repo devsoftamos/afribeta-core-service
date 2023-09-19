@@ -170,6 +170,22 @@ const runtimeEnvironment: RequiredEnvironment[] = [
         name: "ENCRYPT_SECRET",
         type: RequiredEnvironmentTypes.String,
     },
+    {
+        name: "REDIS_HOST",
+        type: RequiredEnvironmentTypes.String,
+    },
+    {
+        name: "REDIS_PORT",
+        type: RequiredEnvironmentTypes.String,
+    },
+    {
+        name: "REDIS_USER",
+        type: RequiredEnvironmentTypes.String,
+    },
+    {
+        name: "REDIS_PASSWORD",
+        type: RequiredEnvironmentTypes.String,
+    },
 
     // {
     //     name: "POLARIS_API_KEY",
@@ -295,5 +311,21 @@ export const termiiSmsOptions: Termii.SmsOptions = {
     apiKey: process.env.TERMII_API_KEY,
     sender: process.env.TERMII_SMS_SENDER,
 };
+
+//redis
+export interface RedisConfig {
+    user: string;
+    password: string;
+    host: string;
+    port: number;
+}
+
+export const redisConfiguration: RedisConfig = {
+    host: process.env.REDIS_HOST,
+    port: +process.env.REDIS_PORT,
+    user: process.env.REDIS_USER ?? "",
+    password: process.env.REDIS_PASSWORD ?? "",
+};
+export const redisUrl = `redis://${redisConfiguration.user}:${redisConfiguration.password}@${redisConfiguration.host}:${redisConfiguration.port}`;
 
 export const frontendDevOrigin = [/^http:\/\/localhost:\d+$/];

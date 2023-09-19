@@ -7,6 +7,7 @@ import {
     GetPriceListOptions,
     Optional,
     ReQueryOptions,
+    ReQueryResponseData,
     WalletBalanceResponseData,
 } from "./interfaces";
 import { Power, Airtime, Data, CableTv } from "./interfaces";
@@ -106,13 +107,16 @@ export class BuyPower {
         }
     }
 
-    private async reQuery<R>(options: ReQueryOptions): Promise<R> {
+    async reQuery<R = ReQueryResponseData>(
+        options: ReQueryOptions
+    ): Promise<BuyPowerResponse<R>> {
         const retryCount = Array.isArray(options.delay)
             ? options.delay.length
             : 2;
         const delay: number = Array.isArray(options.delay)
             ? options.delay[0] * 1000
             : 120 * 1000;
+        // const delay = 5 * 1000;
         const code202 = 202;
         const code502 = 502;
         try {
@@ -127,19 +131,6 @@ export class BuyPower {
                         statusCodesToRetry: [[code502, code502]],
                         backoffType: "static",
                         instance: this.axios,
-                        // onRetryAttempt(err) {
-                        //     console.log(
-                        //         err.response.status,
-                        //         "******",
-                        //         err.message
-                        //     );
-                        //     const cfg = rax.getConfig(err);
-                        //     console.log(
-                        //         `Retry attempts: ${
-                        //             cfg.currentRetryAttempt
-                        //         }, ${new Date()}`
-                        //     );
-                        // },
                     },
                 };
 
@@ -167,10 +158,10 @@ export class BuyPower {
                 }
                 case 200: {
                     return {
-                        status: response.status,
+                        status: true,
                         responseCode: response.status,
-                        data: response.data.result?.data,
-                    } as R;
+                        data: response.data.result?.data as R,
+                    };
                 }
             }
         } catch (error) {
@@ -224,12 +215,11 @@ export class BuyPower {
             // };
 
             if (this.reQueryStatuses.includes(response.status)) {
-                const reQueryResponse = await this.reQuery<
-                    BuyPowerResponse<Power.VendPowerResponseData>
-                >({
-                    orderId: options.orderId, //"C86A86F9801B1611664162", //"135EE81DAAA59E11648532v", // options.orderId,
-                    delay: response.data.data?.delay as any,
-                });
+                const reQueryResponse =
+                    await this.reQuery<Power.VendPowerResponseData>({
+                        orderId: options.orderId, //"C86A86F9801B1611664162", //"135EE81DAAA59E11648532v", // options.orderId,
+                        delay: response.data.data?.delay as any,
+                    });
 
                 if (!reQueryResponse.data) {
                     const error = new BuyPowerError("unable to vend power");
@@ -245,7 +235,7 @@ export class BuyPower {
                 throw error;
             }
 
-            return response.data as any;
+            return response.data;
         } catch (error) {
             this.handleError(error);
         }
@@ -274,12 +264,11 @@ export class BuyPower {
             const response = await this.axios(requestOptions);
 
             if (this.reQueryStatuses.includes(response.status)) {
-                const responseData = await this.reQuery<
-                    BuyPowerResponse<Airtime.VendAirtimeResponseData>
-                >({
-                    orderId: options.orderId,
-                    delay: response.data.data?.delay as any,
-                });
+                const responseData =
+                    await this.reQuery<Airtime.VendAirtimeResponseData>({
+                        orderId: options.orderId,
+                        delay: response.data.data?.delay as any,
+                    });
                 if (!responseData.data) {
                     const error = new BuyPowerError("unable to vend airtime");
                     error.status = 500;
@@ -323,12 +312,11 @@ export class BuyPower {
             const response = await this.axios(requestOptions);
 
             if (this.reQueryStatuses.includes(response.status)) {
-                const responseData = await this.reQuery<
-                    BuyPowerResponse<Data.VendDataResponseData>
-                >({
-                    orderId: options.orderId,
-                    delay: response.data.data?.delay as any,
-                });
+                const responseData =
+                    await this.reQuery<Data.VendDataResponseData>({
+                        orderId: options.orderId,
+                        delay: response.data.data?.delay as any,
+                    });
                 if (!responseData.data) {
                     const error = new BuyPowerError("unable to vend data");
                     error.status = 500;
@@ -373,12 +361,11 @@ export class BuyPower {
             const response = await this.axios(requestOptions);
 
             if (this.reQueryStatuses.includes(response.status)) {
-                const responseData = await this.reQuery<
-                    BuyPowerResponse<CableTv.VendTVResponseData>
-                >({
-                    orderId: options.orderId,
-                    delay: response.data.data?.delay as any,
-                });
+                const responseData =
+                    await this.reQuery<CableTv.VendTVResponseData>({
+                        orderId: options.orderId,
+                        delay: response.data.data?.delay as any,
+                    });
                 if (!responseData.data) {
                     const error = new BuyPowerError("unable to vend TV");
                     error.status = 500;

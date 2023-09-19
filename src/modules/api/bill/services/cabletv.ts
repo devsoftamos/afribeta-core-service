@@ -32,6 +32,7 @@ import {
 } from "../errors";
 import {
     BillProviderSlug,
+    BillProviderSlugForPower,
     BillPurchaseInitializationHandlerOptions,
     CompleteBillPurchaseOptions,
     CompleteBillPurchaseUserOptions,
@@ -57,11 +58,13 @@ import {
     GetTVBouquetDto,
     PurchaseTVDto,
 } from "../dtos/cabletv";
+import { BuyPowerWorkflowService } from "@/modules/workflow/billPayment/providers/buyPower/services";
 
 @Injectable()
 export class CableTVBillService {
     constructor(
         private iRechargeWorkflowService: IRechargeWorkflowService,
+        private buyPowerWorkflowService: BuyPowerWorkflowService,
         private prisma: PrismaService,
 
         @Inject(forwardRef(() => BillService))
@@ -75,12 +78,19 @@ export class CableTVBillService {
             where: {
                 isActive: true,
                 isDefault: true,
+                slug: {
+                    not: BillProviderSlugForPower.IKEJA_ELECTRIC,
+                },
             },
         });
+
         if (!billProvider) {
             billProvider = await this.prisma.billProvider.findFirst({
                 where: {
                     isActive: true,
+                    slug: {
+                        not: BillProviderSlugForPower.IKEJA_ELECTRIC,
+                    },
                 },
             });
         }
@@ -128,15 +138,49 @@ export class CableTVBillService {
 
     async getTVBouquets(options: GetTVBouquetDto): Promise<ApiResponse> {
         let tvBouquets: GetDataBundleResponse[] = [];
-        const provider = await this.prisma.billProvider.findFirst({
-            where: { isActive: true },
-        });
 
-        if (provider) {
-            switch (provider.slug) {
+        let billProvider = await this.prisma.billProvider.findFirst({
+            where: {
+                isActive: true,
+                AND: [
+                    {
+                        slug: {
+                            not: BillProviderSlugForPower.IKEJA_ELECTRIC,
+                        },
+                    },
+                    {
+                        slug: options.billProvider,
+                    },
+                ],
+            },
+        });
+        if (!billProvider) {
+            billProvider = await this.prisma.billProvider.findFirst({
+                where: {
+                    isActive: true,
+                    slug: {
+                        notIn: [
+                            BillProviderSlugForPower.IKEJA_ELECTRIC,
+                            options.billProvider,
+                        ],
+                    },
+                },
+            });
+        }
+
+        if (billProvider) {
+            switch (billProvider.slug) {
                 case BillProviderSlug.IRECHARGE: {
                     const iRechargeDataBundles =
                         await this.iRechargeWorkflowService.getCableTVBouquets(
+                            options.billService
+                        );
+                    tvBouquets = [...tvBouquets, ...iRechargeDataBundles];
+                    break;
+                }
+                case BillProviderSlug.BUYPOWER: {
+                    const iRechargeDataBundles =
+                        await this.buyPowerWorkflowService.getCableTVBouquets(
                             options.billService
                         );
                     tvBouquets = [...tvBouquets, ...iRechargeDataBundles];
@@ -155,7 +199,7 @@ export class CableTVBillService {
         return buildResponse({
             message: "Successfully retrieved TV bouquets",
             data: {
-                billProvider: provider.slug,
+                billProvider: billProvider.slug,
                 billService: options.billService,
                 bundles: tvBouquets,
             },
@@ -595,15 +639,15 @@ export class CableTVBillService {
             );
         }
 
-        //charge wallet and update payment status
-        await this.billService.walletChargeHandler({
-            amount: transaction.totalAmount,
-            transactionId: transaction.id,
-            walletId: wallet.id,
-        });
-
         //purchase
         try {
+            //charge wallet and update payment status
+            await this.billService.walletChargeHandler({
+                amount: transaction.amount,
+                transactionId: transaction.id,
+                walletId: wallet.id,
+            });
+
             await this.completeCableTVPurchase({
                 billProvider: billProvider,
                 transaction: transaction,

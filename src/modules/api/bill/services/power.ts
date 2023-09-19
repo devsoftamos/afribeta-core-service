@@ -32,7 +32,7 @@ import {
     InvalidBillTypePaymentReference,
     WalletChargeException,
     InvalidBillProviderException,
-    BillProviderDiscoNotFound,
+    UnavailableBillProviderDisco,
 } from "../errors";
 import {
     CompletePowerPurchaseOutput,
@@ -56,7 +56,6 @@ import {
     WalletNotFoundException,
     InsufficientWalletBalanceException,
 } from "../../wallet";
-import { IRechargeVendPowerException } from "@/modules/workflow/billPayment/providers/iRecharge";
 import { DB_TRANSACTION_TIMEOUT } from "@/config";
 import { BillEvent } from "../events";
 import { PaymentProvider, PaymentReferenceDto } from "../dtos";
@@ -68,9 +67,17 @@ import { BuyPowerWorkflowService } from "@/modules/workflow/billPayment/provider
 import {
     UnprocessedTransactionException,
     VendPowerFailureException,
+    VendPowerInProgressException,
     VendPowerResponse,
 } from "@/modules/workflow/billPayment";
-import { BuyPowerVendInProgressError } from "@/modules/workflow/billPayment/providers/buyPower";
+import { BuyPowerVendInProgressException } from "@/modules/workflow/billPayment/providers/buyPower";
+import { InjectQueue } from "@nestjs/bull";
+import { Queue } from "bull";
+import {
+    BillQueue,
+    BuyPowerReQueryQueue,
+    BuypowerReQueryJobOptions,
+} from "../queues";
 
 @Injectable()
 export class PowerBillService {
@@ -81,7 +88,9 @@ export class PowerBillService {
         private billService: BillService,
         private billEvent: BillEvent,
         private smsService: SmsService,
-        private buyPowerWorkflowService: BuyPowerWorkflowService
+        private buyPowerWorkflowService: BuyPowerWorkflowService,
+        @InjectQueue(BillQueue.BUYPOWER_REQUERY)
+        private buypowerReQueryQueue: Queue<BuypowerReQueryJobOptions>
     ) {}
 
     async getElectricDiscos(): Promise<ApiResponse> {
@@ -112,7 +121,7 @@ export class PowerBillService {
             },
         };
 
-        if (ikejaProvider) {
+        if (ikejaProvider && ikejaProvider.isActive) {
             const ikejaDiscos =
                 await this.prisma.billProviderElectricDisco.findMany(
                     queryOptions
@@ -429,7 +438,6 @@ export class PowerBillService {
             });
 
             if (!billProvider) {
-                //TODO: AUTOMATION UPGRADE, check for an active provider and switch automatically
                 throw new BillProviderNotFoundException(
                     "Failed to complete power purchase. Bill provider not found",
                     HttpStatus.NOT_FOUND
@@ -443,24 +451,7 @@ export class PowerBillService {
                 billProvider: billProvider,
             });
         } catch (error) {
-            switch (true) {
-                case error instanceof IRechargeVendPowerException: {
-                    const transaction =
-                        await this.prisma.transaction.findUnique({
-                            where: {
-                                paymentReference: options.paymentReference,
-                            },
-                        });
-                    this.billEvent.emit("bill-purchase-failure", {
-                        transactionId: transaction.id,
-                    });
-                }
-
-                default:
-                    break;
-            }
-
-            logger.error(`POWER_PURCHASE_COMPLETION_WEBHOOK_ERROR: ${error}`);
+            logger.error(error);
         }
     }
 
@@ -519,17 +510,17 @@ export class PowerBillService {
                 }
             }
         } catch (error) {
-            // return await this.powerVendFailureAndAutoProviderSwitchHandler(
-            //     options,
-            //     error
-            // );
+            return await this.autoSwitchProviderOnVendFailureHandler(
+                options,
+                error
+            );
         }
     }
 
     async successPurchaseHandler(
         options: CompleteBillPurchaseOptions<CompletePowerPurchaseTransactionOptions>,
         vendPowerResp: VendPowerResponse
-    ) {
+    ): Promise<CompletePowerPurchaseOutput> {
         await this.prisma.$transaction(
             async (tx) => {
                 await tx.transaction.update({
@@ -650,22 +641,20 @@ export class PowerBillService {
         }
 
         if (!billProvider.isActive) {
-            //TODO: AUTOMATION UPGRADE, check for an active provider and switch automatically
             throw new PowerPurchaseException(
                 "Bill Provider not active",
                 HttpStatus.BAD_REQUEST
             );
         }
 
-        //charge wallet and update payment status
-        await this.billService.walletChargeHandler({
-            amount: transaction.totalAmount,
-            transactionId: transaction.id,
-            walletId: wallet.id,
-        });
-
-        //purchase
         try {
+            //charge wallet and update payment status
+            await this.billService.walletChargeHandler({
+                amount: transaction.totalAmount,
+                transactionId: transaction.id,
+                walletId: wallet.id,
+            });
+
             const purchaseInfo = await this.completePowerPurchase({
                 billProvider: billProvider,
                 transaction: transaction,
@@ -677,32 +666,25 @@ export class PowerBillService {
                 isWalletPayment: true,
             });
 
-            if (purchaseInfo) {
-                return buildResponse({
-                    message: "Power purchase successful",
-                    data: {
-                        meter: {
-                            units: purchaseInfo.units,
-                            token: purchaseInfo.meterToken,
-                        },
-                        reference: options.reference,
+            return buildResponse({
+                message: "Power purchase successful",
+                data: {
+                    meter: {
+                        units: purchaseInfo.units,
+                        token: purchaseInfo.meterToken,
                     },
-                });
-            } else {
-                return buildResponse({
-                    message: "Power purchase successful",
-                    data: {
-                        reference: options.reference,
-                    },
-                });
-            }
+                    reference: options.reference,
+                },
+            });
         } catch (error) {
             switch (true) {
-                case error instanceof IRechargeVendPowerException: {
-                    this.billEvent.emit("bill-purchase-failure", {
-                        transactionId: transaction.id,
-                    });
+                case error instanceof VendPowerFailureException: {
                     throw error;
+                }
+                case error instanceof VendPowerInProgressException: {
+                    return buildResponse({
+                        message: "Vending in progress",
+                    });
                 }
                 case error instanceof WalletChargeException: {
                     this.billEvent.emit("payment-failure", {
@@ -835,7 +817,7 @@ export class PowerBillService {
         }
     }
 
-    async powerVendFailureAndAutoProviderSwitchHandler(
+    async autoSwitchProviderOnVendFailureHandler(
         options: CompleteBillPurchaseOptions<CompletePowerPurchaseTransactionOptions>,
         error: HttpException
     ): Promise<CompletePowerPurchaseOutput> {
@@ -862,7 +844,7 @@ export class PowerBillService {
                     },
                     data: {
                         serviceTransactionCode2:
-                            billProviderDiscoInfo.prepaidMeterCode,
+                            billProviderDiscoInfo.prepaidMeterCode, //prepaid and postpaid are the same
                         provider: billProvider.slug,
                         billProviderId: billProvider.id,
                         serviceTransactionCode: null,
@@ -924,7 +906,7 @@ export class PowerBillService {
                 );
             };
 
-            //
+            //check other available active providers
             const billProviders = await this.prisma.billProvider.findMany({
                 where: {
                     isActive: true,
@@ -942,55 +924,103 @@ export class PowerBillService {
             }
 
             //switch automation
-            for (const billProvider of billProviders) {
+            for (let i = 0; i < billProviders.length; i++) {
                 try {
                     const billProviderDiscoInfo =
                         await this.prisma.billProviderElectricDisco.findUnique({
                             where: {
                                 billServiceSlug_billProviderSlug: {
-                                    billProviderSlug: billProvider.slug,
+                                    billProviderSlug: billProviders[i].slug,
                                     billServiceSlug:
                                         options.transaction.billServiceSlug,
                                 },
                             },
                         });
 
-                    if (!billProviderDiscoInfo) {
-                        throw new BillProviderDiscoNotFound(
-                            `Failed to automate power purchase switch for ${billProvider.name} provider. No corresponding disco found`,
-                            HttpStatus.NOT_FOUND
-                        );
+                    if (i == billProviders.length - 1) {
+                        if (!billProviderDiscoInfo) {
+                            throw new UnavailableBillProviderDisco(
+                                `Failed to vend power. The auto selected provider does not have the bill service`,
+                                HttpStatus.NOT_FOUND
+                            );
+                        }
                     }
 
-                    switch (billProvider.slug) {
-                        case BillProviderSlugForPower.BUYPOWER: {
-                            return await handleBuyPowerSwitch(
-                                billProvider,
-                                billProviderDiscoInfo
-                            );
-                        }
-                        case BillProviderSlugForPower.IRECHARGE: {
-                            return await handleIRechargeSwitch(
-                                billProvider,
-                                billProviderDiscoInfo
-                            );
-                        }
+                    if (billProviderDiscoInfo) {
+                        switch (billProviders[i].slug) {
+                            case BillProviderSlugForPower.BUYPOWER: {
+                                return await handleBuyPowerSwitch(
+                                    billProviders[i],
+                                    billProviderDiscoInfo
+                                );
+                            }
+                            case BillProviderSlugForPower.IRECHARGE: {
+                                return await handleIRechargeSwitch(
+                                    billProviders[i],
+                                    billProviderDiscoInfo
+                                );
+                            }
 
-                        default: {
-                            throw new VendPowerFailureException(
-                                error.message ?? "Failed to vend power",
-                                HttpStatus.NOT_IMPLEMENTED
-                            );
+                            default: {
+                                throw new VendPowerFailureException(
+                                    error.message ?? "Failed to vend power",
+                                    HttpStatus.NOT_IMPLEMENTED
+                                );
+                            }
                         }
                     }
                 } catch (error) {
+                    logger.error(error);
                     switch (true) {
-                        case error instanceof BuyPowerVendInProgressError: {
-                            //TODO
+                        case error instanceof UnavailableBillProviderDisco: {
+                            this.billEvent.emit("bill-purchase-failure", {
+                                transactionId: options.transaction.id,
+                            });
+                            throw new VendPowerFailureException(
+                                "Failed to vend power",
+                                HttpStatus.NOT_IMPLEMENTED
+                            );
+                        }
+
+                        case error instanceof BuyPowerVendInProgressException: {
+                            await this.buypowerReQueryQueue.add(
+                                BuyPowerReQueryQueue.POWER,
+                                {
+                                    orderId:
+                                        options.transaction
+                                            .billPaymentReference,
+                                    transactionId: options.transaction.id,
+                                    isWalletPayment: options.isWalletPayment,
+                                }
+                            );
+                            throw new VendPowerInProgressException(
+                                "Power vending in progress",
+                                HttpStatus.ACCEPTED
+                            );
+                        }
+                        case error instanceof UnprocessedTransactionException: {
+                            if (i == billProviders.length - 1) {
+                                this.billEvent.emit("bill-purchase-failure", {
+                                    transactionId: options.transaction.id,
+                                });
+                                throw new VendPowerFailureException(
+                                    "Failed to vend power",
+                                    HttpStatus.NOT_IMPLEMENTED
+                                );
+                            }
+                            break;
                         }
 
                         default: {
-                            logger.error(error);
+                            if (i == billProviders.length - 1) {
+                                this.billEvent.emit("bill-purchase-failure", {
+                                    transactionId: options.transaction.id,
+                                });
+                                throw new VendPowerFailureException(
+                                    "Failed to vend power",
+                                    HttpStatus.NOT_IMPLEMENTED
+                                );
+                            }
                             break;
                         }
                     }
@@ -998,19 +1028,30 @@ export class PowerBillService {
             }
         };
 
-        //
-
         switch (true) {
             case error instanceof UnprocessedTransactionException: {
                 return await handleUnprocessedTransaction();
             }
 
-            case error instanceof BuyPowerVendInProgressError: {
-                //TODO:handle buypower
-                break;
+            case error instanceof BuyPowerVendInProgressException: {
+                await this.buypowerReQueryQueue.add(
+                    BuyPowerReQueryQueue.POWER,
+                    {
+                        orderId: options.transaction.billPaymentReference,
+                        transactionId: options.transaction.id,
+                        isWalletPayment: options.isWalletPayment,
+                    }
+                );
+                throw new VendPowerInProgressException(
+                    "Power vending in progress",
+                    HttpStatus.ACCEPTED
+                );
             }
 
             default: {
+                this.billEvent.emit("bill-purchase-failure", {
+                    transactionId: options.transaction.id,
+                });
                 throw new VendPowerFailureException(
                     error.message ?? "Failed to vend power",
                     HttpStatus.NOT_IMPLEMENTED

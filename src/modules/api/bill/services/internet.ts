@@ -36,6 +36,7 @@ import {
 } from "../errors";
 import {
     BillProviderSlug,
+    BillProviderSlugForPower,
     BillPurchaseInitializationHandlerOptions,
     CompleteBillPurchaseOptions,
     CompleteBillPurchaseUserOptions,
@@ -61,11 +62,13 @@ import {
     InternetPurchaseInitializationHandlerOutput,
     VerifyInternetPurchaseData,
 } from "../interfaces/internet";
+import { BuyPowerWorkflowService } from "@/modules/workflow/billPayment/providers/buyPower/services";
 
 @Injectable()
 export class InternetBillService {
     constructor(
         private iRechargeWorkflowService: IRechargeWorkflowService,
+        private buyPowerWorkflowService: BuyPowerWorkflowService,
         private prisma: PrismaService,
 
         @Inject(forwardRef(() => BillService))
@@ -80,13 +83,28 @@ export class InternetBillService {
         let billProvider = await this.prisma.billProvider.findFirst({
             where: {
                 isActive: true,
-                isDefault: true,
+                AND: [
+                    {
+                        slug: {
+                            not: BillProviderSlugForPower.IKEJA_ELECTRIC,
+                        },
+                    },
+                    {
+                        slug: options.billProvider,
+                    },
+                ],
             },
         });
         if (!billProvider) {
             billProvider = await this.prisma.billProvider.findFirst({
                 where: {
                     isActive: true,
+                    slug: {
+                        notIn: [
+                            BillProviderSlugForPower.IKEJA_ELECTRIC,
+                            options.billProvider,
+                        ],
+                    },
                 },
             });
         }
@@ -96,6 +114,17 @@ export class InternetBillService {
                 case BillProviderSlug.IRECHARGE: {
                     const iRechargeDataBundles =
                         await this.iRechargeWorkflowService.getInternetBundles(
+                            options.billService
+                        );
+                    internetBundles = [
+                        ...internetBundles,
+                        ...iRechargeDataBundles,
+                    ];
+                    break;
+                }
+                case BillProviderSlug.BUYPOWER: {
+                    const iRechargeDataBundles =
+                        await this.buyPowerWorkflowService.getInternetBundles(
                             options.billService
                         );
                     internetBundles = [
@@ -126,11 +155,26 @@ export class InternetBillService {
 
     async getInternetNetworks() {
         let networks = [];
-        const billProvider = await this.prisma.billProvider.findFirst({
+        let billProvider = await this.prisma.billProvider.findFirst({
             where: {
                 isActive: true,
+                isDefault: true,
+                slug: {
+                    not: BillProviderSlugForPower.IKEJA_ELECTRIC,
+                },
             },
         });
+
+        if (!billProvider) {
+            billProvider = await this.prisma.billProvider.findFirst({
+                where: {
+                    isActive: true,
+                    slug: {
+                        not: BillProviderSlugForPower.IKEJA_ELECTRIC,
+                    },
+                },
+            });
+        }
         if (billProvider) {
             const providerNetworks =
                 await this.prisma.billProviderInternetNetwork.findMany({
@@ -558,15 +602,15 @@ export class InternetBillService {
             );
         }
 
-        //record payment
-        await this.billService.walletChargeHandler({
-            amount: transaction.amount,
-            transactionId: transaction.id,
-            walletId: wallet.id,
-        });
-
         //purchase
         try {
+            //record payment
+            await this.billService.walletChargeHandler({
+                amount: transaction.amount,
+                transactionId: transaction.id,
+                walletId: wallet.id,
+            });
+
             const purchaseInfo = await this.completeInternetPurchase({
                 billProvider: billProvider,
                 transaction: transaction,

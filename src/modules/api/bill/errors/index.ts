@@ -24,8 +24,8 @@ export class DuplicatePowerPurchaseException extends HttpException {
     name = "DuplicatePowerPurchaseException";
 }
 
-export class BillProviderDiscoNotFound extends HttpException {
-    name = "BillProviderDiscoNotFound";
+export class UnavailableBillProviderDisco extends HttpException {
+    name = "UnavailableBillProviderDisco";
 }
 
 //data
@@ -37,8 +37,8 @@ export class DuplicateDataPurchaseException extends HttpException {
     name = "DuplicateDataPurchaseException";
 }
 
-export class WalletChargeException extends HttpException {
-    name = "WalletChargeException";
+export class UnavailableBillProviderDataNetwork extends HttpException {
+    name = "UnavailableBillProviderDataNetwork";
 }
 
 //Airtime
@@ -48,6 +48,10 @@ export class DuplicateAirtimePurchaseException extends HttpException {
 
 export class AirtimePurchaseException extends HttpException {
     name = "AirtimePurchaseException";
+}
+
+export class UnavailableBillProviderAirtimeNetwork extends HttpException {
+    name = "UnavailableBillProviderAirtimeNetwork";
 }
 
 //Internet
@@ -74,4 +78,10 @@ export class ComputeBillCommissionException extends HttpException {
 
 export class PayBillCommissionException extends HttpException {
     name = "PayBillCommissionException";
+}
+
+//wallet
+
+export class WalletChargeException extends HttpException {
+    name = "WalletChargeException";
 }

@@ -6,6 +6,9 @@ import { BillProviderSlug } from "../interfaces";
 export class GetTVBouquetDto {
     @IsEnum(CableTVProvider)
     billService: CableTVProvider;
+
+    @IsEnum(BillProviderSlug)
+    billProvider: BillProviderSlug;
 }
 
 export class PurchaseTVDto extends PurchaseBillDto {
