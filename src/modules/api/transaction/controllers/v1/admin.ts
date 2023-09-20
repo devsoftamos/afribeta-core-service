@@ -4,15 +4,19 @@ import {
     Controller,
     Get,
     Patch,
+    Param,
     Query,
     Body,
     UseGuards,
     ValidationPipe,
+    ParseIntPipe,
 } from "@nestjs/common";
 import { User as UserModel } from "@prisma/client";
 import { TransactionService } from "../../services";
 import {
     MerchantTransactionHistoryDto,
+    UpdatePayoutStatusDto,
+    ViewPayoutStatusDto,
 } from "../../dtos";
 
 @UseGuards(AuthGuard)
@@ -34,5 +38,33 @@ export class AdminTransactionController {
         );
     }
 
-   
+    @Get("payout")
+    async viewPayoutHistory(
+        @Query(ValidationPipe) viewPayoutStatusDto: ViewPayoutStatusDto,
+        @User() user: UserModel
+    ) {
+        return await this.transactionService.viewPayoutRequests(
+            viewPayoutStatusDto,
+            user
+        );
+    }
+
+    @Patch("payout/authorize")
+    async updatePayoutStatus(
+        @Body(ValidationPipe) updatePayoutStatusDto: UpdatePayoutStatusDto,
+        @User() user: UserModel
+    ) {
+        return await this.transactionService.updatePayoutStatus(
+            updatePayoutStatusDto,
+            user
+        );
+    }
+
+    @Get("payout/:id")
+    async getPayoutDetails(
+        @Param("id", ParseIntPipe) id: number,
+        @User() user: UserModel
+    ) {
+        return await this.transactionService.viewPayoutDetails(id, user);
+    }
 }

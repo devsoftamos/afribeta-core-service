@@ -14,6 +14,11 @@ export enum VerifyTransactionProvider {
     PAYSTACK = "PAYSTACK",
 }
 
+export enum UpdatePayoutStatus {
+    APPROVED = "APPROVED",
+    DECLINED = "DECLINED",
+}
+
 export class VerifyTransactionDto {
     @IsString()
     reference: string;
@@ -53,4 +58,27 @@ export class MerchantTransactionHistoryDto {
     userId: string;
 }
 
+export class ViewPayoutStatusDto {
+    @IsOptional()
+    @IsBooleanString()
+    pagination: string;
 
+    @IsOptional()
+    @IsNumberString()
+    page: string;
+
+    @IsOptional()
+    @IsNumberString()
+    limit: string;
+
+    @IsEnum(TransactionStatus)
+    payoutStatus: TransactionStatus;
+}
+
+export class UpdatePayoutStatusDto {
+    @IsNumber()
+    id: number;
+
+    @IsEnum(UpdatePayoutStatus)
+    status: UpdatePayoutStatus;
+}

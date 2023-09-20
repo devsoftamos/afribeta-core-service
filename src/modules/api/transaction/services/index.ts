@@ -6,14 +6,30 @@ import { PaystackService } from "@/modules/workflow/payment/providers/paystack/s
 import { PaginationMeta } from "@/utils";
 import { ApiResponse, buildResponse } from "@/utils/api-response-util";
 import { ForbiddenError, subject } from "@casl/ability";
-import { forwardRef, HttpStatus, Inject, Injectable, NotAcceptableException } from "@nestjs/common";
-import { Prisma, User, UserType, TransactionStatus } from "@prisma/client";
+import {
+    forwardRef,
+    HttpStatus,
+    Inject,
+    Injectable,
+    NotAcceptableException,
+} from "@nestjs/common";
+import {
+    Prisma,
+    PrismaClient,
+    User,
+    UserType,
+    TransactionStatus,
+    TransactionType,
+} from "@prisma/client";
 import { UserNotFoundException } from "../../user";
 import {
     MerchantTransactionHistoryDto,
     TransactionHistoryDto,
+    UpdatePayoutStatus,
+    UpdatePayoutStatusDto,
     VerifyTransactionDto,
     VerifyTransactionProvider,
+    ViewPayoutStatusDto,
 } from "../dtos";
 import { InvalidTransactionVerificationProvider } from "../errors";
 
@@ -231,5 +247,161 @@ export class TransactionService {
         });
     }
 
-    
+    async viewPayoutRequests(options: ViewPayoutStatusDto, user: User) {
+        const paginationMeta: Partial<PaginationMeta> = {};
+
+        const queryOptions: Prisma.TransactionFindManyArgs = {
+            orderBy: { createdAt: "desc" },
+            where: {
+                type: TransactionType.PAYOUT,
+            },
+            select: {
+                user: {
+                    select: {
+                        firstName: true,
+                        lastName: true,
+                        email: true,
+                    },
+                },
+                id: true,
+                amount: true,
+                status: true,
+                paymentReference: true,
+            },
+        };
+
+        switch (options.payoutStatus) {
+            case TransactionStatus.PENDING: {
+                queryOptions.where.status = TransactionStatus.PENDING;
+                break;
+            }
+            case TransactionStatus.APPROVED: {
+                queryOptions.where.status = TransactionStatus.APPROVED;
+
+                break;
+            }
+        }
+
+        if (options.pagination) {
+            const page = +options.page || 1;
+            const limit = +options.limit || 10;
+            const offset = (page - 1) * limit;
+            queryOptions.skip = offset;
+            queryOptions.take = limit;
+            const count = await this.prisma.transaction.count({
+                where: queryOptions.where,
+            });
+            paginationMeta.totalCount = count;
+            paginationMeta.perPage = limit;
+        }
+
+        const transactions = await this.prisma.transaction.findMany(
+            queryOptions
+        );
+        if (options.pagination) {
+            paginationMeta.pageCount = transactions.length;
+        }
+
+        return buildResponse({
+            message: "Payout history retrieved successfully",
+            data: {
+                meta: paginationMeta,
+                records: transactions,
+            },
+        });
+    }
+
+    async updatePayoutStatus(options: UpdatePayoutStatusDto, user: User) {
+        const transaction = await this.prisma.transaction.findUnique({
+            where: {
+                id: options.id,
+            },
+        });
+
+        if (!transaction) {
+            throw new UserNotFoundException(
+                "Payout request not found",
+                HttpStatus.NOT_FOUND
+            );
+        }
+
+        const declinePayout = async () => {
+            await this.prisma.$transaction(async (tx) => {
+                await tx.transaction.update({
+                    data: {
+                        status: UpdatePayoutStatus.DECLINED,
+                    },
+                    where: {
+                        id: transaction.id,
+                    },
+                });
+
+                await tx.wallet.update({
+                    data: {
+                        commissionBalance: {
+                            increment: transaction.amount,
+                        },
+                    },
+                    where: {
+                        userId: transaction.userId,
+                    },
+                });
+            });
+        };
+
+        switch (options.status) {
+            case UpdatePayoutStatus.APPROVED: {
+                await this.prisma.transaction.update({
+                    where: {
+                        id: transaction.id,
+                    },
+                    data: {
+                        status: UpdatePayoutStatus.APPROVED,
+                    },
+                });
+                break;
+            }
+            case UpdatePayoutStatus.DECLINED: {
+                await declinePayout();
+                break;
+            }
+        }
+
+        const responseMessage =
+            options.status === UpdatePayoutStatus.APPROVED
+                ? "Payout request approved successfully"
+                : "Payout request declined successfully";
+
+        return buildResponse({
+            message: responseMessage
+        });
+    }
+
+    async viewPayoutDetails(id: number, user: User) {
+        const transaction = await this.prisma.transaction.findUnique({
+            where: {
+                id: id,
+            },
+            select: {
+                id: true,
+                amount: true,
+                destinationBankName: true,
+                destinationBankAccountNumber: true,
+                totalAmount: true,
+                paymentStatus: true,
+            },
+        });
+
+        if (!transaction) {
+            throw new UserNotFoundException(
+                "Payout request not found",
+                HttpStatus.NOT_FOUND
+            );
+        }
+
+        return buildResponse({
+            message: "Payout request details retrieved successfully",
+            data: transaction,
+        });
+    }
 }
