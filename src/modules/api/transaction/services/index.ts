@@ -325,8 +325,6 @@ export class TransactionService {
             );
         }
 
-        let message;
-
         const declinePayout = async () => {
             await this.prisma.$transaction(async (tx) => {
                 await tx.transaction.update({
@@ -361,18 +359,21 @@ export class TransactionService {
                         status: UpdatePayoutStatus.APPROVED,
                     },
                 });
-                message = "Payout request approved successfully";
                 break;
             }
             case UpdatePayoutStatus.DECLINED: {
                 await declinePayout();
-                message = "Payout request declined successfully";
                 break;
             }
         }
 
+        const responseMessage =
+            options.status === UpdatePayoutStatus.APPROVED
+                ? "Payout request approved successfully"
+                : "Payout request declined successfully";
+
         return buildResponse({
-            message: message,
+            message: responseMessage
         });
     }
 
