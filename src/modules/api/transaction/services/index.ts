@@ -247,7 +247,7 @@ export class TransactionService {
         });
     }
 
-    async viewPayouts(options: ViewPayoutStatusDto, user: User) {
+    async viewPayoutRequests(options: ViewPayoutStatusDto, user: User) {
         const paginationMeta: Partial<PaginationMeta> = {};
 
         const queryOptions: Prisma.TransactionFindManyArgs = {
@@ -263,6 +263,7 @@ export class TransactionService {
                         email: true,
                     },
                 },
+                id: true,
                 amount: true,
                 status: true,
                 paymentReference: true,
@@ -311,102 +312,95 @@ export class TransactionService {
     }
 
     async updatePayoutStatus(options: UpdatePayoutStatusDto, user: User) {
-        const paymentReferenceExists = await this.prisma.transaction.findUnique(
-            {
-                where: {
-                    paymentReference: options.paymentReference,
-                },
-            }
-        );
+        const transaction = await this.prisma.transaction.findUnique({
+            where: {
+                id: options.id,
+            },
+        });
 
-        if (!paymentReferenceExists) {
+        if (!transaction) {
             throw new UserNotFoundException(
-                "Transaction reference not found",
+                "Payout request not found",
                 HttpStatus.NOT_FOUND
             );
         }
 
-        const prisma = new PrismaClient();
-        async function declinePayout(status) {
-            return await prisma.$transaction(async (tx) => {
-                const declinePayout = await tx.transaction.update({
+        let message;
+
+        const declinePayout = async () => {
+            await this.prisma.$transaction(async (tx) => {
+                await tx.transaction.update({
                     data: {
-                        status: status,
+                        status: UpdatePayoutStatus.DECLINED,
                     },
                     where: {
-                        paymentReference:
-                            paymentReferenceExists.paymentReference,
+                        id: transaction.id,
                     },
                 });
 
-                //throw error if payout is not declined
-                if (!declinePayout) {
-                    throw new Error(`Payout decline not successful`);
-                }
-
-                const refundCommission = await tx.wallet.update({
+                await tx.wallet.update({
                     data: {
                         commissionBalance: {
-                            increment: paymentReferenceExists.amount,
+                            increment: transaction.amount,
                         },
                     },
                     where: {
-                        userId: paymentReferenceExists.userId,
+                        userId: transaction.userId,
                     },
                 });
             });
-        }
+        };
 
         switch (options.status) {
             case UpdatePayoutStatus.APPROVED: {
                 await this.prisma.transaction.update({
                     where: {
-                        paymentReference:
-                            paymentReferenceExists.paymentReference,
+                        id: transaction.id,
                     },
                     data: {
                         status: UpdatePayoutStatus.APPROVED,
                     },
                 });
+                message = "Payout request approved successfully";
                 break;
             }
             case UpdatePayoutStatus.DECLINED: {
-                await declinePayout(UpdatePayoutStatus.DECLINED);
+                await declinePayout();
+                message = "Payout request declined successfully";
                 break;
             }
         }
 
         return buildResponse({
-            message: "Payout status updated successfully",
+            message: message,
         });
     }
 
-    async viewPayoutDetails(reference: string, user: User) {
-        const paymentReferenceExists = await this.prisma.transaction.findUnique(
-            {
-                where: {
-                    paymentReference: reference,
-                },
-                select: {
-                    amount: true,
-                    destinationBankName: true,
-                    destinationBankAccountNumber: true,
-                    totalAmount: true,
-                    paymentStatus: true,
-                },
-            }
-        );
+    async viewPayoutDetails(id: number, user: User) {
+        const transaction = await this.prisma.transaction.findUnique({
+            where: {
+                id: id,
+            },
+            select: {
+                id: true,
+                amount: true,
+                destinationBankName: true,
+                destinationBankAccountNumber: true,
+                totalAmount: true,
+                paymentStatus: true,
+            },
+        });
 
-        if (!paymentReferenceExists) {
+        if (!transaction) {
             throw new UserNotFoundException(
-                "Transaction reference not found",
+                "Payout request not found",
                 HttpStatus.NOT_FOUND
             );
         }
 
         return buildResponse({
-            message: "Payout details retrieved successfully",
-            data: paymentReferenceExists,
+            message: "Payout request details retrieved successfully",
+            data: transaction,
         });
     }
 }

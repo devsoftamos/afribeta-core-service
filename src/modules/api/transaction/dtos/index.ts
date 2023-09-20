@@ -16,7 +16,7 @@ export enum VerifyTransactionProvider {
 
 export enum UpdatePayoutStatus {
     APPROVED = "APPROVED",
-    DECLINED = "DECLINED"
+    DECLINED = "DECLINED",
 }
 
 export class VerifyTransactionDto {
@@ -76,10 +76,9 @@ export class ViewPayoutStatusDto {
 }
 
 export class UpdatePayoutStatusDto {
-    @IsString()
-    paymentReference: string;
+    @IsNumber()
+    id: number;
 
     @IsEnum(UpdatePayoutStatus)
     status: UpdatePayoutStatus;
 }
-

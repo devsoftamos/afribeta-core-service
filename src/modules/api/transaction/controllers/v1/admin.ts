@@ -9,6 +9,7 @@ import {
     Body,
     UseGuards,
     ValidationPipe,
+    ParseIntPipe,
 } from "@nestjs/common";
 import { User as UserModel } from "@prisma/client";
 import { TransactionService } from "../../services";
@@ -42,7 +43,7 @@ export class AdminTransactionController {
         @Query(ValidationPipe) viewPayoutStatusDto: ViewPayoutStatusDto,
         @User() user: UserModel
     ) {
-        return await this.transactionService.viewPayouts(
+        return await this.transactionService.viewPayoutRequests(
             viewPayoutStatusDto,
             user
         );
@@ -59,11 +60,11 @@ export class AdminTransactionController {
         );
     }
 
-    @Get("payout/:reference")
+    @Get("payout/:id")
     async getPayoutDetails(
-        @Param("reference", ValidationPipe) reference: string,
+        @Param("id", ParseIntPipe) id: number,
         @User() user: UserModel
     ) {
-        return await this.transactionService.viewPayoutDetails(reference, user);
+        return await this.transactionService.viewPayoutDetails(id, user);
     }
 }
