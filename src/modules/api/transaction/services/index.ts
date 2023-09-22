@@ -23,6 +23,7 @@ import {
     VerifyTransactionDto,
     VerifyTransactionProvider,
     ViewPayoutStatusDto,
+    successfulTransactionsDto,
 } from "../dtos";
 import { InvalidTransactionVerificationProvider } from "../errors";
 
@@ -391,6 +392,27 @@ export class TransactionService {
 
         return buildResponse({
             message: "Payout request details retrieved successfully",
+            data: transaction,
+        });
+    }
+
+    async successfulTransactions(
+        options: successfulTransactionsDto,
+        user: User
+    ) {
+        const transaction = await this.prisma.transaction.count({
+            where: {
+                userId: user.id,
+                paymentStatus: TransactionStatus.SUCCESS,
+                createdAt: {
+                    gte: new Date(`${+options.year}-${+options.month}-01`),
+                    lt: new Date(`${+options.year}-${+options.month + 1}-01`),
+                },
+            },
+        });
+
+        return buildResponse({
+            message: "Transaction fetched successfully",
             data: transaction,
         });
     }

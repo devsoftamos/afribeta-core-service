@@ -194,3 +194,11 @@ export class CreateKycDto {
     })
     identificationMeansImageFile: string;
 }
+
+export class CountAgentsCreatedDto {
+    @IsNumberString()
+    year: number;
+
+    @IsNumberString()
+    month: number;
+}
