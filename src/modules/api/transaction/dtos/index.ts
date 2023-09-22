@@ -81,3 +81,11 @@ export class UpdatePayoutStatusDto {
     @IsEnum(UpdatePayoutStatus)
     status: UpdatePayoutStatus;
 }
+
+export class successfulTransactionsDto{
+    @IsNumberString()
+    year: number;
+    
+    @IsNumberString()
+    month: number
+}
