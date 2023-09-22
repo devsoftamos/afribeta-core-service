@@ -776,4 +776,21 @@ export class UserService {
             data: result,
         });
     }
+
+    async countAgentsCreated(options: CountAgentsCreatedDto, user: User) {
+        const agents = await this.prisma.user.count({
+            where: {
+                createdById: user.id,
+                createdAt: {
+                    gte: new Date(`${+options.year}-${+options.month}-01`),
+                    lt: new Date(`${+options.year}-${+options.month + 1}-01`),
+                },
+            },
+        });
+
+        return buildResponse({
+            message: "Agents retrieved successfully",
+            data: agents,
+        });
+    }
 }
