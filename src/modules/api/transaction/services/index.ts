@@ -6,12 +6,7 @@ import { PaystackService } from "@/modules/workflow/payment/providers/paystack/s
 import { PaginationMeta } from "@/utils";
 import { ApiResponse, buildResponse } from "@/utils/api-response-util";
 import { ForbiddenError, subject } from "@casl/ability";
-import {
-    forwardRef,
-    HttpStatus,
-    Inject,
-    Injectable,
-} from "@nestjs/common";
+import { forwardRef, HttpStatus, Inject, Injectable } from "@nestjs/common";
 import {
     Prisma,
     User,
@@ -174,10 +169,7 @@ export class TransactionService {
         return await this.transactionHistory(options, user, userId);
     }
 
-    async merchantTransactionHistory(
-        options: MerchantTransactionHistoryDto,
-        user: User
-    ) {
+    async merchantTransactionHistory(options: MerchantTransactionHistoryDto) {
         const userExists = await this.prisma.user.findUnique({
             where: {
                 id: +options.userId,
