@@ -112,22 +112,21 @@ export interface VendTVOptions {
     tvNetwork: CableTVProvider;
     tvCode: string;
     referenceId: string;
-    accessToken: string;
+    accessToken?: string;
     email?: string;
     smartCardNumber: string;
     amount?: number;
 }
 
-export interface VendTVResponse {
-    orderMessage?: string;
+export interface VendCableTVResponse {
     vendRef: string;
 }
 
 export interface GetSmartCardInfoOptions {
-    tvCode: string;
+    tvCode?: string;
     smartCardNumber: string;
     tvNetwork: CableTVProvider;
-    reference: string;
+    reference?: string;
 }
 
 export interface GetSmartCardInfoResponse {
@@ -178,7 +177,7 @@ export interface BillPaymentWorkflow {
     vendAirtime(options: VendAirtimeOptions): Promise<VendAirtimeResponse>;
     vendData(options: VendDataOptions): Promise<VendDataResponse>;
     vendInternet(options: VendInternetOptions): Promise<VendInternetResponse>;
-    vendTV(options: VendTVOptions): Promise<VendTVResponse>;
+    vendCableTV(options: VendTVOptions): Promise<VendCableTVResponse>;
     getCableTVBouquets(
         cableTVProvider: CableTVProvider
     ): Promise<GetDataBundleResponse[]>;
@@ -188,4 +187,7 @@ export interface BillPaymentWorkflow {
     getInternetBundles(
         networkProvider: NetworkInternetProvider
     ): Promise<GetInternetBundleResponse[]>;
+    getSmartCardInfo(
+        options: GetSmartCardInfoOptions
+    ): Promise<GetSmartCardInfoResponse>;
 }

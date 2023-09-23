@@ -32,7 +32,7 @@ import {
     GetSmartCardInfoOptions,
     GetSmartCardInfoResponse,
     VendTVOptions,
-    VendTVResponse,
+    VendCableTVResponse,
     BillPaymentWorkflow,
 } from "../../../interfaces";
 import {
@@ -274,7 +274,6 @@ export class IRechargeWorkflowService implements BillPaymentWorkflow {
                         code: bundle.code,
                         price: +bundle.price,
                         title: bundle.title,
-                        validity: bundle.validity,
                     };
                 });
             };
@@ -793,7 +792,7 @@ export class IRechargeWorkflowService implements BillPaymentWorkflow {
         }
     }
 
-    async vendTV(options: VendTVOptions): Promise<VendTVResponse> {
+    async vendCableTV(options: VendTVOptions): Promise<VendCableTVResponse> {
         try {
             const serviceCode =
                 options.tvNetwork == CableTVProvider.STARTIMES
@@ -819,7 +818,6 @@ export class IRechargeWorkflowService implements BillPaymentWorkflow {
                 tv_network: this.resolveTVNetworkName(options.tvNetwork),
             });
             return {
-                orderMessage: response.order,
                 vendRef: response.ref,
             };
         } catch (error) {

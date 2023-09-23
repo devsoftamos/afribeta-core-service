@@ -1,9 +1,22 @@
 import { PrismaService } from "@/modules/core/prisma/services";
-import { NetworkAirtimeProvider } from "@/modules/workflow/billPayment";
+import {
+    NetworkAirtimeProvider,
+    UnprocessedTransactionException,
+    VendAirtimeFailureException,
+    VendAirtimeResponse,
+    VendAirtimeInProgressException,
+} from "@/modules/workflow/billPayment";
 import { IRechargeWorkflowService } from "@/modules/workflow/billPayment/providers/iRecharge/services";
 import { ApiResponse, buildResponse, generateId } from "@/utils";
-import { forwardRef, HttpStatus, Inject, Injectable } from "@nestjs/common";
 import {
+    forwardRef,
+    HttpException,
+    HttpStatus,
+    Inject,
+    Injectable,
+} from "@nestjs/common";
+import {
+    BillProvider,
     PaymentChannel,
     PaymentStatus,
     Prisma,
@@ -31,9 +44,11 @@ import {
     WalletChargeException,
     DuplicateAirtimePurchaseException,
     AirtimePurchaseException,
+    UnavailableBillProviderAirtimeNetwork,
 } from "../errors";
 import {
     BillProviderSlug,
+    BillProviderSlugForPower,
     BillPurchaseInitializationHandlerOptions,
     CompleteBillPurchaseOptions,
     CompleteBillPurchaseUserOptions,
@@ -44,7 +59,6 @@ import {
 import logger from "moment-logger";
 import { DB_TRANSACTION_TIMEOUT } from "@/config";
 import { BillService } from ".";
-import { IRechargeVendAirtimeException } from "@/modules/workflow/billPayment/providers/iRecharge";
 import { BillEvent } from "../events";
 import {
     AirtimePurchaseInitializationHandlerOutput,
@@ -55,16 +69,28 @@ import {
     VerifyAirtimePurchaseData,
 } from "../interfaces/airtime";
 import { PurchaseAirtimeDto } from "../dtos/airtime";
+import { BuyPowerWorkflowService } from "@/modules/workflow/billPayment/providers/buyPower/services";
+import { BuyPowerVendInProgressException } from "@/modules/workflow/billPayment/providers/buyPower";
+import { InjectQueue } from "@nestjs/bull";
+import {
+    BillQueue,
+    BuyPowerReQueryQueue,
+    BuypowerReQueryJobOptions,
+} from "../queues";
+import { Queue } from "bull";
 
 @Injectable()
 export class AirtimeBillService {
     constructor(
         private iRechargeWorkflowService: IRechargeWorkflowService,
         private prisma: PrismaService,
+        private buyPowerWorkflowService: BuyPowerWorkflowService,
 
         @Inject(forwardRef(() => BillService))
         private billService: BillService,
-        private billEvent: BillEvent
+        private billEvent: BillEvent,
+        @InjectQueue(BillQueue.BUYPOWER_REQUERY)
+        private buypowerReQueryQueue: Queue<BuypowerReQueryJobOptions>
     ) {}
 
     async getAirtimeNetworks() {
@@ -73,12 +99,19 @@ export class AirtimeBillService {
             where: {
                 isActive: true,
                 isDefault: true,
+                slug: {
+                    not: BillProviderSlugForPower.IKEJA_ELECTRIC,
+                },
             },
         });
+
         if (!billProvider) {
             billProvider = await this.prisma.billProvider.findFirst({
                 where: {
                     isActive: true,
+                    slug: {
+                        not: BillProviderSlugForPower.IKEJA_ELECTRIC,
+                    },
                 },
             });
         }
@@ -214,12 +247,9 @@ export class AirtimeBillService {
     ): Promise<AirtimePurchaseInitializationHandlerOutput> {
         const paymentReference = generateId({ type: "reference" });
         const billPaymentReference = generateId({
-            type: "numeric",
-            length: 12,
+            type: "irecharge_ref",
         });
         const { billProvider, paymentChannel, purchaseOptions, user } = options;
-
-        //TODO: compute commission for agent and merchant here
 
         //record transaction
         const transactionCreateOptions: Prisma.TransactionUncheckedCreateInput =
@@ -321,7 +351,6 @@ export class AirtimeBillService {
             });
 
             if (!billProvider) {
-                //TODO: AUTOMATION UPGRADE, check for an active provider and switch automatically
                 throw new BillProviderNotFoundException(
                     "Failed to complete airtime purchase. Bill provider not found",
                     HttpStatus.NOT_FOUND
@@ -335,22 +364,6 @@ export class AirtimeBillService {
                 billProvider: billProvider,
             });
         } catch (error) {
-            switch (true) {
-                case error instanceof IRechargeVendAirtimeException: {
-                    const transaction =
-                        await this.prisma.transaction.findUnique({
-                            where: {
-                                paymentReference: options.paymentReference,
-                            },
-                        });
-                    this.billEvent.emit("bill-purchase-failure", {
-                        transactionId: transaction.id,
-                    });
-                }
-
-                default:
-                    break;
-            }
             logger.error(error);
         }
     }
@@ -358,64 +371,95 @@ export class AirtimeBillService {
     async completeAirtimePurchase(
         options: CompleteBillPurchaseOptions<CompleteAirtimePurchaseTransactionOptions>
     ): Promise<CompleteAirtimePurchaseOutput> {
-        switch (options.billProvider.slug) {
-            case BillProviderSlug.IRECHARGE: {
-                //TODO: AUTOMATION UPGRADE, if iRecharge service fails, check for an active provider and switch automatically
-                const response =
-                    await this.iRechargeWorkflowService.vendAirtime({
-                        referenceId: options.transaction.billPaymentReference,
-                        vtuNetwork: options.transaction
-                            .billServiceSlug as NetworkAirtimeProvider,
-                        vtuNumber: options.transaction.senderIdentifier,
-                        vtuEmail: options.user.email,
-                        vtuAmount: options.transaction.amount,
-                    });
-
-                await this.prisma.$transaction(
-                    async (tx) => {
-                        await tx.transaction.update({
-                            where: {
-                                id: options.transaction.id,
-                            },
-                            data: {
-                                status: TransactionStatus.SUCCESS,
-                                token: response.networkProviderReference,
-                                paymentChannel: options.isWalletPayment
-                                    ? PaymentChannel.WALLET
-                                    : options.transaction.paymentChannel,
-                            },
+        let vendAirtimeResp: VendAirtimeResponse;
+        try {
+            switch (options.billProvider.slug) {
+                case BillProviderSlug.IRECHARGE: {
+                    vendAirtimeResp =
+                        await this.iRechargeWorkflowService.vendAirtime({
+                            referenceId:
+                                options.transaction.billPaymentReference,
+                            vtuNetwork: options.transaction
+                                .billServiceSlug as NetworkAirtimeProvider,
+                            vtuNumber: options.transaction.senderIdentifier,
+                            vtuEmail: options.user.email,
+                            vtuAmount: options.transaction.amount,
                         });
 
-                        // //TODO: for agent and merchant, credit wallet commission balance
-                        // if (
-                        //     options.user.userType == UserType.MERCHANT ||
-                        //     options.user.userType == UserType.AGENT
-                        // ) {
-                        // }
+                    return await this.successPurchaseHandler(
+                        options,
+                        vendAirtimeResp
+                    );
+                }
 
-                        this.billEvent.emit("pay-bill-commission", {
-                            transactionId: options.transaction.id,
-                            userType: options.user.userType,
+                case BillProviderSlug.BUYPOWER: {
+                    vendAirtimeResp =
+                        await this.buyPowerWorkflowService.vendAirtime({
+                            referenceId:
+                                options.transaction.billPaymentReference,
+                            vtuAmount: options.transaction.amount,
+                            vtuNetwork: options.transaction
+                                .billServiceSlug as NetworkAirtimeProvider,
+                            vtuNumber: options.transaction.senderIdentifier,
+                            vtuEmail: options.user.email,
                         });
+                    return await this.successPurchaseHandler(
+                        options,
+                        vendAirtimeResp
+                    );
+                }
+
+                default: {
+                    throw new VendAirtimeFailureException(
+                        "Failed to complete airtime purchase. Bill provider not integrated",
+                        HttpStatus.NOT_IMPLEMENTED
+                    );
+                }
+            }
+        } catch (error) {
+            return await this.autoSwitchProviderOnVendFailureHandler(
+                options,
+                error
+            );
+        }
+    }
+
+    async successPurchaseHandler(
+        options: CompleteBillPurchaseOptions<CompleteAirtimePurchaseTransactionOptions>,
+        vendAirtimeResp?: VendAirtimeResponse
+    ): Promise<CompleteAirtimePurchaseOutput> {
+        await this.prisma.$transaction(
+            async (tx) => {
+                await tx.transaction.update({
+                    where: {
+                        id: options.transaction.id,
                     },
-                    {
-                        timeout: DB_TRANSACTION_TIMEOUT,
-                    }
-                );
+                    data: {
+                        status: TransactionStatus.SUCCESS,
+                        token: vendAirtimeResp.networkProviderReference,
+                        paymentChannel: options.isWalletPayment
+                            ? PaymentChannel.WALLET
+                            : options.transaction.paymentChannel,
+                    },
+                });
 
-                return {
-                    networkProviderReference: response.networkProviderReference,
-                    amount: response.amount,
-                    phone: response.phone,
-                };
+                this.billEvent.emit("pay-bill-commission", {
+                    transactionId: options.transaction.id,
+                    userType: options.user.userType,
+                });
+            },
+            {
+                timeout: DB_TRANSACTION_TIMEOUT,
             }
+        );
 
-            default: {
-                throw new PowerPurchaseException(
-                    "Failed to complete data purchase. Invalid bill provider",
-                    HttpStatus.NOT_IMPLEMENTED
-                );
-            }
+        if (vendAirtimeResp) {
+            return {
+                networkProviderReference:
+                    vendAirtimeResp.networkProviderReference,
+                amount: vendAirtimeResp.amount,
+                phone: vendAirtimeResp.phone,
+            };
         }
     }
 
@@ -490,22 +534,19 @@ export class AirtimeBillService {
         }
 
         if (!billProvider.isActive) {
-            //TODO: AUTOMATION UPGRADE, check for an active provider and switch automatically
             throw new AirtimePurchaseException(
                 "Failed to complete wallet payment for airtime purchase. Bill Provider not active",
                 HttpStatus.BAD_REQUEST
             );
         }
 
-        //record payment
-        await this.billService.walletChargeHandler({
-            amount: transaction.amount,
-            transactionId: transaction.id,
-            walletId: wallet.id,
-        });
-
-        //purchase
         try {
+            await this.billService.walletChargeHandler({
+                amount: transaction.amount,
+                transactionId: transaction.id,
+                walletId: wallet.id,
+            });
+
             const purchaseInfo = await this.completeAirtimePurchase({
                 billProvider: billProvider,
                 transaction: transaction,
@@ -529,11 +570,13 @@ export class AirtimeBillService {
             });
         } catch (error) {
             switch (true) {
-                case error instanceof IRechargeVendAirtimeException: {
-                    this.billEvent.emit("bill-purchase-failure", {
-                        transactionId: transaction.id,
-                    });
+                case error instanceof VendAirtimeFailureException: {
                     throw error;
+                }
+                case error instanceof VendAirtimeInProgressException: {
+                    return buildResponse({
+                        message: "Vending in progress",
+                    });
                 }
                 case error instanceof WalletChargeException: {
                     this.billEvent.emit("payment-failure", {
@@ -636,5 +679,187 @@ export class AirtimeBillService {
             }
         );
         return formatted;
+    }
+
+    async autoSwitchProviderOnVendFailureHandler(
+        options: CompleteBillPurchaseOptions<CompleteAirtimePurchaseTransactionOptions>,
+        error: HttpException
+    ): Promise<CompleteAirtimePurchaseOutput> {
+        const handleUnprocessedTransaction = async () => {
+            //handle all providers
+            const handleProviderSwitch = async (billProvider: BillProvider) => {
+                const vendAirtimeResp =
+                    await this.buyPowerWorkflowService.vendAirtime({
+                        referenceId: options.transaction.billPaymentReference,
+                        vtuAmount: options.transaction.amount,
+                        vtuNetwork: options.transaction
+                            .billServiceSlug as NetworkAirtimeProvider,
+                        vtuNumber: options.transaction.senderIdentifier,
+                        vtuEmail: options.user.email,
+                    });
+                await this.prisma.transaction.update({
+                    where: {
+                        id: options.transaction.id,
+                    },
+                    data: {
+                        provider: billProvider.slug,
+                        billProviderId: billProvider.id,
+                    },
+                });
+
+                return await this.successPurchaseHandler(
+                    options,
+                    vendAirtimeResp
+                );
+            };
+
+            //check other available active providers
+            const billProviders = await this.prisma.billProvider.findMany({
+                where: {
+                    isActive: true,
+                    id: { not: options.billProvider.id },
+                    slug: {
+                        not: BillProviderSlugForPower.IKEJA_ELECTRIC,
+                    },
+                },
+            });
+            if (!billProviders.length) {
+                throw new VendAirtimeFailureException(
+                    "Failed to vend airtime",
+                    HttpStatus.NOT_IMPLEMENTED
+                );
+            }
+
+            //switch automation
+            for (let i = 0; i < billProviders.length; i++) {
+                try {
+                    const billProviderAirtimeNetwork =
+                        await this.prisma.billProviderAirtimeNetwork.findUnique(
+                            {
+                                where: {
+                                    billServiceSlug_billProviderSlug: {
+                                        billProviderSlug: billProviders[i].slug,
+                                        billServiceSlug:
+                                            options.transaction.billServiceSlug,
+                                    },
+                                },
+                            }
+                        );
+
+                    if (i == billProviders.length - 1) {
+                        if (!billProviderAirtimeNetwork) {
+                            throw new UnavailableBillProviderAirtimeNetwork(
+                                `Failed to vend airtime. The auto selected provider does not have the bill service`,
+                                HttpStatus.NOT_FOUND
+                            );
+                        }
+                    }
+
+                    if (billProviderAirtimeNetwork) {
+                        switch (billProviders[i].slug) {
+                            case BillProviderSlug.BUYPOWER: {
+                                return await handleProviderSwitch(
+                                    billProviders[i]
+                                );
+                            }
+                            case BillProviderSlug.IRECHARGE: {
+                                return await handleProviderSwitch(
+                                    billProviders[i]
+                                );
+                            }
+
+                            default: {
+                                throw new VendAirtimeFailureException(
+                                    error.message ?? "Failed to vend airtime",
+                                    HttpStatus.NOT_IMPLEMENTED
+                                );
+                            }
+                        }
+                    }
+                } catch (error) {
+                    logger.error(error);
+                    switch (true) {
+                        case error instanceof
+                            UnavailableBillProviderAirtimeNetwork: {
+                            this.billEvent.emit("bill-purchase-failure", {
+                                transactionId: options.transaction.id,
+                            });
+                            throw new VendAirtimeFailureException(
+                                "Failed to vend airtime",
+                                HttpStatus.NOT_IMPLEMENTED
+                            );
+                        }
+
+                        case error instanceof BuyPowerVendInProgressException: {
+                            await this.buypowerReQueryQueue.add(
+                                BuyPowerReQueryQueue.AIRTIME,
+                                {
+                                    orderId:
+                                        options.transaction
+                                            .billPaymentReference,
+                                    transactionId: options.transaction.id,
+                                    isWalletPayment: options.isWalletPayment,
+                                }
+                            );
+                            throw new VendAirtimeInProgressException(
+                                "airtime vending in progress",
+                                HttpStatus.ACCEPTED
+                            );
+                        }
+                        case error instanceof UnprocessedTransactionException: {
+                            if (i == billProviders.length - 1) {
+                                this.billEvent.emit("bill-purchase-failure", {
+                                    transactionId: options.transaction.id,
+                                });
+                                throw new VendAirtimeFailureException(
+                                    "Failed to vend airtime",
+                                    HttpStatus.NOT_IMPLEMENTED
+                                );
+                            }
+                            break;
+                        }
+
+                        default: {
+                            if (i == billProviders.length - 1) {
+                                this.billEvent.emit("bill-purchase-failure", {
+                                    transactionId: options.transaction.id,
+                                });
+                                throw error;
+                            }
+                            break;
+                        }
+                    }
+                }
+            }
+        };
+
+        switch (true) {
+            case error instanceof UnprocessedTransactionException: {
+                return await handleUnprocessedTransaction();
+            }
+
+            case error instanceof BuyPowerVendInProgressException: {
+                await this.buypowerReQueryQueue.add(
+                    BuyPowerReQueryQueue.AIRTIME,
+                    {
+                        orderId: options.transaction.billPaymentReference,
+                        transactionId: options.transaction.id,
+                        isWalletPayment: options.isWalletPayment,
+                    }
+                );
+                throw new VendAirtimeInProgressException(
+                    "airtime vending in progress",
+                    HttpStatus.ACCEPTED
+                );
+            }
+
+            default: {
+                this.billEvent.emit("bill-purchase-failure", {
+                    transactionId: options.transaction.id,
+                });
+
+                throw error;
+            }
+        }
     }
 }

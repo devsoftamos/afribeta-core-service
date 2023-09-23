@@ -12,8 +12,12 @@ import { CableTVBillService } from "./services/cabletv";
 import { DataBillService } from "./services/data";
 import { InternetBillService } from "./services/internet";
 import { PowerBillService } from "./services/power";
+import { BullModule } from "@nestjs/bull";
+import { billQueueConfig } from "./queues";
+import { BuypowerReQueryQueueProcessor } from "./queues/processors";
 
 @Module({
+    imports: [BullModule.registerQueue(...billQueueConfig)],
     providers: [
         BillService,
         PowerBillService,
@@ -22,6 +26,7 @@ import { PowerBillService } from "./services/power";
         AirtimeBillService,
         InternetBillService,
         CableTVBillService,
+        BuypowerReQueryQueueProcessor,
     ],
     controllers: [
         BillController,

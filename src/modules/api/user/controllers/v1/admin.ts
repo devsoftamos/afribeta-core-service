@@ -1,22 +1,14 @@
 import { User } from "../../decorators";
-import { AbilitiesGuard } from "@/modules/core/ability/guards";
 import {
-    Body,
     Controller,
     Param,
     Get,
-    Patch,
-    Post,
     Query,
     ParseIntPipe,
     ValidationPipe,
-    Req,
     UseGuards,
 } from "@nestjs/common";
-import {
-    FetchMerchantAgentsDto,
-    ListMerchantAgentsDto,
-} from "../../dtos";
+import { FetchMerchantAgentsDto, ListMerchantAgentsDto } from "../../dtos";
 import { User as UserModel } from "@prisma/client";
 import { UserService } from "../../services";
 import { AuthGuard } from "@/modules/api/auth/guard";
@@ -30,26 +22,21 @@ export class AdminUserController {
 
     @Get("merchant")
     async fetchMerchants(
-        @Query(ValidationPipe) fetchMerchantsDto: FetchMerchantAgentsDto,
-        @User() user: UserModel
+        @Query(ValidationPipe) fetchMerchantsDto: FetchMerchantAgentsDto
     ) {
-        return await this.usersService.fetchMerchants(fetchMerchantsDto, user);
+        return await this.usersService.fetchMerchants(fetchMerchantsDto);
     }
 
     @Get("customer")
     async fetchCustomers(
-        @Query(ValidationPipe) fetchCustomersDto: ListMerchantAgentsDto,
-        @User() user: UserModel
+        @Query(ValidationPipe) fetchCustomersDto: ListMerchantAgentsDto
     ) {
-        return await this.usersService.fetchCustomers(fetchCustomersDto, user);
+        return await this.usersService.fetchCustomers(fetchCustomersDto);
     }
 
     @Get("merchant/:id")
-    async getMerchantDetails(
-        @User() user: UserModel,
-        @Param("id", ParseIntPipe) id: number
-    ) {
-        return await this.usersService.merchantDetails(id, user);
+    async getMerchantDetails(@Param("id", ParseIntPipe) id: number) {
+        return await this.usersService.merchantDetails(id);
     }
 
     @Get("merchant/:id/agent")

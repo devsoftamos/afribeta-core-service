@@ -23,13 +23,13 @@ async function main() {
             create: provider,
         });
     }
-    // for (let billService of billServiceData) {
-    //     await prisma.billService.upsert({
-    //         where: { slug: billService.slug },
-    //         update: {},
-    //         create: billService as any,
-    //     });
-    // }
+    for (let billService of billServiceData) {
+        await prisma.billService.upsert({
+            where: { slug: billService.slug },
+            update: {},
+            create: billService as any,
+        });
+    }
 
     //Electric Discos
     for (let billProviderElectricDisco of billProviderElectricDiscos) {
@@ -102,69 +102,69 @@ async function main() {
         });
     }
 
-    // //Role
-    // for (let role of roles) {
-    //     await prisma.role.upsert({
-    //         where: { slug: role.slug },
-    //         update: {},
-    //         create: role,
-    //     });
-    // }
+    //Role
+    for (let role of roles) {
+        await prisma.role.upsert({
+            where: { slug: role.slug },
+            update: {},
+            create: role,
+        });
+    }
 
-    // //Permission
-    // for (let permission of permissions) {
-    //     await prisma.permission.upsert({
-    //         where: { name: permission.name },
-    //         update: {},
-    //         create: permission,
-    //     });
-    // }
+    //Permission
+    for (let permission of permissions) {
+        await prisma.permission.upsert({
+            where: { name: permission.name },
+            update: {},
+            create: permission,
+        });
+    }
 
-    // //Role Permissions
-    // for (let rolePermission of rolePermissions) {
-    //     await prisma.rolePermission.upsert({
-    //         where: {
-    //             roleId_permissionId: {
-    //                 permissionId: rolePermission.permissionId,
-    //                 roleId: rolePermission.roleId,
-    //             },
-    //         },
-    //         update: {},
-    //         create: rolePermission,
-    //     });
-    // }
+    //Role Permissions
+    for (let rolePermission of rolePermissions) {
+        await prisma.rolePermission.upsert({
+            where: {
+                roleId_permissionId: {
+                    permissionId: rolePermission.permissionId,
+                    roleId: rolePermission.roleId,
+                },
+            },
+            update: {},
+            create: rolePermission,
+        });
+    }
 
-    // //states
-    // for (let state of states) {
-    //     await prisma.state.upsert({
-    //         where: { slug: state.slug },
-    //         update: {},
-    //         create: state,
-    //     });
-    // }
+    //states
+    for (let state of states) {
+        await prisma.state.upsert({
+            where: { slug: state.slug },
+            update: {},
+            create: state,
+        });
+    }
 
-    // //lgas
-    // for (let lga of lgas) {
-    //     await prisma.localGovernmentArea.upsert({
-    //         where: {
-    //             name_stateId: {
-    //                 name: lga.name,
-    //                 stateId: lga.stateId,
-    //             },
-    //         },
-    //         update: {},
-    //         create: lga,
-    //     });
-    // }
+    //lgas
+    for (let lga of lgas) {
+        await prisma.localGovernmentArea.upsert({
+            where: {
+                name_stateId: {
+                    name: lga.name,
+                    stateId: lga.stateId,
+                },
+            },
+            update: {},
+            create: lga,
+        });
+    }
 
-    // //banks
-    // for (let bank of banks) {
-    //     await prisma.bank.upsert({
-    //         where: { slug: bank.slug },
-    //         update: {},
-    //         create: bank,
-    //     });
-    // }
+    //banks
+    for (let bank of banks) {
+        await prisma.bank.upsert({
+            where: { slug: bank.slug },
+            update: {},
+            create: bank,
+        });
+    }
 }
 
 main()

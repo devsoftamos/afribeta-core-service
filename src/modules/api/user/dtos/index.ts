@@ -18,13 +18,6 @@ import {
     ValidateNested,
 } from "class-validator";
 
-enum MerchantUpgradeStatus {
-    PENDING = "PENDING",
-    TO_BE_UPGRADED = "TO_BE_UPGRADED",
-    UPGRADED = "UPGRADED",
-    DECLINED = "DECLINED",
-}
-
 export class GetUserByIdentifierDto {
     @IsString()
     id: string;
@@ -201,4 +194,3 @@ export class CreateKycDto {
     })
     identificationMeansImageFile: string;
 }
-

@@ -39,3 +39,22 @@ export interface VendTVInputOptions {
     name?: string;
     tariffClass: string;
 }
+
+export interface GetSmartCardInputOptions {
+    smartCardNumber: string;
+    vertical?: "TV";
+    network: CableTVNetwork;
+    orderId?: string;
+}
+
+export interface GetSmartCardOptions {
+    meter: string;
+    vertical?: "TV";
+    disco: CableTVNetwork;
+    orderId?: string;
+}
+
+export interface GetSmartCardResponseData {
+    name: string;
+    address: string;
+}

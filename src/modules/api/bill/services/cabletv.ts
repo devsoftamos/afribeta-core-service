@@ -2,6 +2,11 @@ import { PrismaService } from "@/modules/core/prisma/services";
 import {
     CableTVProvider,
     GetDataBundleResponse,
+    GetSmartCardInfoResponse,
+    UnprocessedTransactionException,
+    VendCableTVFailureException,
+    VendCableTVInProgressException,
+    VendCableTVResponse,
 } from "@/modules/workflow/billPayment";
 import { IRechargeWorkflowService } from "@/modules/workflow/billPayment/providers/iRecharge/services";
 import { ApiResponse, buildResponse, generateId } from "@/utils";
@@ -29,9 +34,11 @@ import {
     InvalidBillProviderException,
     CableTVPurchaseException,
     DuplicateCableTVPurchaseException,
+    CableTVPurchaseInitializationHandlerException,
 } from "../errors";
 import {
     BillProviderSlug,
+    BillProviderSlugForPower,
     BillPurchaseInitializationHandlerOptions,
     CompleteBillPurchaseOptions,
     CompleteBillPurchaseUserOptions,
@@ -42,7 +49,6 @@ import { FormatDataBundleNetworkOutput } from "../interfaces/data";
 import logger from "moment-logger";
 import { DB_TRANSACTION_TIMEOUT } from "@/config";
 import { BillService } from ".";
-import { IRechargeVendCableTVException } from "@/modules/workflow/billPayment/providers/iRecharge";
 import { BillEvent } from "../events";
 import {
     CableTVPurchaseInitializationHandlerOutput,
@@ -57,16 +63,28 @@ import {
     GetTVBouquetDto,
     PurchaseTVDto,
 } from "../dtos/cabletv";
+import { BuyPowerWorkflowService } from "@/modules/workflow/billPayment/providers/buyPower/services";
+import { InjectQueue } from "@nestjs/bull";
+import {
+    BillQueue,
+    BuyPowerReQueryQueue,
+    BuypowerReQueryJobOptions,
+} from "../queues";
+import { Queue } from "bull";
+import { BuyPowerVendInProgressException } from "@/modules/workflow/billPayment/providers/buyPower";
 
 @Injectable()
 export class CableTVBillService {
     constructor(
         private iRechargeWorkflowService: IRechargeWorkflowService,
+        private buyPowerWorkflowService: BuyPowerWorkflowService,
         private prisma: PrismaService,
 
         @Inject(forwardRef(() => BillService))
         private billService: BillService,
-        private billEvent: BillEvent
+        private billEvent: BillEvent,
+        @InjectQueue(BillQueue.BUYPOWER_REQUERY)
+        private buypowerReQueryQueue: Queue<BuypowerReQueryJobOptions>
     ) {}
 
     async getTVNetworks() {
@@ -75,12 +93,19 @@ export class CableTVBillService {
             where: {
                 isActive: true,
                 isDefault: true,
+                slug: {
+                    not: BillProviderSlugForPower.IKEJA_ELECTRIC,
+                },
             },
         });
+
         if (!billProvider) {
             billProvider = await this.prisma.billProvider.findFirst({
                 where: {
                     isActive: true,
+                    slug: {
+                        not: BillProviderSlugForPower.IKEJA_ELECTRIC,
+                    },
                 },
             });
         }
@@ -128,15 +153,49 @@ export class CableTVBillService {
 
     async getTVBouquets(options: GetTVBouquetDto): Promise<ApiResponse> {
         let tvBouquets: GetDataBundleResponse[] = [];
-        const provider = await this.prisma.billProvider.findFirst({
-            where: { isActive: true },
-        });
 
-        if (provider) {
-            switch (provider.slug) {
+        let billProvider = await this.prisma.billProvider.findFirst({
+            where: {
+                isActive: true,
+                AND: [
+                    {
+                        slug: {
+                            not: BillProviderSlugForPower.IKEJA_ELECTRIC,
+                        },
+                    },
+                    {
+                        slug: options.billProvider,
+                    },
+                ],
+            },
+        });
+        if (!billProvider) {
+            billProvider = await this.prisma.billProvider.findFirst({
+                where: {
+                    isActive: true,
+                    slug: {
+                        notIn: [
+                            BillProviderSlugForPower.IKEJA_ELECTRIC,
+                            options.billProvider,
+                        ],
+                    },
+                },
+            });
+        }
+
+        if (billProvider) {
+            switch (billProvider.slug) {
                 case BillProviderSlug.IRECHARGE: {
                     const iRechargeDataBundles =
                         await this.iRechargeWorkflowService.getCableTVBouquets(
+                            options.billService
+                        );
+                    tvBouquets = [...tvBouquets, ...iRechargeDataBundles];
+                    break;
+                }
+                case BillProviderSlug.BUYPOWER: {
+                    const iRechargeDataBundles =
+                        await this.buyPowerWorkflowService.getCableTVBouquets(
                             options.billService
                         );
                     tvBouquets = [...tvBouquets, ...iRechargeDataBundles];
@@ -155,7 +214,7 @@ export class CableTVBillService {
         return buildResponse({
             message: "Successfully retrieved TV bouquets",
             data: {
-                billProvider: provider.slug,
+                billProvider: billProvider.slug,
                 billService: options.billService,
                 bundles: tvBouquets,
             },
@@ -163,26 +222,31 @@ export class CableTVBillService {
     }
 
     async getSmartCardInfo(options: GetSmartCardInfoDto) {
+        let resp: GetSmartCardInfoResponse;
         switch (options.billProvider) {
             case BillProviderSlug.IRECHARGE: {
                 const reference = generateId({
                     type: "numeric",
                     length: 12,
                 });
-                const resp =
-                    await this.iRechargeWorkflowService.getSmartCardInfo({
-                        reference: reference,
-                        smartCardNumber: options.smartCardNumber,
-                        tvCode:
-                            options.billService == "startimes"
-                                ? "StarTimes"
-                                : options.tvCode,
-                        tvNetwork: options.billService,
-                    });
-                return buildResponse({
-                    message: "Smart Card Information successfully retrieved",
-                    data: resp,
+                resp = await this.iRechargeWorkflowService.getSmartCardInfo({
+                    reference: reference,
+                    smartCardNumber: options.smartCardNumber,
+                    tvCode:
+                        options.billService == "startimes"
+                            ? "StarTimes"
+                            : options.tvCode,
+                    tvNetwork: options.billService,
                 });
+                break;
+            }
+
+            case BillProviderSlug.BUYPOWER: {
+                resp = await this.buyPowerWorkflowService.getSmartCardInfo({
+                    smartCardNumber: options.smartCardNumber,
+                    tvNetwork: options.billService,
+                });
+                break;
             }
 
             default: {
@@ -192,6 +256,10 @@ export class CableTVBillService {
                 );
             }
         }
+        return buildResponse({
+            message: "Smart Card Information successfully retrieved",
+            data: resp,
+        });
     }
 
     //
@@ -301,7 +369,6 @@ export class CableTVBillService {
         }
     }
 
-    //TODO
     async handleCableTVPurchaseInitialization(
         options: BillPurchaseInitializationHandlerOptions<PurchaseTVDto>
     ): Promise<CableTVPurchaseInitializationHandlerOutput> {
@@ -317,8 +384,6 @@ export class CableTVBillService {
             user,
             billService,
         } = options;
-
-        //TODO: compute commission for agent and merchant here
 
         //record transaction
         const transactionCreateOptions: Prisma.TransactionUncheckedCreateInput =
@@ -339,15 +404,39 @@ export class CableTVBillService {
                 paymentStatus: PaymentStatus.PENDING,
                 packageType: purchaseOptions.packageType,
                 shortDescription: `${billService?.name ?? "Cable TV"} Payment`,
-                serviceTransactionCode: purchaseOptions.accessToken,
                 senderIdentifier: purchaseOptions.smartCardNumber,
                 billServiceSlug: purchaseOptions.billService,
                 provider: purchaseOptions.billProvider,
-                serviceTransactionCode2: purchaseOptions.tvCode,
+                serviceTransactionCode: purchaseOptions.tvCode,
                 receiverIdentifier: purchaseOptions.phone,
                 description: purchaseOptions.narration,
                 serviceCharge: options.purchaseOptions.serviceCharge,
             };
+
+        switch (billProvider.slug) {
+            //iRecharge provider
+            case BillProviderSlug.IRECHARGE: {
+                if (!purchaseOptions.accessToken) {
+                    throw new CableTVPurchaseInitializationHandlerException(
+                        `Access token is required`,
+                        HttpStatus.BAD_REQUEST
+                    );
+                }
+                transactionCreateOptions.serviceTransactionCode2 =
+                    purchaseOptions.accessToken;
+            }
+            //buypower provider
+            case BillProviderSlugForPower.BUYPOWER: {
+                break;
+            }
+
+            default: {
+                throw new CableTVPurchaseInitializationHandlerException(
+                    "Third party power vending provider not integrated or supported",
+                    HttpStatus.NOT_IMPLEMENTED
+                );
+            }
+        }
 
         const transaction = await this.prisma.transaction.create({
             data: transactionCreateOptions,
@@ -381,8 +470,8 @@ export class CableTVBillService {
                         billServiceSlug: true, //network provider
                         billPaymentReference: true,
                         paymentChannel: true,
-                        serviceTransactionCode: true, //third party data bundle code
-                        serviceTransactionCode2: true,
+                        serviceTransactionCode: true, //third party tv package code
+                        serviceTransactionCode2: true, //access token for irecharge provider
                         receiverIdentifier: true,
                     },
                 });
@@ -428,7 +517,6 @@ export class CableTVBillService {
             });
 
             if (!billProvider) {
-                //TODO: AUTOMATION UPGRADE, check for an active provider and switch automatically
                 throw new BillProviderNotFoundException(
                     "Failed to complete cable tv purchase. Bill provider not found",
                     HttpStatus.NOT_FOUND
@@ -442,22 +530,6 @@ export class CableTVBillService {
                 billProvider: billProvider,
             });
         } catch (error) {
-            switch (true) {
-                case error instanceof IRechargeVendCableTVException: {
-                    const transaction =
-                        await this.prisma.transaction.findUnique({
-                            where: {
-                                paymentReference: options.paymentReference,
-                            },
-                        });
-                    this.billEvent.emit("bill-purchase-failure", {
-                        transactionId: transaction.id,
-                    });
-                }
-
-                default:
-                    break;
-            }
             logger.error(error);
         }
     }
@@ -465,56 +537,123 @@ export class CableTVBillService {
     async completeCableTVPurchase(
         options: CompleteBillPurchaseOptions<CompleteCableTVPurchaseTransactionOptions>
     ): Promise<CompleteCableTVPurchaseOutput> {
-        switch (options.billProvider.slug) {
-            case BillProviderSlug.IRECHARGE: {
-                //TODO: AUTOMATION UPGRADE, if iRecharge service fails, check for an active provider and switch automatically
-                const response = await this.iRechargeWorkflowService.vendTV({
-                    tvCode: options.transaction.serviceTransactionCode2,
-                    referenceId: options.transaction.billPaymentReference,
-                    accessToken: options.transaction.serviceTransactionCode,
-                    smartCardNumber: options.transaction.senderIdentifier,
-                    tvNetwork: options.transaction
-                        .billServiceSlug as CableTVProvider,
-                    email: options.user.email,
-                    phone: options.transaction.receiverIdentifier,
-                });
-
-                await this.prisma.$transaction(
-                    async (tx) => {
-                        await tx.transaction.update({
-                            where: {
-                                id: options.transaction.id,
-                            },
-                            data: {
-                                status: TransactionStatus.SUCCESS,
-                                paymentChannel: options.isWalletPayment
-                                    ? PaymentChannel.WALLET
-                                    : options.transaction.paymentChannel,
-                            },
+        let vendCableTvResp: VendCableTVResponse;
+        try {
+            switch (options.billProvider.slug) {
+                case BillProviderSlug.IRECHARGE: {
+                    vendCableTvResp =
+                        await this.iRechargeWorkflowService.vendCableTV({
+                            tvCode: options.transaction.serviceTransactionCode,
+                            referenceId:
+                                options.transaction.billPaymentReference,
+                            accessToken:
+                                options.transaction.serviceTransactionCode,
+                            smartCardNumber:
+                                options.transaction.senderIdentifier,
+                            tvNetwork: options.transaction
+                                .billServiceSlug as CableTVProvider,
+                            email: options.user.email,
+                            phone: options.transaction.receiverIdentifier,
                         });
 
-                        this.billEvent.emit("pay-bill-commission", {
-                            transactionId: options.transaction.id,
-                            userType: options.user.userType,
+                    return await this.successPurchaseHandler(
+                        options,
+                        vendCableTvResp
+                    );
+                }
+                case BillProviderSlug.BUYPOWER: {
+                    vendCableTvResp =
+                        await this.buyPowerWorkflowService.vendCableTV({
+                            tvCode: options.transaction.serviceTransactionCode,
+                            referenceId:
+                                options.transaction.billPaymentReference,
+                            smartCardNumber:
+                                options.transaction.senderIdentifier,
+                            tvNetwork: options.transaction
+                                .billServiceSlug as CableTVProvider,
+                            email: options.user.email,
+                            phone: options.transaction.receiverIdentifier,
+                            amount: options.transaction.amount,
                         });
-                    },
-                    {
-                        timeout: DB_TRANSACTION_TIMEOUT,
-                    }
-                );
 
-                return {
-                    orderMessage: response.orderMessage,
-                };
+                    return await this.successPurchaseHandler(
+                        options,
+                        vendCableTvResp
+                    );
+                }
+
+                default: {
+                    throw new VendCableTVFailureException(
+                        "Failed to complete cable tv purchase. Bill provider not integrated",
+                        HttpStatus.NOT_IMPLEMENTED
+                    );
+                }
             }
+        } catch (error) {
+            switch (true) {
+                case error instanceof BuyPowerVendInProgressException: {
+                    await this.buypowerReQueryQueue.add(
+                        BuyPowerReQueryQueue.CABLE_TV,
+                        {
+                            orderId: options.transaction.billPaymentReference,
+                            transactionId: options.transaction.id,
+                            isWalletPayment: options.isWalletPayment,
+                        }
+                    );
+                    throw new VendCableTVInProgressException(
+                        "Cable TV vending in progress",
+                        HttpStatus.ACCEPTED
+                    );
+                }
+                case error instanceof UnprocessedTransactionException: {
+                    throw new VendCableTVFailureException(
+                        "Failed to vend cable tv",
+                        HttpStatus.NOT_IMPLEMENTED
+                    );
+                }
 
-            default: {
-                throw new CableTVPurchaseException(
-                    "Failed to complete cable tv purchase. Invalid bill provider",
-                    HttpStatus.NOT_IMPLEMENTED
-                );
+                default: {
+                    this.billEvent.emit("bill-purchase-failure", {
+                        transactionId: options.transaction.id,
+                    });
+                    throw error;
+                }
             }
         }
+    }
+
+    async successPurchaseHandler(
+        options: CompleteBillPurchaseOptions<CompleteCableTVPurchaseTransactionOptions>,
+        vendCableTVResp?: VendCableTVResponse
+    ): Promise<CompleteCableTVPurchaseOutput> {
+        await this.prisma.$transaction(
+            async (tx) => {
+                await tx.transaction.update({
+                    where: {
+                        id: options.transaction.id,
+                    },
+                    data: {
+                        status: TransactionStatus.SUCCESS,
+                        token: vendCableTVResp.vendRef,
+                        paymentChannel: options.isWalletPayment
+                            ? PaymentChannel.WALLET
+                            : options.transaction.paymentChannel,
+                    },
+                });
+
+                this.billEvent.emit("pay-bill-commission", {
+                    transactionId: options.transaction.id,
+                    userType: options.user.userType,
+                });
+            },
+            {
+                timeout: DB_TRANSACTION_TIMEOUT,
+            }
+        );
+
+        return {
+            vendRef: vendCableTVResp.vendRef,
+        };
     }
 
     async walletPayment(options: PaymentReferenceDto, user: User) {
@@ -588,22 +727,21 @@ export class CableTVBillService {
         }
 
         if (!billProvider.isActive) {
-            //TODO: AUTOMATION UPGRADE, check for an active provider and switch automatically
             throw new CableTVPurchaseException(
                 "Bill Provider not active",
                 HttpStatus.BAD_REQUEST
             );
         }
 
-        //charge wallet and update payment status
-        await this.billService.walletChargeHandler({
-            amount: transaction.totalAmount,
-            transactionId: transaction.id,
-            walletId: wallet.id,
-        });
-
         //purchase
         try {
+            //charge wallet and update payment status
+            await this.billService.walletChargeHandler({
+                amount: transaction.amount,
+                transactionId: transaction.id,
+                walletId: wallet.id,
+            });
+
             await this.completeCableTVPurchase({
                 billProvider: billProvider,
                 transaction: transaction,
@@ -622,11 +760,13 @@ export class CableTVBillService {
             });
         } catch (error) {
             switch (true) {
-                case error instanceof IRechargeVendCableTVException: {
-                    this.billEvent.emit("bill-purchase-failure", {
-                        transactionId: transaction.id,
-                    });
+                case error instanceof VendCableTVFailureException: {
                     throw error;
+                }
+                case error instanceof VendCableTVInProgressException: {
+                    return buildResponse({
+                        message: "Vending in progress",
+                    });
                 }
                 case error instanceof WalletChargeException: {
                     this.billEvent.emit("payment-failure", {

@@ -8,7 +8,8 @@ import { classValidatorPipeInstance } from "@/core/pipe";
 import { PrismaService } from "@/modules/core/prisma/services";
 import * as morgan from "morgan";
 import { json } from "express";
-import { frontendDevOrigin, manualEnvironment } from "@/config";
+import { frontendDevOrigin, manualEnvironment, redisUrl } from "@/config";
+import waitForRedis from "../utils/wait-for-redis";
 
 export interface CreateServerOptions {
     port: number;
@@ -54,5 +55,8 @@ export default async (
     //handle prisma enableShutDownHook interference with nest app enableShutdownHooks
     const prismaService = app.get(PrismaService);
     await prismaService.enableShutdownHooks(app);
+
+    //wait for redis connection
+    await waitForRedis(redisUrl);
     return app;
 };

@@ -1,4 +1,6 @@
+import { VtuNetwork } from "./airtime";
 import { DataNetwork } from "./data";
+import { Disco } from "./power";
 import { CableTVNetwork } from "./tv";
 
 export * as Power from "./power";
@@ -40,4 +42,21 @@ export interface GetPriceListOptions {
 
 export interface WalletBalanceResponseData {
     balance: number;
+}
+
+export interface ReQueryResponseData {
+    id: number;
+    amountGenerated: string;
+    disco: Disco | CableTVNetwork | DataNetwork | VtuNetwork;
+    debtAmount: string;
+    debtRemaining: string;
+    orderId: string;
+    receiptNo: string;
+    tax: string;
+    vendTime: string;
+    token: string;
+    totalAmountPaid: number;
+    units: string;
+    vendAmount: string;
+    vendRef: string;
 }

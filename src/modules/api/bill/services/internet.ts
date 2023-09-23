@@ -2,6 +2,10 @@ import { PrismaService } from "@/modules/core/prisma/services";
 import {
     GetInternetBundleResponse,
     NetworkInternetProvider,
+    UnprocessedTransactionException,
+    VendInternetFailureException,
+    VendInternetInProgressException,
+    VendInternetResponse,
 } from "@/modules/workflow/billPayment";
 import { IRechargeWorkflowService } from "@/modules/workflow/billPayment/providers/iRecharge/services";
 import { ApiResponse, buildResponse, generateId } from "@/utils";
@@ -36,6 +40,7 @@ import {
 } from "../errors";
 import {
     BillProviderSlug,
+    BillProviderSlugForPower,
     BillPurchaseInitializationHandlerOptions,
     CompleteBillPurchaseOptions,
     CompleteBillPurchaseUserOptions,
@@ -46,7 +51,6 @@ import {
 import logger from "moment-logger";
 import { DB_TRANSACTION_TIMEOUT } from "@/config";
 import { BillService } from ".";
-import { IRechargeVendInternetException } from "@/modules/workflow/billPayment/providers/iRecharge";
 import { BillEvent } from "../events";
 import {
     GetInternetBundleDto,
@@ -61,16 +65,28 @@ import {
     InternetPurchaseInitializationHandlerOutput,
     VerifyInternetPurchaseData,
 } from "../interfaces/internet";
+import { BuyPowerWorkflowService } from "@/modules/workflow/billPayment/providers/buyPower/services";
+import { BuyPowerVendInProgressException } from "@/modules/workflow/billPayment/providers/buyPower";
+import { InjectQueue } from "@nestjs/bull";
+import {
+    BillQueue,
+    BuyPowerReQueryQueue,
+    BuypowerReQueryJobOptions,
+} from "../queues";
+import { Queue } from "bull";
 
 @Injectable()
 export class InternetBillService {
     constructor(
         private iRechargeWorkflowService: IRechargeWorkflowService,
+        private buyPowerWorkflowService: BuyPowerWorkflowService,
         private prisma: PrismaService,
 
         @Inject(forwardRef(() => BillService))
         private billService: BillService,
-        private billEvent: BillEvent
+        private billEvent: BillEvent,
+        @InjectQueue(BillQueue.BUYPOWER_REQUERY)
+        private buypowerReQueryQueue: Queue<BuypowerReQueryJobOptions>
     ) {}
 
     async getInternetBundles(
@@ -80,13 +96,28 @@ export class InternetBillService {
         let billProvider = await this.prisma.billProvider.findFirst({
             where: {
                 isActive: true,
-                isDefault: true,
+                AND: [
+                    {
+                        slug: {
+                            not: BillProviderSlugForPower.IKEJA_ELECTRIC,
+                        },
+                    },
+                    {
+                        slug: options.billProvider,
+                    },
+                ],
             },
         });
         if (!billProvider) {
             billProvider = await this.prisma.billProvider.findFirst({
                 where: {
                     isActive: true,
+                    slug: {
+                        notIn: [
+                            BillProviderSlugForPower.IKEJA_ELECTRIC,
+                            options.billProvider,
+                        ],
+                    },
                 },
             });
         }
@@ -96,6 +127,17 @@ export class InternetBillService {
                 case BillProviderSlug.IRECHARGE: {
                     const iRechargeDataBundles =
                         await this.iRechargeWorkflowService.getInternetBundles(
+                            options.billService
+                        );
+                    internetBundles = [
+                        ...internetBundles,
+                        ...iRechargeDataBundles,
+                    ];
+                    break;
+                }
+                case BillProviderSlug.BUYPOWER: {
+                    const iRechargeDataBundles =
+                        await this.buyPowerWorkflowService.getInternetBundles(
                             options.billService
                         );
                     internetBundles = [
@@ -126,11 +168,26 @@ export class InternetBillService {
 
     async getInternetNetworks() {
         let networks = [];
-        const billProvider = await this.prisma.billProvider.findFirst({
+        let billProvider = await this.prisma.billProvider.findFirst({
             where: {
                 isActive: true,
+                isDefault: true,
+                slug: {
+                    not: BillProviderSlugForPower.IKEJA_ELECTRIC,
+                },
             },
         });
+
+        if (!billProvider) {
+            billProvider = await this.prisma.billProvider.findFirst({
+                where: {
+                    isActive: true,
+                    slug: {
+                        not: BillProviderSlugForPower.IKEJA_ELECTRIC,
+                    },
+                },
+            });
+        }
         if (billProvider) {
             const providerNetworks =
                 await this.prisma.billProviderInternetNetwork.findMany({
@@ -285,8 +342,6 @@ export class InternetBillService {
         });
         const { billProvider, paymentChannel, purchaseOptions, user } = options;
 
-        //TODO: compute commission for agent and merchant here
-
         //record transaction
         const transactionCreateOptions: Prisma.TransactionUncheckedCreateInput =
             {
@@ -342,7 +397,7 @@ export class InternetBillService {
                         billServiceSlug: true, //network provider
                         billPaymentReference: true,
                         paymentChannel: true,
-                        serviceTransactionCode: true, //third party data bundle code
+                        serviceTransactionCode: true, //third party internet bundle code
                     },
                 });
 
@@ -387,7 +442,6 @@ export class InternetBillService {
             });
 
             if (!billProvider) {
-                //TODO: AUTOMATION UPGRADE, check for an active provider and switch automatically
                 throw new BillProviderNotFoundException(
                     "Failed to complete internet purchase. Bill provider not found",
                     HttpStatus.NOT_FOUND
@@ -401,22 +455,6 @@ export class InternetBillService {
                 billProvider: billProvider,
             });
         } catch (error) {
-            switch (true) {
-                case error instanceof IRechargeVendInternetException: {
-                    const transaction =
-                        await this.prisma.transaction.findUnique({
-                            where: {
-                                paymentReference: options.paymentReference,
-                            },
-                        });
-                    this.billEvent.emit("bill-purchase-failure", {
-                        transactionId: transaction.id,
-                    });
-                }
-
-                default:
-                    break;
-            }
             logger.error(error);
         }
     }
@@ -424,59 +462,122 @@ export class InternetBillService {
     async completeInternetPurchase(
         options: CompleteBillPurchaseOptions<CompleteInternetPurchaseTransactionOptions>
     ): Promise<CompleteInternetPurchaseOutput> {
-        switch (options.billProvider.slug) {
-            case BillProviderSlug.IRECHARGE: {
-                //TODO: AUTOMATION UPGRADE, if iRecharge service fails, check for an active provider and switch automatically
-                const response =
-                    await this.iRechargeWorkflowService.vendInternet({
-                        internetCode:
-                            options.transaction.serviceTransactionCode,
-                        referenceId: options.transaction.billPaymentReference,
-                        vtuNetwork: options.transaction
-                            .billServiceSlug as NetworkInternetProvider,
-                        vtuNumber: options.transaction.senderIdentifier,
-                        vtuEmail: options.user.email,
-                    });
+        let vendInternetResp: VendInternetResponse;
 
-                await this.prisma.$transaction(
-                    async (tx) => {
-                        await tx.transaction.update({
-                            where: {
-                                id: options.transaction.id,
-                            },
-                            data: {
-                                status: TransactionStatus.SUCCESS,
-                                token: response.networkProviderReference,
-                                paymentChannel: options.isWalletPayment
-                                    ? PaymentChannel.WALLET
-                                    : options.transaction.paymentChannel,
-                            },
+        try {
+            switch (options.billProvider.slug) {
+                case BillProviderSlug.IRECHARGE: {
+                    vendInternetResp =
+                        await this.iRechargeWorkflowService.vendInternet({
+                            internetCode:
+                                options.transaction.serviceTransactionCode,
+                            referenceId:
+                                options.transaction.billPaymentReference,
+                            vtuNetwork: options.transaction
+                                .billServiceSlug as NetworkInternetProvider,
+                            vtuNumber: options.transaction.senderIdentifier,
+                            vtuEmail: options.user.email,
                         });
 
-                        this.billEvent.emit("pay-bill-commission", {
-                            transactionId: options.transaction.id,
-                            userType: options.user.userType,
+                    return await this.successPurchaseHandler(
+                        options,
+                        vendInternetResp
+                    );
+                }
+                case BillProviderSlug.BUYPOWER: {
+                    vendInternetResp =
+                        await this.buyPowerWorkflowService.vendInternet({
+                            internetCode:
+                                options.transaction.serviceTransactionCode,
+                            referenceId:
+                                options.transaction.billPaymentReference,
+                            vtuNetwork: options.transaction
+                                .billServiceSlug as NetworkInternetProvider,
+                            vtuNumber: options.transaction.senderIdentifier,
+                            vtuEmail: options.user.email,
+                            amount: options.transaction.amount,
                         });
-                    },
-                    {
-                        timeout: DB_TRANSACTION_TIMEOUT,
-                    }
-                );
 
-                return {
-                    networkProviderReference: response.networkProviderReference,
-                    amount: response.amount,
-                    phone: response.receiver,
-                };
+                    return await this.successPurchaseHandler(
+                        options,
+                        vendInternetResp
+                    );
+                }
+
+                default: {
+                    throw new VendInternetFailureException(
+                        "Failed to complete internet purchase. Bill provider not integrated",
+                        HttpStatus.NOT_IMPLEMENTED
+                    );
+                }
             }
+        } catch (error) {
+            switch (true) {
+                case error instanceof BuyPowerVendInProgressException: {
+                    await this.buypowerReQueryQueue.add(
+                        BuyPowerReQueryQueue.INTERNET,
+                        {
+                            orderId: options.transaction.billPaymentReference,
+                            transactionId: options.transaction.id,
+                            isWalletPayment: options.isWalletPayment,
+                        }
+                    );
+                    throw new VendInternetInProgressException(
+                        "Internet vending in progress",
+                        HttpStatus.ACCEPTED
+                    );
+                }
+                case error instanceof UnprocessedTransactionException: {
+                    throw new VendInternetFailureException(
+                        "Failed to vend internet",
+                        HttpStatus.NOT_IMPLEMENTED
+                    );
+                }
 
-            default: {
-                throw new InternetPurchaseException(
-                    "Failed to complete internet purchase. Invalid bill provider",
-                    HttpStatus.NOT_IMPLEMENTED
-                );
+                default: {
+                    this.billEvent.emit("bill-purchase-failure", {
+                        transactionId: options.transaction.id,
+                    });
+                    throw error;
+                }
             }
         }
+    }
+
+    async successPurchaseHandler(
+        options: CompleteBillPurchaseOptions<CompleteInternetPurchaseTransactionOptions>,
+        vendInternetResp: VendInternetResponse
+    ): Promise<CompleteInternetPurchaseOutput> {
+        await this.prisma.$transaction(
+            async (tx) => {
+                await tx.transaction.update({
+                    where: {
+                        id: options.transaction.id,
+                    },
+                    data: {
+                        status: TransactionStatus.SUCCESS,
+                        token: vendInternetResp.networkProviderReference,
+                        paymentChannel: options.isWalletPayment
+                            ? PaymentChannel.WALLET
+                            : options.transaction.paymentChannel,
+                    },
+                });
+
+                this.billEvent.emit("pay-bill-commission", {
+                    transactionId: options.transaction.id,
+                    userType: options.user.userType,
+                });
+            },
+            {
+                timeout: DB_TRANSACTION_TIMEOUT,
+            }
+        );
+
+        return {
+            networkProviderReference: vendInternetResp.networkProviderReference,
+            amount: vendInternetResp.amount,
+            phone: vendInternetResp.receiver,
+        };
     }
 
     async walletPayment(options: PaymentReferenceDto, user: User) {
@@ -551,22 +652,21 @@ export class InternetBillService {
         }
 
         if (!billProvider.isActive) {
-            //TODO: AUTOMATION UPGRADE, check for an active provider and switch automatically
             throw new InternetPurchaseException(
                 "Bill Provider not active",
                 HttpStatus.BAD_REQUEST
             );
         }
 
-        //record payment
-        await this.billService.walletChargeHandler({
-            amount: transaction.amount,
-            transactionId: transaction.id,
-            walletId: wallet.id,
-        });
-
         //purchase
         try {
+            //record payment
+            await this.billService.walletChargeHandler({
+                amount: transaction.amount,
+                transactionId: transaction.id,
+                walletId: wallet.id,
+            });
+
             const purchaseInfo = await this.completeInternetPurchase({
                 billProvider: billProvider,
                 transaction: transaction,
@@ -591,11 +691,13 @@ export class InternetBillService {
             });
         } catch (error) {
             switch (true) {
-                case error instanceof IRechargeVendInternetException: {
-                    this.billEvent.emit("bill-purchase-failure", {
-                        transactionId: transaction.id,
-                    });
+                case error instanceof VendInternetFailureException: {
                     throw error;
+                }
+                case error instanceof VendInternetInProgressException: {
+                    return buildResponse({
+                        message: "Vending in progress",
+                    });
                 }
                 case error instanceof WalletChargeException: {
                     this.billEvent.emit("payment-failure", {

@@ -2,6 +2,10 @@ import { PrismaService } from "@/modules/core/prisma/services";
 import {
     GetDataBundleResponse,
     NetworkDataProvider,
+    UnprocessedTransactionException,
+    VendDataFailureException,
+    VendDataInProgressException,
+    VendDataResponse,
 } from "@/modules/workflow/billPayment";
 import { IRechargeWorkflowService } from "@/modules/workflow/billPayment/providers/iRecharge/services";
 import { ApiResponse, buildResponse, generateId } from "@/utils";
@@ -33,10 +37,10 @@ import {
     PowerPurchaseException,
     InvalidBillTypePaymentReference,
     WalletChargeException,
-    InvalidBillProviderException,
 } from "../errors";
 import {
     BillProviderSlug,
+    BillProviderSlugForPower,
     BillPurchaseInitializationHandlerOptions,
     CompleteBillPurchaseOptions,
     CompleteBillPurchaseUserOptions,
@@ -54,18 +58,29 @@ import {
 import logger from "moment-logger";
 import { DB_TRANSACTION_TIMEOUT } from "@/config";
 import { BillService } from ".";
-import { IRechargeVendDataException } from "@/modules/workflow/billPayment/providers/iRecharge";
 import { BillEvent } from "../events";
+import { BuyPowerWorkflowService } from "@/modules/workflow/billPayment/providers/buyPower/services";
+import { BuyPowerVendInProgressException } from "@/modules/workflow/billPayment/providers/buyPower";
+import {
+    BillQueue,
+    BuyPowerReQueryQueue,
+    BuypowerReQueryJobOptions,
+} from "../queues";
+import { InjectQueue } from "@nestjs/bull";
+import { Queue } from "bull";
 
 @Injectable()
 export class DataBillService {
     constructor(
         private iRechargeWorkflowService: IRechargeWorkflowService,
         private prisma: PrismaService,
+        private buyPowerWorkflowService: BuyPowerWorkflowService,
 
         @Inject(forwardRef(() => BillService))
         private billService: BillService,
-        private billEvent: BillEvent
+        private billEvent: BillEvent,
+        @InjectQueue(BillQueue.BUYPOWER_REQUERY)
+        private buypowerReQueryQueue: Queue<BuypowerReQueryJobOptions>
     ) {}
 
     async getDataBundles(options: GetDataBundleDto): Promise<ApiResponse> {
@@ -73,13 +88,26 @@ export class DataBillService {
         let billProvider = await this.prisma.billProvider.findFirst({
             where: {
                 isActive: true,
-                isDefault: true,
+                AND: [
+                    {
+                        slug: { not: BillProviderSlugForPower.IKEJA_ELECTRIC },
+                    },
+                    {
+                        slug: options.billProvider,
+                    },
+                ],
             },
         });
         if (!billProvider) {
             billProvider = await this.prisma.billProvider.findFirst({
                 where: {
                     isActive: true,
+                    slug: {
+                        notIn: [
+                            BillProviderSlugForPower.IKEJA_ELECTRIC,
+                            options.billProvider,
+                        ],
+                    },
                 },
             });
         }
@@ -94,12 +122,17 @@ export class DataBillService {
                     dataBundles = [...dataBundles, ...iRechargeDataBundles];
                     break;
                 }
+                case BillProviderSlug.BUYPOWER: {
+                    const buyPowerDataBundles =
+                        await this.buyPowerWorkflowService.getDataBundles(
+                            options.billService
+                        );
+                    dataBundles = [...dataBundles, ...buyPowerDataBundles];
+                    break;
+                }
 
                 default: {
-                    throw new InvalidBillProviderException(
-                        "No integration for the retrieved bill provider",
-                        HttpStatus.INTERNAL_SERVER_ERROR
-                    );
+                    break;
                 }
             }
         }
@@ -224,8 +257,6 @@ export class DataBillService {
         });
         const { billProvider, paymentChannel, purchaseOptions, user } = options;
 
-        //TODO: compute commission for agent and merchant here
-
         //record transaction
         const transactionCreateOptions: Prisma.TransactionUncheckedCreateInput =
             {
@@ -326,7 +357,6 @@ export class DataBillService {
             });
 
             if (!billProvider) {
-                //TODO: AUTOMATION UPGRADE, check for an active provider and switch automatically
                 throw new BillProviderNotFoundException(
                     "Failed to complete data purchase. Bill provider not found",
                     HttpStatus.NOT_FOUND
@@ -341,77 +371,120 @@ export class DataBillService {
             });
         } catch (error) {
             logger.error(error);
-            switch (true) {
-                case error instanceof IRechargeVendDataException: {
-                    const transaction =
-                        await this.prisma.transaction.findUnique({
-                            where: {
-                                paymentReference: options.paymentReference,
-                            },
-                        });
-                    this.billEvent.emit("bill-purchase-failure", {
-                        transactionId: transaction.id,
-                    });
-                }
-
-                default:
-                    break;
-            }
         }
     }
 
     async completeDataPurchase(
         options: CompleteBillPurchaseOptions<CompleteDataPurchaseTransactionOptions>
     ): Promise<CompleteDataPurchaseOutput> {
-        switch (options.billProvider.slug) {
-            case BillProviderSlug.IRECHARGE: {
-                //TODO: AUTOMATION UPGRADE, if iRecharge service fails, check for an active provider and switch automatically
-                const response = await this.iRechargeWorkflowService.vendData({
-                    dataCode: options.transaction.serviceTransactionCode,
-                    referenceId: options.transaction.billPaymentReference,
-                    vtuNetwork: options.transaction
-                        .billServiceSlug as NetworkDataProvider,
-                    vtuNumber: options.transaction.senderIdentifier,
-                    vtuEmail: options.user.email,
-                });
+        let vendDataResp: VendDataResponse;
+        try {
+            switch (options.billProvider.slug) {
+                case BillProviderSlug.IRECHARGE: {
+                    vendDataResp = await this.iRechargeWorkflowService.vendData(
+                        {
+                            dataCode:
+                                options.transaction.serviceTransactionCode,
+                            referenceId:
+                                options.transaction.billPaymentReference,
+                            vtuNetwork: options.transaction
+                                .billServiceSlug as NetworkDataProvider,
+                            vtuNumber: options.transaction.senderIdentifier,
+                            vtuEmail: options.user.email,
+                        }
+                    );
+                    return await this.successPurchaseHandler(
+                        options,
+                        vendDataResp
+                    );
+                }
+                case BillProviderSlug.BUYPOWER: {
+                    vendDataResp = await this.buyPowerWorkflowService.vendData({
+                        dataCode: options.transaction.serviceTransactionCode,
+                        referenceId: options.transaction.billPaymentReference,
+                        vtuNetwork: options.transaction
+                            .billServiceSlug as NetworkDataProvider,
+                        vtuNumber: options.transaction.senderIdentifier,
+                        vtuEmail: options.user.email,
+                        amount: options.transaction.amount,
+                    });
+                    return await this.successPurchaseHandler(
+                        options,
+                        vendDataResp
+                    );
+                }
 
-                await this.prisma.$transaction(
-                    async (tx) => {
-                        await tx.transaction.update({
-                            where: {
-                                id: options.transaction.id,
-                            },
-                            data: {
-                                status: TransactionStatus.SUCCESS,
-                                token: response.networkProviderReference,
-                                paymentChannel: options.isWalletPayment
-                                    ? PaymentChannel.WALLET
-                                    : options.transaction.paymentChannel,
-                            },
-                        });
-
-                        this.billEvent.emit("pay-bill-commission", {
-                            transactionId: options.transaction.id,
-                            userType: options.user.userType,
-                        });
-                    },
-                    {
-                        timeout: DB_TRANSACTION_TIMEOUT,
-                    }
-                );
-
-                return {
-                    networkProviderReference: response.networkProviderReference,
-                };
+                default: {
+                    throw new VendDataFailureException(
+                        "Failed to complete data purchase. Bill provider not integrated",
+                        HttpStatus.NOT_IMPLEMENTED
+                    );
+                }
             }
+        } catch (error) {
+            switch (true) {
+                case error instanceof BuyPowerVendInProgressException: {
+                    await this.buypowerReQueryQueue.add(
+                        BuyPowerReQueryQueue.DATA,
+                        {
+                            orderId: options.transaction.billPaymentReference,
+                            transactionId: options.transaction.id,
+                            isWalletPayment: options.isWalletPayment,
+                        }
+                    );
+                    throw new VendDataInProgressException(
+                        "Data vending in progress",
+                        HttpStatus.ACCEPTED
+                    );
+                }
+                case error instanceof UnprocessedTransactionException: {
+                    throw new VendDataFailureException(
+                        "Failed to vend data",
+                        HttpStatus.NOT_IMPLEMENTED
+                    );
+                }
 
-            default: {
-                throw new DataPurchaseException(
-                    "Failed to complete data purchase. Invalid bill provider",
-                    HttpStatus.NOT_IMPLEMENTED
-                );
+                default: {
+                    this.billEvent.emit("bill-purchase-failure", {
+                        transactionId: options.transaction.id,
+                    });
+                    throw error;
+                }
             }
         }
+    }
+
+    async successPurchaseHandler(
+        options: CompleteBillPurchaseOptions<CompleteDataPurchaseTransactionOptions>,
+        vendDataResp: VendDataResponse
+    ): Promise<CompleteDataPurchaseOutput> {
+        await this.prisma.$transaction(
+            async (tx) => {
+                await tx.transaction.update({
+                    where: {
+                        id: options.transaction.id,
+                    },
+                    data: {
+                        status: TransactionStatus.SUCCESS,
+                        token: vendDataResp.networkProviderReference,
+                        paymentChannel: options.isWalletPayment
+                            ? PaymentChannel.WALLET
+                            : options.transaction.paymentChannel,
+                    },
+                });
+
+                this.billEvent.emit("pay-bill-commission", {
+                    transactionId: options.transaction.id,
+                    userType: options.user.userType,
+                });
+            },
+            {
+                timeout: DB_TRANSACTION_TIMEOUT,
+            }
+        );
+        return {
+            networkProviderReference: vendDataResp.networkProviderReference,
+        };
     }
 
     async walletPayment(options: PaymentReferenceDto, user: User) {
@@ -486,22 +559,21 @@ export class DataBillService {
         }
 
         if (!billProvider.isActive) {
-            //TODO: AUTOMATION UPGRADE, check for an active provider and switch automatically
             throw new DataPurchaseException(
                 "Bill Provider not active",
                 HttpStatus.BAD_REQUEST
             );
         }
 
-        //record payment
-        await this.billService.walletChargeHandler({
-            amount: transaction.amount,
-            transactionId: transaction.id,
-            walletId: wallet.id,
-        });
-
         //purchase
         try {
+            //charge wallet and update payment status
+            await this.billService.walletChargeHandler({
+                amount: transaction.amount,
+                transactionId: transaction.id,
+                walletId: wallet.id,
+            });
+
             const purchaseInfo = await this.completeDataPurchase({
                 billProvider: billProvider,
                 transaction: transaction,
@@ -523,11 +595,13 @@ export class DataBillService {
             });
         } catch (error) {
             switch (true) {
-                case error instanceof IRechargeVendDataException: {
-                    this.billEvent.emit("bill-purchase-failure", {
-                        transactionId: transaction.id,
-                    });
+                case error instanceof VendDataFailureException: {
                     throw error;
+                }
+                case error instanceof VendDataInProgressException: {
+                    return buildResponse({
+                        message: "Vending in progress",
+                    });
                 }
                 case error instanceof WalletChargeException: {
                     this.billEvent.emit("payment-failure", {
@@ -620,11 +694,27 @@ export class DataBillService {
 
     async getDataNetworks() {
         let networks = [];
-        const billProvider = await this.prisma.billProvider.findFirst({
+        let billProvider = await this.prisma.billProvider.findFirst({
             where: {
                 isActive: true,
+                isDefault: true,
+                slug: {
+                    not: BillProviderSlugForPower.IKEJA_ELECTRIC,
+                },
             },
         });
+
+        if (!billProvider) {
+            billProvider = await this.prisma.billProvider.findFirst({
+                where: {
+                    isActive: true,
+                    slug: {
+                        not: BillProviderSlugForPower.IKEJA_ELECTRIC,
+                    },
+                },
+            });
+        }
+
         if (billProvider) {
             const providerNetworks =
                 await this.prisma.billProviderDataBundleNetwork.findMany({

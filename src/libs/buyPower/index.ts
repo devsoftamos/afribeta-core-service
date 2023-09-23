@@ -7,6 +7,7 @@ import {
     GetPriceListOptions,
     Optional,
     ReQueryOptions,
+    ReQueryResponseData,
     WalletBalanceResponseData,
 } from "./interfaces";
 import { Power, Airtime, Data, CableTv } from "./interfaces";
@@ -17,7 +18,12 @@ import {
     VendAirtimeOptions,
 } from "./interfaces/airtime";
 import { VendDataInputOptions, VendDataOptions } from "./interfaces/data";
-import { VendTVInputOptions, VendTVOptions } from "./interfaces/tv";
+import {
+    GetSmartCardInputOptions,
+    GetSmartCardResponseData,
+    VendTVInputOptions,
+    VendTVOptions,
+} from "./interfaces/tv";
 import { setTimeout } from "timers/promises";
 
 export * as IBuyPower from "./interfaces";
@@ -106,59 +112,90 @@ export class BuyPower {
         }
     }
 
-    private async reQuery<R>(options: ReQueryOptions): Promise<R> {
-        const delay: number = options.delay
+    async reQuery<R = ReQueryResponseData>(
+        options: ReQueryOptions
+    ): Promise<BuyPowerResponse<R>> {
+        const retryCount = Array.isArray(options.delay)
+            ? options.delay.length
+            : 2;
+        const delay: number = Array.isArray(options.delay)
             ? options.delay[0] * 1000
             : 120 * 1000;
-        await setTimeout(delay);
-        const requestOptions: AxiosRequestConfig = {
-            url: `/transaction/${options.orderId}`,
-            method: "GET",
-            raxConfig: {
-                retry: options.delay ? options.delay.length : 2,
-                retryDelay: delay,
-                statusCodesToRetry: [
-                    [202, 202],
-                    [502, 502],
-                ],
-                backoffType: "static",
-                instance: this.axios,
-            },
-        };
+        // const delay = 5 * 1000;
+        const code202 = 202;
+        const code502 = 502;
+        try {
+            const handleReQuery = async (retry: number) => {
+                await setTimeout(delay);
+                const requestOptions: AxiosRequestConfig = {
+                    url: `/transaction/${options.orderId}`,
+                    method: "GET",
+                    raxConfig: {
+                        retry: retry,
+                        retryDelay: delay,
+                        statusCodesToRetry: [[code502, code502]],
+                        backoffType: "static",
+                        instance: this.axios,
+                    },
+                };
 
-        const response = await this.axios(requestOptions);
-        switch (response.status) {
-            case 202: {
-                const error = new BuyPowerError("Transaction in progress");
-                error.status = 202;
-                throw error;
-            }
-            case 502: {
-                const error = new BuyPowerError("Transaction in progress");
-                error.status = 502;
-                throw error;
-            }
-            case 200: {
-                return response.data as R;
+                return await this.axios(requestOptions);
+            };
+
+            let response = await handleReQuery(retryCount);
+
+            //handle re-query for status code 202
+            if (response.status == code202) {
+                const retry = retryCount - 1;
+                for (let i = 0; i < retry; i++) {
+                    response = await handleReQuery(retry);
+                    if (response.status == 200) {
+                        break;
+                    }
+                }
             }
 
-            default: {
-                const error = new BuyPowerError(
-                    response.data?.message ?? "No response message"
-                );
-                error.status = response.status;
+            switch (response.status) {
+                case code202: {
+                    const error = new BuyPowerError("Transaction in progress");
+                    error.status = code202;
+                    throw error;
+                }
+                case 200: {
+                    return {
+                        status: true,
+                        responseCode: response.status,
+                        data: response.data.result?.data as R,
+                    };
+                }
+            }
+        } catch (error) {
+            if (!Axios.isAxiosError(error)) {
                 throw error;
+            }
+
+            switch (true) {
+                case error.response?.status == code502: {
+                    const err = new BuyPowerError("Transaction in progress");
+                    err.status = code502;
+                    throw err;
+                }
+
+                default: {
+                    const err = new BuyPowerError(
+                        error.response?.data?.message ?? "No response message"
+                    );
+                    error.status = error.response?.status ?? 500;
+                    throw err;
+                }
             }
         }
     }
 
     async vendPower(
-        options: Optional<VendPowerOptions, "paymentType"> //: Promise<BuyPowerResponse<Power.VendPowerResponseData>>
-    ) {
+        options: Optional<VendPowerOptions, "paymentType">
+    ): Promise<BuyPowerResponse<Power.VendPowerResponseData>> {
         try {
-            // const error = new BuyPowerError("unable to vend power");
-            // error.status = 500;
-            // throw error;
             const requestOptions: AxiosRequestConfig<VendPowerOptions> = {
                 url: "/vend",
                 method: "POST",
@@ -177,19 +214,24 @@ export class BuyPower {
             };
             const response = await this.axios(requestOptions);
 
+            // const response = {
+            //     status: 202,
+            //     data: { data: { delay: [10, 10, 10] } },
+            // };
+
             if (this.reQueryStatuses.includes(response.status)) {
-                const responseData = await this.reQuery<
-                    BuyPowerResponse<Power.VendPowerResponseData>
-                >({
-                    orderId: options.orderId,
-                    delay: response.data.data?.delay as any,
-                });
-                if (!responseData.data) {
+                const reQueryResponse =
+                    await this.reQuery<Power.VendPowerResponseData>({
+                        orderId: options.orderId, //"C86A86F9801B1611664162", //"135EE81DAAA59E11648532v", // options.orderId,
+                        delay: response.data.data?.delay as any,
+                    });
+
+                if (!reQueryResponse.data) {
                     const error = new BuyPowerError("unable to vend power");
                     error.status = 500;
                     throw error;
                 }
-                return responseData;
+                return reQueryResponse;
             }
 
             if (!response.data.data) {
@@ -227,12 +269,11 @@ export class BuyPower {
             const response = await this.axios(requestOptions);
 
             if (this.reQueryStatuses.includes(response.status)) {
-                const responseData = await this.reQuery<
-                    BuyPowerResponse<Airtime.VendAirtimeResponseData>
-                >({
-                    orderId: options.orderId,
-                    delay: response.data.data?.delay as any,
-                });
+                const responseData =
+                    await this.reQuery<Airtime.VendAirtimeResponseData>({
+                        orderId: options.orderId,
+                        delay: response.data.data?.delay as any,
+                    });
                 if (!responseData.data) {
                     const error = new BuyPowerError("unable to vend airtime");
                     error.status = 500;
@@ -273,15 +314,15 @@ export class BuyPower {
                     tariffClass: options.tariffClass,
                 },
             };
+
             const response = await this.axios(requestOptions);
 
             if (this.reQueryStatuses.includes(response.status)) {
-                const responseData = await this.reQuery<
-                    BuyPowerResponse<Data.VendDataResponseData>
-                >({
-                    orderId: options.orderId,
-                    delay: response.data.data?.delay as any,
-                });
+                const responseData =
+                    await this.reQuery<Data.VendDataResponseData>({
+                        orderId: options.orderId,
+                        delay: response.data.data?.delay as any,
+                    });
                 if (!responseData.data) {
                     const error = new BuyPowerError("unable to vend data");
                     error.status = 500;
@@ -326,12 +367,11 @@ export class BuyPower {
             const response = await this.axios(requestOptions);
 
             if (this.reQueryStatuses.includes(response.status)) {
-                const responseData = await this.reQuery<
-                    BuyPowerResponse<CableTv.VendTVResponseData>
-                >({
-                    orderId: options.orderId,
-                    delay: response.data.data?.delay as any,
-                });
+                const responseData =
+                    await this.reQuery<CableTv.VendTVResponseData>({
+                        orderId: options.orderId,
+                        delay: response.data.data?.delay as any,
+                    });
                 if (!responseData.data) {
                     const error = new BuyPowerError("unable to vend TV");
                     error.status = 500;
@@ -346,6 +386,40 @@ export class BuyPower {
                 throw error;
             }
             return response.data;
+        } catch (error) {
+            this.handleError(error);
+        }
+    }
+
+    async getSmartCardInfo(
+        options: GetSmartCardInputOptions
+    ): Promise<BuyPowerResponse<GetSmartCardResponseData>> {
+        try {
+            const requestOptions: AxiosRequestConfig = {
+                url: "/check/meter",
+                method: "GET",
+                params: {
+                    disco: options.network,
+                    meter: options.smartCardNumber,
+                    orderId: options.orderId ?? false,
+                    vertical: "TV",
+                } as CableTv.GetSmartCardOptions,
+            };
+            const resp = await this.axios<CableTv.GetSmartCardResponseData>(
+                requestOptions
+            );
+            if (!resp.data) {
+                const error = new BuyPowerError(
+                    "Failed to retrieve smart card information"
+                );
+                error.status = 500;
+                throw error;
+            }
+            return {
+                status: true,
+                responseCode: resp.status,
+                data: resp.data,
+            };
         } catch (error) {
             this.handleError(error);
         }

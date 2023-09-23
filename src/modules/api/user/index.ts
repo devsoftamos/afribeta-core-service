@@ -15,4 +15,4 @@ export * from "./decorators";
     providers: [UserService, UserEvent],
     exports: [UserService],
 })
-export class UserModule { }
+export class UserModule {}
