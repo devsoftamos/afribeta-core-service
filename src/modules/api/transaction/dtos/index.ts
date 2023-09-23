@@ -1,6 +1,5 @@
 import {
     IsBooleanString,
-    IsEmail,
     IsEnum,
     IsNumber,
     IsNumberString,

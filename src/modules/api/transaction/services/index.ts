@@ -11,11 +11,9 @@ import {
     HttpStatus,
     Inject,
     Injectable,
-    NotAcceptableException,
 } from "@nestjs/common";
 import {
     Prisma,
-    PrismaClient,
     User,
     UserType,
     TransactionStatus,
@@ -247,7 +245,7 @@ export class TransactionService {
         });
     }
 
-    async viewPayoutRequests(options: ViewPayoutStatusDto, user: User) {
+    async viewPayoutRequests(options: ViewPayoutStatusDto) {
         const paginationMeta: Partial<PaginationMeta> = {};
 
         const queryOptions: Prisma.TransactionFindManyArgs = {
@@ -311,7 +309,7 @@ export class TransactionService {
         });
     }
 
-    async updatePayoutStatus(options: UpdatePayoutStatusDto, user: User) {
+    async updatePayoutStatus(options: UpdatePayoutStatusDto) {
         const transaction = await this.prisma.transaction.findUnique({
             where: {
                 id: options.id,
@@ -373,11 +371,11 @@ export class TransactionService {
                 : "Payout request declined successfully";
 
         return buildResponse({
-            message: responseMessage
+            message: responseMessage,
         });
     }
 
-    async viewPayoutDetails(id: number, user: User) {
+    async viewPayoutDetails(id: number) {
         const transaction = await this.prisma.transaction.findUnique({
             where: {
                 id: id,
