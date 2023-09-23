@@ -323,8 +323,8 @@ export class PowerBillService {
                 senderIdentifier: purchaseOptions.meterNumber,
                 billServiceSlug: purchaseOptions.billService,
                 provider: purchaseOptions.billProvider,
-                serviceTransactionCode2: purchaseOptions.meterCode,
                 serviceCharge: purchaseOptions.serviceCharge,
+                serviceTransactionCode: purchaseOptions.meterCode,
             };
 
         switch (billProvider.slug) {
@@ -332,11 +332,11 @@ export class PowerBillService {
             case BillProviderSlug.IRECHARGE: {
                 if (!purchaseOptions.accessToken) {
                     throw new PowerPurchaseInitializationHandlerException(
-                        `Meter access token is required for ${BillProviderSlug.IRECHARGE} provider`,
+                        `Access token is required for ${BillProviderSlug.IRECHARGE} provider`,
                         HttpStatus.BAD_REQUEST
                     );
                 }
-                transactionCreateOptions.serviceTransactionCode =
+                transactionCreateOptions.serviceTransactionCode2 =
                     purchaseOptions.accessToken;
             }
             //buypower provider
@@ -351,7 +351,7 @@ export class PowerBillService {
 
             default: {
                 throw new PowerPurchaseInitializationHandlerException(
-                    "Third party power vending provider not integrated",
+                    "Third party power vending provider not integrated or supported",
                     HttpStatus.NOT_IMPLEMENTED
                 );
             }
@@ -465,11 +465,11 @@ export class PowerBillService {
                     vendPowerResp =
                         await this.iRechargeWorkflowService.vendPower({
                             accessToken:
-                                options.transaction.serviceTransactionCode, //access token from get meter info -- irecharge
+                                options.transaction.serviceTransactionCode2, //access token from get meter info -- irecharge
                             accountId: options.transaction.accountId,
                             amount: options.transaction.amount,
                             discoCode:
-                                options.transaction.serviceTransactionCode2,
+                                options.transaction.serviceTransactionCode,
                             email: options.user.email,
                             meterNumber: options.transaction.senderIdentifier,
                             referenceId:
@@ -487,7 +487,7 @@ export class PowerBillService {
                             accountId: options.transaction.accountId,
                             amount: options.transaction.amount,
                             discoCode:
-                                options.transaction.serviceTransactionCode2,
+                                options.transaction.serviceTransactionCode,
                             email: options.user.email,
                             meterNumber: options.transaction.senderIdentifier,
                             referenceId:
@@ -504,7 +504,7 @@ export class PowerBillService {
 
                 default: {
                     throw new VendPowerFailureException(
-                        "Failed to complete power purchase. Invalid bill provider",
+                        "Failed to complete power purchase. Bill provider not integrated",
                         HttpStatus.NOT_IMPLEMENTED
                     );
                 }
@@ -794,6 +794,7 @@ export class PowerBillService {
                 });
             }
             case BillProviderSlugForPower.IKEJA_ELECTRIC: {
+                break;
             }
 
             case BillProviderSlugForPower.BUYPOWER: {
@@ -1016,10 +1017,7 @@ export class PowerBillService {
                                 this.billEvent.emit("bill-purchase-failure", {
                                     transactionId: options.transaction.id,
                                 });
-                                throw new VendPowerFailureException(
-                                    "Failed to vend power",
-                                    HttpStatus.NOT_IMPLEMENTED
-                                );
+                                throw error;
                             }
                             break;
                         }
@@ -1052,10 +1050,7 @@ export class PowerBillService {
                 this.billEvent.emit("bill-purchase-failure", {
                     transactionId: options.transaction.id,
                 });
-                throw new VendPowerFailureException(
-                    error.message ?? "Failed to vend power",
-                    HttpStatus.NOT_IMPLEMENTED
-                );
+                throw error;
             }
         }
     }

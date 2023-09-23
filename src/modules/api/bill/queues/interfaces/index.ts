@@ -1,6 +1,9 @@
 export enum BuyPowerReQueryQueue {
     POWER = "power",
     AIRTIME = "airtime",
+    DATA = "data",
+    CABLE_TV = "cable_tv",
+    INTERNET = "internet",
 }
 
 export enum BillQueue {

@@ -116,7 +116,6 @@ export class BankService {
     }
 
     async getBankAccount(user: User) {
-        //console.log(user, "****user***");
         const account = await this.prisma.bankAccount.findUnique({
             where: {
                 userId: user.id,

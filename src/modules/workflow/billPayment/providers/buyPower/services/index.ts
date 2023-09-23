@@ -19,7 +19,9 @@ import {
     VendPowerOptions,
     VendPowerResponse,
     VendTVOptions,
-    VendTVResponse,
+    VendCableTVResponse,
+    GetSmartCardInfoOptions,
+    GetSmartCardInfoResponse,
 } from "../../../interfaces";
 import {
     BuyPowerCableTVException,
@@ -98,7 +100,7 @@ export class BuyPowerWorkflowService implements BillPaymentWorkflow {
                 case error instanceof BuyPowerError: {
                     if (this.defaultServerErrorCodes.includes(error.status)) {
                         throw new BuyPowerPowerException(
-                            "Failed to retrieve meter information from upstream server. Please try again",
+                            "Failed to retrieve meter information. Please try again",
                             HttpStatus.SERVICE_UNAVAILABLE
                         );
                     }
@@ -419,7 +421,7 @@ export class BuyPowerWorkflowService implements BillPaymentWorkflow {
         }
     }
 
-    async vendTV(options: VendTVOptions): Promise<VendTVResponse> {
+    async vendCableTV(options: VendTVOptions): Promise<VendCableTVResponse> {
         try {
             const resp = await this.buyPower.vendTV({
                 amount: options.amount,
@@ -686,6 +688,48 @@ export class BuyPowerWorkflowService implements BillPaymentWorkflow {
                 default: {
                     throw new BuyPowerInternetException(
                         "Failed to retrieve internet bundles. Error ocurred",
+                        HttpStatus.INTERNAL_SERVER_ERROR
+                    );
+                }
+            }
+        }
+    }
+
+    async getSmartCardInfo(
+        options: GetSmartCardInfoOptions
+    ): Promise<GetSmartCardInfoResponse> {
+        try {
+            const smartCard = await this.buyPower.getSmartCardInfo({
+                network: this.resolveTVNetworkName(options.tvNetwork),
+                smartCardNumber: options.smartCardNumber,
+            });
+
+            return {
+                customer: {
+                    address: smartCard.data.address,
+                    name: smartCard.data.name,
+                },
+            };
+        } catch (error) {
+            logger.error(error);
+            switch (true) {
+                case error instanceof BuyPowerError: {
+                    if (this.defaultServerErrorCodes.includes(error.status)) {
+                        throw new BuyPowerCableTVException(
+                            "Failed to retrieve smart card information. Please try again",
+                            HttpStatus.SERVICE_UNAVAILABLE
+                        );
+                    }
+
+                    throw new BuyPowerCableTVException(
+                        error.message,
+                        HttpStatus.BAD_REQUEST
+                    );
+                }
+
+                default: {
+                    throw new BuyPowerCableTVException(
+                        "Failed to retrieve smart card information. Error ocurred",
                         HttpStatus.INTERNAL_SERVER_ERROR
                     );
                 }

@@ -2,6 +2,9 @@ import { PrismaService } from "@/modules/core/prisma/services";
 import {
     GetDataBundleResponse,
     NetworkDataProvider,
+    UnprocessedTransactionException,
+    VendDataFailureException,
+    VendDataInProgressException,
     VendDataResponse,
 } from "@/modules/workflow/billPayment";
 import { IRechargeWorkflowService } from "@/modules/workflow/billPayment/providers/iRecharge/services";
@@ -60,6 +63,14 @@ import { BillService } from ".";
 import { IRechargeVendDataException } from "@/modules/workflow/billPayment/providers/iRecharge";
 import { BillEvent } from "../events";
 import { BuyPowerWorkflowService } from "@/modules/workflow/billPayment/providers/buyPower/services";
+import { BuyPowerVendInProgressException } from "@/modules/workflow/billPayment/providers/buyPower";
+import {
+    BillQueue,
+    BuyPowerReQueryQueue,
+    BuypowerReQueryJobOptions,
+} from "../queues";
+import { InjectQueue } from "@nestjs/bull";
+import { Queue } from "bull";
 
 @Injectable()
 export class DataBillService {
@@ -70,7 +81,9 @@ export class DataBillService {
 
         @Inject(forwardRef(() => BillService))
         private billService: BillService,
-        private billEvent: BillEvent
+        private billEvent: BillEvent,
+        @InjectQueue(BillQueue.BUYPOWER_REQUERY)
+        private buypowerReQueryQueue: Queue<BuypowerReQueryJobOptions>
     ) {}
 
     async getDataBundles(options: GetDataBundleDto): Promise<ApiResponse> {
@@ -361,22 +374,6 @@ export class DataBillService {
             });
         } catch (error) {
             logger.error(error);
-            switch (true) {
-                case error instanceof IRechargeVendDataException: {
-                    const transaction =
-                        await this.prisma.transaction.findUnique({
-                            where: {
-                                paymentReference: options.paymentReference,
-                            },
-                        });
-                    this.billEvent.emit("bill-purchase-failure", {
-                        transactionId: transaction.id,
-                    });
-                }
-
-                default:
-                    break;
-            }
         }
     }
 
@@ -421,13 +418,43 @@ export class DataBillService {
                 }
 
                 default: {
-                    throw new DataPurchaseException(
-                        "Failed to complete data purchase. Invalid bill provider",
+                    throw new VendDataFailureException(
+                        "Failed to complete data purchase. Bill provider not integrated",
                         HttpStatus.NOT_IMPLEMENTED
                     );
                 }
             }
-        } catch (error) {}
+        } catch (error) {
+            switch (true) {
+                case error instanceof BuyPowerVendInProgressException: {
+                    await this.buypowerReQueryQueue.add(
+                        BuyPowerReQueryQueue.DATA,
+                        {
+                            orderId: options.transaction.billPaymentReference,
+                            transactionId: options.transaction.id,
+                            isWalletPayment: options.isWalletPayment,
+                        }
+                    );
+                    throw new VendDataInProgressException(
+                        "Data vending in progress",
+                        HttpStatus.ACCEPTED
+                    );
+                }
+                case error instanceof UnprocessedTransactionException: {
+                    throw new VendDataFailureException(
+                        "Failed to vend data",
+                        HttpStatus.NOT_IMPLEMENTED
+                    );
+                }
+
+                default: {
+                    this.billEvent.emit("bill-purchase-failure", {
+                        transactionId: options.transaction.id,
+                    });
+                    throw error;
+                }
+            }
+        }
     }
 
     async successPurchaseHandler(
@@ -571,11 +598,13 @@ export class DataBillService {
             });
         } catch (error) {
             switch (true) {
-                case error instanceof IRechargeVendDataException: {
-                    this.billEvent.emit("bill-purchase-failure", {
-                        transactionId: transaction.id,
-                    });
+                case error instanceof VendDataFailureException: {
                     throw error;
+                }
+                case error instanceof VendDataInProgressException: {
+                    return buildResponse({
+                        message: "Vending in progress",
+                    });
                 }
                 case error instanceof WalletChargeException: {
                     this.billEvent.emit("payment-failure", {

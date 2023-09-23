@@ -18,7 +18,13 @@ import {
     VendAirtimeOptions,
 } from "./interfaces/airtime";
 import { VendDataInputOptions, VendDataOptions } from "./interfaces/data";
-import { VendTVInputOptions, VendTVOptions } from "./interfaces/tv";
+import {
+    GetSmartCardInputOptions,
+    GetSmartCardOptions,
+    GetSmartCardResponseData,
+    VendTVInputOptions,
+    VendTVOptions,
+} from "./interfaces/tv";
 import { setTimeout } from "timers/promises";
 
 export * as IBuyPower from "./interfaces";
@@ -309,6 +315,7 @@ export class BuyPower {
                     tariffClass: options.tariffClass,
                 },
             };
+
             const response = await this.axios(requestOptions);
 
             if (this.reQueryStatuses.includes(response.status)) {
@@ -380,6 +387,40 @@ export class BuyPower {
                 throw error;
             }
             return response.data;
+        } catch (error) {
+            this.handleError(error);
+        }
+    }
+
+    async getSmartCardInfo(
+        options: GetSmartCardInputOptions
+    ): Promise<BuyPowerResponse<GetSmartCardResponseData>> {
+        try {
+            const requestOptions: AxiosRequestConfig = {
+                url: "/check/meter",
+                method: "GET",
+                params: {
+                    disco: options.network,
+                    meter: options.smartCardNumber,
+                    orderId: options.orderId ?? false,
+                    vertical: "TV",
+                } as CableTv.GetSmartCardOptions,
+            };
+            const resp = await this.axios<CableTv.GetSmartCardResponseData>(
+                requestOptions
+            );
+            if (!resp.data) {
+                const error = new BuyPowerError(
+                    "Failed to retrieve smart card information"
+                );
+                error.status = 500;
+                throw error;
+            }
+            return {
+                status: true,
+                responseCode: resp.status,
+                data: resp.data,
+            };
         } catch (error) {
             this.handleError(error);
         }

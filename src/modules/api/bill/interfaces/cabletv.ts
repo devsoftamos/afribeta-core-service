@@ -29,7 +29,7 @@ export interface CompleteCableTVPurchaseTransactionOptions
 }
 
 export interface CompleteCableTVPurchaseOutput {
-    orderMessage?: string;
+    vendRef?: string;
 }
 
 export interface VerifyCableTVPurchaseData {

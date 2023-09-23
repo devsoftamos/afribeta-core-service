@@ -80,6 +80,10 @@ export class PayBillCommissionException extends HttpException {
     name = "PayBillCommissionException";
 }
 
+export class CableTVPurchaseInitializationHandlerException extends HttpException {
+    name = "CableTVPurchaseInitializationHandlerException";
+}
+
 //wallet
 
 export class WalletChargeException extends HttpException {

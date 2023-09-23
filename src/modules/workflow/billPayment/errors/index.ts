@@ -38,3 +38,20 @@ export class VendAirtimeFailureException extends VendFailureException {
 export class VendAirtimeInProgressException extends VendInProgressException {
     name = "VendAirtimeInProgressException";
 }
+
+//internet
+export class VendInternetFailureException extends VendFailureException {
+    name = "VendInternetFailureException";
+}
+export class VendInternetInProgressException extends VendInProgressException {
+    name = "VendInternetInProgressException";
+}
+
+//cable tv
+export class VendCableTVFailureException extends VendFailureException {
+    name: string = "VendCableTVFailureException";
+}
+
+export class VendCableTVInProgressException extends VendInProgressException {
+    name: string = "VendCableTVInProgressException";
+}

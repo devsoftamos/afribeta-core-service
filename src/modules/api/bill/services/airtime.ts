@@ -365,22 +365,6 @@ export class AirtimeBillService {
                 billProvider: billProvider,
             });
         } catch (error) {
-            switch (true) {
-                case error instanceof IRechargeVendAirtimeException: {
-                    const transaction =
-                        await this.prisma.transaction.findUnique({
-                            where: {
-                                paymentReference: options.paymentReference,
-                            },
-                        });
-                    this.billEvent.emit("bill-purchase-failure", {
-                        transactionId: transaction.id,
-                    });
-                }
-
-                default:
-                    break;
-            }
             logger.error(error);
         }
     }
@@ -420,11 +404,15 @@ export class AirtimeBillService {
                             vtuNumber: options.transaction.senderIdentifier,
                             vtuEmail: options.user.email,
                         });
+                    return await this.successPurchaseHandler(
+                        options,
+                        vendAirtimeResp
+                    );
                 }
 
                 default: {
-                    throw new PowerPurchaseException(
-                        "Failed to complete data purchase. Invalid bill provider",
+                    throw new VendAirtimeFailureException(
+                        "Failed to complete airtime purchase. Bill provider not integrated",
                         HttpStatus.NOT_IMPLEMENTED
                     );
                 }
@@ -831,10 +819,7 @@ export class AirtimeBillService {
                                 this.billEvent.emit("bill-purchase-failure", {
                                     transactionId: options.transaction.id,
                                 });
-                                throw new VendAirtimeFailureException(
-                                    "Failed to vend airtime",
-                                    HttpStatus.NOT_IMPLEMENTED
-                                );
+                                throw error;
                             }
                             break;
                         }
@@ -867,10 +852,8 @@ export class AirtimeBillService {
                 this.billEvent.emit("bill-purchase-failure", {
                     transactionId: options.transaction.id,
                 });
-                throw new VendAirtimeFailureException(
-                    "Failed to vend power",
-                    HttpStatus.NOT_IMPLEMENTED
-                );
+
+                throw error;
             }
         }
     }
