@@ -85,10 +85,10 @@ export class BuypowerReQueryQueueProcessor {
                     id: transaction.id,
                 },
                 data: {
-                    serviceTransactionCode2: powerVendInfo.disco,
+                    serviceTransactionCode: powerVendInfo.disco,
                     provider: billProvider.slug,
                     billProviderId: billProvider.id,
-                    serviceTransactionCode: null,
+                    serviceTransactionCode2: null,
                 },
             });
 
