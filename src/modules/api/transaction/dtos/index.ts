@@ -82,10 +82,10 @@ export class UpdatePayoutStatusDto {
     status: UpdatePayoutStatus;
 }
 
-export class successfulTransactionsDto{
+export class SuccessfulTransactionsDto {
     @IsNumberString()
     year: number;
-    
+
     @IsNumberString()
-    month: number
+    month: number;
 }

@@ -19,7 +19,7 @@ import {
     VerifyTransactionDto,
     VerifyTransactionProvider,
     ViewPayoutStatusDto,
-    successfulTransactionsDto,
+    SuccessfulTransactionsDto,
 } from "../dtos";
 import { InvalidTransactionVerificationProvider } from "../errors";
 
@@ -382,7 +382,7 @@ export class TransactionService {
     }
 
     async successfulTransactions(
-        options: successfulTransactionsDto,
+        options: SuccessfulTransactionsDto,
         user: User
     ) {
         const transaction = await this.prisma.transaction.count({
