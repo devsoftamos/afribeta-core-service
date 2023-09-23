@@ -16,7 +16,7 @@ import { User as UserModel } from "@prisma/client";
 import {
     TransactionHistoryDto,
     VerifyTransactionDto,
-    successfulTransactionsDto,
+    SuccessfulTransactionsDto,
 } from "../../dtos";
 import { TransactionService } from "../../services";
 
@@ -65,7 +65,7 @@ export class TransactionController {
     @Get("successful/count")
     async GetSuccessfulTransactions(
         @Query(ValidationPipe)
-        successfulTransactionsDto: successfulTransactionsDto,
+        successfulTransactionsDto: SuccessfulTransactionsDto,
         @User() user: UserModel
     ) {
         return await this.transactionService.successfulTransactions(
