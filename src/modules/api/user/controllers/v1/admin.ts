@@ -22,26 +22,21 @@ export class AdminUserController {
 
     @Get("merchant")
     async fetchMerchants(
-        @Query(ValidationPipe) fetchMerchantsDto: FetchMerchantAgentsDto,
-        @User() user: UserModel
+        @Query(ValidationPipe) fetchMerchantsDto: FetchMerchantAgentsDto
     ) {
-        return await this.usersService.fetchMerchants(fetchMerchantsDto, user);
+        return await this.usersService.fetchMerchants(fetchMerchantsDto);
     }
 
     @Get("customer")
     async fetchCustomers(
-        @Query(ValidationPipe) fetchCustomersDto: ListMerchantAgentsDto,
-        @User() user: UserModel
+        @Query(ValidationPipe) fetchCustomersDto: ListMerchantAgentsDto
     ) {
-        return await this.usersService.fetchCustomers(fetchCustomersDto, user);
+        return await this.usersService.fetchCustomers(fetchCustomersDto);
     }
 
     @Get("merchant/:id")
-    async getMerchantDetails(
-        @User() user: UserModel,
-        @Param("id", ParseIntPipe) id: number
-    ) {
-        return await this.usersService.merchantDetails(id, user);
+    async getMerchantDetails(@Param("id", ParseIntPipe) id: number) {
+        return await this.usersService.merchantDetails(id);
     }
 
     @Get("merchant/:id/agent")
