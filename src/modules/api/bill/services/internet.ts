@@ -51,7 +51,6 @@ import {
 import logger from "moment-logger";
 import { DB_TRANSACTION_TIMEOUT } from "@/config";
 import { BillService } from ".";
-import { IRechargeVendInternetException } from "@/modules/workflow/billPayment/providers/iRecharge";
 import { BillEvent } from "../events";
 import {
     GetInternetBundleDto,

@@ -59,7 +59,6 @@ import {
 import logger from "moment-logger";
 import { DB_TRANSACTION_TIMEOUT } from "@/config";
 import { BillService } from ".";
-import { IRechargeVendAirtimeException } from "@/modules/workflow/billPayment/providers/iRecharge";
 import { BillEvent } from "../events";
 import {
     AirtimePurchaseInitializationHandlerOutput,
@@ -578,6 +577,12 @@ export class AirtimeBillService {
                     return buildResponse({
                         message: "Vending in progress",
                     });
+                }
+                case error instanceof WalletChargeException: {
+                    this.billEvent.emit("payment-failure", {
+                        transactionId: transaction.id,
+                    });
+                    throw error;
                 }
 
                 default: {

@@ -20,7 +20,6 @@ import {
 import { VendDataInputOptions, VendDataOptions } from "./interfaces/data";
 import {
     GetSmartCardInputOptions,
-    GetSmartCardOptions,
     GetSmartCardResponseData,
     VendTVInputOptions,
     VendTVOptions,

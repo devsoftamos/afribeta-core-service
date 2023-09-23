@@ -9,7 +9,7 @@ import { UserModule } from "./user";
 import { WalletModule } from "./wallet";
 import { WebExtension } from "./webExtension";
 import { BullModule } from "@nestjs/bull";
-import { redisConfiguration, redisUrl } from "@/config";
+import { redisUrl } from "@/config";
 
 @Module({
     imports: [

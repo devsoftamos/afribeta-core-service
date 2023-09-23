@@ -49,9 +49,9 @@ export class VendInternetInProgressException extends VendInProgressException {
 
 //cable tv
 export class VendCableTVFailureException extends VendFailureException {
-    name: string = "VendCableTVFailureException";
+    name = "VendCableTVFailureException";
 }
 
 export class VendCableTVInProgressException extends VendInProgressException {
-    name: string = "VendCableTVInProgressException";
+    name = "VendCableTVInProgressException";
 }
