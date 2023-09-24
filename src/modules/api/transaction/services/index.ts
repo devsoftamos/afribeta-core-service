@@ -401,4 +401,42 @@ export class TransactionService {
             data: transaction,
         });
     }
+
+    async fetchTotalCommission(options: SuccessfulTransactionsDto, user: User) {
+        const agentCommission = await this.prisma.transaction.aggregate({
+            _sum: {
+                merchantCommission: true,
+            },
+            where: {
+                user: {
+                    createdById: user.id,
+                },
+                createdAt: {
+                    gte: new Date(`${+options.year}-${+options.month}-01`),
+                    lt: new Date(`${+options.year}-${+options.month + 1}-01`),
+                },
+            },
+        });
+        const merchantCommission = await this.prisma.transaction.aggregate({
+            _sum: {
+                commission: true,
+            },
+            where: {
+                userId: user.id,
+                createdAt: {
+                    gte: new Date(`${+options.year}-${+options.month}-01`),
+                    lt: new Date(`${+options.year}-${+options.month + 1}-01`),
+                },
+            },
+        });
+
+        const totalCommission =
+            merchantCommission._sum.commission +
+            agentCommission._sum.merchantCommission;
+
+        return buildResponse({
+            message: "Total commission fetched successfully",
+            data: totalCommission,
+        });
+    }
 }

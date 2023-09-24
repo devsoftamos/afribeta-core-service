@@ -73,4 +73,16 @@ export class TransactionController {
             user
         );
     }
+
+    @Get("commission")
+    async GetTotalCommission(
+        @Query(ValidationPipe)
+        successfulTransactionsDto: SuccessfulTransactionsDto,
+        @User() user: UserModel
+    ) {
+        return await this.transactionService.fetchTotalCommission(
+            successfulTransactionsDto,
+            user
+        );
+    }
 }
