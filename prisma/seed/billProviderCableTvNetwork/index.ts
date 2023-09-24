@@ -29,6 +29,6 @@ const buyPower = [
 ];
 
 export const billProviderCableTVNetworks = [
-    //...iRecharge,
+    ...iRecharge,
     ...buyPower,
 ];

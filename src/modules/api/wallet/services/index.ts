@@ -684,14 +684,7 @@ export class WalletService {
             );
         }
 
-        // let accountName = user.createdById
-        //     ? `${user.firstName} ${user.lastName}`
-        //     : `${user.businessName}`;
         const accountName = `${user.firstName} ${user.lastName}`;
-
-        // if (accountName.trim().split(" ").length < 2) {
-        //     accountName = `${accountName} ${accountName}`;
-        // }
 
         const providusAccountDetail = await this.providusService
             .createVirtualAccount({

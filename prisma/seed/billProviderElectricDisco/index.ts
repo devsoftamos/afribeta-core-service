@@ -112,7 +112,4 @@ const buyPower = [
     },
 ];
 
-export const billProviderElectricDiscos = [
-    //...iRecharge,
-    ...buyPower,
-];
+export const billProviderElectricDiscos = [...iRecharge, ...buyPower];

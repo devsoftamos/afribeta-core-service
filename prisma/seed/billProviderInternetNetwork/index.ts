@@ -44,7 +44,4 @@ const buyPower = [
     },
 ];
 
-export const billProviderInternetNetworks = [
-    //...iRecharge,
-    ...buyPower,
-];
+export const billProviderInternetNetworks = [...iRecharge, ...buyPower];
