@@ -44,6 +44,8 @@ enum KYC_STATUS {
   APPROVED
 }
 
+
+
 model User {
   id                          Int                    @id @default(autoincrement())
   identifier                  String                 @unique
@@ -320,6 +322,15 @@ enum PaymentStatus {
   SUCCESS
   FAILED
 }
+
+enum BillServiceSlug {
+  electricBillProviders
+  dataBundleProviders
+  airtimeProviders
+  cableTVProviders
+  internetProviders
+}
+
 
 model Transaction {
   id                           Int               @id @default(autoincrement())
