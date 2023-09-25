@@ -8,6 +8,7 @@ import { TransactionModule } from "./transaction";
 import { UserModule } from "./user";
 import { WalletModule } from "./wallet";
 import { WebExtension } from "./webExtension";
+import { CommissionModule } from "./commission";
 
 @Module({
     imports: [
@@ -20,6 +21,7 @@ import { WebExtension } from "./webExtension";
         BillModule,
         NotificationModule,
         LocationModule,
+        CommissionModule,
     ],
 })
 export class APIModule {}

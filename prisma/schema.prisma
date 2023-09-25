@@ -379,7 +379,9 @@ model Transaction {
 model UserCommission {
   userId          Int
   billServiceSlug String
-  percentage      Float
+  percentage      Float?
+  percentMd       Float?
+  percentNonMd    Float?
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
   billService     BillService @relation(fields: [billServiceSlug], references: [slug])
@@ -416,22 +418,25 @@ enum BillType {
 }
 
 model BillService {
-  id                       Int                             @id @default(autoincrement())
-  name                     String
-  slug                     String                          @unique
-  type                     BillType
-  abbrev                   String?
-  icon                     String
-  baseCommissionPercentage Float
-  createdAt                DateTime                        @default(now())
-  updatedAt                DateTime                        @updatedAt
-  electricBillProviders    BillProviderElectricDisco[]
-  transactions             Transaction[]
-  dataBundleProviders      BillProviderDataBundleNetwork[]
-  airtimeProviders         BillProviderAirtimeNetwork[]
-  cableTVProviders         BillProviderCableTVNetwork[]
-  internetProviders        BillProviderInternetNetwork[]
-  commissions              UserCommission[]
+  id                                 Int                             @id @default(autoincrement())
+  name                               String
+  slug                               String                          @unique
+  type                               BillType
+  abbrev                             String?
+  icon                               String
+  baseCommissionPercentage           Float?
+  agentDefaultCommissionPercent      Float?
+  agentDefaultCommissionPercentMd    Float?
+  agentDefaultCommissionPercentNonMd Float?
+  createdAt                          DateTime                        @default(now())
+  updatedAt                          DateTime                        @updatedAt
+  electricBillProviders              BillProviderElectricDisco[]
+  transactions                       Transaction[]
+  dataBundleProviders                BillProviderDataBundleNetwork[]
+  airtimeProviders                   BillProviderAirtimeNetwork[]
+  cableTVProviders                   BillProviderCableTVNetwork[]
+  internetProviders                  BillProviderInternetNetwork[]
+  commissions                        UserCommission[]
 
   @@map("BillServices")
 }

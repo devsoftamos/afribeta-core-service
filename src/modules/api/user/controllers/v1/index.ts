@@ -118,11 +118,6 @@ export class UserController {
         );
     }
 
-    @Get("commission")
-    async getUserBillCommissions(@User() user: UserModel) {
-        return await this.userService.getServiceCommissions(user);
-    }
-
     @Post("kyc")
     async createKyc(
         @Body(ValidationPipe) kycDto: CreateKycDto,

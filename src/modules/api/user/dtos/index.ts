@@ -80,8 +80,17 @@ export class BillServiceCommissionOptions {
     @IsString()
     billServiceSlug: string;
 
+    @IsOptional()
     @IsNumber()
     percentage: number;
+
+    @IsOptional()
+    @IsNumber()
+    percentMd: number;
+
+    @IsOptional()
+    @IsNumber()
+    percentNonMd: number;
 }
 export class CreateAgentDto {
     @IsString()

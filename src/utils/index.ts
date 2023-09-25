@@ -34,6 +34,9 @@ export const generateId = (options: TransactionIdOption): string => {
         case "irecharge_ref": {
             return customAlphabet(numeric, 12)();
         }
+        case "walletNumber": {
+            return customAlphabet(alphaNumeric, 10)();
+        }
 
         default:
             break;

@@ -7,7 +7,8 @@ export interface TransactionIdOption {
         | "custom_lower_case"
         | "numeric"
         | "irecharge_ref"
-        | "identifier";
+        | "identifier"
+        | "walletNumber";
     length?: number;
 }
 

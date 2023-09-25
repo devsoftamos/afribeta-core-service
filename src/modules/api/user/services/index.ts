@@ -328,7 +328,7 @@ export class UserService {
                 slug: "sub-agent",
             },
         });
-        const walletNumber = customAlphabet("1234567890ABCDEFGH", 10)();
+        const walletNumber = generateId({ type: "walletNumber" });
         const createAgentOptions: Prisma.UserUncheckedCreateInput = {
             email: verificationData.email,
             firstName: options.firstName,
@@ -349,7 +349,6 @@ export class UserService {
                 },
             },
         };
-        // return {};
 
         if (options.billServiceCommissions) {
             createAgentOptions.commissions = {
@@ -420,6 +419,8 @@ export class UserService {
                 select: {
                     billServiceSlug: true,
                     percentage: true,
+                    percentMd: true,
+                    percentNonMd: true,
                 },
             });
 
@@ -434,13 +435,77 @@ export class UserService {
                 );
             }
 
-            if (
-                billCommission.percentage > merchantServiceCommission.percentage
-            ) {
-                throw new InvalidAgentCommissionAssignment(
-                    "One of the selected bill service commission for the agent is greater than the corresponding merchant's commission",
-                    HttpStatus.BAD_REQUEST
-                );
+            //NB: Only Ikeja Electric uses MD and Non-MD commission types
+            //validate MD and Non MD commission types on bill service
+
+            if (billCommission.billServiceSlug == "ikeja-electric") {
+                if (billCommission.percentage) {
+                    throw new InvalidAgentCommissionAssignment(
+                        "Invalid commission assignment for Ikeja Electric. Only MD and Non-MD types are valid",
+                        HttpStatus.BAD_REQUEST
+                    );
+                }
+
+                if (
+                    !(billCommission.percentMd && billCommission.percentNonMd)
+                ) {
+                    throw new InvalidAgentCommissionAssignment(
+                        "Invalid commission assignment for Ikeja Electric. MD and Non-MD commission types are required",
+                        HttpStatus.BAD_REQUEST
+                    );
+                }
+            }
+
+            if (billCommission.billServiceSlug != "ikeja-electric") {
+                if (billCommission.percentMd || billCommission.percentNonMd) {
+                    throw new InvalidAgentCommissionAssignment(
+                        "Invalid commission assignment for one of the bill service. MD and Non-MD commissions are only valid for Ikeja Electric ",
+                        HttpStatus.BAD_REQUEST
+                    );
+                }
+
+                if (!billCommission.percentage) {
+                    throw new InvalidAgentCommissionAssignment(
+                        "The commission for one of the selected bill services is not set",
+                        HttpStatus.BAD_REQUEST
+                    );
+                }
+            }
+
+            if (billCommission.percentage) {
+                if (
+                    billCommission.percentage >
+                    merchantServiceCommission.percentage
+                ) {
+                    throw new InvalidAgentCommissionAssignment(
+                        "One of the selected bill service commission for the agent is greater than the corresponding merchant's commission",
+                        HttpStatus.BAD_REQUEST
+                    );
+                }
+            }
+
+            if (billCommission.percentMd) {
+                if (
+                    billCommission.percentMd >
+                    merchantServiceCommission.percentMd
+                ) {
+                    throw new InvalidAgentCommissionAssignment(
+                        "The MD commission for Ikeja Electric must not be greater than the corresponding merchant's commission",
+                        HttpStatus.BAD_REQUEST
+                    );
+                }
+            }
+
+            if (billCommission.percentNonMd) {
+                if (
+                    billCommission.percentNonMd >
+                    merchantServiceCommission.percentNonMd
+                ) {
+                    throw new InvalidAgentCommissionAssignment(
+                        "The Non-MD commission for Ikeja Electric must not be greater than the corresponding merchant's commission",
+                        HttpStatus.BAD_REQUEST
+                    );
+                }
             }
         }
     }
@@ -523,28 +588,6 @@ export class UserService {
                 id: id,
                 createdById: user.id,
             },
-        });
-    }
-
-    async getServiceCommissions(user: User) {
-        const billCommissions = await this.prisma.userCommission.findMany({
-            where: {
-                userId: user.id,
-            },
-            select: {
-                percentage: true,
-                billService: {
-                    select: {
-                        name: true,
-                        slug: true,
-                        type: true,
-                    },
-                },
-            },
-        });
-        return buildResponse({
-            message: "Bill service commissions successfully retrieved",
-            data: billCommissions,
         });
     }
 
