@@ -40,7 +40,6 @@ import {
 import logger from "moment-logger";
 import { SendinblueEmailException } from "@calculusky/transactional-email";
 import { S3Service } from "@/modules/core/upload/services/s3";
-import { customAlphabet } from "nanoid";
 import { AbilityFactory } from "@/modules/core/ability/services";
 import { Action } from "@/modules/core/ability/interfaces";
 import { ForbiddenError, subject } from "@casl/ability";
