@@ -342,7 +342,6 @@ export class AuthService {
         const user = await this.prisma.user.findUnique({
             where: {
                 email: options.email,
-                userType: UserType.SUPER_ADMIN,
             },
             select: {
                 identifier: true,
@@ -365,6 +364,13 @@ export class AuthService {
                 },
             },
         });
+
+        if(user.userType !== UserType.SUPER_ADMIN){
+            throw new UserNotFoundException(
+                "admin account does not exist",
+                HttpStatus.NOT_FOUND
+            )
+        }
 
         if (!user) {
             throw new InvalidCredentialException(
