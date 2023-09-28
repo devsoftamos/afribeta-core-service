@@ -365,11 +365,11 @@ export class AuthService {
             },
         });
 
-        if(user.userType !== UserType.SUPER_ADMIN){
+        if (user.userType !== UserType.SUPER_ADMIN) {
             throw new UserNotFoundException(
                 "admin account does not exist",
                 HttpStatus.NOT_FOUND
-            )
+            );
         }
 
         if (!user) {
