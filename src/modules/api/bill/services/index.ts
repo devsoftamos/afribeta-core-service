@@ -9,7 +9,6 @@ import {
     TransactionStatus,
     TransactionType,
     User,
-    UserType,
     WalletFundTransactionFlow,
 } from "@prisma/client";
 import {
@@ -19,7 +18,6 @@ import {
     ComputeCommissionOptions,
     ComputeCommissionResult,
     ProcessBillPaymentOptions,
-    SubAgentMdCommissionData,
     WalletChargeHandler,
     BillServiceSlug,
 } from "../interfaces";
@@ -423,7 +421,9 @@ export class BillService {
             }
 
             let baseCommission = null;
-            if (transaction.billService.slug != BillServiceSlug.IKEJA_ELECTRIC) {
+            if (
+                transaction.billService.slug != BillServiceSlug.IKEJA_ELECTRIC
+            ) {
                 baseCommission =
                     (transaction.billService.baseCommissionPercentage / 100) *
                     transaction.amount;
@@ -463,7 +463,10 @@ export class BillService {
                 //merchant commission compute
                 if (!agentCommissionConfig) {
                     //Ikeja :: only ikeja-electric has MD and Non MD Meter check
-                    if (transaction.billService.slug == BillServiceSlug.IKEJA_ELECTRIC) {
+                    if (
+                        transaction.billService.slug ==
+                        BillServiceSlug.IKEJA_ELECTRIC
+                    ) {
                         let merchantCommission: number;
 
                         if (
@@ -532,7 +535,10 @@ export class BillService {
                 //Merchant's agent with commission assigned to
                 if (agentCommissionConfig) {
                     //ikeja
-                    if (transaction.billService.slug == BillServiceSlug.IKEJA_ELECTRIC) {
+                    if (
+                        transaction.billService.slug ==
+                        BillServiceSlug.IKEJA_ELECTRIC
+                    ) {
                         if (
                             transaction.meterAccountType == MeterAccountType.MD
                         ) {
@@ -679,7 +685,10 @@ export class BillService {
                     );
                 }
 
-                if (transaction.billService.slug == BillServiceSlug.IKEJA_ELECTRIC) {
+                if (
+                    transaction.billService.slug ==
+                    BillServiceSlug.IKEJA_ELECTRIC
+                ) {
                     let agentCommission: number;
 
                     if (transaction.meterAccountType == MeterAccountType.MD) {
