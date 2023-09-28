@@ -429,7 +429,6 @@ export class PowerBillService {
             });
 
             if (!billProvider) {
-                //TODO: AUTOMATION UPGRADE, check for an active provider and switch automatically
                 throw new BillProviderNotFoundException(
                     "Failed to complete power purchase. Bill provider not found",
                     HttpStatus.NOT_FOUND

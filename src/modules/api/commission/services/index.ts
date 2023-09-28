@@ -14,8 +14,6 @@ export class CommissionService {
             },
             select: {
                 percentage: true,
-                percentMd: true,
-                percentNonMd: true,
                 billService: {
                     select: {
                         name: true,

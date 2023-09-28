@@ -19,7 +19,7 @@ import {
 import { User as UserModel } from "@prisma/client";
 import { User } from "../../decorators";
 import {
-    CreateAgentDto,
+    CreateSubAgentDto,
     CreateKycDto,
     CreateTransactionPinDto,
     ListMerchantAgentsDto,
@@ -99,7 +99,7 @@ export class UserController {
     @UseGuards(AbilitiesGuard)
     @CheckAbilities(new CreateAgentAbility())
     async createAgent(
-        @Body(ValidationPipe) createAgentDto: CreateAgentDto,
+        @Body(ValidationPipe) createAgentDto: CreateSubAgentDto,
         @User() user: UserModel
     ) {
         return await this.userService.createAgent(createAgentDto, user);

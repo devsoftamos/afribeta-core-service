@@ -321,6 +321,11 @@ enum PaymentStatus {
   FAILED
 }
 
+enum MeterAccountType {
+  MD
+  NON_MD
+}
+
 model Transaction {
   id                           Int               @id @default(autoincrement())
   type                         TransactionType
@@ -360,7 +365,8 @@ model Transaction {
   billPaymentReference      String?
   walletFundTransactionFlow WalletFundTransactionFlow?
   billServiceSlug           String?
-  unprocessedBillProviders  Json?
+  merchantId                Int?
+  meterAccountType          MeterAccountType?
 
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
@@ -377,15 +383,14 @@ model Transaction {
 }
 
 model UserCommission {
-  userId          Int
-  billServiceSlug String
-  percentage      Float?
-  percentMd       Float?
-  percentNonMd    Float?
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
-  billService     BillService @relation(fields: [billServiceSlug], references: [slug])
-  user            User        @relation(fields: [userId], references: [id])
+  userId                   Int
+  billServiceSlug          String
+  percentage               Float?
+  subAgentMdMeterCapAmount Int?
+  createdAt                DateTime    @default(now())
+  updatedAt                DateTime    @updatedAt
+  billService              BillService @relation(fields: [billServiceSlug], references: [slug])
+  user                     User        @relation(fields: [userId], references: [id])
 
   @@id([userId, billServiceSlug])
   @@map("UserCommissions")

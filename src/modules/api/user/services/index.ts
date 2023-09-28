@@ -1,4 +1,5 @@
 import {
+    AGENT_MD_METER_COMMISSION_CAP_AMOUNT,
     agentPostAccountCreateTemplate,
     DB_TRANSACTION_TIMEOUT,
 } from "@/config";
@@ -15,7 +16,7 @@ import {
 } from "../../auth";
 import { AuthService } from "../../auth/services";
 import {
-    CreateAgentDto,
+    CreateSubAgentDto,
     CreateKycDto,
     CreateTransactionPinDto,
     ListMerchantAgentsDto,
@@ -44,6 +45,7 @@ import { AbilityFactory } from "@/modules/core/ability/services";
 import { Action } from "@/modules/core/ability/interfaces";
 import { ForbiddenError, subject } from "@casl/ability";
 import { InsufficientPermissionException } from "@/modules/core/ability/errors";
+import { BillServiceSlug } from "../../bill";
 
 @Injectable()
 export class UserService {
@@ -273,7 +275,7 @@ export class UserService {
         });
     }
 
-    async createAgent(options: CreateAgentDto, user: User) {
+    async createAgent(options: CreateSubAgentDto, user: User) {
         // console.log(user);
         //check for duplicate agent
         const email = options.email.trim();
@@ -319,7 +321,6 @@ export class UserService {
                 billServiceCommissions: options.billServiceCommissions,
             });
         }
-
         const password = generateId({ type: "custom_lower_case", length: 8 });
         const hashedPassword = await this.authService.hashPassword(password);
         const role = await this.prisma.role.findUnique({
@@ -366,19 +367,6 @@ export class UserService {
                         where: { email: verificationData.email },
                     });
 
-                    await this.emailService.send<AgentPostAccountCreateEmailParams>(
-                        {
-                            provider: "sendinblue",
-                            subject: "Account Successfully Created",
-                            to: { email: verificationData.email },
-                            templateId: agentPostAccountCreateTemplate,
-                            params: {
-                                email: verificationData.email,
-                                firstName: options.firstName,
-                                password: password,
-                            },
-                        }
-                    );
                     return user;
                 },
                 { timeout: DB_TRANSACTION_TIMEOUT }
@@ -401,6 +389,17 @@ export class UserService {
                     }
                 }
             });
+        await this.emailService.send<AgentPostAccountCreateEmailParams>({
+            provider: "sendinblue",
+            subject: "Account Successfully Created",
+            to: { email: verificationData.email },
+            templateId: agentPostAccountCreateTemplate,
+            params: {
+                email: verificationData.email,
+                firstName: options.firstName,
+                password: password,
+            },
+        });
 
         return buildResponse({
             message: "Agent successfully created",
@@ -418,8 +417,11 @@ export class UserService {
                 select: {
                     billServiceSlug: true,
                     percentage: true,
-                    percentMd: true,
-                    percentNonMd: true,
+                    billService: {
+                        select: {
+                            name: true,
+                        },
+                    },
                 },
             });
 
@@ -434,77 +436,43 @@ export class UserService {
                 );
             }
 
-            //NB: Only Ikeja Electric uses MD and Non-MD commission types
-            //validate MD and Non MD commission types on bill service
+            //NB: Only Ikeja Electric for capped amount for MD
 
-            if (billCommission.billServiceSlug == "ikeja-electric") {
-                if (billCommission.percentage) {
+            if (
+                billCommission.billServiceSlug == BillServiceSlug.IKEJA_ELECTRIC
+            ) {
+                if (!billCommission.subAgentMdMeterCapAmount) {
                     throw new InvalidAgentCommissionAssignment(
-                        "Invalid commission assignment for Ikeja Electric. Only MD and Non-MD types are valid",
+                        "Invalid commission assignment for Ikeja Electric. Capped amount for MD Meter is required",
                         HttpStatus.BAD_REQUEST
                     );
                 }
 
                 if (
-                    !(billCommission.percentMd && billCommission.percentNonMd)
+                    billCommission.subAgentMdMeterCapAmount >
+                    AGENT_MD_METER_COMMISSION_CAP_AMOUNT
                 ) {
                     throw new InvalidAgentCommissionAssignment(
-                        "Invalid commission assignment for Ikeja Electric. MD and Non-MD commission types are required",
+                        `Invalid commission assignment for Ikeja Electric. Capped amount for MD Meter must not be greater than ${AGENT_MD_METER_COMMISSION_CAP_AMOUNT}`,
                         HttpStatus.BAD_REQUEST
                     );
                 }
             }
 
-            if (billCommission.billServiceSlug != "ikeja-electric") {
-                if (billCommission.percentMd || billCommission.percentNonMd) {
-                    throw new InvalidAgentCommissionAssignment(
-                        "Invalid commission assignment for one of the bill service. MD and Non-MD commissions are only valid for Ikeja Electric ",
-                        HttpStatus.BAD_REQUEST
-                    );
-                }
-
-                if (!billCommission.percentage) {
-                    throw new InvalidAgentCommissionAssignment(
-                        "The commission for one of the selected bill services is not set",
-                        HttpStatus.BAD_REQUEST
-                    );
-                }
+            if (!billCommission.percentage) {
+                throw new InvalidAgentCommissionAssignment(
+                    "The commission for one of the selected bill services is not set",
+                    HttpStatus.BAD_REQUEST
+                );
             }
 
-            if (billCommission.percentage) {
-                if (
-                    billCommission.percentage >
-                    merchantServiceCommission.percentage
-                ) {
-                    throw new InvalidAgentCommissionAssignment(
-                        "One of the selected bill service commission for the agent is greater than the corresponding merchant's commission",
-                        HttpStatus.BAD_REQUEST
-                    );
-                }
-            }
-
-            if (billCommission.percentMd) {
-                if (
-                    billCommission.percentMd >
-                    merchantServiceCommission.percentMd
-                ) {
-                    throw new InvalidAgentCommissionAssignment(
-                        "The MD commission for Ikeja Electric must not be greater than the corresponding merchant's commission",
-                        HttpStatus.BAD_REQUEST
-                    );
-                }
-            }
-
-            if (billCommission.percentNonMd) {
-                if (
-                    billCommission.percentNonMd >
-                    merchantServiceCommission.percentNonMd
-                ) {
-                    throw new InvalidAgentCommissionAssignment(
-                        "The Non-MD commission for Ikeja Electric must not be greater than the corresponding merchant's commission",
-                        HttpStatus.BAD_REQUEST
-                    );
-                }
+            if (
+                billCommission.percentage > merchantServiceCommission.percentage
+            ) {
+                throw new InvalidAgentCommissionAssignment(
+                    `One of the selected bill service, ${merchantServiceCommission.billService.name} commission for the agent is greater than the corresponding merchant's commission`,
+                    HttpStatus.BAD_REQUEST
+                );
             }
         }
     }

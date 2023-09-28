@@ -13,6 +13,8 @@ import { DataBillService } from "./services/data";
 import { InternetBillService } from "./services/internet";
 import { PowerBillService } from "./services/power";
 
+export * from "./interfaces";
+
 @Module({
     providers: [
         BillService,

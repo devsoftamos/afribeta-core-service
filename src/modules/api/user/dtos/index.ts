@@ -1,3 +1,4 @@
+import { AGENT_MD_METER_COMMISSION_CAP_AMOUNT } from "@/config";
 import { IdentificationMeans } from "@prisma/client";
 import { Type } from "class-transformer";
 import {
@@ -15,6 +16,7 @@ import {
     IsPhoneNumber,
     IsString,
     Length,
+    Max,
     ValidateNested,
 } from "class-validator";
 
@@ -80,19 +82,15 @@ export class BillServiceCommissionOptions {
     @IsString()
     billServiceSlug: string;
 
-    @IsOptional()
     @IsNumber()
     percentage: number;
 
     @IsOptional()
-    @IsNumber()
-    percentMd: number;
-
-    @IsOptional()
-    @IsNumber()
-    percentNonMd: number;
+    @IsInt()
+    @Max(AGENT_MD_METER_COMMISSION_CAP_AMOUNT)
+    subAgentMdMeterCapAmount: number;
 }
-export class CreateAgentDto {
+export class CreateSubAgentDto {
     @IsString()
     firstName: string;
 
