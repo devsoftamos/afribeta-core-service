@@ -55,9 +55,7 @@ export class AdminTransactionController {
     }
 
     @Get("payout/:id")
-    async getPayoutDetails(
-        @Param("id", ParseIntPipe) id: number
-    ) {
+    async getPayoutDetails(@Param("id", ParseIntPipe) id: number) {
         return await this.transactionService.viewPayoutDetails(id);
     }
 }
