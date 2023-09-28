@@ -338,7 +338,9 @@ export class AuthService {
         });
     }
 
-    async adminSignIn(options: SignInDto) {
+    async adminSignIn(
+        options: SignInDto
+    ): Promise<ApiResponse<LoginResponseData>> {
         const user = await this.prisma.user.findUnique({
             where: {
                 email: options.email,
@@ -347,6 +349,8 @@ export class AuthService {
                 identifier: true,
                 password: true,
                 userType: true,
+                kycStatus: true,
+                isWalletCreated: true,
                 role: {
                     select: {
                         name: true,
@@ -379,6 +383,8 @@ export class AuthService {
             );
         }
 
+        const permissions = user.role.permissions.map((p) => p.permission.name);
+
         const isValidPassword = await this.comparePassword(
             options.password,
             user.password
@@ -394,10 +400,25 @@ export class AuthService {
         const accessToken = await this.jwtService.signAsync({
             sub: user.identifier,
         });
+
+        const adminLoginMeta: LoginMeta = {
+            kycStatus: user.kycStatus,
+            isWalletCreated: user.isWalletCreated,
+            userType: user.userType,
+            role: {
+                name: user.role.name,
+                slug: user.role.slug,
+                permissions: permissions,
+            },
+        };
+
+        console.log(adminLoginMeta);
+
         return buildResponse({
             message: "Login successful",
             data: {
                 accessToken,
+                meta: encrypt(adminLoginMeta),
             },
         });
     }

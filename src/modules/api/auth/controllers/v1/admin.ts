@@ -24,7 +24,9 @@ export class AdminAuthController {
 
     @HttpCode(HttpStatus.OK)
     @Post("login")
-    async signIn(@Body(ValidationPipe) signInDto: SignInDto) {
+    async signIn(
+        @Body(ValidationPipe) signInDto: SignInDto
+    ): Promise<ApiResponse> {
         return await this.authService.adminSignIn(signInDto);
     }
 }
