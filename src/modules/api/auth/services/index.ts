@@ -66,52 +66,22 @@ export class AuthService {
         return await bcrypt.compare(password, hash);
     }
 
-    async getUserByEmail(email: string): Promise<any> {
-        return await this.prisma.user.findUnique({
+    async superAdminCheck(email: any) {
+        const admin = await this.prisma.user.findUnique({
             where: {
                 email: email,
             },
-            select: {
-                identifier: true,
-                password: true,
-                kycStatus: true,
-                isWalletCreated: true,
-                userType: true,
-                role: {
-                    select: {
-                        name: true,
-                        slug: true,
-                        permissions: {
-                            select: {
-                                permission: {
-                                    select: {
-                                        name: true,
-                                    },
-                                },
-                            },
-                        },
-                    },
-                },
-            },
         });
-    }
 
-    async generateAccessToken(user: any) {
-        return await this.jwtService.signAsync({ sub: user.identifier });
-    }
-
-    private buildLoginMeta(user: any): LoginMeta {
-        const permissions = user.role.permissions.map((p) => p.permission.name);
-        return {
-            kycStatus: user.kycStatus,
-            isWalletCreated: user.isWalletCreated,
-            userType: user.userType,
-            role: {
-                name: user.role.name,
-                slug: user.role.slug,
-                permissions: permissions,
-            },
-        };
+        if (
+            admin.userType !== UserType.SUPER_ADMIN &&
+            admin.userType !== UserType.ADMIN
+        ) {
+            throw new UserNotFoundException(
+                "admin account does not exist",
+                HttpStatus.NOT_FOUND
+            );
+        }
     }
 
     async sendAccountVerificationEmail(
@@ -315,14 +285,41 @@ export class AuthService {
     }
 
     async signIn(options: SignInDto): Promise<ApiResponse<LoginResponseData>> {
-        const user = await this.getUserByEmail(options.email);
-
+        const user = await this.prisma.user.findUnique({
+            where: {
+                email: options.email,
+            },
+            select: {
+                identifier: true,
+                password: true,
+                kycStatus: true,
+                isWalletCreated: true,
+                userType: true,
+                role: {
+                    select: {
+                        name: true,
+                        slug: true,
+                        permissions: {
+                            select: {
+                                permission: {
+                                    select: {
+                                        name: true,
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+        });
         if (!user) {
             throw new InvalidCredentialException(
                 "Incorrect email or password",
                 HttpStatus.UNAUTHORIZED
             );
         }
+
+        const permissions = user.role.permissions.map((p) => p.permission.name);
 
         const isValidPassword = await this.comparePassword(
             options.password,
@@ -335,9 +332,20 @@ export class AuthService {
             );
         }
 
-        const accessToken = await this.generateAccessToken(user);
+        const accessToken = await this.jwtService.signAsync({
+            sub: user.identifier,
+        });
 
-        const loginMeta = this.buildLoginMeta(user);
+        const loginMeta: LoginMeta = {
+            kycStatus: user.kycStatus,
+            isWalletCreated: user.isWalletCreated,
+            userType: user.userType,
+            role: {
+                name: user.role.name,
+                slug: user.role.slug,
+                permissions: permissions,
+            },
+        };
 
         return buildResponse({
             message: "Login successful",
@@ -351,45 +359,9 @@ export class AuthService {
     async adminSignIn(
         options: SignInDto
     ): Promise<ApiResponse<LoginResponseData>> {
-        const user = await this.getUserByEmail(options.email);
+        await this.superAdminCheck(options.email);
 
-        if (!user) {
-            throw new InvalidCredentialException(
-                "Incorrect email or password",
-                HttpStatus.UNAUTHORIZED
-            );
-        }
-
-        if (user.userType !== UserType.SUPER_ADMIN) {
-            throw new UserNotFoundException(
-                "admin account does not exist",
-                HttpStatus.NOT_FOUND
-            );
-        }
-
-        const isValidPassword = await this.comparePassword(
-            options.password,
-            user.password
-        );
-
-        if (!isValidPassword) {
-            throw new InvalidCredentialException(
-                "Incorrect email or password",
-                HttpStatus.UNAUTHORIZED
-            );
-        }
-
-        const accessToken = await this.generateAccessToken(user);
-
-        const adminLoginMeta = this.buildLoginMeta(user);
-
-        return buildResponse({
-            message: "Login successful",
-            data: {
-                accessToken,
-                meta: encrypt(adminLoginMeta),
-            },
-        });
+        return await this.signIn(options);
     }
 
     async passwordResetRequest(options: PasswordResetRequestDto) {
