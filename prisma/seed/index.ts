@@ -14,6 +14,7 @@ import { permissions } from "./permission";
 import { roles } from "./role";
 import { rolePermissions } from "./rolePermission";
 import { states } from "./state";
+import { userAdmin } from "./user";
 
 async function main() {
     for (let provider of billProviders) {

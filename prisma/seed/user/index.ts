@@ -12,6 +12,8 @@ const hashPassword = bcrypt.hashSync("pass1234", 10)
 export const userAdmin = {
     email: "test@email.com",
     phone: "09000987654",
+    firstName: "admin",
+    lastName: "admin",
     password: hashPassword,
     identifier: customAlphabet(urlAlphabet, 16)(),
     userType: UserType.SUPER_ADMIN,

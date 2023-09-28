@@ -338,6 +338,64 @@ export class AuthService {
         });
     }
 
+    async adminSignIn(options: SignInDto) {
+        const user = await this.prisma.user.findUnique({
+            where: {
+                email: options.email,
+                userType: UserType.SUPER_ADMIN,
+            },
+            select: {
+                identifier: true,
+                password: true,
+                userType: true,
+                role: {
+                    select: {
+                        name: true,
+                        slug: true,
+                        permissions: {
+                            select: {
+                                permission: {
+                                    select: {
+                                        name: true,
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+        });
+
+        if (!user) {
+            throw new InvalidCredentialException(
+                "Incorrect email or password",
+                HttpStatus.UNAUTHORIZED
+            );
+        }
+
+        const isValidPassword = await this.comparePassword(
+            options.password,
+            user.password
+        );
+
+        if (!isValidPassword) {
+            throw new InvalidCredentialException(
+                "Incorrect email or password",
+                HttpStatus.UNAUTHORIZED
+            );
+        }
+
+        const accessToken = await this.jwtService.signAsync({
+            sub: user.identifier,
+        });
+        return buildResponse({
+            message: "Login successful",
+            data: {
+                accessToken,
+            },
+        });
+    }
+
     async passwordResetRequest(options: PasswordResetRequestDto) {
         const user = await this.prisma.user.findUnique({
             where: { email: options.email },

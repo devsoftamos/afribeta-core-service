@@ -29,42 +29,35 @@ export class AdminTransactionController {
     @Get("merchant")
     async merchantTransactionHistory(
         @Query(ValidationPipe)
-        merchantTransactionHistory: MerchantTransactionHistoryDto,
-        @User() user: UserModel
+        merchantTransactionHistory: MerchantTransactionHistoryDto
     ) {
         return await this.transactionService.merchantTransactionHistory(
-            merchantTransactionHistory,
-            user
+            merchantTransactionHistory
         );
     }
 
     @Get("payout")
     async viewPayoutHistory(
-        @Query(ValidationPipe) viewPayoutStatusDto: ViewPayoutStatusDto,
-        @User() user: UserModel
+        @Query(ValidationPipe) viewPayoutStatusDto: ViewPayoutStatusDto
     ) {
         return await this.transactionService.viewPayoutRequests(
-            viewPayoutStatusDto,
-            user
+            viewPayoutStatusDto
         );
     }
 
     @Patch("payout/authorize")
     async updatePayoutStatus(
-        @Body(ValidationPipe) updatePayoutStatusDto: UpdatePayoutStatusDto,
-        @User() user: UserModel
+        @Body(ValidationPipe) updatePayoutStatusDto: UpdatePayoutStatusDto
     ) {
         return await this.transactionService.updatePayoutStatus(
-            updatePayoutStatusDto,
-            user
+            updatePayoutStatusDto
         );
     }
 
     @Get("payout/:id")
     async getPayoutDetails(
-        @Param("id", ParseIntPipe) id: number,
-        @User() user: UserModel
+        @Param("id", ParseIntPipe) id: number
     ) {
-        return await this.transactionService.viewPayoutDetails(id, user);
+        return await this.transactionService.viewPayoutDetails(id);
     }
 }

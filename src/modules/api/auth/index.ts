@@ -4,6 +4,7 @@ import { JwtModule } from "@nestjs/jwt";
 import { jwtSecret, TOKEN_EXPIRATION } from "@/config";
 import { AuthController } from "./controllers/v1";
 import { AuthGuard } from "./guard";
+import { AdminAuthController } from "./controllers/v1/admin";
 export * from "./interfaces";
 export * from "./errors";
 
@@ -15,7 +16,7 @@ export * from "./errors";
             signOptions: { expiresIn: TOKEN_EXPIRATION },
         }),
     ],
-    controllers: [AuthController],
+    controllers: [AuthController, AdminAuthController],
     providers: [AuthService, AuthGuard],
     exports: [AuthService],
 })

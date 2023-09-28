@@ -54,7 +54,7 @@ export const rolePermissions = [
     },
 
     {
-        roleId: 2, //admin
+        roleId: 4, //superadmin
         permissionId: 3
     }
 ];
