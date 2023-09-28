@@ -17,6 +17,6 @@ export const userAdmin = {
     password: hashPassword,
     identifier: customAlphabet(urlAlphabet, 16)(),
     userType: UserType.SUPER_ADMIN,
-    roleId: 2
+    roleId: 4
 };
 
