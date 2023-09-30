@@ -2,6 +2,7 @@ import {
     IsEmail,
     IsEnum,
     IsInt,
+    IsNotEmpty,
     IsOptional,
     IsPhoneNumber,
     IsString,
@@ -14,13 +15,16 @@ enum UserType {
 }
 
 export class SignUpDto {
+    @IsNotEmpty()
     @IsString()
     firstName: string;
 
+    @IsNotEmpty()
     @IsString()
     lastName: string;
 
     @IsOptional()
+    @IsNotEmpty()
     @IsString()
     middleName: string;
 
@@ -28,7 +32,7 @@ export class SignUpDto {
     @IsString()
     businessName: string;
 
-    @IsEmail()
+    @IsEmail({}, { message: "Invalid email address" })
     email: string;
 
     @IsPhoneNumber("NG")
@@ -43,6 +47,7 @@ export class SignUpDto {
     @IsInt()
     stateId: number;
 
+    @IsNotEmpty()
     @IsString()
     password: string;
 
@@ -62,13 +67,14 @@ export class SignInDto {
 }
 
 export class SendVerificationCodeDto {
-    @IsEmail()
+    @IsEmail({}, { message: "Invalid email address" })
     email: string;
 
     @IsPhoneNumber("NG")
     @Length(11, 11, { message: "Phone number must be 11 digits" })
     phone: string;
 
+    @IsNotEmpty()
     @IsString()
     firstName: string;
 }

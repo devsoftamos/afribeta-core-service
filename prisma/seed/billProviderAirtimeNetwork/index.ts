@@ -37,6 +37,6 @@ const buyPower = [
 ];
 
 export const billProviderAirtimeNetworks = [
-    //...iRecharge,
+    ...iRecharge,
     ...buyPower,
 ];

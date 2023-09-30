@@ -36,7 +36,4 @@ const buyPower = [
     },
 ];
 
-export const billProviderDataBundleNetworks = [
-    //...iRecharge,
-    ...buyPower,
-];
+export const billProviderDataBundleNetworks = [...iRecharge, ...buyPower];

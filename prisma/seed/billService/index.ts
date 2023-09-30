@@ -1,10 +1,13 @@
-const airtime = [
+import { Prisma } from "@prisma/client";
+
+const airtime: Prisma.BillServiceUncheckedCreateInput[] = [
     {
         name: "MTN Airtime",
         slug: "mtn-airtime",
         type: "AIRTIME",
         icon: "https://afribeta.s3.amazonaws.com/MTN.png",
         baseCommissionPercentage: 2,
+        agentDefaultCommissionPercent: 1.5,
     },
     {
         name: "Glo Airtime",
@@ -12,6 +15,7 @@ const airtime = [
         type: "AIRTIME",
         icon: "https://afribeta.s3.amazonaws.com/Glo.png",
         baseCommissionPercentage: 2,
+        agentDefaultCommissionPercent: 1.5,
     },
     {
         name: "Etisalat Airtime",
@@ -19,6 +23,7 @@ const airtime = [
         type: "AIRTIME",
         icon: "https://afribeta.s3.amazonaws.com/etisalat.png",
         baseCommissionPercentage: 2,
+        agentDefaultCommissionPercent: 1.5,
     },
     {
         name: "Airtel Airtime",
@@ -26,16 +31,18 @@ const airtime = [
         type: "AIRTIME",
         icon: "https://afribeta.s3.amazonaws.com/airtel.png",
         baseCommissionPercentage: 2,
+        agentDefaultCommissionPercent: 1.5,
     },
 ];
 
-const data = [
+const data: Prisma.BillServiceUncheckedCreateInput[] = [
     {
         name: "MTN Data",
         slug: "mtn-data",
         type: "DATA",
         icon: "https://afribeta.s3.amazonaws.com/MTN.png",
         baseCommissionPercentage: 2,
+        agentDefaultCommissionPercent: 1.5,
     },
     {
         name: "Glo Data",
@@ -43,6 +50,7 @@ const data = [
         type: "DATA",
         icon: "https://afribeta.s3.amazonaws.com/Glo.png",
         baseCommissionPercentage: 2,
+        agentDefaultCommissionPercent: 1.5,
     },
     {
         name: "Etisalat Data",
@@ -50,6 +58,7 @@ const data = [
         type: "DATA",
         icon: "https://afribeta.s3.amazonaws.com/etisalat.png",
         baseCommissionPercentage: 2,
+        agentDefaultCommissionPercent: 1.5,
     },
     {
         name: "Airtel Data",
@@ -57,16 +66,18 @@ const data = [
         type: "DATA",
         icon: "https://afribeta.s3.amazonaws.com/airtel.png",
         baseCommissionPercentage: 2,
+        agentDefaultCommissionPercent: 1.5,
     },
 ];
 
-const cableTv = [
+const cableTv: Prisma.BillServiceUncheckedCreateInput[] = [
     {
         name: "DSTV",
         slug: "dstv",
         type: "CABLE_TV",
         icon: "https://afribeta.s3.amazonaws.com/dstv.png",
         baseCommissionPercentage: 2,
+        agentDefaultCommissionPercent: 1.5,
     },
     {
         name: "GOTV",
@@ -74,6 +85,7 @@ const cableTv = [
         type: "CABLE_TV",
         icon: "https://afribeta.s3.amazonaws.com/GOTV.png",
         baseCommissionPercentage: 2,
+        agentDefaultCommissionPercent: 1.5,
     },
     {
         name: "Startimes",
@@ -81,17 +93,19 @@ const cableTv = [
         type: "CABLE_TV",
         icon: "https://afribeta.s3.amazonaws.com/startimes.png",
         baseCommissionPercentage: 2,
+        agentDefaultCommissionPercent: 1.5,
     },
 ];
 
-const electricity = [
+const electricity: Prisma.BillServiceUncheckedCreateInput[] = [
     {
         name: "Ikeja Electric",
         slug: "ikeja-electric",
         abbrev: "IKEDC",
         type: "ELECTRICITY",
         icon: "https://afribeta.s3.amazonaws.com/ikedc.png",
-        baseCommissionPercentage: 2,
+        agentDefaultCommissionPercentMd: 1.2,
+        agentDefaultCommissionPercentNonMd: 1.5,
     },
     {
         name: "Eko Electricity",
@@ -100,6 +114,7 @@ const electricity = [
         type: "ELECTRICITY",
         icon: "https://afribeta.s3.amazonaws.com/EKEDC.png",
         baseCommissionPercentage: 2,
+        agentDefaultCommissionPercent: 1.5,
     },
     {
         name: "Kano Electricity",
@@ -108,6 +123,7 @@ const electricity = [
         type: "ELECTRICITY",
         icon: "https://afribeta.s3.amazonaws.com/KEDCO.png",
         baseCommissionPercentage: 2,
+        agentDefaultCommissionPercent: 1.5,
     },
     {
         name: "Port Harcourt Electric",
@@ -116,6 +132,7 @@ const electricity = [
         type: "ELECTRICITY",
         icon: "https://afribeta.s3.amazonaws.com/Mask%20group-4.png",
         baseCommissionPercentage: 2,
+        agentDefaultCommissionPercent: 1.5,
     },
     {
         name: "Jos Electricity",
@@ -124,6 +141,7 @@ const electricity = [
         type: "ELECTRICITY",
         icon: "https://afribeta.s3.amazonaws.com/JEDC.png",
         baseCommissionPercentage: 2,
+        agentDefaultCommissionPercent: 1.5,
     },
     {
         name: "Ibadan Electricity",
@@ -132,6 +150,7 @@ const electricity = [
         type: "ELECTRICITY",
         icon: "https://afribeta.s3.amazonaws.com/IBEDC.png",
         baseCommissionPercentage: 2,
+        agentDefaultCommissionPercent: 1.5,
     },
     {
         name: "Kaduna Electric",
@@ -140,6 +159,7 @@ const electricity = [
         type: "ELECTRICITY",
         icon: "https://afribeta.s3.amazonaws.com/kaduna.png",
         baseCommissionPercentage: 2,
+        agentDefaultCommissionPercent: 1.5,
     },
     {
         name: "Abuja Electric ",
@@ -148,6 +168,7 @@ const electricity = [
         type: "ELECTRICITY",
         icon: "https://afribeta.s3.amazonaws.com/AEDC.png",
         baseCommissionPercentage: 2,
+        agentDefaultCommissionPercent: 1.5,
     },
     {
         name: "Enugu Electric",
@@ -156,6 +177,7 @@ const electricity = [
         type: "ELECTRICITY",
         icon: "https://afribeta.s3.amazonaws.com/EEDS.png",
         baseCommissionPercentage: 2,
+        agentDefaultCommissionPercent: 1.5,
     },
     {
         name: "Benin Electric ",
@@ -164,6 +186,7 @@ const electricity = [
         type: "ELECTRICITY",
         icon: "https://afribeta.s3.amazonaws.com/BEDC.png",
         baseCommissionPercentage: 2,
+        agentDefaultCommissionPercent: 1.5,
     },
     {
         name: "Aba Power",
@@ -172,16 +195,18 @@ const electricity = [
         type: "ELECTRICITY",
         icon: "https://afribeta.s3.amazonaws.com/aba.png",
         baseCommissionPercentage: 2,
+        agentDefaultCommissionPercent: 1.5,
     },
 ];
 
-const internet = [
+const internet: Prisma.BillServiceUncheckedCreateInput[] = [
     {
         name: "MTN Internet",
         slug: "mtn-internet",
         type: "INTERNET",
         icon: "https://afribeta.s3.amazonaws.com/MTN.png",
         baseCommissionPercentage: 2,
+        agentDefaultCommissionPercent: 1.5,
     },
     {
         name: "Glo Internet",
@@ -189,6 +214,7 @@ const internet = [
         type: "INTERNET",
         icon: "https://afribeta.s3.amazonaws.com/Glo.png",
         baseCommissionPercentage: 2,
+        agentDefaultCommissionPercent: 1.5,
     },
     {
         name: "Etisalat Internet",
@@ -196,6 +222,7 @@ const internet = [
         type: "INTERNET",
         icon: "https://afribeta.s3.amazonaws.com/etisalat.png",
         baseCommissionPercentage: 2,
+        agentDefaultCommissionPercent: 1.5,
     },
     {
         name: "Airtel Internet",
@@ -203,6 +230,7 @@ const internet = [
         type: "INTERNET",
         icon: "https://afribeta.s3.amazonaws.com/airtel.png",
         baseCommissionPercentage: 2,
+        agentDefaultCommissionPercent: 1.5,
     },
     {
         name: "Smile",
@@ -210,6 +238,7 @@ const internet = [
         type: "INTERNET",
         icon: "https://afribeta.s3.amazonaws.com/Smile.png",
         baseCommissionPercentage: 2,
+        agentDefaultCommissionPercent: 1.5,
     },
     {
         name: "Spectranet",
@@ -217,6 +246,7 @@ const internet = [
         type: "INTERNET",
         icon: "https://afribeta.s3.amazonaws.com/Spectranet.png",
         baseCommissionPercentage: 2,
+        agentDefaultCommissionPercent: 1.5,
     },
 ];
 

@@ -1,4 +1,5 @@
 import {
+    AGENT_MD_METER_COMMISSION_CAP_AMOUNT,
     agentPostAccountCreateTemplate,
     DB_TRANSACTION_TIMEOUT,
 } from "@/config";
@@ -21,7 +22,7 @@ import {
 } from "../../auth";
 import { AuthService } from "../../auth/services";
 import {
-    CreateAgentDto,
+    CreateSubAgentDto,
     CreateKycDto,
     CreateTransactionPinDto,
     FetchMerchantAgentsDto,
@@ -48,11 +49,11 @@ import {
 import logger from "moment-logger";
 import { SendinblueEmailException } from "@calculusky/transactional-email";
 import { S3Service } from "@/modules/core/upload/services/s3";
-import { customAlphabet } from "nanoid";
 import { AbilityFactory } from "@/modules/core/ability/services";
 import { Action } from "@/modules/core/ability/interfaces";
 import { ForbiddenError, subject } from "@casl/ability";
 import { InsufficientPermissionException } from "@/modules/core/ability/errors";
+import { BillServiceSlug } from "@/modules/api/bill/interfaces";
 
 @Injectable()
 export class UserService {
@@ -276,7 +277,9 @@ export class UserService {
         });
     }
 
-    async createAgent(options: CreateAgentDto, user: User) {
+    async createAgent(options: CreateSubAgentDto, user: User) {
+        // console.log(user);
+        //check for duplicate agent
         const email = options.email.trim();
         const userAgent = await this.prisma.user.findUnique({
             where: {
@@ -320,7 +323,6 @@ export class UserService {
                 billServiceCommissions: options.billServiceCommissions,
             });
         }
-
         const password = generateId({ type: "custom_lower_case", length: 8 });
         const hashedPassword = await this.authService.hashPassword(password);
         const role = await this.prisma.role.findUnique({
@@ -328,7 +330,7 @@ export class UserService {
                 slug: "sub-agent",
             },
         });
-        const walletNumber = customAlphabet("1234567890ABCDEFGH", 10)();
+        const walletNumber = generateId({ type: "walletNumber" });
         const createAgentOptions: Prisma.UserUncheckedCreateInput = {
             email: verificationData.email,
             firstName: options.firstName,
@@ -349,7 +351,6 @@ export class UserService {
                 },
             },
         };
-        // return {};
 
         if (options.billServiceCommissions) {
             createAgentOptions.commissions = {
@@ -368,19 +369,6 @@ export class UserService {
                         where: { email: verificationData.email },
                     });
 
-                    await this.emailService.send<AgentPostAccountCreateEmailParams>(
-                        {
-                            provider: "sendinblue",
-                            subject: "Account Successfully Created",
-                            to: { email: verificationData.email },
-                            templateId: agentPostAccountCreateTemplate,
-                            params: {
-                                email: verificationData.email,
-                                firstName: options.firstName,
-                                password: password,
-                            },
-                        }
-                    );
                     return user;
                 },
                 { timeout: DB_TRANSACTION_TIMEOUT }
@@ -404,6 +392,18 @@ export class UserService {
                 }
             });
 
+        await this.emailService.send<AgentPostAccountCreateEmailParams>({
+            provider: "sendinblue",
+            subject: "Account Successfully Created",
+            to: { email: verificationData.email },
+            templateId: agentPostAccountCreateTemplate,
+            params: {
+                email: verificationData.email,
+                firstName: options.firstName,
+                password: password,
+            },
+        });
+
         return buildResponse({
             message: "Agent successfully created",
         });
@@ -420,6 +420,11 @@ export class UserService {
                 select: {
                     billServiceSlug: true,
                     percentage: true,
+                    billService: {
+                        select: {
+                            name: true,
+                        },
+                    },
                 },
             });
 
@@ -434,11 +439,40 @@ export class UserService {
                 );
             }
 
+            //NB: Only Ikeja Electric for capped amount for MD
+            if (
+                billCommission.billServiceSlug == BillServiceSlug.IKEJA_ELECTRIC
+            ) {
+                if (!billCommission.subAgentMdMeterCapAmount) {
+                    throw new InvalidAgentCommissionAssignment(
+                        "Invalid commission assignment for Ikeja Electric. Capped amount for MD Meter is required",
+                        HttpStatus.BAD_REQUEST
+                    );
+                }
+
+                if (
+                    billCommission.subAgentMdMeterCapAmount >
+                    AGENT_MD_METER_COMMISSION_CAP_AMOUNT
+                ) {
+                    throw new InvalidAgentCommissionAssignment(
+                        `Invalid commission assignment for Ikeja Electric. Capped amount for MD Meter must not be greater than ${AGENT_MD_METER_COMMISSION_CAP_AMOUNT}`,
+                        HttpStatus.BAD_REQUEST
+                    );
+                }
+            }
+
+            if (!billCommission.percentage) {
+                throw new InvalidAgentCommissionAssignment(
+                    "The commission for one of the selected bill services is not set",
+                    HttpStatus.BAD_REQUEST
+                );
+            }
+
             if (
                 billCommission.percentage > merchantServiceCommission.percentage
             ) {
                 throw new InvalidAgentCommissionAssignment(
-                    "One of the selected bill service commission for the agent is greater than the corresponding merchant's commission",
+                    `One of the selected bill service, ${merchantServiceCommission.billService.name} commission for the agent is greater than the corresponding merchant's commission`,
                     HttpStatus.BAD_REQUEST
                 );
             }
@@ -531,28 +565,6 @@ export class UserService {
                 id: id,
                 createdById: user.id,
             },
-        });
-    }
-
-    async getServiceCommissions(user: User) {
-        const billCommissions = await this.prisma.userCommission.findMany({
-            where: {
-                userId: user.id,
-            },
-            select: {
-                percentage: true,
-                billService: {
-                    select: {
-                        name: true,
-                        slug: true,
-                        type: true,
-                    },
-                },
-            },
-        });
-        return buildResponse({
-            message: "Bill service commissions successfully retrieved",
-            data: billCommissions,
         });
     }
 
