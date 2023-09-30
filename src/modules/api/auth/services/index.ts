@@ -73,7 +73,10 @@ export class AuthService {
             },
         });
 
-        const adminUserType = ["ADMIN", "SUPER_ADMIN"];
+        const adminUserType: UserType[] = [
+            UserType.ADMIN,
+            UserType.SUPER_ADMIN,
+        ];
 
         if (!admin || !adminUserType.includes(admin.userType)) {
             throw new UserNotFoundException(
