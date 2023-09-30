@@ -8,8 +8,8 @@ import {
     VERSION_NEUTRAL,
 } from "@nestjs/common";
 import { Response } from "express";
+import { PaystackWebhookEvent } from "../events";
 import { EventBody } from "../interfaces";
-import { PaystackWebhookService } from "../services";
 
 @UseGuards(PaystackWebhookGuard)
 @Controller({
@@ -17,13 +17,11 @@ import { PaystackWebhookService } from "../services";
     version: VERSION_NEUTRAL,
 })
 export class PaystackWebhookController {
-    constructor(
-        private readonly paystackWebhookService: PaystackWebhookService
-    ) {}
+    constructor(private readonly paystackWebhookEvent: PaystackWebhookEvent) {}
 
     @Post()
     async processWebhook(@Body() eventBody: EventBody, @Res() res: Response) {
+        this.paystackWebhookEvent.emit("process-webhook-event", eventBody);
         res.sendStatus(200);
-        await this.paystackWebhookService.processWebhookEvent(eventBody);
     }
 }

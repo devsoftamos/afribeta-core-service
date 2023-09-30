@@ -1,13 +1,15 @@
-import * as morgan from "morgan";
-
+import helmet from "helmet";
+import { INestApplication, VersioningType } from "@nestjs/common";
 import { HttpAdapterHost, NestFactory } from "@nestjs/core";
 import { AppModule } from "@/modules";
-import { INestApplication, VersioningType } from "@nestjs/common";
 import { CorsOptions } from "@nestjs/common/interfaces/external/cors-options.interface";
-import helmet from "helmet";
 import { AllExceptionsFilter } from "@/core/exception/http";
 import { classValidatorPipeInstance } from "@/core/pipe";
 import { PrismaService } from "@/modules/core/prisma/services";
+import * as morgan from "morgan";
+import { json } from "express";
+import { frontendDevOrigin, manualEnvironment, redisUrl } from "@/config";
+import waitForRedis from "../utils/wait-for-redis";
 
 export interface CreateServerOptions {
     port: number;
@@ -21,17 +23,14 @@ export default async (
     const app = await NestFactory.create(AppModule, {
         //logger: false,
     });
-    const whitelist = options.whitelistedDomains ?? [];
+
+    let whitelist = options.whitelistedDomains ?? [];
+    if (manualEnvironment == "development") {
+        whitelist = whitelist.concat(frontendDevOrigin as any);
+    }
 
     const corsOptions: CorsOptions = {
-        origin: async (origin, callback) => {
-            if (!origin) return callback(null, true);
-
-            if (whitelist.indexOf(origin) !== -1) {
-                return callback(null, true);
-            }
-            callback(new Error(`Not allowed by CORS - ${origin}`));
-        },
+        origin: whitelist,
         allowedHeaders: ["Authorization", "X-Requested-With", "Content-Type"],
         methods: ["GET", "PUT", "POST", "PATCH", "DELETE", "OPTIONS"],
         credentials: true,
@@ -40,6 +39,7 @@ export default async (
     app.use(helmet());
     app.enableCors(corsOptions);
     app.use(morgan(options.production ? "combined" : "dev"));
+    app.use(json({ limit: "100mb" }));
 
     app.enableVersioning({
         type: VersioningType.URI,
@@ -55,5 +55,8 @@ export default async (
     //handle prisma enableShutDownHook interference with nest app enableShutdownHooks
     const prismaService = app.get(PrismaService);
     await prismaService.enableShutdownHooks(app);
+
+    //wait for redis connection
+    await waitForRedis(redisUrl);
     return app;
 };

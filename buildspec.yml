@@ -1,17 +1,15 @@
 version: 0.2
 
 phases:
-  pre_build:
-    commands:
-      - npm install -g pnpm
-      - pnpm install
-  build:
-    commands:
-      - pnpm build
+    pre_build:
+        commands:
+            - npm install
+    build:
+        commands:
+            - npm run build
 
 artifacts:
-  files:
-    - '**/*'
-  discard-paths: no
-  base-directory: ./
-
+    files:
+        - "**/*"
+    discard-paths: no
+    base-directory: ./

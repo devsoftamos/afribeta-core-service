@@ -1,7 +1,8 @@
 import { Module } from "@nestjs/common";
+import { BillPaymentWorkflowModule } from "./billPayment";
 import { PaymentWorkflowModule } from "./payment";
 
 @Module({
-    imports: [PaymentWorkflowModule],
+    imports: [PaymentWorkflowModule, BillPaymentWorkflowModule],
 })
 export class WorkflowModule {}

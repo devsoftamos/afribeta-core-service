@@ -1,6 +1,8 @@
 import {
     IsEmail,
     IsEnum,
+    IsInt,
+    IsNotEmpty,
     IsOptional,
     IsPhoneNumber,
     IsString,
@@ -8,18 +10,29 @@ import {
 } from "class-validator";
 
 enum UserType {
-    AGENT = "agent",
-    CUSTOMER = "customer",
+    AGENT = "AGENT",
+    CUSTOMER = "CUSTOMER",
 }
 
 export class SignUpDto {
+    @IsNotEmpty()
     @IsString()
     firstName: string;
 
+    @IsNotEmpty()
     @IsString()
     lastName: string;
 
-    @IsEmail()
+    @IsOptional()
+    @IsNotEmpty()
+    @IsString()
+    middleName: string;
+
+    @IsOptional()
+    @IsString()
+    businessName: string;
+
+    @IsEmail({}, { message: "Invalid email address" })
     email: string;
 
     @IsPhoneNumber("NG")
@@ -27,13 +40,14 @@ export class SignUpDto {
     phone: string;
 
     @IsOptional()
-    @IsString()
-    localGovernmentArea: string;
+    @IsInt()
+    localGovernmentAreaId: number;
 
     @IsOptional()
-    @IsString()
-    state: string;
+    @IsInt()
+    stateId: number;
 
+    @IsNotEmpty()
     @IsString()
     password: string;
 
@@ -53,13 +67,14 @@ export class SignInDto {
 }
 
 export class SendVerificationCodeDto {
-    @IsEmail()
+    @IsEmail({}, { message: "Invalid email address" })
     email: string;
 
     @IsPhoneNumber("NG")
     @Length(11, 11, { message: "Phone number must be 11 digits" })
     phone: string;
 
+    @IsNotEmpty()
     @IsString()
     firstName: string;
 }

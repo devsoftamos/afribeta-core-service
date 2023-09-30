@@ -1,6 +1,7 @@
 # compiled output
 /dist
 /node_modules
+/node_modules_
 
 # Logs
 logs
@@ -37,6 +38,9 @@ lerna-debug.log*
 
 #pnpm
 pnpm-lock.yaml
+
+#npm
+package-lock.json
 
 #env
 .env

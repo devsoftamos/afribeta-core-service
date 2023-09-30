@@ -1,5 +1,4 @@
 import { HttpStatus, Injectable } from "@nestjs/common";
-import { UserService } from "@/modules/api/user/services";
 import { JwtService } from "@nestjs/jwt";
 import {
     SignUpDto,
@@ -13,8 +12,14 @@ import {
     UserNotFoundException,
 } from "@/modules/api/user";
 import * as bcrypt from "bcryptjs";
-import { Prisma } from "@prisma/client";
-import { customAlphabet, urlAlphabet } from "nanoid";
+import {
+    MerchantUpgradeStatus,
+    Prisma,
+    Role,
+    User,
+    UserType,
+} from "@prisma/client";
+import { customAlphabet } from "nanoid";
 import {
     InvalidCredentialException,
     InvalidEmailVerificationCodeException,
@@ -27,14 +32,26 @@ import { ApiResponse, buildResponse } from "@/utils/api-response-util";
 import { SmsService } from "@/modules/core/sms/services";
 import { PrismaService } from "@/modules/core/prisma/services";
 import { EmailService } from "@/modules/core/email/services";
-import { passwordResetTemplate, verifyEmailTemplate } from "@/config";
+import {
+    agentVerifyEmailTemplate,
+    passwordResetTemplate,
+    verifyEmailTemplate,
+} from "@/config";
 import { SendinblueEmailException } from "@calculusky/transactional-email";
 import logger from "moment-logger";
+import { encrypt, formatName, generateId } from "@/utils";
+import {
+    AgentVerifyEmailParams,
+    LoginMeta,
+    LoginResponseData,
+    SignupResponseData,
+} from "../interfaces";
+import { SMS } from "@/modules/core/sms";
+import { SmsMessage, smsMessage } from "@/core/smsMessage";
 
 @Injectable()
 export class AuthService {
     constructor(
-        private userService: UserService,
         private jwtService: JwtService,
         private smsService: SmsService,
         private prisma: PrismaService,
@@ -49,6 +66,26 @@ export class AuthService {
         return await bcrypt.compare(password, hash);
     }
 
+    async validateAdminUser(email: string) {
+        const admin = await this.prisma.user.findUnique({
+            where: {
+                email: email,
+            },
+        });
+
+        const adminUserType: UserType[] = [
+            UserType.ADMIN,
+            UserType.SUPER_ADMIN,
+        ];
+
+        if (!admin || !adminUserType.includes(admin.userType)) {
+            throw new UserNotFoundException(
+                "admin account does not exist",
+                HttpStatus.NOT_FOUND
+            );
+        }
+    }
+
     async sendAccountVerificationEmail(
         options: SendVerificationCodeDto
     ): Promise<ApiResponse> {
@@ -56,7 +93,9 @@ export class AuthService {
             const verificationCode = customAlphabet("1234567890", 4)();
             const email = options.email.toLowerCase().trim();
 
-            const user = await this.userService.findUserByEmail(email);
+            const user = await this.prisma.user.findUnique({
+                where: { email: email },
+            });
             if (user) {
                 throw new DuplicateUserException(
                     "Account already verified. Kindly login",
@@ -78,26 +117,34 @@ export class AuthService {
             });
 
             const phoneNumber = `234${options.phone.trim().substring(1)}`;
-            const emailResp = await this.emailService.brevo.send({
-                to: [{ email: email }],
+            const emailResp = await this.emailService.send({
+                to: { email: email },
                 subject: "Verify Your Email",
+                provider: "sendinblue",
                 templateId: verifyEmailTemplate,
                 params: {
                     code: verificationCode,
-                    firstName: options.firstName,
+                    firstName: formatName(options.firstName),
                 },
             });
 
             if (emailResp) {
-                await this.smsService.termii
-                    .send({
-                        to: phoneNumber,
-                        sms: `Hi, a confirmation code has been sent to your email, ${options.email.trim()}. Kindly verify your account with the code.`,
+                await this.smsService
+                    .send<SMS.TermiiProvider>({
+                        provider: "termii",
+                        phone: phoneNumber,
                         type: "plain",
                         channel: "generic",
+                        message: smsMessage({
+                            template: SmsMessage.Template.VERIFY_EMAIL,
+                            data: {
+                                email: options.email,
+                            },
+                        }),
                     })
                     .catch(() => false);
             }
+
             return buildResponse({
                 message: `An email verification code has been sent to your email, ${options.email}`,
             });
@@ -125,8 +172,13 @@ export class AuthService {
         }
     }
 
-    async signUp(options: SignUpDto, ip: string): Promise<ApiResponse> {
-        const user = await this.userService.findUserByEmail(options.email);
+    async signUp(
+        options: SignUpDto,
+        ip: string
+    ): Promise<ApiResponse<SignupResponseData>> {
+        const user = await this.prisma.user.findUnique({
+            where: { email: options.email.trim() },
+        });
         if (user) {
             throw new DuplicateUserException(
                 "An account already exist with this email. Please login",
@@ -158,30 +210,68 @@ export class AuthService {
         }
 
         const hashedPassword = await this.hashPassword(options.password);
+        let role: Role;
+        if (options.userType == UserType.AGENT) {
+            role = await this.prisma.role.findUnique({
+                where: {
+                    slug: "agent",
+                },
+            });
+        } else {
+            role = await this.prisma.role.findUnique({
+                where: {
+                    slug: "customer",
+                },
+            });
+        }
 
-        const createUserOptions: Prisma.UserCreateInput = {
-            firstName: options.firstName,
-            lastName: options.lastName,
+        const createUserOptions: Prisma.UserUncheckedCreateInput = {
             email: verificationData.email,
             phone: options.phone.trim(),
             userType: options.userType,
-            identifier: customAlphabet(urlAlphabet, 16)(),
+            identifier: generateId({ type: "identifier" }),
             password: hashedPassword,
             ipAddress: ip,
-            isMerchantUpgradable: options.userType == "agent" ? true : false,
-            role: {
-                connectOrCreate: {
-                    where: { name: options.userType },
-                    create: {
-                        name: options.userType,
-                    },
-                },
-            },
+            roleId: role?.id,
+            firstName: formatName(options.firstName),
+            lastName: formatName(options.lastName),
+            middleName: options.middleName && formatName(options.middleName),
         };
 
-        const createdUser = await this.userService.createUser(
-            createUserOptions
-        );
+        if (options.userType == UserType.AGENT) {
+            if (!options.businessName) {
+                throw new InvalidCredentialException(
+                    "businessName field is required for the account type",
+                    HttpStatus.BAD_REQUEST
+                );
+            }
+
+            if (!options.stateId) {
+                throw new InvalidCredentialException(
+                    "stateId field is required for the account type",
+                    HttpStatus.BAD_REQUEST
+                );
+            }
+
+            if (!options.localGovernmentAreaId) {
+                throw new InvalidCredentialException(
+                    "localGovernmentAreaId field is required for the account type",
+                    HttpStatus.BAD_REQUEST
+                );
+            }
+
+            createUserOptions.businessName = options.businessName;
+            createUserOptions.stateId = options.stateId;
+            createUserOptions.localGovernmentAreaId =
+                options.localGovernmentAreaId;
+            createUserOptions.isMerchantUpgradable = true;
+            createUserOptions.merchantUpgradeStatus =
+                MerchantUpgradeStatus.TO_BE_UPGRADED;
+        }
+
+        const createdUser = await this.prisma.user.create({
+            data: createUserOptions,
+        });
         const accessToken = await this.jwtService.signAsync({
             sub: createdUser.identifier,
         });
@@ -196,14 +286,42 @@ export class AuthService {
         });
     }
 
-    async signIn(options: SignInDto): Promise<ApiResponse> {
-        const user = await this.userService.findUserByEmail(options.email);
+    async signIn(options: SignInDto): Promise<ApiResponse<LoginResponseData>> {
+        const user = await this.prisma.user.findUnique({
+            where: {
+                email: options.email,
+            },
+            select: {
+                identifier: true,
+                password: true,
+                kycStatus: true,
+                isWalletCreated: true,
+                userType: true,
+                role: {
+                    select: {
+                        name: true,
+                        slug: true,
+                        permissions: {
+                            select: {
+                                permission: {
+                                    select: {
+                                        name: true,
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+        });
         if (!user) {
             throw new InvalidCredentialException(
                 "Incorrect email or password",
                 HttpStatus.UNAUTHORIZED
             );
         }
+
+        const permissions = user.role.permissions.map((p) => p.permission.name);
 
         const isValidPassword = await this.comparePassword(
             options.password,
@@ -220,14 +338,38 @@ export class AuthService {
             sub: user.identifier,
         });
 
+        const loginMeta: LoginMeta = {
+            kycStatus: user.kycStatus,
+            isWalletCreated: user.isWalletCreated,
+            userType: user.userType,
+            role: {
+                name: user.role.name,
+                slug: user.role.slug,
+                permissions: permissions,
+            },
+        };
+
         return buildResponse({
             message: "Login successful",
-            data: { accessToken },
+            data: {
+                accessToken,
+                meta: encrypt(loginMeta),
+            },
         });
     }
 
+    async adminSignIn(
+        options: SignInDto
+    ): Promise<ApiResponse<LoginResponseData>> {
+        await this.validateAdminUser(options.email);
+
+        return await this.signIn(options);
+    }
+
     async passwordResetRequest(options: PasswordResetRequestDto) {
-        const user = await this.userService.findUserByEmail(options.email);
+        const user = await this.prisma.user.findUnique({
+            where: { email: options.email },
+        });
         if (!user) {
             throw new UserNotFoundException(
                 "There is no account registered with this email address. Please Sign Up",
@@ -249,9 +391,10 @@ export class AuthService {
             },
         });
 
-        await this.emailService.brevo
+        await this.emailService
             .send({
                 to: [{ email: options.email }],
+                provider: "sendinblue",
                 subject: "Reset Your Password",
                 templateId: passwordResetTemplate,
                 params: {
@@ -277,7 +420,7 @@ export class AuthService {
             );
         }
         //check verification expiration
-        const timeDifference = Date.now() - resetData.createdAt.getTime();
+        const timeDifference = Date.now() - resetData.updatedAt.getTime();
         const timeDiffInMin = timeDifference / (1000 * 60);
         if (timeDiffInMin > 30) {
             throw new PasswordResetCodeExpiredException(
@@ -285,17 +428,19 @@ export class AuthService {
                 HttpStatus.BAD_REQUEST
             );
         }
-        const user = await this.userService.findUserById(resetData.userId);
+        const user = await this.prisma.user.findUnique({
+            where: { id: resetData.userId },
+        });
         if (!user) {
             throw new UserNotFoundException(
                 "Account not found",
                 HttpStatus.NOT_FOUND
             );
         }
-        const newHarshedPassword = await this.hashPassword(options.newPassword);
+        const newHashedPassword = await this.hashPassword(options.newPassword);
         await this.prisma.user.update({
             where: { id: user.id },
-            data: { password: newHarshedPassword },
+            data: { password: newHashedPassword },
         });
         await this.prisma.passwordResetRequest.delete({
             where: { code: resetData.code },
@@ -304,5 +449,95 @@ export class AuthService {
         return buildResponse({
             message: `Password successfully updated. Kindly login`,
         });
+    }
+
+    async sendAgentAccountVerificationEmail(
+        options: SendVerificationCodeDto,
+        user: User
+    ): Promise<ApiResponse> {
+        try {
+            const verificationCode = customAlphabet("1234567890", 4)();
+            const email = options.email.toLowerCase().trim();
+
+            const agent = await this.prisma.user.findUnique({
+                where: { email: options.email },
+            });
+            if (agent) {
+                throw new DuplicateUserException(
+                    "Account already verified. Kindly login",
+                    HttpStatus.BAD_REQUEST
+                );
+            }
+
+            await this.prisma.accountVerificationRequest.upsert({
+                where: {
+                    email: email,
+                },
+                create: {
+                    code: verificationCode,
+                    email: email,
+                },
+                update: {
+                    code: verificationCode,
+                },
+            });
+
+            const phoneNumber = `234${options.phone.trim().substring(1)}`;
+            const emailResp =
+                await this.emailService.send<AgentVerifyEmailParams>({
+                    to: { email: email },
+                    subject: "Agent Email Verification",
+                    provider: "sendinblue",
+                    templateId: agentVerifyEmailTemplate,
+                    params: {
+                        code: verificationCode,
+                        firstName: options.firstName,
+                        merchantName: `${user.firstName} ${user.lastName}`,
+                        merchantEmail: user.email,
+                    },
+                });
+
+            if (emailResp) {
+                await this.smsService
+                    .send<SMS.TermiiProvider>({
+                        provider: "termii",
+                        phone: phoneNumber,
+                        message: smsMessage({
+                            template: SmsMessage.Template.SUBAGENT_VERIFY_EMAIL,
+                            data: {
+                                email: options.email,
+                                merchantFirstName: user.firstName,
+                                merchantLastName: user.lastName,
+                            },
+                        }),
+                    })
+                    .catch(() => false);
+            }
+
+            return buildResponse({
+                message: `An email verification code has been sent to the agent's email, ${options.email}`,
+            });
+        } catch (error) {
+            logger.error(error);
+            switch (true) {
+                case error instanceof DuplicateUserException: {
+                    throw error;
+                }
+
+                case error instanceof SendinblueEmailException: {
+                    throw new SendVerificationEmailException(
+                        "Error from email provider. Please try again",
+                        HttpStatus.INTERNAL_SERVER_ERROR
+                    );
+                }
+
+                default: {
+                    throw new SendVerificationEmailException(
+                        "Unable to send email verification",
+                        HttpStatus.INTERNAL_SERVER_ERROR
+                    );
+                }
+            }
+        }
     }
 }

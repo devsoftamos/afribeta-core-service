@@ -1,3 +1,7 @@
+import { User } from "@/modules/api/user";
+import { CreateAgentAbility } from "@/modules/core/ability";
+import { CheckAbilities } from "@/modules/core/ability/decorator";
+import { AbilitiesGuard } from "@/modules/core/ability/guards";
 import { ApiResponse } from "@/utils/api-response-util";
 import {
     Body,
@@ -7,8 +11,10 @@ import {
     Patch,
     Post,
     Req,
+    UseGuards,
     ValidationPipe,
 } from "@nestjs/common";
+import { User as UserModel } from "@prisma/client";
 import { Request } from "express";
 import {
     PasswordResetRequestDto,
@@ -17,6 +23,7 @@ import {
     SignUpDto,
     UpdatePasswordDto,
 } from "../../dtos";
+import { AuthGuard } from "../../guard";
 import { AuthService } from "../../services";
 
 @Controller({
@@ -66,5 +73,19 @@ export class AuthController {
         @Body(ValidationPipe) updatePasswordDto: UpdatePasswordDto
     ) {
         return await this.authService.updatePassword(updatePasswordDto);
+    }
+
+    @UseGuards(AuthGuard, AbilitiesGuard)
+    @CheckAbilities(new CreateAgentAbility())
+    @HttpCode(HttpStatus.OK)
+    @Post("verify-agent-email")
+    async sendAgentAccountVerificationEmail(
+        @Body(ValidationPipe) sendVerificationCodeDto: SendVerificationCodeDto,
+        @User() user: UserModel
+    ) {
+        return await this.authService.sendAgentAccountVerificationEmail(
+            sendVerificationCodeDto,
+            user
+        );
     }
 }

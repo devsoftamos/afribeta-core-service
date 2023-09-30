@@ -1,4 +1,10 @@
-import { jwtSecret, paystackSecretKey } from "@/config";
+import {
+    fsdh360ApiKeyAuth,
+    fsdh360Ips,
+    jwtSecret,
+    paystackSecretKey,
+    squadGtBankOptions,
+} from "@/config";
 import {
     CanActivate,
     ExecutionContext,
@@ -12,14 +18,18 @@ import { UserService } from "../../user/services";
 import {
     AuthTokenValidationException,
     InvalidAuthTokenException,
+    PrismaNetworkException,
 } from "../errors";
 import {
     DataStoredInToken,
+    RequestFromFSDH360Bank,
     RequestFromPaystack,
+    RequestFromSquadGTBank,
     RequestWithUser,
 } from "../interfaces";
 import { Observable } from "rxjs";
 import { createHmac } from "crypto";
+import logger from "moment-logger";
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -33,7 +43,7 @@ export class AuthGuard implements CanActivate {
         const token = this.extractTokenFromHeader(request);
         if (!token) {
             throw new InvalidAuthTokenException(
-                "Your session is unauthorized",
+                "Authorization header is missing",
                 HttpStatus.UNAUTHORIZED
             );
         }
@@ -53,10 +63,18 @@ export class AuthGuard implements CanActivate {
             }
             request.user = user;
         } catch (error) {
+            logger.error(error);
             switch (true) {
                 case error instanceof UserNotFoundException: {
                     throw error;
                 }
+                case error.name == "PrismaClientKnownRequestError": {
+                    throw new PrismaNetworkException(
+                        "Unable to process request. Please try again",
+                        HttpStatus.SERVICE_UNAVAILABLE
+                    );
+                }
+
                 default: {
                     throw new AuthTokenValidationException(
                         "Your session is unauthorized or expired",
@@ -88,6 +106,47 @@ export class PaystackWebhookGuard implements CanActivate {
             .digest("hex");
 
         if (hash == request.headers["x-paystack-signature"]) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+}
+
+@Injectable()
+export class SquadGTBankWebhookGuard implements CanActivate {
+    canActivate(
+        context: ExecutionContext
+    ): boolean | Promise<boolean> | Observable<boolean> {
+        const request = context
+            .switchToHttp()
+            .getRequest() as RequestFromSquadGTBank;
+
+        const hash = createHmac("sha512", squadGtBankOptions.secretKey)
+            .update(JSON.stringify(request.body))
+            .digest("hex");
+
+        if (hash == request.headers["x-squad-signature"]) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+}
+
+@Injectable()
+export class FSDH360BankWebhookGuard implements CanActivate {
+    canActivate(
+        context: ExecutionContext
+    ): boolean | Promise<boolean> | Observable<boolean> {
+        const request = context
+            .switchToHttp()
+            .getRequest() as RequestFromFSDH360Bank;
+
+        if (
+            fsdh360ApiKeyAuth == request.headers["api-key-auth"] &&
+            fsdh360Ips.includes(request.ip)
+        ) {
             return true;
         } else {
             return false;

@@ -1,16 +1,32 @@
 import { Module } from "@nestjs/common";
 import { RouterModule } from "@nestjs/core";
+import { FSDH360BankWebhookModule } from "./fsdh360Bank";
 import { PaystackWebhookModule } from "./paystack";
-import { ProvidusBankWebhookModule } from "./providusBank";
+import { ProvidusWebhookModule } from "./providus";
+import { SquadGTBankWebhookModule } from "./squadGTBank";
 
 @Module({
     imports: [
-        ProvidusBankWebhookModule,
+        ProvidusWebhookModule,
         PaystackWebhookModule,
+        SquadGTBankWebhookModule,
+        FSDH360BankWebhookModule,
         RouterModule.register([
             {
-                path: "webhooks",
+                path: "webhook",
                 module: PaystackWebhookModule,
+            },
+            {
+                path: "webhook",
+                module: ProvidusWebhookModule,
+            },
+            {
+                path: "webhook",
+                module: SquadGTBankWebhookModule,
+            },
+            {
+                path: "webhook",
+                module: FSDH360BankWebhookModule,
             },
         ]),
     ],

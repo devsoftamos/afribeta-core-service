@@ -1,17 +1,15 @@
-import { paystackConfiguration } from "@/config";
-import { Global, Module } from "@nestjs/common";
-import { PaystackService } from "./services/paystack";
+import { Module } from "@nestjs/common";
+import { FSDH360BankWorkflowModule } from "./providers/fsdh360Bank";
+import { PaystackWorkflowModule } from "./providers/paystack";
+import { ProvidusWorkflowModule } from "./providers/providus";
+import { SquadGTBankWorkflowModule } from "./providers/squadGTBank";
 
-@Global()
 @Module({
-    providers: [
-        {
-            provide: PaystackService,
-            useFactory() {
-                return new PaystackService(paystackConfiguration);
-            },
-        },
+    imports: [
+        PaystackWorkflowModule,
+        ProvidusWorkflowModule,
+        FSDH360BankWorkflowModule,
+        SquadGTBankWorkflowModule,
     ],
-    exports: [PaystackService],
 })
 export class PaymentWorkflowModule {}

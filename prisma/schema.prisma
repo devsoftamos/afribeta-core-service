@@ -2,7 +2,9 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  binaryTargets   = ["native", "rhel-openssl-1.0.x"]
+  previewFeatures = ["fullTextSearch", "fulltextIndex"]
 }
 
 datasource db {
@@ -12,103 +14,150 @@ datasource db {
 
 //User
 enum UserType {
-  super_admin
-  admin
-  merchant
-  agent
-  customer
+  SUPER_ADMIN
+  ADMIN
+  MERCHANT
+  AGENT
+  CUSTOMER
 }
 
 enum Status {
-  enabled
-  disabled
-  blocked
+  ENABLED
+  DISABLED
 }
 
 enum MerchantUpgradeStatus {
-  pending
-  toBeUpgraded
-  upgraded
-  declined
+  PENDING
+  TO_BE_UPGRADED
+  UPGRADED
+  DECLINED
+}
+
+enum IdentificationMeans {
+  NIN
+  VOTERS_CARD
+  INTERNATIONAL_PASSPORT
+}
+
+enum KYC_STATUS {
+  PENDING
+  APPROVED
 }
 
 model User {
-  id                    Int                    @id @default(autoincrement())
-  identifier            String                 @unique
-  firstName             String
-  lastName              String
-  email                 String                 @unique
-  phone                 String
-  password              String
-  userType              UserType
-  profilePhoto          String?
-  status                Status                 @default(enabled)
-  state                 String?
-  localGovernmentArea   String?
-  createdById           Int?
-  isMerchantUpgradable  Boolean                @default(false)
-  merchantUpgradeStatus MerchantUpgradeStatus?
-  transactionPin        String?
-  roleId                Int
-  ipAddress             String
-  notificationToken     String?
-  customerCode          String?
-  cacNumber             String?
-  utilityDocumentUrl    String?
-  createdAt             DateTime               @default(now())
-  updatedAt             DateTime               @updatedAt
-  bank                  Bank?
-  createdUsers          User[]                 @relation(name: "creatorAndCreatedUser")
-  creator               User?                  @relation(name: "creatorAndCreatedUser", fields: [createdById], references: [id])
-  role                  Role                   @relation(fields: [roleId], references: [id])
-  wallet                Wallet?
-  passwordResetRequest  PasswordResetRequest?
-  transactions          Transaction[]          @relation(name: "userToTransaction")
-  senderTransactions    Transaction[]          @relation(name: "senderToTransaction")
-  receiverTransactions  Transaction[]          @relation(name: "receiverToTransaction")
-  virtualBankAccount    VirtualBankAccount?
+  id                          Int                    @id @default(autoincrement())
+  identifier                  String                 @unique
+  firstName                   String?
+  lastName                    String?
+  middleName                  String?
+  businessName                String?
+  email                       String                 @unique
+  phone                       String
+  password                    String
+  userType                    UserType
+  photo                       String?
+  status                      Status                 @default(ENABLED)
+  stateId                     Int?
+  localGovernmentAreaId       Int?
+  createdById                 Int?
+  isMerchantUpgradable        Boolean                @default(false)
+  merchantUpgradeStatus       MerchantUpgradeStatus?
+  transactionPin              String?
+  roleId                      Int
+  ipAddress                   String?
+  notificationToken           String?
+  isVerified                  Boolean                @default(true) //email verification
+  kycStatus                   KYC_STATUS?
+  isWalletCreated             Boolean                @default(false) //for wallet
+  isDeleted                   Boolean?               @default(false)
+  createdAt                   DateTime               @default(now())
+  updatedAt                   DateTime               @updatedAt
+  bankAccount                 BankAccount?
+  createdUsers                User[]                 @relation(name: "creatorAndCreatedUser")
+  creator                     User?                  @relation(name: "creatorAndCreatedUser", fields: [createdById], references: [id])
+  role                        Role                   @relation(fields: [roleId], references: [id])
+  wallet                      Wallet?
+  passwordResetRequest        PasswordResetRequest?
+  transactions                Transaction[]          @relation(name: "userToTransaction")
+  senderTransactions          Transaction[]          @relation(name: "senderToTransaction")
+  receiverTransactions        Transaction[]          @relation(name: "receiverToTransaction")
+  virtualBankAccount          VirtualBankAccount[]
+  commissions                 UserCommission[]
+  kycInformation              KycInformation?
+  notifications               Notification[]         @relation(name: "userToNotification")
+  agentTriggeredNotifications Notification[]         @relation(name: "agentDetailInNotification")
+  state                       State?                 @relation(fields: [stateId], references: [id])
+  lga                         LocalGovernmentArea?   @relation(fields: [localGovernmentAreaId], references: [id])
 
+  @@fulltext([firstName, lastName])
   @@map("Users")
 }
 
+model KycInformation {
+  id                             Int                  @id @default(autoincrement())
+  userId                         Int                  @unique
+  cacNumber                      String?
+  cacDocumentUrl                 String?
+  identificationMeans            IdentificationMeans?
+  identificationMeansDocumentUrl String?
+  nextOfKinName                  String?
+  nextOfKinPhone                 String?
+  nextOfKinAddress               String?
+  address                        String?              @db.Text
+  createdAt                      DateTime             @default(now())
+  updatedAt                      DateTime             @updatedAt
+  user                           User                 @relation(fields: [userId], references: [id])
+
+  @@map("KycInformation")
+}
+
 //Bank
-enum BankCodeprovider {
-  paystack
-  providus_bank
-}
+// enum BankCodeprovider {
+//   PAYSTACK
+//   PROVIDUS
+// }
 
-model Bank {
-  id               Int              @id @default(autoincrement())
-  userId           Int              @unique
-  bankName         String
-  accountName      String
-  accountNumber    String
-  bankCode         String?
-  bankCodeProvider BankCodeprovider @default(providus_bank)
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
-  user             User             @relation(fields: [userId], references: [id])
-
-  @@map("Banks")
-}
-
-//Virtual Bank Account
-enum VirtualAccountProviders {
-  paystack
-  providus_bank
-}
-
-model VirtualBankAccount {
-  id            Int                     @id @default(autoincrement())
-  userId        Int                     @unique
+model BankAccount {
+  id            Int      @id @default(autoincrement())
+  userId        Int      @unique
   bankName      String
   accountName   String
   accountNumber String
-  provider      VirtualAccountProviders
-  createdAt     DateTime                @default(now())
-  updatedAt     DateTime                @updatedAt
-  user          User                    @relation(fields: [userId], references: [id])
+  bankCode      String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  user          User     @relation(fields: [userId], references: [id])
 
+  @@unique([userId, accountNumber, bankCode])
+  @@index([userId])
+  @@map("BankAccounts")
+}
+
+//Virtual Bank Account
+enum VirtualAccountProvider {
+  PAYSTACK
+  PROVIDUS
+  GTBANK
+  POLARIS
+  FSDH360
+}
+
+model VirtualBankAccount {
+  id            Int                    @id @default(autoincrement())
+  userId        Int
+  bankName      String
+  accountName   String
+  accountNumber String
+  slug          String?
+  provider      VirtualAccountProvider
+  customerCode  String? //customer code from paystack 
+  createdAt     DateTime               @default(now())
+  updatedAt     DateTime               @updatedAt
+  user          User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, provider])
+  @@unique([accountNumber, provider])
+  @@index([accountNumber, provider])
   @@map("VirtualBankAccounts")
 }
 
@@ -127,6 +176,7 @@ model AccountVerificationRequest {
 model Role {
   id          Int              @id @default(autoincrement())
   name        String           @unique
+  slug        String           @unique
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
   users       User[]
@@ -137,12 +187,13 @@ model Role {
 
 //Permission
 model Permission {
-  id        Int              @id @default(autoincrement())
-  name      String
-  domain    String
-  createdAt DateTime         @default(now())
-  updatedAt DateTime         @updatedAt
-  roles     RolePermission[]
+  id                 Int              @id @default(autoincrement())
+  name               String           @unique
+  description        String
+  isCustomAssignable Boolean          @default(true)
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+  roles              RolePermission[]
 
   @@map("Permissions")
 }
@@ -164,6 +215,7 @@ model RolePermission {
 model Wallet {
   id                Int      @id @default(autoincrement())
   userId            Int      @unique
+  walletNumber      String   @unique
   mainBalance       Float    @default(0)
   commissionBalance Float    @default(0)
   createdAt         DateTime @default(now())
@@ -175,19 +227,30 @@ model Wallet {
 
 //Notification
 enum NotificationType {
-  wallet_fund_request
+  WALLET_FUND_REQUEST
+  MESSAGE
+}
+
+enum NotificationStatus {
+  PENDING
+  APPROVED
+  DECLINED
 }
 
 model Notification {
-  id            Int              @id @default(autoincrement())
-  title         String
-  description   String?
-  transactionId Int?
-  userId        Int
-  isRead        Boolean          @default(false)
-  type          NotificationType
-  createdAt     DateTime         @default(now())
-  updatedAt     DateTime         @updatedAt
+  id        Int                 @id @default(autoincrement())
+  title     String?
+  message   String?
+  isRead    Boolean?            @default(false)
+  userId    Int
+  agentId   Int?
+  amount    Int?
+  type      NotificationType?   @default(MESSAGE)
+  status    NotificationStatus?
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+  user      User                @relation(name: "userToNotification", fields: [userId], references: [id])
+  agent     User?               @relation(name: "agentDetailInNotification", fields: [agentId], references: [id])
 
   @@map("Notifications")
 }
@@ -206,13 +269,15 @@ model PasswordResetRequest {
 
 //Transactions logs
 enum TransactionType {
-  airtime_to_cash
-  data_purchase
-  transfer
-  wallet_fund
-  electricity_bill
-  internet_bill
-  cableTv_bill
+  AIRTIME_TO_CASH
+  DATA_PURCHASE
+  TRANSFER_FUND
+  WALLET_FUND
+  ELECTRICITY_BILL
+  INTERNET_BILL
+  CABLETV_BILL
+  AIRTIME_PURCHASE
+  PAYOUT
 }
 
 enum TransactionFlow {
@@ -221,69 +286,259 @@ enum TransactionFlow {
 }
 
 enum TransactionStatus {
-  pending
-  success
-  approved
-  failed
-  declined
+  PENDING
+  SUCCESS
+  APPROVED
+  FAILED
+  DECLINED
 }
 
-enum PaymentMethod {
-  wallet
-  paystack
-  providus_transfer
+enum PaymentChannel {
+  WALLET
+  PAYSTACK_CHANNEL //Any of the paystack channels: card, ussd etc
+  PAYSTACK_VIRTUAL_ACCOUNT_TRANSFER
+  PROVIDUS_VIRTUAL_ACCOUNT_TRANSFER
+  GTBANK_VIRTUAL_ACCOUNT_TRANSFER
+  FSDH360_VIRTUAL_ACCOUNT_TRANSFER
+  POLARIS_VIRTUAL_ACCOUNT_TRANSFER
+  SYSTEM
+  MANUAL
 }
 
 enum WalletFundTransactionFlow {
-  to_agent
-  to_beneficiary
-  from_merchant
-  from_benefactor
-  self_fund
-  from_paid_commission
+  TO_AGENT
+  TO_BENEFICIARY
+  FROM_MERCHANT
+  FROM_BENEFACTOR
+  SELF_FUND
+  FROM_PAID_COMMISSION
+  COMMISSION_BALANCE_TO_MAIN_BALANCE
 }
 
 enum PaymentStatus {
-  pending
-  success
-  failed
+  PENDING
+  SUCCESS
+  FAILED
+}
+
+enum MeterAccountType {
+  MD
+  NON_MD
 }
 
 model Transaction {
-  id                           Int                        @id @default(autoincrement())
+  id                           Int               @id @default(autoincrement())
   type                         TransactionType
   flow                         TransactionFlow
   amount                       Float
-  serviceCharge                Float?
-  totalAmount                  Float
+  serviceCharge                Float             @default(0)
+  totalAmount                  Float //serviceCharge + amount
   status                       TransactionStatus
   paymentStatus                PaymentStatus?
+  paymentReference             String?           @unique //reference for payment
   userId                       Int
-  senderId                     Int
-  receiverId                   Int
+  senderId                     Int?
+  receiverId                   Int?
   destinationBankName          String?
   destinationBankAccountNumber String?
   destinationBankAccountName   String?
-  description                  String?                    @db.VarChar(255)
+  shortDescription             String?           @db.VarChar(255)
+  description                  String?           @db.Text
   transactionId                String
   provider                     String?
   providerLogo                 String?
   accountId                    String?
   packageType                  String?
   meterType                    String?
-  phone1                       String?
-  phone2                       String?
-  paymentMethod                PaymentMethod?
+  senderIdentifier             String?
+  receiverIdentifier           String?
+  paymentChannel               PaymentChannel?
   token                        String?
-  commission                   Float?
-  merchantCommission           Float?
-  companyCommission            Float?
-  walletFundTransactionFlow    WalletFundTransactionFlow?
-  createdAt                    DateTime                   @default(now())
-  updatedAt                    DateTime                   @updatedAt
-  user                         User                       @relation(name: "userToTransaction", fields: [userId], references: [id])
-  sender                       User                       @relation(name: "senderToTransaction", fields: [senderId], references: [id])
-  receiver                     User                       @relation(name: "receiverToTransaction", fields: [receiverId], references: [id])
+  units                        String?
+  commission                   Float?            @default(0)
+  merchantCommission           Float?            @default(0)
+  companyCommission            Float?            @default(0)
+  serviceTransactionCode       String?
+  serviceTransactionCode2      String?
 
+  billProviderId            Int?
+  billPaymentReference      String?
+  walletFundTransactionFlow WalletFundTransactionFlow?
+  billServiceSlug           String?
+  merchantId                Int?
+  meterAccountType          MeterAccountType?
+
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  user         User          @relation(name: "userToTransaction", fields: [userId], references: [id])
+  sender       User?         @relation(name: "senderToTransaction", fields: [senderId], references: [id])
+  receiver     User?         @relation(name: "receiverToTransaction", fields: [receiverId], references: [id])
+  billProvider BillProvider? @relation(fields: [billProviderId], references: [id])
+  billService  BillService?  @relation(fields: [billServiceSlug], references: [slug])
+
+  @@index([paymentReference, paymentStatus])
+  @@index([transactionId])
+  @@index([type])
   @@map("Transactions")
+}
+
+model UserCommission {
+  userId                   Int
+  billServiceSlug          String
+  percentage               Float?
+  subAgentMdMeterCapAmount Int?
+  createdAt                DateTime    @default(now())
+  updatedAt                DateTime    @updatedAt
+  billService              BillService @relation(fields: [billServiceSlug], references: [slug])
+  user                     User        @relation(fields: [userId], references: [id])
+
+  @@id([userId, billServiceSlug])
+  @@map("UserCommissions")
+}
+
+model BillProvider {
+  id           Int                             @id @default(autoincrement())
+  name         String
+  slug         String                          @unique
+  isActive     Boolean?                        @default(true)
+  isDefault    Boolean?                        @default(false)
+  createdAt    DateTime                        @default(now())
+  updatedAt    DateTime                        @updatedAt
+  transactions Transaction[]
+  discos       BillProviderElectricDisco[]
+  airtimes     BillProviderDataBundleNetwork[]
+  dataBundles  BillProviderAirtimeNetwork[]
+  cableTVs     BillProviderCableTVNetwork[]
+  internets    BillProviderInternetNetwork[]
+
+  @@map("BillProviders")
+}
+
+enum BillType {
+  DATA
+  ELECTRICITY
+  AIRTIME
+  CABLE_TV
+  INTERNET
+}
+
+model BillService {
+  id                                 Int                             @id @default(autoincrement())
+  name                               String
+  slug                               String                          @unique
+  type                               BillType
+  abbrev                             String?
+  icon                               String
+  baseCommissionPercentage           Float?
+  agentDefaultCommissionPercent      Float?
+  agentDefaultCommissionPercentMd    Float?
+  agentDefaultCommissionPercentNonMd Float?
+  createdAt                          DateTime                        @default(now())
+  updatedAt                          DateTime                        @updatedAt
+  electricBillProviders              BillProviderElectricDisco[]
+  transactions                       Transaction[]
+  dataBundleProviders                BillProviderDataBundleNetwork[]
+  airtimeProviders                   BillProviderAirtimeNetwork[]
+  cableTVProviders                   BillProviderCableTVNetwork[]
+  internetProviders                  BillProviderInternetNetwork[]
+  commissions                        UserCommission[]
+
+  @@map("BillServices")
+}
+
+model BillProviderElectricDisco {
+  billProviderSlug  String
+  billServiceSlug   String
+  discoIdentifier   String?
+  prepaidMeterCode  String
+  postpaidMeterCode String
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+  billProvider      BillProvider @relation(fields: [billProviderSlug], references: [slug])
+  discoProvider     BillService  @relation(fields: [billServiceSlug], references: [slug])
+
+  @@id([billServiceSlug, billProviderSlug])
+  @@map("BillProviderElectricDiscos")
+}
+
+model BillProviderDataBundleNetwork {
+  billProviderSlug String
+  billServiceSlug  String
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+  billProvider     BillProvider @relation(fields: [billProviderSlug], references: [slug])
+  dataProvider     BillService  @relation(fields: [billServiceSlug], references: [slug])
+
+  @@id([billServiceSlug, billProviderSlug])
+  @@map("BillProviderDataBundleNetworks")
+}
+
+model BillProviderAirtimeNetwork {
+  billProviderSlug String
+  billServiceSlug  String
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+  billProvider     BillProvider @relation(fields: [billProviderSlug], references: [slug])
+  airtimeProvider  BillService  @relation(fields: [billServiceSlug], references: [slug])
+
+  @@id([billServiceSlug, billProviderSlug])
+  @@map("BillProviderAirtimeNetworks")
+}
+
+model BillProviderCableTVNetwork {
+  billProviderSlug String
+  billServiceSlug  String
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+  billProvider     BillProvider @relation(fields: [billProviderSlug], references: [slug])
+  cableTVProvider  BillService  @relation(fields: [billServiceSlug], references: [slug])
+
+  @@id([billServiceSlug, billProviderSlug])
+  @@map("BillProviderCableTVNetworks")
+}
+
+model BillProviderInternetNetwork {
+  billProviderSlug String
+  billServiceSlug  String
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+  billProvider     BillProvider @relation(fields: [billProviderSlug], references: [slug])
+  internetProvider BillService  @relation(fields: [billServiceSlug], references: [slug])
+
+  @@id([billServiceSlug, billProviderSlug])
+  @@map("BillProviderInternetNetworks")
+}
+
+model State {
+  id   Int                   @id @default(autoincrement())
+  name String
+  slug String                @unique
+  lga  LocalGovernmentArea[]
+  user User[]
+
+  @@map("States")
+}
+
+model LocalGovernmentArea {
+  id      Int    @id @default(autoincrement())
+  name    String
+  stateId Int
+  state   State  @relation(fields: [stateId], references: [id])
+  user    User[]
+
+  @@unique([name, stateId])
+  @@map("LocalGovernmentAreas")
+}
+
+model Bank {
+  id        Int      @id @default(autoincrement())
+  name      String
+  slug      String   @unique
+  code      String   @unique
+  longCode  String?
+  logo      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("Banks")
 }

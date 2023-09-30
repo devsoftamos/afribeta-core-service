@@ -1,4 +1,11 @@
 export const TOKEN_EXPIRATION = "365d";
-export const MAIL_SENDER_NAME = "Afri-B";
+export const MAIL_SENDER_NAME = "AfricaBeta";
 export const MAIL_SENDER_EMAIL = " gostack.africa@gmail.com";
-export const SMS_SENDER_ID = "N-Alert";
+export const DB_TRANSACTION_TIMEOUT = 10000;
+export const AFRIBETA_WALLET_NAME = "AfriB Wallet";
+export const COMPANY_NAME = "AfricaBeta";
+export const PAYOUT_PERCENT_CHARGE = 2.5;
+export const AGENT_MD_METER_COMMISSION_CAP_AMOUNT = 1000;
+export const AGENT_MD_METER_COMMISSION_PERCENT = 0.25;
+export const SUBAGENT_MD_METER_COMMISSION_PERCENT = 0.125;
+export const DEFAULT_CAPPING_MULTIPLIER = 1000;

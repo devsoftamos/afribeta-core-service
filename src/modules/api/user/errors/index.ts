@@ -12,6 +12,22 @@ export class IncorrectPasswordException extends HttpException {
     name = "IncorrectPasswordException";
 }
 
-export class IncorrectTransactionPinException extends HttpException {
-    name = "IncorrectTransactionPinException";
+export class TransactionPinException extends HttpException {
+    name = "TransactionPinException";
+}
+
+export class InvalidAgentCommissionAssignment extends HttpException {
+    name = "InvalidAgentCommissionAssignment";
+}
+
+export class AgentCreationException extends HttpException {
+    name = "AgentCreationException";
+}
+
+export class UserKycException extends HttpException {
+    name = "UserKycException";
+}
+
+export class InvalidUserException extends HttpException {
+    name = "InvalidUserException";
 }

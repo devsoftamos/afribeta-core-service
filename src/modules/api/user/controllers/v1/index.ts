@@ -1,5 +1,8 @@
 import { RequestWithUser } from "@/modules/api/auth";
 import { AuthGuard } from "@/modules/api/auth/guard";
+import { CreateAgentAbility, ViewAgentAbility } from "@/modules/core/ability";
+import { CheckAbilities } from "@/modules/core/ability/decorator";
+import { AbilitiesGuard } from "@/modules/core/ability/guards";
 import {
     Body,
     Controller,
@@ -8,15 +11,21 @@ import {
     HttpStatus,
     Patch,
     Post,
+    Query,
     Req,
     UseGuards,
     ValidationPipe,
 } from "@nestjs/common";
-import { User as UserEntity } from "@prisma/client";
-import { User } from "../../decorator";
+import { User as UserModel } from "@prisma/client";
+import { User } from "../../decorators";
 import {
+    CreateSubAgentDto,
+    CreateKycDto,
+    CreateTransactionPinDto,
+    ListMerchantAgentsDto,
+    UpdateProfileDto,
     UpdateProfilePasswordDto,
-    UpsertTransactionPinDto,
+    UpdateTransactionPinDto,
     VerifyTransactionPinDto,
 } from "../../dtos";
 import { UserService } from "../../services";
@@ -44,13 +53,13 @@ export class UserController {
             req.user
         );
     }
-    @Patch("profile/save-transaction-pin")
+    @Patch("profile/transaction-pin")
     async upsertTransactionPin(
-        @Body(ValidationPipe) upsertTransactionPinDto: UpsertTransactionPinDto,
-        @User() user: UserEntity
+        @Body(ValidationPipe) updateTransactionPinDto: UpdateTransactionPinDto,
+        @User() user: UserModel
     ) {
-        return await this.userService.upsertTransactionPin(
-            upsertTransactionPinDto,
+        return await this.userService.updateTransactionPin(
+            updateTransactionPinDto,
             user
         );
     }
@@ -59,11 +68,61 @@ export class UserController {
     @Post("profile/verify-transaction-pin")
     async verifyTransactionPin(
         @Body(ValidationPipe) verifyTransactionPinDto: VerifyTransactionPinDto,
-        @User() user: UserEntity
+        @User() user: UserModel
     ) {
         return await this.userService.verifyTransactionPin(
             verifyTransactionPinDto,
             user
         );
+    }
+
+    @Post("profile/transaction-pin")
+    async createTransactionPin(
+        @Body(ValidationPipe) createTransactionPinDto: CreateTransactionPinDto,
+        @User() user: UserModel
+    ) {
+        return await this.userService.createTransactionPin(
+            createTransactionPinDto,
+            user
+        );
+    }
+
+    @Patch("profile")
+    async updateProfile(
+        @Body(ValidationPipe) updateProfileDto: UpdateProfileDto,
+        @User() user: UserModel
+    ) {
+        return await this.userService.updateProfile(updateProfileDto, user);
+    }
+
+    @Post("agent")
+    @UseGuards(AbilitiesGuard)
+    @CheckAbilities(new CreateAgentAbility())
+    async createAgent(
+        @Body(ValidationPipe) createAgentDto: CreateSubAgentDto,
+        @User() user: UserModel
+    ) {
+        return await this.userService.createAgent(createAgentDto, user);
+    }
+
+    @Get("agent")
+    @UseGuards(AbilitiesGuard)
+    @CheckAbilities(new ViewAgentAbility())
+    async getMerchantAgents(
+        @Query(ValidationPipe) listMerchantAgentsDto: ListMerchantAgentsDto,
+        @User() user: UserModel
+    ) {
+        return await this.userService.getMerchantAgents(
+            listMerchantAgentsDto,
+            user
+        );
+    }
+
+    @Post("kyc")
+    async createKyc(
+        @Body(ValidationPipe) kycDto: CreateKycDto,
+        @User() user: UserModel
+    ) {
+        return await this.userService.createKyc(kycDto, user);
     }
 }
