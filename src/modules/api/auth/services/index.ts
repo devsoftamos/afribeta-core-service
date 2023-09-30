@@ -66,17 +66,16 @@ export class AuthService {
         return await bcrypt.compare(password, hash);
     }
 
-    async superAdminCheck(email: any) {
+    async validateAdminUser(email: string) {
         const admin = await this.prisma.user.findUnique({
             where: {
                 email: email,
             },
         });
 
-        if (
-            admin.userType !== UserType.SUPER_ADMIN &&
-            admin.userType !== UserType.ADMIN
-        ) {
+        const adminUserType = ["ADMIN", "SUPER_ADMIN"];
+
+        if (!admin || !adminUserType.includes(admin.userType)) {
             throw new UserNotFoundException(
                 "admin account does not exist",
                 HttpStatus.NOT_FOUND
@@ -359,7 +358,7 @@ export class AuthService {
     async adminSignIn(
         options: SignInDto
     ): Promise<ApiResponse<LoginResponseData>> {
-        await this.superAdminCheck(options.email);
+        await this.validateAdminUser(options.email);
 
         return await this.signIn(options);
     }
