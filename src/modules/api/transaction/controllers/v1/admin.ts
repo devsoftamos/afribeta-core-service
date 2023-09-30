@@ -1,5 +1,4 @@
 import { AuthGuard } from "@/modules/api/auth/guard";
-import { User } from "@/modules/api/user";
 import {
     Controller,
     Get,
