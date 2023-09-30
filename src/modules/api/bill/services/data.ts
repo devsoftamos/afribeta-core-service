@@ -365,7 +365,6 @@ export class DataBillService {
     ): Promise<CompleteDataPurchaseOutput> {
         switch (options.billProvider.slug) {
             case BillProviderSlug.IRECHARGE: {
-                //TODO: AUTOMATION UPGRADE, if iRecharge service fails, check for an active provider and switch automatically
                 const response = await this.iRechargeWorkflowService.vendData({
                     dataCode: options.transaction.serviceTransactionCode,
                     referenceId: options.transaction.billPaymentReference,
@@ -486,7 +485,6 @@ export class DataBillService {
         }
 
         if (!billProvider.isActive) {
-            //TODO: AUTOMATION UPGRADE, check for an active provider and switch automatically
             throw new DataPurchaseException(
                 "Bill Provider not active",
                 HttpStatus.BAD_REQUEST

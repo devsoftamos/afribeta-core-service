@@ -45,7 +45,7 @@ import { AbilityFactory } from "@/modules/core/ability/services";
 import { Action } from "@/modules/core/ability/interfaces";
 import { ForbiddenError, subject } from "@casl/ability";
 import { InsufficientPermissionException } from "@/modules/core/ability/errors";
-import { BillServiceSlug } from "../../bill";
+import { BillServiceSlug } from "@/modules/api/bill/interfaces";
 
 @Injectable()
 export class UserService {
@@ -389,6 +389,7 @@ export class UserService {
                     }
                 }
             });
+
         await this.emailService.send<AgentPostAccountCreateEmailParams>({
             provider: "sendinblue",
             subject: "Account Successfully Created",
@@ -437,7 +438,6 @@ export class UserService {
             }
 
             //NB: Only Ikeja Electric for capped amount for MD
-
             if (
                 billCommission.billServiceSlug == BillServiceSlug.IKEJA_ELECTRIC
             ) {

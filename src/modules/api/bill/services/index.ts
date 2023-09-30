@@ -276,21 +276,27 @@ export class BillService {
 
         switch (options.type) {
             case "capped-subagent-md-meter": {
-                const merchantCommission = parseFloat(
+                const defaultMerchantCommission = parseFloat(
                     (
                         (AGENT_MD_METER_COMMISSION_PERCENT / 100) *
                         options.amount
                     ).toFixed(2)
                 );
 
-                if (merchantCommission > AGENT_MD_METER_COMMISSION_CAP_AMOUNT) {
+                if (
+                    defaultMerchantCommission >
+                    AGENT_MD_METER_COMMISSION_CAP_AMOUNT
+                ) {
+                    const newMerchantCommissionAmount =
+                        AGENT_MD_METER_COMMISSION_CAP_AMOUNT -
+                        options.subAgentMdMeterCapAmount;
+
                     return {
-                        merchantAmount:
-                            AGENT_MD_METER_COMMISSION_CAP_AMOUNT -
-                            options.subAgentMdMeterCapAmount,
+                        merchantAmount: newMerchantCommissionAmount,
                         subAgentAmount: options.subAgentMdMeterCapAmount,
                     } as ComputeCommissionResult<T>;
                 }
+
                 const subAgentCommission = parseFloat(
                     (
                         (SUBAGENT_MD_METER_COMMISSION_PERCENT / 100) *
@@ -298,8 +304,12 @@ export class BillService {
                     ).toFixed(2)
                 );
 
+                const newMerchantCommission = parseFloat(
+                    (defaultMerchantCommission - subAgentCommission).toFixed(2)
+                );
+
                 return {
-                    merchantAmount: merchantCommission,
+                    merchantAmount: newMerchantCommission,
                     subAgentAmount: subAgentCommission,
                 } as ComputeCommissionResult<T>;
             }
@@ -429,7 +439,7 @@ export class BillService {
                     transaction.amount;
             }
 
-            //compute for agents with merchant
+            //compute for subagents with their merchant only
             if (user.creator) {
                 const [agentCommissionConfig, merchantCommissionConfig] =
                     await Promise.all([
@@ -667,7 +677,7 @@ export class BillService {
                     }
                 }
             } else {
-                //Merchant and upgradable-agent-merchant
+                //Compute for Merchant and upgradable-agents only
                 const commissionConfig =
                     await this.prisma.userCommission.findUnique({
                         where: {
