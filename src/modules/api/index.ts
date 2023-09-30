@@ -10,6 +10,7 @@ import { WalletModule } from "./wallet";
 import { WebExtension } from "./webExtension";
 import { BullModule } from "@nestjs/bull";
 import { redisUrl } from "@/config";
+import { CommissionModule } from "./commission";
 
 @Module({
     imports: [
@@ -25,6 +26,7 @@ import { redisUrl } from "@/config";
         BullModule.forRoot({
             url: redisUrl,
         }),
+        CommissionModule,
     ],
 })
 export class APIModule {}

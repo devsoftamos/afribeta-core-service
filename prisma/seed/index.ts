@@ -24,7 +24,10 @@ async function main() {
             create: provider,
         });
     }
+<<<<<<< HEAD
 
+=======
+>>>>>>> b0c7055b920d0a40d88806550e4be0e490c53009
     for (let billService of billServiceData) {
         await prisma.billService.upsert({
             where: { slug: billService.slug },
@@ -167,6 +170,7 @@ async function main() {
             create: bank,
         });
     }
+<<<<<<< HEAD
 
     //superAdmin
     await prisma.user.upsert({
@@ -174,6 +178,8 @@ async function main() {
         update: {},
         create: userAdmin
     })
+=======
+>>>>>>> b0c7055b920d0a40d88806550e4be0e490c53009
 }
 
 main()

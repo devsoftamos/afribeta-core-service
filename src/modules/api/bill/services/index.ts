@@ -1,5 +1,7 @@
 import { forwardRef, HttpStatus, Inject, Injectable } from "@nestjs/common";
 import {
+    BillType,
+    MeterAccountType,
     PaymentChannel,
     PaymentStatus,
     Prisma,
@@ -7,20 +9,29 @@ import {
     TransactionStatus,
     TransactionType,
     User,
-    UserType,
     WalletFundTransactionFlow,
 } from "@prisma/client";
 import {
     BillPaymentFailure,
     BillPurchaseFailure,
+    ComputeTypes,
+    ComputeCommissionOptions,
+    ComputeCommissionResult,
     ProcessBillPaymentOptions,
     WalletChargeHandler,
+    BillServiceSlug,
 } from "../interfaces";
 import logger from "moment-logger";
 import { PowerBillService } from "./power";
 import { DataBillService } from "./data";
 import { PrismaService } from "@/modules/core/prisma/services";
-import { DB_TRANSACTION_TIMEOUT } from "@/config";
+import {
+    AGENT_MD_METER_COMMISSION_CAP_AMOUNT,
+    DB_TRANSACTION_TIMEOUT,
+    AGENT_MD_METER_COMMISSION_PERCENT,
+    SUBAGENT_MD_METER_COMMISSION_PERCENT,
+    DEFAULT_CAPPING_MULTIPLIER,
+} from "@/config";
 import {
     ComputeBillCommissionException,
     PayBillCommissionException,
@@ -242,6 +253,114 @@ export class BillService {
         });
     }
 
+    computeCommission<T extends ComputeTypes>(
+        options: ComputeCommissionOptions<T>
+    ): ComputeCommissionResult<T> {
+        // return parseFloat((1000 * commissionPercent).toFixed(2));
+
+        const computeForMd = () => {
+            const commission = parseFloat(
+                (
+                    (AGENT_MD_METER_COMMISSION_PERCENT / 100) *
+                    options.amount
+                ).toFixed(2)
+            );
+            const commissionAmount =
+                commission > AGENT_MD_METER_COMMISSION_CAP_AMOUNT
+                    ? AGENT_MD_METER_COMMISSION_CAP_AMOUNT
+                    : commission;
+            return {
+                amount: commissionAmount,
+            };
+        };
+
+        switch (options.type) {
+            case "capped-subagent-md-meter": {
+                const defaultMerchantCommission = parseFloat(
+                    (
+                        (AGENT_MD_METER_COMMISSION_PERCENT / 100) *
+                        options.amount
+                    ).toFixed(2)
+                );
+
+                if (
+                    defaultMerchantCommission >
+                    AGENT_MD_METER_COMMISSION_CAP_AMOUNT
+                ) {
+                    const newMerchantCommissionAmount =
+                        AGENT_MD_METER_COMMISSION_CAP_AMOUNT -
+                        options.subAgentMdMeterCapAmount;
+
+                    return {
+                        merchantAmount: newMerchantCommissionAmount,
+                        subAgentAmount: options.subAgentMdMeterCapAmount,
+                    } as ComputeCommissionResult<T>;
+                }
+
+                const subAgentCommission = parseFloat(
+                    (
+                        (SUBAGENT_MD_METER_COMMISSION_PERCENT / 100) *
+                        options.amount
+                    ).toFixed(2)
+                );
+
+                const newMerchantCommission = parseFloat(
+                    (defaultMerchantCommission - subAgentCommission).toFixed(2)
+                );
+
+                return {
+                    merchantAmount: newMerchantCommission,
+                    subAgentAmount: subAgentCommission,
+                } as ComputeCommissionResult<T>;
+            }
+            case "default-cap": {
+                const defaultCappedAmount =
+                    DEFAULT_CAPPING_MULTIPLIER * options.percentCommission;
+
+                const commission = parseFloat(
+                    (
+                        (options.percentCommission / 100) *
+                        options.amount
+                    ).toFixed(2)
+                );
+                return {
+                    amount:
+                        commission > defaultCappedAmount
+                            ? defaultCappedAmount
+                            : commission,
+                } as ComputeCommissionResult<T>;
+            }
+
+            case "capped-agent-md-meter": {
+                return computeForMd() as ComputeCommissionResult<T>;
+            }
+            case "capped-merchant-md-meter": {
+                return computeForMd() as ComputeCommissionResult<T>;
+            }
+            case "non-capped": {
+                const commission = parseFloat(
+                    (
+                        (options.percentCommission / 100) *
+                        options.amount
+                    ).toFixed(2)
+                );
+                return {
+                    amount: commission,
+                } as ComputeCommissionResult<T>;
+            }
+
+            default:
+                break;
+        }
+    }
+
+    isCapped(billType: BillType) {
+        if (billType == BillType.ELECTRICITY) {
+            return true;
+        }
+        return false;
+    }
+
     async computeBillCommissionHandler(transactionId: number) {
         try {
             const transaction = await this.prisma.transaction.findUnique({
@@ -253,9 +372,11 @@ export class BillService {
                     userId: true,
                     type: true,
                     amount: true,
+                    meterAccountType: true,
                     billService: {
                         select: {
                             slug: true,
+                            type: true,
                             baseCommissionPercentage: true,
                         },
                     },
@@ -269,7 +390,7 @@ export class BillService {
                 );
             }
 
-            const vendorTypes = [UserType.MERCHANT, UserType.AGENT];
+            //const vendorTypes = [UserType.MERCHANT, UserType.AGENT];
             const user = await this.prisma.user.findUnique({
                 where: {
                     id: transaction.userId,
@@ -293,13 +414,6 @@ export class BillService {
                 );
             }
 
-            if (!vendorTypes.includes(user.userType as any)) {
-                throw new ComputeBillCommissionException(
-                    "Failed to assign bill payment commission. User must be merchant or agent",
-                    HttpStatus.NOT_IMPLEMENTED
-                );
-            }
-
             const billPurchaseTransactions = [
                 TransactionType.AIRTIME_PURCHASE,
                 TransactionType.AIRTIME_TO_CASH,
@@ -316,13 +430,16 @@ export class BillService {
                 );
             }
 
-            let agentCommission = 0;
-            let merchantCommission = 0;
-            const baseCommission =
-                (transaction.billService.baseCommissionPercentage / 100) *
-                transaction.amount;
+            let baseCommission = null;
+            if (
+                transaction.billService.slug != BillServiceSlug.IKEJA_ELECTRIC
+            ) {
+                baseCommission =
+                    (transaction.billService.baseCommissionPercentage / 100) *
+                    transaction.amount;
+            }
 
-            //compute for agents with merchant
+            //compute for subagents with their merchant only
             if (user.creator) {
                 const [agentCommissionConfig, merchantCommissionConfig] =
                     await Promise.all([
@@ -349,70 +466,218 @@ export class BillService {
                 //Merchant's agent with no commission assigned to
                 if (!merchantCommissionConfig) {
                     throw new ComputeBillCommissionException(
-                        `Bill service commission with slug ${transaction.billService.slug} not assigned to userType, ${user.userType} with user identifier, ${user.identifier}`,
+                        "Failed to compute commission. The bill service commission not assigned to the subagent's merchant",
                         HttpStatus.NOT_FOUND
                     );
                 }
                 //merchant commission compute
                 if (!agentCommissionConfig) {
-                    merchantCommission = parseFloat(
-                        (
-                            (merchantCommissionConfig.percentage / 100) *
-                            transaction.amount
-                        ).toFixed(2)
-                    );
-                    const companyCommission = parseFloat(
-                        (baseCommission - merchantCommission).toFixed(2)
-                    );
+                    //Ikeja :: only ikeja-electric has MD and Non MD Meter check
+                    if (
+                        transaction.billService.slug ==
+                        BillServiceSlug.IKEJA_ELECTRIC
+                    ) {
+                        let merchantCommission: number;
 
-                    await this.prisma.transaction.update({
-                        where: {
-                            id: transaction.id,
-                        },
-                        data: {
-                            merchantCommission: merchantCommission,
-                            companyCommission: companyCommission,
-                        },
-                    });
+                        if (
+                            transaction.meterAccountType == MeterAccountType.MD
+                        ) {
+                            //md meter
+                            merchantCommission = this.computeCommission({
+                                type: "capped-merchant-md-meter",
+                                amount: transaction.amount,
+                            }).amount;
+                        } else {
+                            //non-md meter
+                            merchantCommission = this.computeCommission({
+                                type: "default-cap",
+                                amount: transaction.amount,
+                                percentCommission:
+                                    merchantCommissionConfig.percentage,
+                            }).amount;
+                        }
+
+                        //no computed commission for company on ikeja electric
+                        await this.prisma.transaction.update({
+                            where: {
+                                id: transaction.id,
+                            },
+                            data: {
+                                merchantCommission: merchantCommission,
+                            },
+                        });
+                    } else {
+                        //non ikeja
+                        //Only electricity bills are capped
+                        let merchantCommission: number;
+                        if (this.isCapped(transaction.billService.type)) {
+                            merchantCommission = this.computeCommission({
+                                amount: transaction.amount,
+                                type: "default-cap",
+                                percentCommission:
+                                    merchantCommissionConfig.percentage,
+                            }).amount;
+                        } else {
+                            merchantCommission = this.computeCommission({
+                                amount: transaction.amount,
+                                type: "non-capped",
+                                percentCommission:
+                                    merchantCommissionConfig.percentage,
+                            }).amount;
+                        }
+
+                        const companyCommission = parseFloat(
+                            (baseCommission - merchantCommission).toFixed(2)
+                        );
+
+                        await this.prisma.transaction.update({
+                            where: {
+                                id: transaction.id,
+                            },
+                            data: {
+                                merchantCommission: merchantCommission,
+                                companyCommission: companyCommission,
+                            },
+                        });
+                    }
                 }
 
                 //Merchant's agent with commission assigned to
                 if (agentCommissionConfig) {
-                    merchantCommission = parseFloat(
-                        (
-                            (merchantCommissionConfig.percentage / 100) *
-                            transaction.amount
-                        ).toFixed(2)
-                    );
+                    //ikeja
+                    if (
+                        transaction.billService.slug ==
+                        BillServiceSlug.IKEJA_ELECTRIC
+                    ) {
+                        if (
+                            transaction.meterAccountType == MeterAccountType.MD
+                        ) {
+                            const commission = this.computeCommission({
+                                type: "capped-subagent-md-meter",
+                                amount: transaction.amount,
+                            });
+                            await this.prisma.transaction.update({
+                                where: {
+                                    id: transaction.id,
+                                },
+                                data: {
+                                    merchantCommission:
+                                        commission.merchantAmount,
+                                    commission: commission.subAgentAmount,
+                                },
+                            });
+                        } else {
+                            //non-md meter
+                            const agentCommission = this.computeCommission({
+                                type: "default-cap",
+                                amount: transaction.amount,
+                                percentCommission:
+                                    agentCommissionConfig.percentage,
+                            }).amount;
+                            const newMerchantCommissionPercent =
+                                merchantCommissionConfig.percentage -
+                                agentCommissionConfig.percentage;
 
-                    agentCommission = parseFloat(
-                        (
-                            (agentCommissionConfig.percentage / 100) *
-                            transaction.amount
-                        ).toFixed(2)
-                    );
+                            const merchantCommission = this.computeCommission({
+                                type: "default-cap",
+                                amount: transaction.amount,
+                                percentCommission: newMerchantCommissionPercent,
+                            }).amount;
+                            await this.prisma.transaction.update({
+                                where: {
+                                    id: transaction.id,
+                                },
+                                data: {
+                                    merchantCommission: merchantCommission,
+                                    commission: agentCommission,
+                                },
+                            });
+                        }
+                    } else {
+                        //non ikeja
+                        //capped
+                        if (this.isCapped(transaction.billService.type)) {
+                            //agent
+                            const agentCommission = this.computeCommission({
+                                type: "default-cap",
+                                amount: transaction.amount,
+                                percentCommission:
+                                    agentCommissionConfig.percentage,
+                            }).amount;
 
-                    const merchantFinalCommission = parseFloat(
-                        (merchantCommission - agentCommission).toFixed(2)
-                    );
+                            //merchant
+                            const newMerchantCommissionPercent =
+                                merchantCommissionConfig.percentage -
+                                agentCommissionConfig.percentage;
 
-                    const companyCommission = parseFloat(
-                        (baseCommission - merchantCommission).toFixed(2)
-                    );
+                            const merchantCommission = this.computeCommission({
+                                type: "default-cap",
+                                amount: transaction.amount,
+                                percentCommission: newMerchantCommissionPercent,
+                            }).amount;
 
-                    await this.prisma.transaction.update({
-                        where: {
-                            id: transaction.id,
-                        },
-                        data: {
-                            merchantCommission: merchantFinalCommission,
-                            companyCommission: companyCommission,
-                            commission: agentCommission,
-                        },
-                    });
+                            //company
+                            const companyCommission = parseFloat(
+                                (
+                                    baseCommission -
+                                    (merchantCommission + agentCommission)
+                                ).toFixed(2)
+                            );
+
+                            await this.prisma.transaction.update({
+                                where: {
+                                    id: transaction.id,
+                                },
+                                data: {
+                                    merchantCommission: merchantCommission,
+                                    commission: agentCommission,
+                                    companyCommission: companyCommission,
+                                },
+                            });
+                        } else {
+                            //non capped
+                            //agent
+                            const agentCommission = this.computeCommission({
+                                type: "non-capped",
+                                amount: transaction.amount,
+                                percentCommission:
+                                    agentCommissionConfig.percentage,
+                            }).amount;
+
+                            //merchant
+                            const newMerchantCommissionPercent =
+                                merchantCommissionConfig.percentage -
+                                agentCommissionConfig.percentage;
+
+                            const merchantCommission = this.computeCommission({
+                                type: "non-capped",
+                                amount: transaction.amount,
+                                percentCommission: newMerchantCommissionPercent,
+                            }).amount;
+
+                            //company
+                            const companyCommission = parseFloat(
+                                (
+                                    baseCommission -
+                                    (merchantCommission + agentCommission)
+                                ).toFixed(2)
+                            );
+
+                            await this.prisma.transaction.update({
+                                where: {
+                                    id: transaction.id,
+                                },
+                                data: {
+                                    merchantCommission: merchantCommission,
+                                    commission: agentCommission,
+                                    companyCommission: companyCommission,
+                                },
+                            });
+                        }
+                    }
                 }
             } else {
-                //Merchant and upgradable-agent-merchant
+                //Compute for Merchant and upgradable-agents only
                 const commissionConfig =
                     await this.prisma.userCommission.findUnique({
                         where: {
@@ -430,26 +695,66 @@ export class BillService {
                     );
                 }
 
-                const commission = parseFloat(
-                    (
-                        (commissionConfig.percentage / 100) *
-                        transaction.amount
-                    ).toFixed(2)
-                );
+                if (
+                    transaction.billService.slug ==
+                    BillServiceSlug.IKEJA_ELECTRIC
+                ) {
+                    let agentCommission: number;
 
-                const companyCommission = parseFloat(
-                    (baseCommission - commission).toFixed(2)
-                );
+                    if (transaction.meterAccountType == MeterAccountType.MD) {
+                        //md meter
+                        agentCommission = this.computeCommission({
+                            type: "capped-merchant-md-meter",
+                            amount: transaction.amount,
+                        }).amount;
+                    } else {
+                        //non-md meter
+                        agentCommission = this.computeCommission({
+                            type: "default-cap",
+                            amount: transaction.amount,
+                            percentCommission: commissionConfig.percentage,
+                        }).amount;
+                    }
 
-                await this.prisma.transaction.update({
-                    where: {
-                        id: transaction.id,
-                    },
-                    data: {
-                        commission: commission,
-                        companyCommission: companyCommission,
-                    },
-                });
+                    //no companyCommission for ikeja electric
+                    await this.prisma.transaction.update({
+                        where: {
+                            id: transaction.id,
+                        },
+                        data: {
+                            commission: agentCommission,
+                        },
+                    });
+                } else {
+                    let agentCommission: number;
+                    if (this.isCapped(transaction.billService.type)) {
+                        agentCommission = this.computeCommission({
+                            amount: transaction.amount,
+                            type: "default-cap",
+                            percentCommission: commissionConfig.percentage,
+                        }).amount;
+                    } else {
+                        agentCommission = this.computeCommission({
+                            amount: transaction.amount,
+                            type: "non-capped",
+                            percentCommission: commissionConfig.percentage,
+                        }).amount;
+                    }
+
+                    const companyCommission = parseFloat(
+                        (baseCommission - agentCommission).toFixed(2)
+                    );
+
+                    await this.prisma.transaction.update({
+                        where: {
+                            id: transaction.id,
+                        },
+                        data: {
+                            commission: agentCommission,
+                            companyCommission: companyCommission,
+                        },
+                    });
+                }
             }
         } catch (error) {
             logger.error(error);
@@ -496,7 +801,7 @@ export class BillService {
 
             if (!user) {
                 throw new PayBillCommissionException(
-                    "Failed to credit wallet for the bill commission. merchant/agent user not found",
+                    "Commission payment failed. User not found",
                     HttpStatus.NOT_FOUND
                 );
             }
