@@ -14,6 +14,7 @@ import { permissions } from "./permission";
 import { roles } from "./role";
 import { rolePermissions } from "./rolePermission";
 import { states } from "./state";
+import { userAdmin } from "./user";
 
 async function main() {
     for (let provider of billProviders) {
@@ -23,6 +24,7 @@ async function main() {
             create: provider,
         });
     }
+
     for (let billService of billServiceData) {
         await prisma.billService.upsert({
             where: { slug: billService.slug },
@@ -165,6 +167,13 @@ async function main() {
             create: bank,
         });
     }
+
+    //superAdmin
+    await prisma.user.upsert({
+        where: {email: userAdmin.email},
+        update: {},
+        create: userAdmin
+    })
 }
 
 main()
