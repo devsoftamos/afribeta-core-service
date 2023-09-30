@@ -47,8 +47,7 @@ export class AdminTransactionController {
 
     @Patch("payout/authorize")
     async updatePayoutStatus(
-        @Body(ValidationPipe) updatePayoutStatusDto: UpdatePayoutStatusDto,
-        @User() user: UserModel
+        @Body(ValidationPipe) updatePayoutStatusDto: UpdatePayoutStatusDto
     ) {
         return await this.transactionService.updatePayoutStatus(
             updatePayoutStatusDto
