@@ -314,8 +314,11 @@ export class BillService {
                 } as ComputeCommissionResult<T>;
             }
             case "default-cap": {
-                const defaultCappedAmount =
-                    DEFAULT_CAPPING_MULTIPLIER * options.percentCommission;
+                const defaultCappedAmount = parseFloat(
+                    (
+                        DEFAULT_CAPPING_MULTIPLIER * options.percentCommission
+                    ).toFixed(2)
+                );
 
                 const commission = parseFloat(
                     (
@@ -323,6 +326,7 @@ export class BillService {
                         options.amount
                     ).toFixed(2)
                 );
+
                 return {
                     amount:
                         commission > defaultCappedAmount
@@ -555,7 +559,10 @@ export class BillService {
                             const commission = this.computeCommission({
                                 type: "capped-subagent-md-meter",
                                 amount: transaction.amount,
+                                subAgentMdMeterCapAmount:
+                                    agentCommissionConfig.subAgentMdMeterCapAmount,
                             });
+
                             await this.prisma.transaction.update({
                                 where: {
                                     id: transaction.id,
@@ -583,6 +590,7 @@ export class BillService {
                                 amount: transaction.amount,
                                 percentCommission: newMerchantCommissionPercent,
                             }).amount;
+
                             await this.prisma.transaction.update({
                                 where: {
                                     id: transaction.id,
