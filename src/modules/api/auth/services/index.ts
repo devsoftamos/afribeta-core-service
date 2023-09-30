@@ -66,6 +66,26 @@ export class AuthService {
         return await bcrypt.compare(password, hash);
     }
 
+    async validateAdminUser(email: string) {
+        const admin = await this.prisma.user.findUnique({
+            where: {
+                email: email,
+            },
+        });
+
+        const adminUserType: UserType[] = [
+            UserType.ADMIN,
+            UserType.SUPER_ADMIN,
+        ];
+
+        if (!admin || !adminUserType.includes(admin.userType)) {
+            throw new UserNotFoundException(
+                "admin account does not exist",
+                HttpStatus.NOT_FOUND
+            );
+        }
+    }
+
     async sendAccountVerificationEmail(
         options: SendVerificationCodeDto
     ): Promise<ApiResponse> {
@@ -336,6 +356,14 @@ export class AuthService {
                 meta: encrypt(loginMeta),
             },
         });
+    }
+
+    async adminSignIn(
+        options: SignInDto
+    ): Promise<ApiResponse<LoginResponseData>> {
+        await this.validateAdminUser(options.email);
+
+        return await this.signIn(options);
     }
 
     async passwordResetRequest(options: PasswordResetRequestDto) {

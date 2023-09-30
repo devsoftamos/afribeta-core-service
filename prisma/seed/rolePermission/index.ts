@@ -52,4 +52,9 @@ export const rolePermissions = [
         roleId: 1, //agent
         permissionId: 8, ///bank_account.read
     },
+
+    {
+        roleId: 4, //superadmin
+        permissionId: 3
+    }
 ];
