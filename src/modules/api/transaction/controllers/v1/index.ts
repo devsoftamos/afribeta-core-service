@@ -62,7 +62,7 @@ export class TransactionController {
         );
     }
 
-    @Get("successful/count")
+    @Get("successful")
     async GetSuccessfulTransactions(
         @Query(ValidationPipe)
         successfulTransactionsDto: SuccessfulTransactionsDto,
