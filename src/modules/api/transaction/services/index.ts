@@ -1,11 +1,8 @@
-import { InsufficientPermissionException } from "@/modules/core/ability/errors";
-import { Action } from "@/modules/core/ability/interfaces";
 import { AbilityFactory } from "@/modules/core/ability/services";
 import { PrismaService } from "@/modules/core/prisma/services";
 import { PaystackService } from "@/modules/workflow/payment/providers/paystack/services";
 import { PaginationMeta } from "@/utils";
 import { ApiResponse, buildResponse } from "@/utils/api-response-util";
-import { ForbiddenError, subject } from "@casl/ability";
 import { forwardRef, HttpStatus, Inject, Injectable } from "@nestjs/common";
 import {
     Prisma,
@@ -31,8 +28,7 @@ export class TransactionService {
     constructor(
         private prisma: PrismaService,
         @Inject(forwardRef(() => PaystackService))
-        private paystackService: PaystackService,
-        private abilityFactory: AbilityFactory
+        private paystackService: PaystackService
     ) {}
 
     async getTransactionByPaymentReference(reference: string) {
@@ -135,11 +131,14 @@ export class TransactionService {
     async viewOwnAgentTransactionHistory(
         options: TransactionHistoryDto,
         user: User,
-        userId: number
+        subAgentId: number
     ) {
         const agent = await this.prisma.user.findUnique({
             where: {
-                id: userId,
+                id_createdById: {
+                    id: subAgentId,
+                    createdById: user.id,
+                },
             },
             select: {
                 createdById: true,
@@ -148,25 +147,12 @@ export class TransactionService {
 
         if (!agent) {
             throw new UserNotFoundException(
-                "Agent could not be found",
+                "Sub Agent could not be found",
                 HttpStatus.NOT_FOUND
             );
         }
 
-        try {
-            const ability = await this.abilityFactory.createForUser(user);
-            ForbiddenError.from(ability).throwUnlessCan(
-                Action.ViewAgent,
-                subject("User", { createdById: agent.createdById } as any)
-            );
-        } catch (error) {
-            throw new InsufficientPermissionException(
-                error.message,
-                HttpStatus.FORBIDDEN
-            );
-        }
-
-        return await this.transactionHistory(options, user, userId);
+        return await this.transactionHistory(options, user, subAgentId);
     }
 
     async merchantTransactionHistory(options: MerchantTransactionHistoryDto) {

@@ -1,6 +1,6 @@
 import { AuthGuard } from "@/modules/api/auth/guard";
 import { User } from "@/modules/api/user";
-import { ViewAgentAbility } from "@/modules/core/ability";
+import { ViewSubAgentAbility } from "@/modules/core/ability";
 import { CheckAbilities } from "@/modules/core/ability/decorator";
 import { AbilitiesGuard } from "@/modules/core/ability/guards";
 import {
@@ -45,7 +45,7 @@ export class TransactionController {
 
     @Get("agent/:id/history")
     @UseGuards(AbilitiesGuard)
-    @CheckAbilities(new ViewAgentAbility())
+    @CheckAbilities(new ViewSubAgentAbility())
     async MerchantAgentTransactionHistory(
         @Query(ValidationPipe) transactionHistoryDto: TransactionHistoryDto,
         @User() user: UserModel,

@@ -1,17 +1,17 @@
 import { Action, RequiredRule, Subjects } from "../interfaces";
 
-export class CreateAgentAbility implements RequiredRule {
-    action: Action = Action.CreateAgent;
+export class CreateSubAgentAbility implements RequiredRule {
+    action: Action = Action.CreateSubAgent;
     subject: Subjects = "User";
 }
 
-export class ViewAgentAbility implements RequiredRule {
-    action: Action = Action.ViewAgent;
+export class ViewSubAgentAbility implements RequiredRule {
+    action: Action = Action.ViewSubAgent;
     subject: Subjects = "User";
 }
 
-export class FundAgentAbility implements RequiredRule {
-    action: Action = Action.FundAgent;
+export class FundSubAgentAbility implements RequiredRule {
+    action: Action = Action.FundSubAgent;
     subject: Subjects = "User";
 }
 

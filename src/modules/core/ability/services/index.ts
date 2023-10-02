@@ -4,6 +4,7 @@ import { AbilityBuilder } from "@casl/ability";
 import { createPrismaAbility } from "@casl/prisma";
 import { Action, AppAbility } from "../interfaces";
 import { PrismaService } from "../../prisma/services";
+import { RoleSlug } from "@/modules/api/role/interfaces";
 
 @Injectable()
 export class AbilityFactory {
@@ -25,70 +26,77 @@ export class AbilityFactory {
         if (role.permissions.length) {
             permissions = role.permissions.map((p) => p.permission.name);
         }
+
+        const agencyRoleTypes = [
+            RoleSlug.MERCHANT,
+            RoleSlug.SUB_AGENT,
+            RoleSlug.AGENT,
+        ];
+
+        const mainAgencyTypes = [RoleSlug.MERCHANT, RoleSlug.AGENT];
+
         const { can, cannot, build } = new AbilityBuilder<AppAbility>(
             createPrismaAbility
         );
 
-        can(Action.CreateAgent, "User");
-        can(Action.ViewAgent, "User");
-        can(Action.FundAgent, "User");
-        can(Action.ViewAgent, "User", { createdById: user.id });
-        can(Action.FundAgent, "User", { createdById: user.id });
+        can(Action.CreateSubAgent, "User");
+        can(Action.ViewSubAgent, "User");
+        can(Action.FundSubAgent, "User");
+        can(Action.ViewSubAgent, "User");
+        can(Action.FundSubAgent, "User");
         can(Action.FundRequest, "User");
         can(Action.FundWalletFromCommission, "Wallet");
         can(Action.PayoutRequest, "User");
         can(Action.ReadBankAccount, "BankAccount");
         can(Action.CreateBankAccount, "BankAccount");
 
-        cannot(Action.ViewAgent, "User", {
-            createdById: { not: user.id },
-        }).because(
-            "Insufficient permission! You can only view resources of your agent"
-        );
-        cannot(Action.FundAgent, "User", {
-            createdById: { not: user.id },
-        }).because("Insufficient permission. You can only fund your agent");
+        if (role.slug !== RoleSlug.MERCHANT) {
+            cannot(Action.ViewSubAgent, "User").because(
+                "Your account type does not have sufficient permission to view sub agent resource"
+            );
+        }
 
-        //Agent Management
-        if (!permissions.includes(Action.CreateAgent)) {
-            cannot(Action.CreateAgent, "User").because(
+        if (role.slug !== RoleSlug.MERCHANT) {
+            cannot(Action.FundSubAgent, "User").because(
+                "Insufficient permission. Account type cannot fund a sub agent account"
+            );
+        }
+
+        if (role.slug !== RoleSlug.MERCHANT) {
+            cannot(Action.CreateSubAgent, "User").because(
                 "Your account type does not have sufficient permission to create agent"
             );
         }
 
-        if (!permissions.includes(Action.ViewAgent)) {
-            cannot(Action.ViewAgent, "User").because(
+        if (role.slug !== RoleSlug.MERCHANT) {
+            cannot(Action.ViewSubAgent, "User").because(
                 "Your account type does not have sufficient permission to view agent resource"
             );
         }
-        if (!permissions.includes(Action.FundAgent)) {
-            cannot(Action.FundAgent, "User").because(
-                "Your account type does not have sufficient permission to fund agent"
-            );
-        }
-        if (!permissions.includes(Action.FundRequest)) {
+
+        if (role.slug !== RoleSlug.SUB_AGENT) {
             cannot(Action.FundRequest, "User").because(
                 "Your account type does not have sufficient permission for fund request"
             );
         }
-        if (!permissions.includes(Action.FundWalletFromCommission)) {
+        if (!agencyRoleTypes.includes(role.slug as any)) {
             cannot(Action.FundWalletFromCommission, "Wallet").because(
                 "Your account type does not have sufficient permission to fund wallet from commission wallet"
             );
         }
 
-        if (!permissions.includes(Action.PayoutRequest)) {
+        if (!mainAgencyTypes.includes(role.slug as any)) {
             cannot(Action.PayoutRequest, "User").because(
                 "Your account type does not have sufficient permission for payout request"
             );
         }
-        if (!permissions.includes(Action.ReadBankAccount)) {
+        if (!mainAgencyTypes.includes(role.slug as any)) {
             cannot(Action.ReadBankAccount, "BankAccount").because(
                 "Your account type does not have sufficient permission to view bank account"
             );
         }
-        if (!permissions.includes(Action.CreateBankAccount)) {
-            cannot(Action.ReadBankAccount, "BankAccount").because(
+        if (!mainAgencyTypes.includes(role.slug as any)) {
+            cannot(Action.CreateBankAccount, "BankAccount").because(
                 "Your account type does not have sufficient permission to create bank account"
             );
         }

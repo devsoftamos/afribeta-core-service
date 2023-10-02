@@ -49,11 +49,8 @@ import {
 import logger from "moment-logger";
 import { SendinblueEmailException } from "@calculusky/transactional-email";
 import { S3Service } from "@/modules/core/upload/services/s3";
-import { AbilityFactory } from "@/modules/core/ability/services";
-import { Action } from "@/modules/core/ability/interfaces";
-import { ForbiddenError, subject } from "@casl/ability";
-import { InsufficientPermissionException } from "@/modules/core/ability/errors";
 import { BillServiceSlug } from "@/modules/api/bill/interfaces";
+import { RoleSlug } from "../../role/interfaces";
 
 @Injectable()
 export class UserService {
@@ -62,8 +59,7 @@ export class UserService {
         @Inject(forwardRef(() => AuthService))
         private authService: AuthService,
         private emailService: EmailService,
-        private s3Service: S3Service,
-        private abilityFactory: AbilityFactory
+        private s3Service: S3Service
     ) {}
 
     async createUser(options: Prisma.UserCreateInput) {
@@ -278,7 +274,6 @@ export class UserService {
     }
 
     async createAgent(options: CreateSubAgentDto, user: User) {
-        // console.log(user);
         //check for duplicate agent
         const email = options.email.trim();
         const userAgent = await this.prisma.user.findUnique({
@@ -289,7 +284,7 @@ export class UserService {
 
         if (userAgent) {
             throw new DuplicateUserException(
-                "An agent with the email already exists",
+                "An account with the email already exist",
                 HttpStatus.BAD_REQUEST
             );
         }
@@ -327,7 +322,7 @@ export class UserService {
         const hashedPassword = await this.authService.hashPassword(password);
         const role = await this.prisma.role.findUnique({
             where: {
-                slug: "sub-agent",
+                slug: RoleSlug.SUB_AGENT,
             },
         });
         const walletNumber = generateId({ type: "walletNumber" });
@@ -547,25 +542,21 @@ export class UserService {
     }
 
     async getSingleAgent(id: number, user: User) {
-        try {
-            const ability = await this.abilityFactory.createForUser(user);
-            ForbiddenError.from(ability).throwUnlessCan(
-                Action.ViewAgent,
-                subject("User", { createdById: id } as any)
-            );
-        } catch (error) {
-            throw new InsufficientPermissionException(
-                error.message,
-                HttpStatus.FORBIDDEN
-            );
-        }
-
-        return await this.prisma.user.findFirst({
+        const subAgent = await this.prisma.user.findFirst({
             where: {
                 id: id,
                 createdById: user.id,
             },
         });
+        if (!subAgent) {
+            throw new UserNotFoundException(
+                "Sub Agent account not found",
+                HttpStatus.NOT_FOUND
+            );
+        }
+
+        //TODO: complete
+        return subAgent;
     }
 
     private async uploadKycImage(file: string): Promise<string> {

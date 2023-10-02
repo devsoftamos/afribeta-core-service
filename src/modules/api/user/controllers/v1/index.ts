@@ -1,6 +1,9 @@
 import { RequestWithUser } from "@/modules/api/auth";
 import { AuthGuard } from "@/modules/api/auth/guard";
-import { CreateAgentAbility, ViewAgentAbility } from "@/modules/core/ability";
+import {
+    CreateSubAgentAbility,
+    ViewSubAgentAbility,
+} from "@/modules/core/ability";
 import { CheckAbilities } from "@/modules/core/ability/decorator";
 import { AbilitiesGuard } from "@/modules/core/ability/guards";
 import {
@@ -97,7 +100,7 @@ export class UserController {
 
     @Post("agent")
     @UseGuards(AbilitiesGuard)
-    @CheckAbilities(new CreateAgentAbility())
+    @CheckAbilities(new CreateSubAgentAbility())
     async createAgent(
         @Body(ValidationPipe) createAgentDto: CreateSubAgentDto,
         @User() user: UserModel
@@ -107,7 +110,7 @@ export class UserController {
 
     @Get("agent")
     @UseGuards(AbilitiesGuard)
-    @CheckAbilities(new ViewAgentAbility())
+    @CheckAbilities(new ViewSubAgentAbility())
     async getMerchantAgents(
         @Query(ValidationPipe) listMerchantAgentsDto: ListMerchantAgentsDto,
         @User() user: UserModel

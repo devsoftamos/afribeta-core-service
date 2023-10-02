@@ -1,5 +1,5 @@
 import { User } from "@/modules/api/user";
-import { CreateAgentAbility } from "@/modules/core/ability";
+import { CreateSubAgentAbility } from "@/modules/core/ability";
 import { CheckAbilities } from "@/modules/core/ability/decorator";
 import { AbilitiesGuard } from "@/modules/core/ability/guards";
 import { ApiResponse } from "@/utils/api-response-util";
@@ -76,7 +76,7 @@ export class AuthController {
     }
 
     @UseGuards(AuthGuard, AbilitiesGuard)
-    @CheckAbilities(new CreateAgentAbility())
+    @CheckAbilities(new CreateSubAgentAbility())
     @HttpCode(HttpStatus.OK)
     @Post("verify-agent-email")
     async sendAgentAccountVerificationEmail(

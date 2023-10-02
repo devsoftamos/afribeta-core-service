@@ -17,14 +17,14 @@ export enum Action {
     Read = "read",
     Update = "update",
     Delete = "delete",
-    CreateAgent = "agent.create",
-    ViewAgent = "agent.view",
-    FundAgent = "agent.fund",
-    FundRequest = "fund.request",
-    FundWalletFromCommission = "wallet.commission.fund.main",
-    PayoutRequest = "payout.request",
-    CreateBankAccount = "bank_account.create",
-    ReadBankAccount = "bank_account.read",
+    CreateSubAgent = "subagent.create", //Create Agent
+    ViewSubAgent = "subagent.view", //merchant view sub-agent
+    FundSubAgent = "subagent.fund", //merchant fund sub agent
+    FundRequest = "fund.request", //Sub agent request fund from merchant
+    FundWalletFromCommission = "wallet.fund.from.commission", //Fund main wallet from commission wallet
+    PayoutRequest = "payout.request", //Request for payout
+    CreateBankAccount = "bank_account.create", //Add bank account details
+    ReadBankAccount = "bank_account.read", //View own bank account details
 }
 
 export interface RequiredRule {

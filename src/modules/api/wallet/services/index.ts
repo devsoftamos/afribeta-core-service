@@ -84,9 +84,7 @@ import { FSDH360BankService } from "@/modules/workflow/payment/providers/fsdh360
 import { SquadGTBankService } from "@/modules/workflow/payment/providers/squadGTBank/services";
 import { CreateVirtualAccountResponse } from "@/modules/workflow/payment/interfaces";
 import { AbilityFactory } from "@/modules/core/ability/services";
-import { ForbiddenError, subject } from "@casl/ability";
-import { Action } from "@/modules/core/ability/interfaces";
-import { InsufficientPermissionException } from "@/modules/core/ability/errors";
+
 import {
     InvalidNotificationTypeException,
     NotificationNotFoundException,
@@ -103,7 +101,6 @@ export class WalletService {
         private providusService: ProvidusService,
         private fsdh360BankService: FSDH360BankService,
         private squadGTBankService: SquadGTBankService,
-        private abilityFactory: AbilityFactory
     ) {}
 
     async processWebhookWalletAndVirtualAccountCreation(
@@ -1140,27 +1137,17 @@ export class WalletService {
     ): Promise<FundSubAgentHandlerResponse> {
         const agent = await this.prisma.user.findUnique({
             where: {
-                id: options.agentId,
+                id_createdById: {
+                    id: options.agentId,
+                    createdById: user.id
+                },
             },
         });
 
         if (!agent) {
             throw new UserNotFoundException(
-                "Agent account not found",
+                "Sub Agent account not found",
                 HttpStatus.NOT_FOUND
-            );
-        }
-
-        try {
-            const ability = await this.abilityFactory.createForUser(user);
-            ForbiddenError.from(ability).throwUnlessCan(
-                Action.FundAgent,
-                subject("User", { createdById: agent.createdById } as any)
-            );
-        } catch (error) {
-            throw new InsufficientPermissionException(
-                error.message,
-                HttpStatus.FORBIDDEN
             );
         }
 
