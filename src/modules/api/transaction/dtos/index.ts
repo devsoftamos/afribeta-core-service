@@ -1,5 +1,6 @@
 import {
     IsBooleanString,
+    IsDateString,
     IsEnum,
     IsNumber,
     IsNumberString,
@@ -83,6 +84,6 @@ export class UpdatePayoutStatusDto {
 }
 
 export class SuccessfulTransactionsDto {
-    @IsString()
+    @IsDateString()
     date: string;
 }
