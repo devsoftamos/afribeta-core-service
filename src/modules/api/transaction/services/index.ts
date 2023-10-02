@@ -22,7 +22,7 @@ import {
     SuccessfulTransactionsDto,
 } from "../dtos";
 import { InvalidTransactionVerificationProvider } from "../errors";
-import { format } from "date-fns";
+import { endOfMonth, startOfMonth } from "date-fns";
 
 @Injectable()
 export class TransactionService {
@@ -386,14 +386,9 @@ export class TransactionService {
         options: SuccessfulTransactionsDto,
         user: User
     ) {
-        const startDate = new Date(
-            format(new Date(options.date), "yyyy-MM-dd")
-        );
-        const formatDate = options.date.split("-");
-        const month = +formatDate[1];
-        const endDate = new Date(
-            format(new Date(+formatDate[0], month, 1), "yyyy-MM-dd")
-        );
+        const startDate = startOfMonth(new Date(options.date));
+        const endDate = endOfMonth(new Date(options.date));
+
         const transaction = await this.prisma.transaction.count({
             where: {
                 userId: user.id,
@@ -412,14 +407,8 @@ export class TransactionService {
     }
 
     async fetchTotalCommission(options: SuccessfulTransactionsDto, user: User) {
-        const startDate = new Date(
-            format(new Date(options.date), "yyyy-MM-dd")
-        );
-        const formatDate = options.date.split("-");
-        const month = +formatDate[1];
-        const endDate = new Date(
-            format(new Date(+formatDate[0], month, 1), "yyyy-MM-dd")
-        );
+        const startDate = startOfMonth(new Date(options.date));
+        const endDate = endOfMonth(new Date(options.date));
 
         const agentCommission = await this.prisma.transaction.aggregate({
             _sum: {
