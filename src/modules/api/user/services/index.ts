@@ -32,6 +32,7 @@ import {
     UpdateProfilePasswordDto,
     UpdateTransactionPinDto,
     VerifyTransactionPinDto,
+    CountAgentsCreatedDto,
 } from "../dtos";
 import {
     AgentCreationException,

@@ -83,9 +83,6 @@ export class UpdatePayoutStatusDto {
 }
 
 export class SuccessfulTransactionsDto {
-    @IsNumberString()
-    year: number;
-
-    @IsNumberString()
-    month: number;
+    @IsString()
+    date: string;
 }

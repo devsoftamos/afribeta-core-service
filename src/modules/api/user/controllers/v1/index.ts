@@ -31,6 +31,7 @@ import {
     UpdateProfilePasswordDto,
     UpdateTransactionPinDto,
     VerifyTransactionPinDto,
+    CountAgentsCreatedDto,
 } from "../../dtos";
 import { UserService } from "../../services";
 
