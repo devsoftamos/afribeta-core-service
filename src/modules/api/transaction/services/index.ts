@@ -1,4 +1,3 @@
-import { AbilityFactory } from "@/modules/core/ability/services";
 import { PrismaService } from "@/modules/core/prisma/services";
 import { PaystackService } from "@/modules/workflow/payment/providers/paystack/services";
 import { PaginationMeta } from "@/utils";

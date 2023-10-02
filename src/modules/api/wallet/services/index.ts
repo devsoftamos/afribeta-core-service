@@ -83,7 +83,6 @@ import { ProvidusService } from "@/modules/workflow/payment/providers/providus/s
 import { FSDH360BankService } from "@/modules/workflow/payment/providers/fsdh360Bank/services";
 import { SquadGTBankService } from "@/modules/workflow/payment/providers/squadGTBank/services";
 import { CreateVirtualAccountResponse } from "@/modules/workflow/payment/interfaces";
-import { AbilityFactory } from "@/modules/core/ability/services";
 
 import {
     InvalidNotificationTypeException,
@@ -100,7 +99,7 @@ export class WalletService {
         private userService: UserService,
         private providusService: ProvidusService,
         private fsdh360BankService: FSDH360BankService,
-        private squadGTBankService: SquadGTBankService,
+        private squadGTBankService: SquadGTBankService
     ) {}
 
     async processWebhookWalletAndVirtualAccountCreation(
@@ -1139,7 +1138,7 @@ export class WalletService {
             where: {
                 id_createdById: {
                     id: options.agentId,
-                    createdById: user.id
+                    createdById: user.id,
                 },
             },
         });
