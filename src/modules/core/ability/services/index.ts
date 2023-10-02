@@ -22,10 +22,10 @@ export class AbilityFactory {
                 },
             },
         });
-        let permissions = [];
-        if (role.permissions.length) {
-            permissions = role.permissions.map((p) => p.permission.name);
-        }
+        // let permissions = [];
+        // if (role.permissions.length) {
+        //     permissions = role.permissions.map((p) => p.permission.name);
+        // }
 
         const agencyRoleTypes = [
             RoleSlug.MERCHANT,
