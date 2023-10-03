@@ -1,44 +1,49 @@
-export const permissions = [
-    {
-        name: "agent.create",
-        description: "Create Agent",
-        isCustomAssignable: false,
-    },
-    {
-        name: "agent.view",
-        description: "View Agent",
-        isCustomAssignable: false,
-    },
+import { Prisma } from "@prisma/client";
 
+export const permissions: Prisma.PermissionUncheckedCreateInput[] = [
     {
-        name: "agent.fund",
-        description: "Fund Agent Wallet",
-        isCustomAssignable: false,
-    },
-
-    {
-        name: "fund.request",
-        description: "Request fund from merchant",
-        isCustomAssignable: false,
+        name: "report.read",
+        description: "View Report",
     },
     {
-        name: "wallet.commission.fund.main",
-        description: "Fund main wallet from commission wallet",
-        isCustomAssignable: false,
+        name: "user_balance.read",
+        description: "View single user wallet balance",
     },
     {
-        name: "payout.request",
-        description: "Request payout",
-        isCustomAssignable: false,
+        name: "enquiry", //
+        description: "Enquiry",
     },
     {
-        name: "bank_account.create",
-        description: "Create bank account",
-        isCustomAssignable: false,
+        name: "account.manage",
+        description: "Activation and Deactivation of accounts",
     },
     {
-        name: "bank_account.read",
-        description: "View own bank account",
-        isCustomAssignable: false,
+        name: "kyc.authorize",
+        description: "Approve or Decline KYC",
+    },
+    {
+        name: "transaction.read",
+        description: "View Transaction History",
+    },
+    {
+        name: "",
+        description: "Fund withdrawal recommendations", //
+    },
+    //super admin
+    {
+        name: "payout.authorize",
+        description: "Approve/Decline Fund Withdrawal",
+    },
+    {
+        name: "payout.read",
+        description: "Payout/Fund Withdrawal Summary",
+    },
+    {
+        name: "third_party_wallet.read",
+        description: "Third Party Providers Wallet Balance Summary",
+    },
+    {
+        name: "wallet_summary.read",
+        description: "Users Wallet Balance Summary",
     },
 ];
