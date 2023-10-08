@@ -33,10 +33,7 @@ export class TransactionStatService {
         });
     }
 
-    async fetchTotalCommission(
-        options: SuccessfulTeransactionsDto,
-        user: User
-    ) {
+    async fetchTotalCommission(options: SuccessfulTransactionsDto, user: User) {
         const startDate = startOfMonth(new Date(options.date));
         const endDate = endOfMonth(new Date(options.date));
 
