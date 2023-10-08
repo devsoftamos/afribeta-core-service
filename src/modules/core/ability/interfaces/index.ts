@@ -37,6 +37,7 @@ export enum Action {
     ReadPayout = "payout.read",
     ReadThirdPartyWalletBalance = "third_party_wallet.read",
     ReadUsersWalletSummary = "wallet_summary.read",
+    FundWithdrawRecommend = "fund.withdraw.recommend",
 }
 
 export interface RequiredRule {

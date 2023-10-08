@@ -1,50 +1,50 @@
-import { Permission } from "@/modules/api/role/interfaces";
+import { Action } from "@/modules/core/ability/interfaces";
 import { Prisma } from "@prisma/client";
 
 export const permissions: Prisma.PermissionUncheckedCreateInput[] = [
     {
-        name: Permission.ReadReport,
+        name: Action.ReadReport,
         description: "View Report",
     },
     {
-        name: Permission.ReadUserBalance,
+        name: Action.ReadUserBalance,
         description: "View single user wallet balance",
     },
     {
-        name: "enquiry", //
+        name: "enquiry",
         description: "Enquiry",
     },
     {
-        name: Permission.ManageAccount,
+        name: Action.ManageAccount,
         description: "Activation and Deactivation of accounts",
     },
     {
-        name: Permission.AuthorizeKYC,
+        name: Action.AuthorizeKYC,
         description: "Approve or Decline KYC",
     },
     {
-        name: Permission.ReadTransaction,
+        name: Action.ReadTransaction,
         description: "View Transaction History",
     },
     {
-        name: "",
-        description: "Fund withdrawal recommendations", //
+        name: Action.FundWithdrawRecommend,
+        description: "Fund withdrawal recommendations",
     },
-    //super admin
+    //super admin (ceo/chairman)
     {
-        name: Permission.AuthorizePayout,
+        name: Action.AuthorizePayout,
         description: "Approve/Decline Fund Withdrawal",
     },
     {
-        name: Permission.ReadPayout,
+        name: Action.ReadPayout,
         description: "Payout/Fund Withdrawal Summary",
     },
     {
-        name: Permission.ReadThirdPartyWalletBalance,
+        name: Action.ReadThirdPartyWalletBalance,
         description: "Third Party Providers Wallet Balance Summary",
     },
     {
-        name: Permission.ReadUsersWalletSummary,
+        name: Action.ReadUsersWalletSummary,
         description: "Users Wallet Balance Summary",
     },
 ];
