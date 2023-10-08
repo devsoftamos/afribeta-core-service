@@ -13,11 +13,7 @@ import {
     ValidationPipe,
 } from "@nestjs/common";
 import { User as UserModel } from "@prisma/client";
-import {
-    TransactionHistoryDto,
-    VerifyTransactionDto,
-    SuccessfulTransactionsDto,
-} from "../../dtos";
+import { TransactionHistoryDto, VerifyTransactionDto } from "../../dtos";
 import { TransactionService } from "../../services";
 
 @UseGuards(AuthGuard)
@@ -59,30 +55,6 @@ export class TransactionController {
             transactionHistoryDto,
             user,
             id
-        );
-    }
-
-    @Get("successful")
-    async GetSuccessfulTransactions(
-        @Query(ValidationPipe)
-        successfulTransactionsDto: SuccessfulTransactionsDto,
-        @User() user: UserModel
-    ) {
-        return await this.transactionService.successfulTransactions(
-            successfulTransactionsDto,
-            user
-        );
-    }
-
-    @Get("commission")
-    async GetTotalCommission(
-        @Query(ValidationPipe)
-        successfulTransactionsDto: SuccessfulTransactionsDto,
-        @User() user: UserModel
-    ) {
-        return await this.transactionService.fetchTotalCommission(
-            successfulTransactionsDto,
-            user
         );
     }
 }
