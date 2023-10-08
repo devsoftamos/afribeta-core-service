@@ -8,7 +8,6 @@ import {
     PaymentChannel,
     PaymentStatus,
     Prisma,
-    Transaction,
     TransactionFlow,
     TransactionStatus,
     TransactionType,
@@ -421,8 +420,8 @@ export class WalletService {
                 status: true,
                 amount: true,
                 serviceCharge: true,
-                transactionId: true
-            }
+                transactionId: true,
+            },
         });
         if (!transaction) {
             throw new TransactionNotFoundException(
