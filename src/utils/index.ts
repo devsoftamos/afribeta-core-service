@@ -1,7 +1,7 @@
 import { customAlphabet, urlAlphabet } from "nanoid";
 import { TransactionIdOption } from "./interfaces";
 import { AES } from "crypto-js";
-import { encryptSecret } from "@/config";
+import { DEFAULT_CAPPING_MULTIPLIER, encryptSecret } from "@/config";
 
 export * from "./api-response-util";
 export * from "./interfaces";
@@ -50,4 +50,8 @@ export const formatName = (name: string) => {
 
 export const encrypt = (data: any) => {
     return AES.encrypt(JSON.stringify(data), encryptSecret).toString();
+};
+
+export const computeCap = (commission: number) => {
+    return commission * DEFAULT_CAPPING_MULTIPLIER;
 };

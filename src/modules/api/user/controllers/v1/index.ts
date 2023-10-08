@@ -1,6 +1,7 @@
 import { RequestWithUser } from "@/modules/api/auth";
 import { AuthGuard } from "@/modules/api/auth/guard";
 import {
+    CreateKYCAbility,
     CreateSubAgentAbility,
     ViewSubAgentAbility,
 } from "@/modules/core/ability";
@@ -122,6 +123,8 @@ export class UserController {
     }
 
     @Post("kyc")
+    @UseGuards(AbilitiesGuard)
+    @CheckAbilities(new CreateKYCAbility())
     async createKyc(
         @Body(ValidationPipe) kycDto: CreateKycDto,
         @User() user: UserModel

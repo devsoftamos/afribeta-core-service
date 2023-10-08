@@ -39,3 +39,8 @@ export class ReadBankAccountAbility implements RequiredRule {
     action: Action = Action.ReadBankAccount;
     subject: Subjects = "BankAccount";
 }
+
+export class CreateKYCAbility implements RequiredRule {
+    action: Action = Action.CreateKYC;
+    subject: Subjects = "User";
+}

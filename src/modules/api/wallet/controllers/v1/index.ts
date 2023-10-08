@@ -183,6 +183,8 @@ export class WalletController {
     }
 
     @Get("merchant/agent/fund/verify/:reference")
+    @UseGuards(AbilitiesGuard)
+    @CheckAbilities(new FundSubAgentAbility())
     async verifySubAgentFunding(
         @Param(ValidationPipe)
         paymentReferenceDto: PaymentReferenceDto,
@@ -249,6 +251,8 @@ export class WalletController {
     }
 
     @Get("payout/verify/:reference")
+    @UseGuards(AbilitiesGuard)
+    @CheckAbilities(new PayoutRequestAbility())
     async verifyPayoutRequest(
         @Param(ValidationPipe)
         paymentReferenceDto: PaymentReferenceDto,

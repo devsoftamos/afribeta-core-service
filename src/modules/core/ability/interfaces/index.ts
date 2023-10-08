@@ -25,6 +25,18 @@ export enum Action {
     PayoutRequest = "payout.request", //Request for payout
     CreateBankAccount = "bank_account.create", //Add bank account details
     ReadBankAccount = "bank_account.read", //View own bank account details
+    CreateKYC = "kyc.create",
+
+    //admin
+    ReadReport = "report.read",
+    ReadUserBalance = "user_balance.read",
+    ManageAccount = "account.manage",
+    AuthorizeKYC = "kyc.authorize",
+    ReadTransaction = "transaction.read",
+    AuthorizePayout = "payout.authorize",
+    ReadPayout = "payout.read",
+    ReadThirdPartyWalletBalance = "third_party_wallet.read",
+    ReadUsersWalletSummary = "wallet_summary.read",
 }
 
 export interface RequiredRule {

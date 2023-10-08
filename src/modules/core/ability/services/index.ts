@@ -49,6 +49,7 @@ export class AbilityFactory {
         can(Action.PayoutRequest, "User");
         can(Action.ReadBankAccount, "BankAccount");
         can(Action.CreateBankAccount, "BankAccount");
+        can(Action.CreateKYC, "User");
 
         if (role.slug !== RoleSlug.MERCHANT) {
             cannot(Action.ViewSubAgent, "User").because(
@@ -56,21 +57,16 @@ export class AbilityFactory {
             );
         }
 
+        //merchant only
         if (role.slug !== RoleSlug.MERCHANT) {
             cannot(Action.FundSubAgent, "User").because(
                 "Insufficient permission. Account type cannot fund a sub agent account"
             );
-        }
-
-        if (role.slug !== RoleSlug.MERCHANT) {
-            cannot(Action.CreateSubAgent, "User").because(
-                "Your account type does not have sufficient permission to create agent"
-            );
-        }
-
-        if (role.slug !== RoleSlug.MERCHANT) {
             cannot(Action.ViewSubAgent, "User").because(
                 "Your account type does not have sufficient permission to view agent resource"
+            );
+            cannot(Action.CreateSubAgent, "User").because(
+                "Your account type does not have sufficient permission to create agent"
             );
         }
 
@@ -89,15 +85,17 @@ export class AbilityFactory {
             cannot(Action.PayoutRequest, "User").because(
                 "Your account type does not have sufficient permission for payout request"
             );
-        }
-        if (!mainAgencyTypes.includes(role.slug as any)) {
             cannot(Action.ReadBankAccount, "BankAccount").because(
                 "Your account type does not have sufficient permission to view bank account"
             );
-        }
-        if (!mainAgencyTypes.includes(role.slug as any)) {
             cannot(Action.CreateBankAccount, "BankAccount").because(
                 "Your account type does not have sufficient permission to create bank account"
+            );
+        }
+
+        if (role.slug !== RoleSlug.AGENT) {
+            cannot(Action.CreateKYC, "User").because(
+                "Your account type does not have sufficient permission to add KYC"
             );
         }
         return build();

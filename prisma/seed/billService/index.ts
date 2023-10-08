@@ -104,8 +104,7 @@ const electricity: Prisma.BillServiceUncheckedCreateInput[] = [
         abbrev: "IKEDC",
         type: "ELECTRICITY",
         icon: "https://afribeta.s3.amazonaws.com/ikedc.png",
-        agentDefaultCommissionPercentMd: 1.2,
-        agentDefaultCommissionPercentNonMd: 1.5,
+        agentDefaultCommissionPercent: 1.6,
     },
     {
         name: "Eko Electricity",

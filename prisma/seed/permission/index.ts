@@ -1,12 +1,13 @@
+import { Permission } from "@/modules/api/role/interfaces";
 import { Prisma } from "@prisma/client";
 
 export const permissions: Prisma.PermissionUncheckedCreateInput[] = [
     {
-        name: "report.read",
+        name: Permission.ReadReport,
         description: "View Report",
     },
     {
-        name: "user_balance.read",
+        name: Permission.ReadUserBalance,
         description: "View single user wallet balance",
     },
     {
@@ -14,15 +15,15 @@ export const permissions: Prisma.PermissionUncheckedCreateInput[] = [
         description: "Enquiry",
     },
     {
-        name: "account.manage",
+        name: Permission.ManageAccount,
         description: "Activation and Deactivation of accounts",
     },
     {
-        name: "kyc.authorize",
+        name: Permission.AuthorizeKYC,
         description: "Approve or Decline KYC",
     },
     {
-        name: "transaction.read",
+        name: Permission.ReadTransaction,
         description: "View Transaction History",
     },
     {
@@ -31,19 +32,19 @@ export const permissions: Prisma.PermissionUncheckedCreateInput[] = [
     },
     //super admin
     {
-        name: "payout.authorize",
+        name: Permission.AuthorizePayout,
         description: "Approve/Decline Fund Withdrawal",
     },
     {
-        name: "payout.read",
+        name: Permission.ReadPayout,
         description: "Payout/Fund Withdrawal Summary",
     },
     {
-        name: "third_party_wallet.read",
+        name: Permission.ReadThirdPartyWalletBalance,
         description: "Third Party Providers Wallet Balance Summary",
     },
     {
-        name: "wallet_summary.read",
+        name: Permission.ReadUsersWalletSummary,
         description: "Users Wallet Balance Summary",
     },
 ];
