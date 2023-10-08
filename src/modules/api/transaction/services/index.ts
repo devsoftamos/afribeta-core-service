@@ -19,10 +19,8 @@ import {
     VerifyTransactionDto,
     VerifyTransactionProvider,
     ViewPayoutStatusDto,
-    SuccessfulTransactionsDto,
 } from "../dtos";
 import { InvalidTransactionVerificationProvider } from "../errors";
-import { endOfMonth, startOfMonth } from "date-fns";
 
 @Injectable()
 export class TransactionService {
@@ -379,71 +377,6 @@ export class TransactionService {
         return buildResponse({
             message: "Payout request details retrieved successfully",
             data: transaction,
-        });
-    }
-
-    async successfulTransactions(
-        options: SuccessfulTransactionsDto,
-        user: User
-    ) {
-        const startDate = startOfMonth(new Date(options.date));
-        const endDate = endOfMonth(new Date(options.date));
-
-        const transaction = await this.prisma.transaction.count({
-            where: {
-                userId: user.id,
-                status: TransactionStatus.SUCCESS,
-                createdAt: {
-                    gte: startDate,
-                    lt: endDate,
-                },
-            },
-        });
-
-        return buildResponse({
-            message: "Transaction fetched successfully",
-            data: transaction,
-        });
-    }
-
-    async fetchTotalCommission(options: SuccessfulTransactionsDto, user: User) {
-        const startDate = startOfMonth(new Date(options.date));
-        const endDate = endOfMonth(new Date(options.date));
-
-        const agentCommission = await this.prisma.transaction.aggregate({
-            _sum: {
-                merchantCommission: true,
-            },
-            where: {
-                user: {
-                    createdById: user.id,
-                },
-                createdAt: {
-                    gte: startDate,
-                    lt: endDate,
-                },
-            },
-        });
-        const merchantCommission = await this.prisma.transaction.aggregate({
-            _sum: {
-                commission: true,
-            },
-            where: {
-                userId: user.id,
-                createdAt: {
-                    gte: startDate,
-                    lt: endDate,
-                },
-            },
-        });
-
-        const totalCommission =
-            merchantCommission._sum.commission +
-            agentCommission._sum.merchantCommission;
-
-        return buildResponse({
-            message: "Total commission fetched successfully",
-            data: totalCommission,
         });
     }
 }
