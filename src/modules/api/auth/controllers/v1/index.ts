@@ -45,7 +45,7 @@ export class AuthController {
     async signIn(
         @Body(ValidationPipe) signInDto: SignInDto
     ): Promise<ApiResponse> {
-        return await this.authService.signIn(signInDto);
+        return await this.authService.userSignIn(signInDto);
     }
 
     @HttpCode(HttpStatus.OK)
