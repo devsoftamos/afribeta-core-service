@@ -86,6 +86,27 @@ export class AuthService {
         }
     }
 
+    async validateUser(email: string) {
+        const user = await this.prisma.user.findUnique({
+            where: {
+                email: email,
+            },
+        });
+
+        const userType: UserType[] = [
+            UserType.CUSTOMER,
+            UserType.AGENT,
+            UserType.MERCHANT,
+        ];
+
+        if (!user || !userType.includes(user.userType)) {
+            throw new UserNotFoundException(
+                "user account does not exist",
+                HttpStatus.NOT_FOUND
+            );
+        }
+    }
+
     async sendAccountVerificationEmail(
         options: SendVerificationCodeDto
     ): Promise<ApiResponse> {
@@ -356,6 +377,14 @@ export class AuthService {
                 meta: encrypt(loginMeta),
             },
         });
+    }
+
+    async userSignIn(
+        options: SignInDto
+    ): Promise<ApiResponse<LoginResponseData>> {
+        await this.validateUser(options.email);
+
+        return await this.signIn(options);
     }
 
     async adminSignIn(
