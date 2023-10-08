@@ -363,6 +363,7 @@ export class InternetBillService {
                 senderIdentifier: purchaseOptions.vtuNumber,
                 billServiceSlug: purchaseOptions.billService,
                 provider: purchaseOptions.billProvider,
+                merchantId: user.createdById,
             };
 
         const transaction = await this.prisma.transaction.create({
@@ -408,7 +409,7 @@ export class InternetBillService {
                 );
             }
 
-            if (transaction.paymentStatus == PaymentStatus.SUCCESS) {
+            if (transaction.paymentStatus !== PaymentStatus.PENDING) {
                 throw new DuplicateInternetPurchaseException(
                     "Duplicate webhook internet purchase payment event",
                     HttpStatus.BAD_REQUEST
@@ -442,6 +443,9 @@ export class InternetBillService {
             });
 
             if (!billProvider) {
+                this.billEvent.emit("bill-purchase-failure", {
+                    transactionId: transaction.id,
+                });
                 throw new BillProviderNotFoundException(
                     "Failed to complete internet purchase. Bill provider not found",
                     HttpStatus.NOT_FOUND

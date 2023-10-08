@@ -47,7 +47,10 @@ import {
     generateId,
     PaginationMeta,
 } from "@/utils";
-import { TransactionShortDescription } from "../../transaction";
+import {
+    TransactionNotFoundException,
+    TransactionShortDescription,
+} from "../../transaction";
 
 @Injectable()
 export class BillService {
@@ -173,15 +176,80 @@ export class BillService {
         }
     }
 
+    //update transaction status and refund to user wallet
     async billPurchaseFailureHandler(options: BillPurchaseFailure) {
         try {
-            await this.prisma.transaction.update({
-                where: {
-                    id: options.transactionId,
+            const transaction = await this.prisma.transaction.findUnique({
+                where: { id: options.transactionId },
+                select: {
+                    id: true,
+                    userId: true,
+                    totalAmount: true,
+                    transactionId: true,
                 },
-                data: {
-                    status: TransactionStatus.FAILED,
-                },
+            });
+            if (!transaction) {
+                throw new TransactionNotFoundException(
+                    "Failed to process bill purchase failed event. Transaction ID not found",
+                    HttpStatus.NOT_FOUND
+                );
+            }
+
+            const userWallet = await this.prisma.wallet.findUnique({
+                where: { userId: transaction.userId },
+            });
+
+            if (!userWallet) {
+                return await this.prisma.transaction.update({
+                    where: {
+                        id: options.transactionId,
+                    },
+                    data: {
+                        status: TransactionStatus.FAILED,
+                    },
+                });
+            }
+
+            //refund
+            await this.prisma.$transaction(async (tx) => {
+                await tx.wallet.update({
+                    where: {
+                        userId: transaction.userId,
+                    },
+                    data: {
+                        mainBalance: {
+                            increment: transaction.totalAmount,
+                        },
+                    },
+                });
+                await tx.transaction.update({
+                    where: {
+                        id: transaction.id,
+                    },
+                    data: {
+                        status: TransactionStatus.FAILED,
+                        paymentStatus: PaymentStatus.REFUNDED,
+                    },
+                });
+
+                await tx.transaction.create({
+                    data: {
+                        amount: transaction.totalAmount,
+                        totalAmount: transaction.totalAmount,
+                        flow: TransactionFlow.IN,
+                        status: TransactionStatus.SUCCESS,
+                        paymentStatus: PaymentStatus.SUCCESS,
+                        transactionId: transaction.transactionId,
+                        paymentChannel: PaymentChannel.SYSTEM,
+                        type: TransactionType.WALLET_FUND,
+                        walletFundTransactionFlow:
+                            WalletFundTransactionFlow.FROM_FAILED_TRANSACTION,
+                        userId: transaction.userId,
+                        paymentReference: generateId({ type: "reference" }),
+                        shortDescription:
+                            TransactionShortDescription.BILL_PAYMENT_REFUND,
+                    },
+                });
             });
         } catch (error) {
             logger.error(error);

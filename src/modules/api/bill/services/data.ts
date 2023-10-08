@@ -278,6 +278,7 @@ export class DataBillService {
                 senderIdentifier: purchaseOptions.vtuNumber,
                 billServiceSlug: purchaseOptions.billService,
                 provider: purchaseOptions.billProvider,
+                merchantId: user.createdById,
             };
 
         const transaction = await this.prisma.transaction.create({
@@ -323,7 +324,7 @@ export class DataBillService {
                 );
             }
 
-            if (transaction.paymentStatus == PaymentStatus.SUCCESS) {
+            if (transaction.paymentStatus !== PaymentStatus.PENDING) {
                 throw new DuplicateDataPurchaseException(
                     "Duplicate webhook data purchase payment event",
                     HttpStatus.BAD_REQUEST
@@ -357,6 +358,9 @@ export class DataBillService {
             });
 
             if (!billProvider) {
+                this.billEvent.emit("bill-purchase-failure", {
+                    transactionId: transaction.id,
+                });
                 throw new BillProviderNotFoundException(
                     "Failed to complete data purchase. Bill provider not found",
                     HttpStatus.NOT_FOUND

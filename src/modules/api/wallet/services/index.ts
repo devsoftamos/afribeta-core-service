@@ -59,6 +59,7 @@ import {
     VerifyWalletToWalletTransferTransaction,
     VerifyWalletTransaction,
     WalletFundProvider,
+    WalletToBankTransferStatus,
 } from "../interfaces";
 import logger from "moment-logger";
 import {
@@ -414,6 +415,14 @@ export class WalletService {
     async processWalletWithdrawal(options: ProcessWalletWithdrawalOptions) {
         const transaction = await this.prisma.transaction.findUnique({
             where: { paymentReference: options.paymentReference },
+            select: {
+                id: true,
+                userId: true,
+                status: true,
+                amount: true,
+                serviceCharge: true,
+                transactionId: true
+            }
         });
         if (!transaction) {
             throw new TransactionNotFoundException(
@@ -422,10 +431,7 @@ export class WalletService {
             );
         }
 
-        if (
-            transaction.status == TransactionStatus.SUCCESS ||
-            transaction.status == TransactionStatus.FAILED
-        ) {
+        if (transaction.status !== TransactionStatus.PENDING) {
             throw new DuplicateWalletWithdrawalTransaction(
                 "Wallet withdrawal transaction already completed",
                 HttpStatus.BAD_REQUEST
@@ -443,26 +449,45 @@ export class WalletService {
             );
         }
 
-        switch (options.paymentStatus) {
-            case PaymentStatus.SUCCESS: {
+        switch (options.transferToBankStatus) {
+            case WalletToBankTransferStatus.SUCCESS: {
                 await this.updateWalletWithdrawalSuccessRecords(
-                    transaction,
+                    transaction.id,
                     options.transferCode
                 );
                 break;
             }
-            case PaymentStatus.FAILED: {
+            case WalletToBankTransferStatus.FAILED: {
                 const totalAmount =
                     transaction.amount + transaction.serviceCharge;
                 await this.prisma.$transaction(async (tx) => {
                     await tx.transaction.update({
                         where: { id: transaction.id },
                         data: {
-                            paymentStatus: PaymentStatus.FAILED,
+                            paymentStatus: PaymentStatus.REFUNDED,
                             status: TransactionStatus.FAILED,
                             serviceTransactionCode: options.transferCode,
                         },
                     });
+                    await tx.transaction.create({
+                        data: {
+                            userId: transaction.userId,
+                            amount: totalAmount,
+                            totalAmount: totalAmount,
+                            flow: TransactionFlow.IN,
+                            status: TransactionStatus.SUCCESS,
+                            transactionId: transaction.transactionId,
+                            type: TransactionType.WALLET_FUND,
+                            walletFundTransactionFlow:
+                                WalletFundTransactionFlow.FROM_FAILED_TRANSACTION,
+                            paymentStatus: PaymentStatus.SUCCESS,
+                            paymentChannel: PaymentChannel.SYSTEM,
+                            paymentReference: generateId({ type: "reference" }),
+                            shortDescription:
+                                TransactionShortDescription.BANK_TRANSFER_REFUND,
+                        },
+                    });
+
                     if (user.userType == UserType.CUSTOMER) {
                         await tx.wallet.update({
                             where: { userId: transaction.userId },
@@ -491,12 +516,12 @@ export class WalletService {
     }
 
     async updateWalletWithdrawalSuccessRecords(
-        transaction: Transaction,
+        transactionId: number,
         transferCode?: string
     ) {
         await this.prisma.$transaction(async (tx) => {
             await tx.transaction.update({
-                where: { id: transaction.id },
+                where: { id: transactionId },
                 data: {
                     status: TransactionStatus.SUCCESS,
                     serviceTransactionCode: transferCode,

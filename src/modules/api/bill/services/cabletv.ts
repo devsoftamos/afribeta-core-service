@@ -411,6 +411,7 @@ export class CableTVBillService {
                 receiverIdentifier: purchaseOptions.phone,
                 description: purchaseOptions.narration,
                 serviceCharge: options.purchaseOptions.serviceCharge,
+                merchantId: user.createdById,
             };
 
         switch (billProvider.slug) {
@@ -483,7 +484,7 @@ export class CableTVBillService {
                 );
             }
 
-            if (transaction.paymentStatus == PaymentStatus.SUCCESS) {
+            if (transaction.paymentStatus !== PaymentStatus.PENDING) {
                 throw new DuplicateCableTVPurchaseException(
                     "Duplicate webhook cable tv purchase payment event",
                     HttpStatus.BAD_REQUEST
@@ -517,6 +518,9 @@ export class CableTVBillService {
             });
 
             if (!billProvider) {
+                this.billEvent.emit("bill-purchase-failure", {
+                    transactionId: transaction.id,
+                });
                 throw new BillProviderNotFoundException(
                     "Failed to complete cable tv purchase. Bill provider not found",
                     HttpStatus.NOT_FOUND

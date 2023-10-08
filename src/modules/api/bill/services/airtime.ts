@@ -270,6 +270,7 @@ export class AirtimeBillService {
                 senderIdentifier: purchaseOptions.vtuNumber,
                 billServiceSlug: purchaseOptions.billService,
                 provider: purchaseOptions.billProvider,
+                merchantId: user.createdById,
             };
 
         const transaction = await this.prisma.transaction.create({
@@ -317,7 +318,7 @@ export class AirtimeBillService {
                 );
             }
 
-            if (transaction.paymentStatus == PaymentStatus.SUCCESS) {
+            if (transaction.paymentStatus !== PaymentStatus.PENDING) {
                 throw new DuplicateDataPurchaseException(
                     "Duplicate webhook airtime purchase payment event",
                     HttpStatus.BAD_REQUEST
@@ -351,6 +352,9 @@ export class AirtimeBillService {
             });
 
             if (!billProvider) {
+                this.billEvent.emit("bill-purchase-failure", {
+                    transactionId: transaction.id,
+                });
                 throw new BillProviderNotFoundException(
                     "Failed to complete airtime purchase. Bill provider not found",
                     HttpStatus.NOT_FOUND

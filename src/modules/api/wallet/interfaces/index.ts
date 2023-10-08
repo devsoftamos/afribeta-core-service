@@ -45,9 +45,14 @@ export interface ProcessWalletFundOptions {
     provider: WalletFundProvider;
 }
 
+export enum WalletToBankTransferStatus {
+    FAILED = "FAILED",
+    SUCCESS = "SUCCESS",
+}
+
 export interface ProcessWalletWithdrawalOptions {
     paymentReference: string;
-    paymentStatus: PaymentStatus;
+    transferToBankStatus: WalletToBankTransferStatus;
     transferCode?: string;
 }
 

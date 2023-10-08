@@ -325,6 +325,7 @@ export class PowerBillService {
                 provider: purchaseOptions.billProvider,
                 serviceCharge: purchaseOptions.serviceCharge,
                 serviceTransactionCode: purchaseOptions.meterCode,
+                merchantId: user.createdById,
             };
 
         switch (billProvider.slug) {
@@ -404,7 +405,7 @@ export class PowerBillService {
                 );
             }
 
-            if (transaction.paymentStatus == PaymentStatus.SUCCESS) {
+            if (transaction.paymentStatus !== PaymentStatus.PENDING) {
                 throw new DuplicatePowerPurchaseException(
                     "Duplicate webhook power payment event",
                     HttpStatus.BAD_REQUEST
@@ -438,6 +439,9 @@ export class PowerBillService {
             });
 
             if (!billProvider) {
+                this.billEvent.emit("bill-purchase-failure", {
+                    transactionId: transaction.id,
+                });
                 throw new BillProviderNotFoundException(
                     "Failed to complete power purchase. Bill provider not found",
                     HttpStatus.NOT_FOUND
