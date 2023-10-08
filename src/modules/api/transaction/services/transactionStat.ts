@@ -22,7 +22,7 @@ export class TransactionStatService {
                 status: TransactionStatus.SUCCESS,
                 createdAt: {
                     gte: startDate,
-                    lt: endDate,
+                    lte: endDate,
                 },
             },
         });
@@ -33,7 +33,10 @@ export class TransactionStatService {
         });
     }
 
-    async fetchTotalCommission(options: SuccessfulTransactionsDto, user: User) {
+    async fetchTotalCommission(
+        options: SuccessfulTeransactionsDto,
+        user: User
+    ) {
         const startDate = startOfMonth(new Date(options.date));
         const endDate = endOfMonth(new Date(options.date));
 
@@ -47,7 +50,7 @@ export class TransactionStatService {
                 },
                 createdAt: {
                     gte: startDate,
-                    lt: endDate,
+                    lte: endDate,
                 },
             },
         });
@@ -59,7 +62,7 @@ export class TransactionStatService {
                 userId: user.id,
                 createdAt: {
                     gte: startDate,
-                    lt: endDate,
+                    lte: endDate,
                 },
             },
         });
