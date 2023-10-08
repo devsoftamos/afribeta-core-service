@@ -329,3 +329,25 @@ export const redisConfiguration: RedisConfig = {
 export const redisUrl = `redis://${redisConfiguration.user}:${redisConfiguration.password}@${redisConfiguration.host}:${redisConfiguration.port}`;
 
 export const frontendDevOrigin = [/^http:\/\/localhost:\d+$/];
+
+//payout charge
+export const PAYOUT_PERCENT_CHARGE = process.env.PAYOUT_PERCENT_CHARGE
+    ? parseFloat(process.env.PAYOUT_PERCENT_CHARGE)
+    : 2.5;
+
+//commission config
+export const AGENT_MD_METER_COMMISSION_CAP_AMOUNT = process.env
+    .AGENT_MD_METER_COMMISSION_CAP_AMOUNT
+    ? parseInt(process.env.AGENT_MD_METER_COMMISSION_CAP_AMOUNT)
+    : 1000;
+export const AGENT_MD_METER_COMMISSION_PERCENT = process.env
+    .AGENT_MD_METER_COMMISSION_PERCENT
+    ? parseFloat(process.env.AGENT_MD_METER_COMMISSION_PERCENT)
+    : 0.25;
+export const SUBAGENT_MD_METER_COMMISSION_PERCENT = process.env
+    .SUBAGENT_MD_METER_COMMISSION_PERCENT
+    ? parseFloat(process.env.SUBAGENT_MD_METER_COMMISSION_PERCENT)
+    : 0.125;
+export const DEFAULT_CAPPING_MULTIPLIER = process.env.DEFAULT_CAPPING_MULTIPLIER
+    ? parseInt(process.env.DEFAULT_CAPPING_MULTIPLIER)
+    : 1000;

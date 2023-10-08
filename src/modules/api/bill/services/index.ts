@@ -9,6 +9,7 @@ import {
     TransactionStatus,
     TransactionType,
     User,
+    UserType,
     WalletFundTransactionFlow,
 } from "@prisma/client";
 import {
@@ -450,6 +451,7 @@ export class BillService {
                             slug: true,
                             type: true,
                             baseCommissionPercentage: true,
+                            agentDefaultCommissionPercent: true,
                         },
                     },
                 },
@@ -754,21 +756,27 @@ export class BillService {
                 }
             } else {
                 //Compute for Merchant and upgradable-agents only
-                const commissionConfig =
-                    await this.prisma.userCommission.findUnique({
-                        where: {
-                            userId_billServiceSlug: {
-                                userId: user.id,
-                                billServiceSlug: transaction.billService.slug,
+                let commissionPercent =
+                    transaction.billService.agentDefaultCommissionPercent;
+                if (user.userType == UserType.MERCHANT) {
+                    const commissionConfig =
+                        await this.prisma.userCommission.findUnique({
+                            where: {
+                                userId_billServiceSlug: {
+                                    userId: user.id,
+                                    billServiceSlug:
+                                        transaction.billService.slug,
+                                },
                             },
-                        },
-                    });
+                        });
 
-                if (!commissionConfig) {
-                    throw new ComputeBillCommissionException(
-                        `Bill service commission with slug ${transaction.billService.slug} not assigned to userType, ${user.userType} with user identifier, ${user.identifier}`,
-                        HttpStatus.NOT_FOUND
-                    );
+                    if (!commissionConfig) {
+                        throw new ComputeBillCommissionException(
+                            `Bill service commission with slug ${transaction.billService.slug} not assigned to userType, ${user.userType} with user identifier, ${user.identifier}`,
+                            HttpStatus.NOT_FOUND
+                        );
+                    }
+                    commissionPercent = commissionConfig.percentage;
                 }
 
                 if (
@@ -788,7 +796,7 @@ export class BillService {
                         agentCommission = this.computeCommission({
                             type: "default-cap",
                             amount: transaction.amount,
-                            percentCommission: commissionConfig.percentage,
+                            percentCommission: commissionPercent,
                         }).amount;
                     }
 
@@ -807,13 +815,13 @@ export class BillService {
                         agentCommission = this.computeCommission({
                             amount: transaction.amount,
                             type: "default-cap",
-                            percentCommission: commissionConfig.percentage,
+                            percentCommission: commissionPercent,
                         }).amount;
                     } else {
                         agentCommission = this.computeCommission({
                             amount: transaction.amount,
                             type: "non-capped",
-                            percentCommission: commissionConfig.percentage,
+                            percentCommission: commissionPercent,
                         }).amount;
                     }
 

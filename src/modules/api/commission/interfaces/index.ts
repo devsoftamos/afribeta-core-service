@@ -1,6 +1,6 @@
 import { BillType } from "@prisma/client";
 
-export interface ListAgencyCommission {
+export interface ListMerchantCommission {
     commission: number;
     cap?: number;
     type: BillType;
@@ -8,4 +8,12 @@ export interface ListAgencyCommission {
     slug: string;
     commissionMd?: number;
     capMd?: number;
+}
+
+export interface ListAgencyCommission {
+    baseCommission?: number;
+    agentCommission: number;
+    type: BillType;
+    name: string;
+    slug: string;
 }
