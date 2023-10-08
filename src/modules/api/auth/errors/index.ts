@@ -41,5 +41,5 @@ export class PrismaNetworkException extends HttpException {
 }
 
 export class AuthGenericException extends HttpException {
-    name: string = "AuthGenericException";
+    name = "AuthGenericException";
 }
