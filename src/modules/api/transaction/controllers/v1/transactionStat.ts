@@ -8,7 +8,7 @@ import {
     ValidationPipe,
 } from "@nestjs/common";
 import { User as UserModel } from "@prisma/client";
-import { TransactionStatService } from "../../services/transaction.stat";
+import { TransactionStatService } from "../../services/transactionStat";
 import { SuccessfulTransactionsDto } from "../../dtos";
 
 @UseGuards(AuthGuard)
@@ -20,7 +20,7 @@ export class TransactionStatController {
         private readonly transactionStatService: TransactionStatService
     ) {}
 
-    @Get("successful")
+    @Get("success")
     async GetSuccessfulTransactions(
         @Query(ValidationPipe)
         successfulTransactionsDto: SuccessfulTransactionsDto,
