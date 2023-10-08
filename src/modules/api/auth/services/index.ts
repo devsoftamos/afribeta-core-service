@@ -21,6 +21,7 @@ import {
 } from "@prisma/client";
 import { customAlphabet } from "nanoid";
 import {
+    AuthGenericException,
     InvalidCredentialException,
     InvalidEmailVerificationCodeException,
     InvalidPasswordResetToken,
@@ -43,6 +44,7 @@ import { encrypt, formatName, generateId } from "@/utils";
 import {
     AgentVerifyEmailParams,
     LoginMeta,
+    LoginPlatform,
     LoginResponseData,
     SignupResponseData,
 } from "../interfaces";
@@ -66,43 +68,31 @@ export class AuthService {
         return await bcrypt.compare(password, hash);
     }
 
-    async validateAdminUser(email: string) {
-        const admin = await this.prisma.user.findUnique({
-            where: {
-                email: email,
-            },
-        });
-
-        const adminUserType: UserType[] = [
+    async validateAdminAccount(userType: UserType) {
+        const adminUserTypes: UserType[] = [
             UserType.ADMIN,
             UserType.SUPER_ADMIN,
         ];
 
-        if (!admin || !adminUserType.includes(admin.userType)) {
-            throw new UserNotFoundException(
-                "admin account does not exist",
-                HttpStatus.NOT_FOUND
+        if (!adminUserTypes.includes(userType)) {
+            throw new InvalidCredentialException(
+                "Incorrect email or password",
+                HttpStatus.UNAUTHORIZED
             );
         }
     }
 
-    async validateUser(email: string) {
-        const user = await this.prisma.user.findUnique({
-            where: {
-                email: email,
-            },
-        });
-
-        const userType: UserType[] = [
+    async validateUserAccount(userType: UserType) {
+        const userTypes: UserType[] = [
             UserType.CUSTOMER,
             UserType.AGENT,
             UserType.MERCHANT,
         ];
 
-        if (!user || !userType.includes(user.userType)) {
-            throw new UserNotFoundException(
-                "user account does not exist",
-                HttpStatus.NOT_FOUND
+        if (!userTypes.includes(userType)) {
+            throw new InvalidCredentialException(
+                "Incorrect email or password",
+                HttpStatus.UNAUTHORIZED
             );
         }
     }
@@ -307,7 +297,10 @@ export class AuthService {
         });
     }
 
-    async signIn(options: SignInDto): Promise<ApiResponse<LoginResponseData>> {
+    async signIn(
+        options: SignInDto,
+        loginPlatform: LoginPlatform
+    ): Promise<ApiResponse<LoginResponseData>> {
         const user = await this.prisma.user.findUnique({
             where: {
                 email: options.email,
@@ -340,6 +333,24 @@ export class AuthService {
                 "Incorrect email or password",
                 HttpStatus.UNAUTHORIZED
             );
+        }
+
+        switch (loginPlatform) {
+            case LoginPlatform.ADMIN: {
+                this.validateAdminAccount(user.userType);
+                break;
+            }
+            case LoginPlatform.USER: {
+                this.validateUserAccount(user.userType);
+                break;
+            }
+
+            default: {
+                throw new AuthGenericException(
+                    "Invalid login platform",
+                    HttpStatus.INTERNAL_SERVER_ERROR
+                );
+            }
         }
 
         const permissions = user.role.permissions.map((p) => p.permission.name);
@@ -382,17 +393,13 @@ export class AuthService {
     async userSignIn(
         options: SignInDto
     ): Promise<ApiResponse<LoginResponseData>> {
-        await this.validateUser(options.email);
-
-        return await this.signIn(options);
+        return await this.signIn(options, LoginPlatform.USER);
     }
 
     async adminSignIn(
         options: SignInDto
     ): Promise<ApiResponse<LoginResponseData>> {
-        await this.validateAdminUser(options.email);
-
-        return await this.signIn(options);
+        return await this.signIn(options, LoginPlatform.ADMIN);
     }
 
     async passwordResetRequest(options: PasswordResetRequestDto) {

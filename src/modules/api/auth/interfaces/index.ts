@@ -51,3 +51,9 @@ export interface SignupResponseData {
 export interface LoginResponseData extends SignupResponseData {
     meta: string;
 }
+
+
+export enum LoginPlatform {
+    ADMIN = "ADMIN",
+    USER = "USER"
+}
