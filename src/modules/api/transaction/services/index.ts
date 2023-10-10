@@ -379,4 +379,47 @@ export class TransactionService {
             data: transaction,
         });
     }
+
+    async adminRecentTransactions(options: TransactionHistoryDto) {
+
+        const queryOptions: Prisma.TransactionFindManyArgs = {
+            orderBy: { createdAt: "desc" },
+            where: {},
+            select: {
+                merchantCommission: true,
+                merchantId: true,
+                amount: true,
+                status: true,
+            },
+        };
+
+        const recentTransactions = await this.prisma.transaction.findMany(
+            queryOptions
+        );
+
+        const getMerchantDetails = await Promise.all(
+            recentTransactions.map(async (element) => {
+                const user = await this.prisma.user.findUnique({
+                    where: {
+                        id: element.merchantId,
+                    },
+                    select: {
+                        id: true,
+                        email: true,
+                        phone: true,
+                    },
+                });
+                element.merchantId = user;
+                return element;
+            })
+        );
+
+        return buildResponse({
+            message: "Payout history retrieved successfully",
+            data: { 
+                transactions: getMerchantDetails,
+               
+            },
+        });
+    }
 }
