@@ -380,8 +380,7 @@ export class TransactionService {
         });
     }
 
-    async adminRecentTransactions(options: TransactionHistoryDto) {
-
+    async adminRecentTransactions() {
         const queryOptions: Prisma.TransactionFindManyArgs = {
             orderBy: { createdAt: "desc" },
             where: {},
@@ -416,9 +415,8 @@ export class TransactionService {
 
         return buildResponse({
             message: "Payout history retrieved successfully",
-            data: { 
+            data: {
                 transactions: getMerchantDetails,
-               
             },
         });
     }
