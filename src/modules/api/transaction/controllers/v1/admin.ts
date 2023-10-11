@@ -13,6 +13,7 @@ import {
 import { TransactionService } from "../../services";
 import {
     MerchantTransactionHistoryDto,
+    TransactionHistoryDto,
     UpdatePayoutStatusDto,
     ViewPayoutStatusDto,
 } from "../../dtos";
@@ -58,7 +59,11 @@ export class AdminTransactionController {
     }
 
     @Get("recent")
-    async getrecentTransactions() {
-        return await this.transactionService.adminRecentTransactions();
+    async getrecentTransactions(
+        @Query(ValidationPipe) transactionHistoryDto: TransactionHistoryDto
+    ) {
+        return await this.transactionService.adminRecentTransactions(
+            transactionHistoryDto
+        );
     }
 }

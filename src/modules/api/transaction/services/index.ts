@@ -380,43 +380,48 @@ export class TransactionService {
         });
     }
 
-    async adminRecentTransactions() {
+    async adminRecentTransactions(options: TransactionHistoryDto) {
+        const paginationMeta: Partial<PaginationMeta> = {};
+
         const queryOptions: Prisma.TransactionFindManyArgs = {
             orderBy: { createdAt: "desc" },
             where: {},
             select: {
-                merchantCommission: true,
-                merchantId: true,
                 amount: true,
                 status: true,
+                transactionId: true,
+                type: true,
+                paymentChannel: true,
+                createdAt: true,
             },
         };
+
+        if (options.pagination) {
+            const page = +options.page || 1;
+            const limit = +options.limit || 10;
+            const offset = (page - 1) * limit;
+            queryOptions.skip = offset;
+            queryOptions.take = limit;
+            const count = await this.prisma.transaction.count({
+                where: queryOptions.where,
+            });
+            paginationMeta.totalCount = count;
+            paginationMeta.perPage = limit;
+        }
 
         const recentTransactions = await this.prisma.transaction.findMany(
             queryOptions
         );
 
-        const getMerchantDetails = await Promise.all(
-            recentTransactions.map(async (element) => {
-                const user = await this.prisma.user.findUnique({
-                    where: {
-                        id: element.merchantId,
-                    },
-                    select: {
-                        id: true,
-                        email: true,
-                        phone: true,
-                    },
-                });
-                element.merchantId = user;
-                return element;
-            })
-        );
+        if (options.pagination) {
+            paginationMeta.pageCount = recentTransactions.length;
+        }
 
         return buildResponse({
-            message: "Payout history retrieved successfully",
+            message: "Recent transactions retrieved successfully",
             data: {
-                transactions: getMerchantDetails,
+                meta: paginationMeta,
+                records: recentTransactions,
             },
         });
     }
