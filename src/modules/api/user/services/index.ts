@@ -782,7 +782,7 @@ export class UserService {
         const paginationMeta: Partial<PaginationMeta> = {};
 
         const queryOptions: Prisma.UserFindManyArgs = {
-            orderBy: { createdAt: "asc" },
+            orderBy: { createdAt: "desc" },
             where: {
                 userType: UserType.MERCHANT,
             },
