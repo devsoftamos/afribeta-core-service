@@ -8,7 +8,11 @@ import {
     ValidationPipe,
     UseGuards,
 } from "@nestjs/common";
-import { FetchMerchantAgentsDto, ListMerchantAgentsDto } from "../../dtos";
+import {
+    FetchAllMerchantsDto,
+    FetchMerchantAgentsDto,
+    ListMerchantAgentsDto,
+} from "../../dtos";
 import { User as UserModel } from "@prisma/client";
 import { UserService } from "../../services";
 import { AuthGuard } from "@/modules/api/auth/guard";
@@ -50,5 +54,12 @@ export class AdminUserController {
             user,
             id
         );
+    }
+
+    @Get("overview/merchants")
+    async fetchAllMerchants(
+        @Query(ValidationPipe) fetchAllMerchantsDto: FetchAllMerchantsDto
+    ) {
+        return await this.usersService.getAllMerchants(fetchAllMerchantsDto);
     }
 }

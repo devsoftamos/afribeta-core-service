@@ -201,3 +201,17 @@ export class CreateKycDto {
     })
     identificationMeansImageFile: string;
 }
+
+export class FetchAllMerchantsDto {
+    @IsOptional()
+    @IsBooleanString()
+    pagination: string;
+
+    @IsOptional()
+    @IsNumberString()
+    page: number;
+
+    @IsOptional()
+    @IsNumberString()
+    limit: number;
+}

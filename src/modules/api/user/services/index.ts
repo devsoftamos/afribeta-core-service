@@ -32,6 +32,7 @@ import {
     UpdateProfilePasswordDto,
     UpdateTransactionPinDto,
     VerifyTransactionPinDto,
+    FetchAllMerchantsDto,
 } from "../dtos";
 import {
     AgentCreationException,
@@ -774,6 +775,54 @@ export class UserService {
         return buildResponse({
             message: "Merchant Details successfully retrieved",
             data: result,
+        });
+    }
+
+    async getAllMerchants(options: FetchAllMerchantsDto) {
+        const paginationMeta: Partial<PaginationMeta> = {};
+
+        const queryOptions: Prisma.UserFindManyArgs = {
+            orderBy: { createdAt: "asc" },
+            where: {
+                userType: UserType.MERCHANT,
+            },
+            select: {
+                firstName: true,
+                lastName: true,
+                businessName: true,
+                photo: true,
+                state: {
+                    select: {
+                        name: true,
+                    },
+                },
+            },
+        };
+
+        if (options.pagination) {
+            const page = +options.page || 1;
+            const limit = +options.limit || 10;
+            const offset = (page - 1) * limit;
+            queryOptions.skip = offset;
+            queryOptions.take = limit;
+            const count = await this.prisma.user.count({
+                where: queryOptions.where,
+            });
+            paginationMeta.totalCount = count;
+            paginationMeta.perPage = limit;
+        }
+
+        const merchants = await this.prisma.user.findMany(queryOptions);
+        if (options.pagination) {
+            paginationMeta.pageCount = merchants.length;
+        }
+
+        return buildResponse({
+            message: "Merchants retrieved successfully",
+            data: {
+                meta: paginationMeta,
+                records: merchants,
+            },
         });
     }
 }
