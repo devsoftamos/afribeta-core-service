@@ -6,6 +6,7 @@ import {
     IsNumberString,
     IsOptional,
     IsString,
+    IsDateString,
 } from "class-validator";
 
 import { TransactionStatus } from "@prisma/client";
@@ -119,5 +120,9 @@ export class AdminTransactionHistoryDto {
 
     @IsOptional()
     @IsString()
-    searchName: string;
+    transactionId: string;
+
+    @IsOptional()
+    @IsDateString()
+    date: string;
 }

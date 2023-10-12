@@ -26,6 +26,8 @@ import {
     InvalidTransactionVerificationProvider,
     TransactionNotFoundException,
 } from "../errors";
+import { InvalidTransactionVerificationProvider } from "../errors";
+import { endOfMonth, startOfMonth } from "date-fns";
 
 @Injectable()
 export class TransactionService {
@@ -388,6 +390,9 @@ export class TransactionService {
     async getAllTransactions(options: AdminTransactionHistoryDto) {
         const paginationMeta: Partial<PaginationMeta> = {};
 
+        const startDate = startOfMonth(new Date(options.date));
+        const endDate = endOfMonth(new Date(options.date));
+
         const queryOptions: Prisma.TransactionFindManyArgs = {
             orderBy: { createdAt: "desc" },
             where: {},
@@ -401,8 +406,11 @@ export class TransactionService {
             },
         };
 
-        if (options.searchName) {
-            queryOptions.where.transactionId = options.searchName;
+        if (options.transactionId) {
+            queryOptions.where.transactionId = options.transactionId;
+        }
+        if (options.date) {
+            queryOptions.where.createdAt = { gte: startDate, lte: endDate };
         }
 
         if (options.pagination) {
