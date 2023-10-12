@@ -19,6 +19,7 @@ import {
     Max,
     ValidateNested,
 } from "class-validator";
+import { BillServiceSlug } from "../interfaces";
 
 export class GetUserByIdentifierDto {
     @IsString()
@@ -87,7 +88,7 @@ export class BillServiceCommissionOptions {
     @IsString()
     billServiceSlug: string;
 
-    @IsNumber()
+    @IsNumber({ maxDecimalPlaces: 1 })
     percentage: number;
 
     @IsOptional()
@@ -200,4 +201,29 @@ export class CreateKycDto {
         message: "Identification image file must be a valid base64 plain text",
     })
     identificationMeansImageFile: string;
+}
+
+export enum AuthorizeAgentUpgradeType {
+    APPROVE = "APPROVE",
+    DECLINE = "DECLINE",
+}
+
+export class AgentUpgradeBillServiceCommissionOptions {
+    @IsEnum(BillServiceSlug)
+    billServiceSlug: BillServiceSlug;
+
+    @IsNumber({ maxDecimalPlaces: 1 })
+    percentage: number;
+}
+
+export class AuthorizeAgentToMerchantUpgradeAgentDto {
+    @IsEnum(AuthorizeAgentUpgradeType)
+    authorizeType: AuthorizeAgentUpgradeType;
+
+    @IsOptional()
+    @ValidateNested({ each: true })
+    @Type(() => AgentUpgradeBillServiceCommissionOptions)
+    @ArrayMinSize(1)
+    @IsArray()
+    billServiceCommissions: AgentUpgradeBillServiceCommissionOptions[];
 }

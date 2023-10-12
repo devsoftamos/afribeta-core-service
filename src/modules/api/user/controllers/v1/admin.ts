@@ -7,8 +7,17 @@ import {
     ParseIntPipe,
     ValidationPipe,
     UseGuards,
+    Patch,
+    Body,
+    Post,
+    HttpCode,
+    HttpStatus,
 } from "@nestjs/common";
-import { FetchMerchantAgentsDto, ListMerchantAgentsDto } from "../../dtos";
+import {
+    AuthorizeAgentToMerchantUpgradeAgentDto,
+    FetchMerchantAgentsDto,
+    ListMerchantAgentsDto,
+} from "../../dtos";
 import { User as UserModel } from "@prisma/client";
 import { UserService } from "../../services";
 import { AuthGuard } from "@/modules/api/auth/guard";
@@ -49,6 +58,19 @@ export class AdminUserController {
             fetchMerchantsAgentDto,
             user,
             id
+        );
+    }
+
+    @HttpCode(HttpStatus.OK)
+    @Post("agent/:id/upgrade")
+    async authorizeAgentUpgrade(
+        @Param("id", ParseIntPipe) id: number,
+        @Body(ValidationPipe)
+        authorizeAgentToMerchantUpgradeAgentDto: AuthorizeAgentToMerchantUpgradeAgentDto
+    ) {
+        return await this.usersService.authorizeAgentToMerchantUpgradeRequest(
+            id,
+            authorizeAgentToMerchantUpgradeAgentDto
         );
     }
 }
