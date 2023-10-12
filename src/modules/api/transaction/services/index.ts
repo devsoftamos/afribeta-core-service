@@ -12,6 +12,7 @@ import {
 } from "@prisma/client";
 import { UserNotFoundException } from "../../user";
 import {
+    AdminTransactionHistoryDto,
     MerchantTransactionHistoryDto,
     TransactionHistoryDto,
     TransactionReportType,
@@ -384,36 +385,7 @@ export class TransactionService {
         });
     }
 
-    async recommendPayout(id: number) {
-        const transaction = await this.prisma.transaction.findUnique({
-            where: {
-                id: id,
-            },
-        });
-
-        if (!transaction) {
-            throw new TransactionNotFoundException(
-                "Payout request not found",
-                HttpStatus.NOT_FOUND
-            );
-        }
-
-        await this.prisma.transaction.update({
-            where: {
-                id: id,
-            },
-            data: {
-                isPayoutRecommended: true,
-            },
-        });
-
-        return buildResponse({
-            message: "Payout recommended successfully",
-            data: {},
-        });
-    }
-
-    async adminRecentTransactions(options: TransactionHistoryDto) {
+    async getAllTransactions(options: AdminTransactionHistoryDto) {
         const paginationMeta: Partial<PaginationMeta> = {};
 
         const queryOptions: Prisma.TransactionFindManyArgs = {
@@ -421,95 +393,16 @@ export class TransactionService {
             where: {},
             select: {
                 transactionId: true,
-                amount: true,
-                paymentChannel: true,
-                paymentStatus: true,
-                flow: true,
-                shortDescription: true,
-                createdAt: true,
-            },
-        };
-
-        if (options.pagination) {
-            const page = +options.page || 1;
-            const limit = +options.limit || 10;
-            const offset = (page - 1) * limit;
-            queryOptions.skip = offset;
-            queryOptions.take = limit;
-            const count = await this.prisma.transaction.count({
-                where: queryOptions.where,
-            });
-            paginationMeta.totalCount = count;
-            paginationMeta.perPage = limit;
-        }
-
-        const recentTransactions = await this.prisma.transaction.findMany(
-            queryOptions
-        );
-
-        if (options.pagination) {
-            paginationMeta.pageCount = recentTransactions.length;
-        }
-
-        return buildResponse({
-            message: "Recent transactions retrieved successfully",
-            data: {
-                meta: paginationMeta,
-                records: recentTransactions,
-            },
-        });
-    }
-
-    async merchantTransactionReport(
-        options: TransactionHistoryDto,
-        user: User
-    ) {
-        const paginationMeta: Partial<PaginationMeta> = {};
-
-        const queryOptions: Prisma.TransactionFindManyArgs = {
-            orderBy: { createdAt: "desc" },
-            where: {
-                userId: user.id,
-            },
-            select: {
-                id: true,
-                amount: true,
-                shortDescription: true,
-                paymentStatus: true,
-                status: true,
-                transactionId: true,
-                paymentChannel: true,
-                merchantCommission: true,
-                commission: true,
-                flow: true,
                 type: true,
+                amount: true,
+                paymentChannel: true,
+                status: true,
                 createdAt: true,
             },
         };
 
-        switch (options.type) {
-            case TransactionReportType.AIRTIME_PURCHASE: {
-                queryOptions.where.type =
-                    TransactionReportType.AIRTIME_PURCHASE;
-                break;
-            }
-            case TransactionReportType.CABLETV_BILL: {
-                queryOptions.where.type = TransactionReportType.CABLETV_BILL;
-                break;
-            }
-            case TransactionReportType.DATA_PURCHASE: {
-                queryOptions.where.type = TransactionReportType.DATA_PURCHASE;
-                break;
-            }
-            case TransactionReportType.ELECTRICITY_BILL: {
-                queryOptions.where.type =
-                    TransactionReportType.ELECTRICITY_BILL;
-                break;
-            }
-            case TransactionReportType.PAYOUT: {
-                queryOptions.where.type = TransactionReportType.PAYOUT;
-                break;
-            }
+        if (options.searchName) {
+            queryOptions.where.transactionId = options.searchName;
         }
 
         if (options.pagination) {
@@ -533,7 +426,7 @@ export class TransactionService {
         }
 
         return buildResponse({
-            message: "Merchant report retrieved successfully",
+            message: "Transactions retrieved successfully",
             data: {
                 meta: paginationMeta,
                 records: transactions,
