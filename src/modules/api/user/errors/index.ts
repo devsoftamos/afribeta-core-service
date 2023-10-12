@@ -31,3 +31,7 @@ export class UserKycException extends HttpException {
 export class InvalidUserException extends HttpException {
     name = "InvalidUserException";
 }
+
+export class AgentUpgradeGenericException extends HttpException {
+    name: string = "AgentUpgradeGenericException";
+}

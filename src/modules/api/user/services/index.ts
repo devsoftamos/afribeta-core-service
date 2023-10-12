@@ -37,6 +37,7 @@ import {
 } from "../dtos";
 import {
     AgentCreationException,
+    AgentUpgradeGenericException,
     DuplicateUserException,
     IncorrectPasswordException,
     InvalidAgentCommissionAssignment,
@@ -328,6 +329,12 @@ export class UserService {
                 slug: RoleSlug.SUB_AGENT,
             },
         });
+        if (!role) {
+            throw new RoleNotFoundException(
+                "Failed to assign role. Role not found",
+                HttpStatus.INTERNAL_SERVER_ERROR
+            );
+        }
         const walletNumber = generateId({ type: "walletNumber" });
         const createAgentOptions: Prisma.UserUncheckedCreateInput = {
             email: verificationData.email,

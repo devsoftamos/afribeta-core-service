@@ -20,6 +20,7 @@ import {
     Max,
     ValidateNested,
 } from "class-validator";
+import { BillServiceSlug } from "../interfaces";
 
 export class GetUserByIdentifierDto {
     @IsString()
@@ -88,7 +89,7 @@ export class BillServiceCommissionOptions {
     @IsString()
     billServiceSlug: string;
 
-    @IsNumber()
+    @IsNumber({ maxDecimalPlaces: 1 })
     percentage: number;
 
     @IsOptional()

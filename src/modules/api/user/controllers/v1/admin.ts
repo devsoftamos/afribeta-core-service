@@ -7,6 +7,11 @@ import {
     ParseIntPipe,
     ValidationPipe,
     UseGuards,
+    Patch,
+    Body,
+    Post,
+    HttpCode,
+    HttpStatus,
 } from "@nestjs/common";
 import {
     FetchAllMerchantsDto,
