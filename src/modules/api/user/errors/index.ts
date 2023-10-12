@@ -33,5 +33,5 @@ export class InvalidUserException extends HttpException {
 }
 
 export class AgentUpgradeGenericException extends HttpException {
-    name: string = "AgentUpgradeGenericException";
+    name = "AgentUpgradeGenericException";
 }
