@@ -322,6 +322,7 @@ enum PaymentStatus {
   SUCCESS
   FAILED
   REFUNDED
+  RECOMMEND
 }
 
 enum MeterAccountType {
