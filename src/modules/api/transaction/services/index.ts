@@ -379,4 +379,51 @@ export class TransactionService {
             data: transaction,
         });
     }
+
+    async adminRecentTransactions(options: TransactionHistoryDto) {
+        const paginationMeta: Partial<PaginationMeta> = {};
+
+        const queryOptions: Prisma.TransactionFindManyArgs = {
+            orderBy: { createdAt: "desc" },
+            where: {},
+            select: {
+                transactionId: true,
+                amount: true,
+                paymentChannel: true,
+                paymentStatus: true,
+                flow: true,
+                shortDescription: true,
+                createdAt: true,
+            },
+        };
+
+        if (options.pagination) {
+            const page = +options.page || 1;
+            const limit = +options.limit || 10;
+            const offset = (page - 1) * limit;
+            queryOptions.skip = offset;
+            queryOptions.take = limit;
+            const count = await this.prisma.transaction.count({
+                where: queryOptions.where,
+            });
+            paginationMeta.totalCount = count;
+            paginationMeta.perPage = limit;
+        }
+
+        const recentTransactions = await this.prisma.transaction.findMany(
+            queryOptions
+        );
+
+        if (options.pagination) {
+            paginationMeta.pageCount = recentTransactions.length;
+        }
+
+        return buildResponse({
+            message: "Recent transactions retrieved successfully",
+            data: {
+                meta: paginationMeta,
+                records: recentTransactions,
+            },
+        });
+    }
 }
