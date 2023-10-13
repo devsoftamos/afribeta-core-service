@@ -387,11 +387,12 @@ export class TransactionService {
             orderBy: { createdAt: "desc" },
             where: {},
             select: {
-                amount: true,
-                status: true,
                 transactionId: true,
-                type: true,
+                amount: true,
                 paymentChannel: true,
+                paymentStatus: true,
+                flow: true,
+                shortDescription: true,
                 createdAt: true,
             },
         };
