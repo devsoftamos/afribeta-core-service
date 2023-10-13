@@ -341,6 +341,18 @@ export class TransactionService {
                 await declinePayout();
                 break;
             }
+
+            case UpdatePayoutStatus.RECOMMEND: {
+                await this.prisma.transaction.update({
+                    where: {
+                        id: transaction.id,
+                    },
+                    data: {
+                        status: UpdatePayoutStatus.RECOMMEND,
+                    },
+                });
+                break;
+            }
         }
 
         const responseMessage =
