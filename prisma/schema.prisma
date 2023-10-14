@@ -322,7 +322,6 @@ enum PaymentStatus {
   SUCCESS
   FAILED
   REFUNDED
-  RECOMMEND
 }
 
 enum MeterAccountType {
@@ -364,6 +363,7 @@ model Transaction {
   companyCommission            Float?            @default(0)
   serviceTransactionCode       String?
   serviceTransactionCode2      String?
+  recommended                  Boolean            @default(false)
 
   billProviderId            Int?
   billPaymentReference      String?
