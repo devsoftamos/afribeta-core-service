@@ -17,7 +17,6 @@ export enum VerifyTransactionProvider {
 export enum UpdatePayoutStatus {
     APPROVED = "APPROVED",
     DECLINED = "DECLINED",
-    RECOMMEND = "RECOMMEND",
 }
 
 export enum TransactionReportType {
