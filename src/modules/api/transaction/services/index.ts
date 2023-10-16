@@ -21,7 +21,10 @@ import {
     VerifyTransactionProvider,
     ViewPayoutStatusDto,
 } from "../dtos";
-import { InvalidTransactionVerificationProvider } from "../errors";
+import {
+    InvalidTransactionVerificationProvider,
+    TransactionNotFoundException,
+} from "../errors";
 
 @Injectable()
 export class TransactionService {
@@ -295,7 +298,7 @@ export class TransactionService {
         });
 
         if (!transaction) {
-            throw new UserNotFoundException(
+            throw new TransactionNotFoundException(
                 "Payout request not found",
                 HttpStatus.NOT_FOUND
             );
@@ -369,7 +372,7 @@ export class TransactionService {
         });
 
         if (!transaction) {
-            throw new UserNotFoundException(
+            throw new TransactionNotFoundException(
                 "Payout request not found",
                 HttpStatus.NOT_FOUND
             );
@@ -389,7 +392,7 @@ export class TransactionService {
         });
 
         if (!transaction) {
-            throw new UserNotFoundException(
+            throw new TransactionNotFoundException(
                 "Payout request not found",
                 HttpStatus.NOT_FOUND
             );
@@ -400,7 +403,7 @@ export class TransactionService {
                 id: id,
             },
             data: {
-                recommended: true,
+                isPayoutRecommended: true,
             },
         });
 
