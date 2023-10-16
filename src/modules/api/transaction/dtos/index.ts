@@ -1,5 +1,6 @@
 import {
     IsBooleanString,
+    IsDateString,
     IsEnum,
     IsNumber,
     IsNumberString,
@@ -80,4 +81,9 @@ export class UpdatePayoutStatusDto {
 
     @IsEnum(UpdatePayoutStatus)
     status: UpdatePayoutStatus;
+}
+
+export class SuccessfulTransactionsDto {
+    @IsDateString()
+    date: string;
 }
