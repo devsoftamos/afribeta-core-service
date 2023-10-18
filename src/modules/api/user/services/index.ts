@@ -34,7 +34,7 @@ import {
     UpdateTransactionPinDto,
     VerifyTransactionPinDto,
     FetchAllMerchantsDto,
-    CountAgentsCreatedDto,
+    CreateUserDto,
 } from "../dtos";
 import {
     AgentCreationException,
@@ -849,23 +849,93 @@ export class UserService {
         });
     }
 
-    async countAgentsCreated(options: CountAgentsCreatedDto, user: User) {
-        const startDate = startOfMonth(new Date(options.date));
-        const endDate = endOfMonth(new Date(options.date));
+    async fetchAllUsers(options: ListMerchantAgentsDto) {
+        const paginationMeta: Partial<PaginationMeta> = {};
 
-        const agents = await this.prisma.user.count({
-            where: {
-                createdById: user.id,
-                createdAt: {
-                    gte: startDate,
-                    lte: endDate,
+        const queryOptions: Prisma.UserFindManyArgs = {
+            orderBy: { createdAt: "desc" },
+            where: {},
+            select: {
+                id: true,
+                lastName: true,
+                firstName: true,
+                email: true,
+                phone: true,
+                ipAddress: true,
+                role: {
+                    select: {
+                        name: true,
+                    },
                 },
+            },
+        };
+
+        if (options.searchName) {
+            queryOptions.where.firstName = { search: options.searchName };
+            queryOptions.where.lastName = { search: options.searchName };
+        }
+
+        if (options.pagination) {
+            const page = +options.page || 1;
+            const limit = +options.limit || 10;
+            const offset = (page - 1) * limit;
+            queryOptions.skip = offset;
+            queryOptions.take = limit;
+            const count = await this.prisma.user.count({
+                where: queryOptions.where,
+            });
+            paginationMeta.totalCount = count;
+            paginationMeta.perPage = limit;
+        }
+
+        const users = await this.prisma.user.findMany(queryOptions);
+        if (options.pagination) {
+            paginationMeta.pageCount = users.length;
+        }
+
+        return buildResponse({
+            message: "Users fetched successfully",
+            data: {
+                meta: paginationMeta,
+                records: users,
+            },
+        });
+    }
+
+    async createNewUser(options: CreateUserDto) {
+        const user = await this.findUserByEmail(options.email);
+        if (user) {
+            throw new DuplicateUserException(
+                "An account with this email already exists",
+                HttpStatus.BAD_REQUEST
+            );
+        }
+
+        const hashedPassword = await this.authService.hashPassword("pass1234");
+
+        const role = await this.prisma.role.findUnique({
+            where: {
+                slug: RoleSlug.ADMIN,
             },
         });
 
+        const createUserOptions: Prisma.UserUncheckedCreateInput = {
+            identifier: generateId({ type: "identifier" }),
+            email: options.email,
+            lastName: options.lastName,
+            firstName: options.firstName,
+            phone: options.phone,
+            password: hashedPassword,
+            userType: UserType.ADMIN,
+            roleId: role.id,
+        };
+
+        await this.prisma.user.create({
+            data: createUserOptions,
+        });
+
         return buildResponse({
-            message: "Agents fetched successfully",
-            data: agents,
+            message: "User created successfully",
         });
     }
 }

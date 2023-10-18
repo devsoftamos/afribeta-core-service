@@ -7,12 +7,11 @@ import {
     ParseIntPipe,
     ValidationPipe,
     UseGuards,
-    Body,
     Post,
-    HttpCode,
-    HttpStatus,
+    Body,
 } from "@nestjs/common";
 import {
+    CreateUserDto,
     FetchAllMerchantsDto,
     FetchMerchantAgentsDto,
     ListMerchantAgentsDto,
@@ -81,5 +80,17 @@ export class AdminUserController {
         @Query(ValidationPipe) fetchAllMerchantsDto: FetchAllMerchantsDto
     ) {
         return await this.usersService.getAllMerchants(fetchAllMerchantsDto);
+    }
+
+    @Get("list-users")
+    async fetchAllUsers(
+        @Query(ValidationPipe) fetchAllUsersDto: ListMerchantAgentsDto
+    ) {
+        return await this.usersService.fetchAllUsers(fetchAllUsersDto);
+    }
+
+    @Post("create-user")
+    async createUser(@Body(ValidationPipe) createUserDto: CreateUserDto) {
+        return await this.usersService.createNewUser(createUserDto);
     }
 }
