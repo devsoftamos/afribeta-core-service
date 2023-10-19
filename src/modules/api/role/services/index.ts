@@ -16,8 +16,8 @@ export class RolesService {
             },
         };
 
-        if (options.role) {
-            queryOptions.where.name = { search: options.role };
+        if (options.roleName) {
+            queryOptions.where.name = options.roleName;
         }
 
         const roles = await this.prisma.role.findMany(queryOptions);
