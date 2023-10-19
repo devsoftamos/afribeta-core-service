@@ -9,7 +9,7 @@ import {
 } from "@nestjs/common";
 import { User as UserModel } from "@prisma/client";
 import { TransactionStatService } from "../../services/transactionStat";
-import { SuccessfulTransactionsDto, TransactionHistoryDto } from "../../dtos";
+import { SuccessfulTransactionsDto } from "../../dtos";
 
 @UseGuards(AuthGuard)
 @Controller({
@@ -40,17 +40,6 @@ export class TransactionStatController {
     ) {
         return await this.transactionStatService.fetchTotalCommission(
             successfulTransactionsDto,
-            user
-        );
-    }
-
-    @Get()
-    async transactionHistory(
-        @Query(ValidationPipe) transactionHistoryDto: TransactionHistoryDto,
-        @User() user: UserModel
-    ) {
-        return await this.transactionStatService.transactionHistory(
-            transactionHistoryDto,
             user
         );
     }
