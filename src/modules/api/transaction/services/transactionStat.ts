@@ -1,5 +1,12 @@
 import { PrismaService } from "@/modules/core/prisma/services";
-import { endOfMonth, startOfMonth } from "date-fns";
+import {
+    endOfDay,
+    endOfMonth,
+    endOfWeek,
+    startOfDay,
+    startOfMonth,
+    startOfWeek,
+} from "date-fns";
 import { User, TransactionStatus } from "@prisma/client";
 import { SuccessfulTransactionsDto } from "../dtos";
 import { buildResponse } from "@/utils/api-response-util";
