@@ -19,6 +19,14 @@ export enum UpdatePayoutStatus {
     DECLINED = "DECLINED",
 }
 
+export enum TransactionReportType {
+    AIRTIME_PURCHASE = "AIRTIME_PURCHASE",
+    ELECTRICITY_BILL = "ELECTRICITY_BILL",
+    DATA_PURCHASE = "DATA_PURCHASE",
+    CABLETV_BILL = "CABLETV_BILL",
+    PAYOUT = "PAYOUT",
+}
+
 export class VerifyTransactionDto {
     @IsString()
     reference: string;
@@ -39,6 +47,10 @@ export class TransactionHistoryDto {
     @IsOptional()
     @IsNumberString()
     limit: string;
+
+    @IsOptional()
+    @IsEnum(TransactionReportType)
+    type: TransactionReportType;
 }
 
 export class MerchantTransactionHistoryDto {

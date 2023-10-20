@@ -6,6 +6,7 @@ import {
     IsArray,
     IsBase64,
     IsBooleanString,
+    IsDateString,
     IsEmail,
     IsEnum,
     IsInt,
@@ -214,4 +215,9 @@ export class FetchAllMerchantsDto {
     @IsOptional()
     @IsNumberString()
     limit: number;
+}
+
+export class CountAgentsCreatedDto {
+    @IsDateString()
+    date: string;
 }
