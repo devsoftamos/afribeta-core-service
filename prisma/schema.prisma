@@ -185,6 +185,7 @@ model Role {
   users        User[]
   permissions  RolePermission[]
 
+  @@fulltext([name])
   @@map("Roles")
 }
 
