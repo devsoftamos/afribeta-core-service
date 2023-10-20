@@ -37,7 +37,6 @@ import {
     AgentUpgradeBillServiceCommissionOptions,
     AuthorizeAgentUpgradeType,
     FetchAllMerchantsDto,
-    CreateUserDto,
     CountAgentsCreatedDto,
 } from "../dtos";
 import {
@@ -58,8 +57,6 @@ import logger from "moment-logger";
 import { SendinblueEmailException } from "@calculusky/transactional-email";
 import { BillServiceSlug } from "@/modules/api/bill/interfaces";
 import { RoleSlug } from "../../role/interfaces";
-import { RoleNotFoundException } from "../../role/errors";
-import { AzureStorageService } from "@/modules/core/upload/services/azure";
 import { endOfMonth, startOfMonth } from "date-fns";
 
 @Injectable()
@@ -1015,105 +1012,13 @@ export class UserService {
         });
     }
 
-    async fetchAllUsers(options: ListMerchantAgentsDto) {
-        const paginationMeta: Partial<PaginationMeta> = {};
-
-        const queryOptions: Prisma.UserFindManyArgs = {
-            orderBy: { createdAt: "desc" },
-            where: {},
-            select: {
-                id: true,
-                lastName: true,
-                firstName: true,
-                email: true,
-                phone: true,
-                ipAddress: true,
-                role: {
-                    select: {
-                        name: true,
-                    },
-                },
-            },
-        };
-
-        if (options.searchName) {
-            queryOptions.where.firstName = { search: options.searchName };
-            queryOptions.where.lastName = { search: options.searchName };
-        }
-
-        if (options.pagination) {
-            const page = +options.page || 1;
-            const limit = +options.limit || 10;
-            const offset = (page - 1) * limit;
-            queryOptions.skip = offset;
-            queryOptions.take = limit;
-            const count = await this.prisma.user.count({
-                where: queryOptions.where,
-            });
-            paginationMeta.totalCount = count;
-            paginationMeta.perPage = limit;
-        }
-
-        const users = await this.prisma.user.findMany(queryOptions);
-        if (options.pagination) {
-            paginationMeta.pageCount = users.length;
-        }
-
-        return buildResponse({
-            message: "Users fetched successfully",
-            data: {
-                meta: paginationMeta,
-                records: users,
-            },
-        });
-    }
-
-    async createNewUser(options: CreateUserDto) {
-        const user = await this.findUserByEmail(options.email);
-        if (user) {
-            throw new DuplicateUserException(
-                "An account with this email already exists",
-                HttpStatus.BAD_REQUEST
-            );
-        }
-
-        const hashedPassword = await this.authService.hashPassword(
-            options.password
-        );
-
-        const role = await this.prisma.role.findUnique({
-            where: {
-                id: options.roleId,
-            },
-        });
-
-        const createUserOptions: Prisma.UserUncheckedCreateInput = {
-            identifier: generateId({ type: "identifier" }),
-            email: options.email,
-            lastName: options.lastName,
-            firstName: options.firstName,
-            phone: options.phone,
-            password: hashedPassword,
-            userType: UserType.ADMIN,
-            roleId: role.id,
-        };
-
-        await this.prisma.user.create({
-            data: createUserOptions,
-        });
-
-        return buildResponse({
-            message: "User created successfully",
-        });
-    }
-
-    async countMerchants(options: CountAgentsCreatedDto) {
+    async countAgentsCreated(options: CountAgentsCreatedDto, user: User) {
         const startDate = startOfMonth(new Date(options.date));
         const endDate = endOfMonth(new Date(options.date));
 
-        const merchants = await this.prisma.user.count({
+        const agents = await this.prisma.user.count({
             where: {
-                userType: UserType.MERCHANT,
+                createdById: user.id,
                 createdAt: {
                     gte: startDate,
                     lte: endDate,
@@ -1122,88 +1027,8 @@ export class UserService {
         });
 
         return buildResponse({
-            message: "Number of available merchants retrieved successfully",
-            data: merchants,
-        });
-    }
-
-    async getAgentDetails(id: number) {
-        const userExists = await this.prisma.user.findUnique({
-            where: {
-                id: id,
-            },
-        });
-
-        if (!userExists || userExists.userType !== UserType.AGENT) {
-            throw new UserNotFoundException(
-                "Agent account does not exist",
-                HttpStatus.NOT_FOUND
-            );
-        }
-
-        const agent = await this.prisma.user.findUnique({
-            where: {
-                id: id,
-            },
-            select: {
-                firstName: true,
-                lastName: true,
-                email: true,
-                phone: true,
-                state: {
-                    select: {
-                        name: true,
-                    },
-                },
-                kycInformation: {
-                    select: {
-                        address: true,
-                        cacDocumentUrl: true,
-                        nextOfKinName: true,
-                        identificationMeans: true,
-                        identificationMeansDocumentUrl: true,
-                        nextOfKinPhone: true,
-                        nextOfKinAddress: true,
-                    },
-                },
-            },
-        });
-
-        return buildResponse({
-            message: "Agent details retrieved successfully",
-            data: agent,
-        });
-    }
-
-    async customerDetails(id: number) {
-        const userExists = await this.prisma.user.findUnique({
-            where: {
-                id: id,
-            },
-        });
-
-        if (!userExists || userExists.userType !== UserType.CUSTOMER) {
-            throw new UserNotFoundException(
-                "Customer account does not exist",
-                HttpStatus.NOT_FOUND
-            );
-        }
-
-        const customer = await this.prisma.user.findUnique({
-            where: {
-                id: id,
-            },
-            select: {
-                firstName: true,
-                lastName: true,
-                email: true,
-                phone: true,
-            },
-        });
-
-        return buildResponse({
-            message: "Customer details retrieved successfully",
-            data: customer,
+            message: "Agents fetched successfully",
+            data: agents,
         });
     }
 }
