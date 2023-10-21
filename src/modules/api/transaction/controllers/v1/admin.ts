@@ -68,7 +68,7 @@ export class AdminTransactionController {
         );
     }
 
-    @Post("recommend/:id")
+    @Post("recommend-payout/:id")
     async recommendPyout(@Param("id", ParseIntPipe) id: number) {
         return await this.transactionService.recommendPayout(id);
     }
