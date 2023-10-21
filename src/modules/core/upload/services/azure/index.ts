@@ -1,8 +1,7 @@
 import { AzureConfiguration } from "@/config";
-import { BlobServiceClient, BlockBlobClient } from "@azure/storage-blob";
-import { DefaultAzureCredential } from "@azure/identity";
+import { BlobServiceClient } from "@azure/storage-blob";
 import { Injectable } from "@nestjs/common";
-import { UploadCompressedImageOptions, UploadFileOptions } from "../s3";
+import { UploadCompressedImageOptions } from "../s3";
 import * as sharp from "sharp";
 
 @Injectable()
@@ -44,7 +43,7 @@ export class AzureService {
         const blobName = options.key;
         const blockBlobClient = containerClient.getBlockBlobClient(blobName);
 
-        await blockBlobClient.uploadData(options.body);
+        await blockBlobClient.uploadData(compressedBuffer);
         const blobUrl = containerClient.getBlobClient(blobName).url;
         return blobUrl;
     }
