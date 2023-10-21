@@ -292,6 +292,22 @@ export const awsConfiguration: AWSConfiguration = {
     s3Bucket: process.env.AWS_S3_BUCKET,
 };
 
+//Azure
+
+export interface AzureConfiguration {
+    storageName: string;
+    storageKey: string;
+    storageContainer: string;
+    strorageUrl: string;
+}
+
+export const azureConfiguration: AzureConfiguration = {
+    storageName: process.env.AZURE_STORAGE_NAME,
+    storageKey: process.env.AZURE_STORAGE_KEY,
+    storageContainer: process.env.AZURE_STORAGE_CONTAINER,
+    strorageUrl: process.env.AZURE_STORAGE_URL,
+};
+
 //polaris bank
 export const polarisBankOptions: PolarisBankOptions = {
     apiKey: process.env.POLARIS_API_KEY,
