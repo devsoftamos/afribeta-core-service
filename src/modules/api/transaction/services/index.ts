@@ -21,7 +21,10 @@ import {
     VerifyTransactionProvider,
     ViewPayoutStatusDto,
 } from "../dtos";
-import { InvalidTransactionVerificationProvider } from "../errors";
+import {
+    InvalidTransactionVerificationProvider,
+    TransactionNotFoundException,
+} from "../errors";
 
 @Injectable()
 export class TransactionService {
@@ -295,7 +298,7 @@ export class TransactionService {
         });
 
         if (!transaction) {
-            throw new UserNotFoundException(
+            throw new TransactionNotFoundException(
                 "Payout request not found",
                 HttpStatus.NOT_FOUND
             );
@@ -369,7 +372,7 @@ export class TransactionService {
         });
 
         if (!transaction) {
-            throw new UserNotFoundException(
+            throw new TransactionNotFoundException(
                 "Payout request not found",
                 HttpStatus.NOT_FOUND
             );
@@ -378,6 +381,35 @@ export class TransactionService {
         return buildResponse({
             message: "Payout request details retrieved successfully",
             data: transaction,
+        });
+    }
+
+    async recommendPayout(id: number) {
+        const transaction = await this.prisma.transaction.findUnique({
+            where: {
+                id: id,
+            },
+        });
+
+        if (!transaction) {
+            throw new TransactionNotFoundException(
+                "Payout request not found",
+                HttpStatus.NOT_FOUND
+            );
+        }
+
+        await this.prisma.transaction.update({
+            where: {
+                id: id,
+            },
+            data: {
+                isPayoutRecommended: true,
+            },
+        });
+
+        return buildResponse({
+            message: "Payout recommended successfully",
+            data: {},
         });
     }
 

@@ -3,6 +3,7 @@ import {
     Controller,
     Get,
     Patch,
+    Post,
     Param,
     Query,
     Body,
@@ -65,5 +66,10 @@ export class AdminTransactionController {
         return await this.transactionService.adminRecentTransactions(
             transactionHistoryDto
         );
+    }
+
+    @Post("payout/recommend/:id")
+    async recommendPyout(@Param("id", ParseIntPipe) id: number) {
+        return await this.transactionService.recommendPayout(id);
     }
 }
