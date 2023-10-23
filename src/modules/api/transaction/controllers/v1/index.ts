@@ -57,4 +57,15 @@ export class TransactionController {
             id
         );
     }
+
+    @Get("merchant/report")
+    async merchantReport(
+        @Query(ValidationPipe) transactionHistoryDto: TransactionHistoryDto,
+        @User() user: UserModel
+    ) {
+        return await this.transactionService.merchantTransactionReport(
+            transactionHistoryDto,
+            user
+        );
+    }
 }

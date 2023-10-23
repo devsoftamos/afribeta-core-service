@@ -36,6 +36,8 @@ import {
     AuthorizeAgentToMerchantUpgradeAgentDto,
     AgentUpgradeBillServiceCommissionOptions,
     AuthorizeAgentUpgradeType,
+    FetchAllMerchantsDto,
+    CountAgentsCreatedDto,
 } from "../dtos";
 import {
     AgentCreationException,
@@ -57,6 +59,8 @@ import { S3Service } from "@/modules/core/upload/services/s3";
 import { BillServiceSlug } from "@/modules/api/bill/interfaces";
 import { RoleSlug } from "../../role/interfaces";
 import { RoleNotFoundException } from "../../role/errors";
+import { endOfMonth, startOfMonth } from "date-fns";
+import { AzureService } from "@/modules/core/upload/services/azure";
 
 @Injectable()
 export class UserService {
@@ -65,7 +69,8 @@ export class UserService {
         @Inject(forwardRef(() => AuthService))
         private authService: AuthService,
         private emailService: EmailService,
-        private s3Service: S3Service
+        private s3Service: S3Service,
+        private azureService: AzureService
     ) {}
 
     async createUser(options: Prisma.UserCreateInput) {
@@ -576,10 +581,9 @@ export class UserService {
         const key = `${KYC_UPLOAD_DIR}/kyc-image-${date}.webp`;
         const body = Buffer.from(file, "base64");
 
-        return await this.s3Service.uploadCompressedImage({
+        return await this.azureService.azureUploadCompressedImage({
             key,
             body: body,
-            format: "webp",
             quality: 100,
             width: 320,
         });
@@ -944,6 +948,74 @@ export class UserService {
             data: {
                 merchantUpgradeStatus: MerchantUpgradeStatus.DECLINED,
             },
+        });
+    }
+
+    async getAllMerchants(options: FetchAllMerchantsDto) {
+        const paginationMeta: Partial<PaginationMeta> = {};
+
+        const queryOptions: Prisma.UserFindManyArgs = {
+            orderBy: { createdAt: "desc" },
+            where: {
+                userType: UserType.MERCHANT,
+            },
+            select: {
+                firstName: true,
+                lastName: true,
+                businessName: true,
+                photo: true,
+                state: {
+                    select: {
+                        name: true,
+                    },
+                },
+            },
+        };
+
+        if (options.pagination) {
+            const page = +options.page || 1;
+            const limit = +options.limit || 10;
+            const offset = (page - 1) * limit;
+            queryOptions.skip = offset;
+            queryOptions.take = limit;
+            const count = await this.prisma.user.count({
+                where: queryOptions.where,
+            });
+            paginationMeta.totalCount = count;
+            paginationMeta.perPage = limit;
+        }
+
+        const merchants = await this.prisma.user.findMany(queryOptions);
+        if (options.pagination) {
+            paginationMeta.pageCount = merchants.length;
+        }
+
+        return buildResponse({
+            message: "Merchants retrieved successfully",
+            data: {
+                meta: paginationMeta,
+                records: merchants,
+            },
+        });
+    }
+
+    async countAgentsCreated(options: CountAgentsCreatedDto, user: User) {
+        const startDate = startOfMonth(new Date(options.date));
+        const endDate = endOfMonth(new Date(options.date));
+
+        const agents = await this.prisma.user.count({
+            where: {
+                createdById: user.id,
+                createdAt: {
+                    gte: startDate,
+                    lte: endDate,
+                },
+            },
+        });
+
+        return buildResponse({
+            message: "Agents fetched successfully",
+            data: agents,
         });
     }
 }

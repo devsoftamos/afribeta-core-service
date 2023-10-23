@@ -3,6 +3,7 @@ import {
     Controller,
     Get,
     Patch,
+    Post,
     Param,
     Query,
     Body,
@@ -13,6 +14,7 @@ import {
 import { TransactionService } from "../../services";
 import {
     MerchantTransactionHistoryDto,
+    TransactionHistoryDto,
     UpdatePayoutStatusDto,
     ViewPayoutStatusDto,
 } from "../../dtos";
@@ -55,5 +57,19 @@ export class AdminTransactionController {
     @Get("payout/:id")
     async getPayoutDetails(@Param("id", ParseIntPipe) id: number) {
         return await this.transactionService.viewPayoutDetails(id);
+    }
+
+    @Get("recent")
+    async getrecentTransactions(
+        @Query(ValidationPipe) transactionHistoryDto: TransactionHistoryDto
+    ) {
+        return await this.transactionService.adminRecentTransactions(
+            transactionHistoryDto
+        );
+    }
+
+    @Post("payout/recommend/:id")
+    async recommendPyout(@Param("id", ParseIntPipe) id: number) {
+        return await this.transactionService.recommendPayout(id);
     }
 }

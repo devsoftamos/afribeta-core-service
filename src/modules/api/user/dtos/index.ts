@@ -6,6 +6,7 @@ import {
     IsArray,
     IsBase64,
     IsBooleanString,
+    IsDateString,
     IsEmail,
     IsEnum,
     IsInt,
@@ -226,4 +227,22 @@ export class AuthorizeAgentToMerchantUpgradeAgentDto {
     @ArrayMinSize(1)
     @IsArray()
     billServiceCommissions: AgentUpgradeBillServiceCommissionOptions[];
+}
+export class FetchAllMerchantsDto {
+    @IsOptional()
+    @IsBooleanString()
+    pagination: string;
+
+    @IsOptional()
+    @IsNumberString()
+    page: number;
+
+    @IsOptional()
+    @IsNumberString()
+    limit: number;
+}
+
+export class CountAgentsCreatedDto {
+    @IsDateString()
+    date: string;
 }

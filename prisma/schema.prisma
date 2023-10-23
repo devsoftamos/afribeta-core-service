@@ -363,6 +363,7 @@ model Transaction {
   companyCommission            Float?            @default(0)
   serviceTransactionCode       String?
   serviceTransactionCode2      String?
+  isPayoutRecommended          Boolean            @default(false)
 
   billProviderId            Int?
   billPaymentReference      String?

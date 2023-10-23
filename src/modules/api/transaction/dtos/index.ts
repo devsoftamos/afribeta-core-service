@@ -1,5 +1,6 @@
 import {
     IsBooleanString,
+    IsDateString,
     IsEnum,
     IsNumber,
     IsNumberString,
@@ -16,6 +17,14 @@ export enum VerifyTransactionProvider {
 export enum UpdatePayoutStatus {
     APPROVED = "APPROVED",
     DECLINED = "DECLINED",
+}
+
+export enum TransactionReportType {
+    AIRTIME_PURCHASE = "AIRTIME_PURCHASE",
+    ELECTRICITY_BILL = "ELECTRICITY_BILL",
+    DATA_PURCHASE = "DATA_PURCHASE",
+    CABLETV_BILL = "CABLETV_BILL",
+    PAYOUT = "PAYOUT",
 }
 
 export class VerifyTransactionDto {
@@ -38,6 +47,10 @@ export class TransactionHistoryDto {
     @IsOptional()
     @IsNumberString()
     limit: string;
+
+    @IsOptional()
+    @IsEnum(TransactionReportType)
+    type: TransactionReportType;
 }
 
 export class MerchantTransactionHistoryDto {
@@ -80,4 +93,9 @@ export class UpdatePayoutStatusDto {
 
     @IsEnum(UpdatePayoutStatus)
     status: UpdatePayoutStatus;
+}
+
+export class SuccessfulTransactionsDto {
+    @IsDateString()
+    date: string;
 }

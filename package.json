@@ -19,11 +19,6 @@
         "start:prod": "node dist/server",
         "start:debug": "nest start --watch",
         "lint": "eslint \"{src,test}/**/*.ts\" --fix",
-        "test": "jest",
-        "test:watch": "jest --watch",
-        "test:cov": "jest --coverage",
-        "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-        "test:e2e": "jest --config ./jest.config.js",
         "husky:install": "husky install",
         "prisma:init": "npx prisma init",
         "prisma:generate": "npx prisma generate",
@@ -35,6 +30,8 @@
         "postinstall": "npm run prisma:generate"
     },
     "dependencies": {
+        "@azure/identity": "^3.3.2",
+        "@azure/storage-blob": "^12.16.0",
         "@boxpositron/vre": "^1.0.0",
         "@calculusky/transactional-email": "^1.0.4",
         "@casl/ability": "^6.5.0",
@@ -52,6 +49,7 @@
         "class-transformer": "^0.5.1",
         "class-validator": "^0.14.0",
         "crypto-js": "^4.1.1",
+        "date-fns": "^2.30.0",
         "dotenv": "^16.0.3",
         "helmet": "^6.0.1",
         "moment-logger": "1.0.5-12",

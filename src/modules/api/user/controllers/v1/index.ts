@@ -31,6 +31,7 @@ import {
     UpdateProfilePasswordDto,
     UpdateTransactionPinDto,
     VerifyTransactionPinDto,
+    CountAgentsCreatedDto,
 } from "../../dtos";
 import { UserService } from "../../services";
 
@@ -130,5 +131,16 @@ export class UserController {
         @User() user: UserModel
     ) {
         return await this.userService.createKyc(kycDto, user);
+    }
+
+    @Get("agent/count")
+    async countCreatedAgents(
+        @Query(ValidationPipe) countAgentsCreatedDto: CountAgentsCreatedDto,
+        @User() user: UserModel
+    ) {
+        return await this.userService.countAgentsCreated(
+            countAgentsCreatedDto,
+            user
+        );
     }
 }

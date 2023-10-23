@@ -14,6 +14,7 @@ import {
 } from "@nestjs/common";
 import {
     AuthorizeAgentToMerchantUpgradeAgentDto,
+    FetchAllMerchantsDto,
     FetchMerchantAgentsDto,
     ListMerchantAgentsDto,
 } from "../../dtos";
@@ -71,5 +72,12 @@ export class AdminUserController {
             id,
             authorizeAgentToMerchantUpgradeAgentDto
         );
+    }
+
+    @Get("overview/merchants")
+    async fetchAllMerchants(
+        @Query(ValidationPipe) fetchAllMerchantsDto: FetchAllMerchantsDto
+    ) {
+        return await this.usersService.getAllMerchants(fetchAllMerchantsDto);
     }
 }
