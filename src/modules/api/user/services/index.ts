@@ -2,7 +2,7 @@ import {
     AGENT_MD_METER_COMMISSION_CAP_AMOUNT,
     agentPostAccountCreateTemplate,
     DB_TRANSACTION_TIMEOUT,
-    KYC_UPLOAD_DIR,
+    storageDirConfig,
 } from "@/config";
 import { EmailService } from "@/modules/core/email/services";
 import { PrismaService } from "@/modules/core/prisma/services";
@@ -52,11 +52,10 @@ import {
 } from "../interfaces";
 import logger from "moment-logger";
 import { SendinblueEmailException } from "@calculusky/transactional-email";
-import { S3Service } from "@/modules/core/upload/services/s3";
 import { BillServiceSlug } from "@/modules/api/bill/interfaces";
 import { RoleSlug } from "../../role/interfaces";
 import { endOfMonth, startOfMonth } from "date-fns";
-import { AzureService } from "@/modules/core/upload/services/azure";
+import { AzureStorageService } from "@/modules/core/upload/services/azure";
 
 @Injectable()
 export class UserService {
@@ -65,8 +64,7 @@ export class UserService {
         @Inject(forwardRef(() => AuthService))
         private authService: AuthService,
         private emailService: EmailService,
-        private s3Service: S3Service,
-        private azureService: AzureService
+        private azureStorageService: AzureStorageService
     ) {}
 
     async createUser(options: Prisma.UserCreateInput) {
@@ -574,11 +572,12 @@ export class UserService {
 
     private async uploadKycImage(file: string): Promise<string> {
         const date = Date.now();
-        const key = `${KYC_UPLOAD_DIR}/kyc-image-${date}.webp`;
         const body = Buffer.from(file, "base64");
 
-        return await this.azureService.azureUploadCompressedImage({
-            key,
+        return await this.azureStorageService.uploadCompressedImage({
+            dir: storageDirConfig.kycInfo,
+            name: `kyc-image-${date}`,
+            format: "webp",
             body: body,
             quality: 100,
             width: 320,
