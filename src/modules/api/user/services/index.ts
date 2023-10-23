@@ -54,6 +54,7 @@ import { S3Service } from "@/modules/core/upload/services/s3";
 import { BillServiceSlug } from "@/modules/api/bill/interfaces";
 import { RoleSlug } from "../../role/interfaces";
 import { endOfMonth, startOfMonth } from "date-fns";
+import { AzureService } from "@/modules/core/upload/services/azure";
 
 @Injectable()
 export class UserService {
@@ -62,7 +63,8 @@ export class UserService {
         @Inject(forwardRef(() => AuthService))
         private authService: AuthService,
         private emailService: EmailService,
-        private s3Service: S3Service
+        private s3Service: S3Service,
+        private azureService: AzureService
     ) {}
 
     async createUser(options: Prisma.UserCreateInput) {
@@ -568,10 +570,9 @@ export class UserService {
         const key = `${directory}/kyc-image-${date}.webp`;
         const body = Buffer.from(file, "base64");
 
-        return await this.s3Service.uploadCompressedImage({
+        return await this.azureService.azureUploadCompressedImage({
             key,
             body: body,
-            format: "webp",
             quality: 100,
             width: 320,
         });
