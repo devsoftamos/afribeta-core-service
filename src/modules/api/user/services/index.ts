@@ -2,6 +2,7 @@ import {
     AGENT_MD_METER_COMMISSION_CAP_AMOUNT,
     agentPostAccountCreateTemplate,
     DB_TRANSACTION_TIMEOUT,
+    KYC_UPLOAD_DIR,
 } from "@/config";
 import { EmailService } from "@/modules/core/email/services";
 import { PrismaService } from "@/modules/core/prisma/services";
@@ -572,8 +573,7 @@ export class UserService {
 
     private async uploadKycImage(file: string): Promise<string> {
         const date = Date.now();
-        const directory = "kycInfo";
-        const key = `${directory}/kyc-image-${date}.webp`;
+        const key = `${KYC_UPLOAD_DIR}/kyc-image-${date}.webp`;
         const body = Buffer.from(file, "base64");
 
         return await this.s3Service.uploadCompressedImage({
