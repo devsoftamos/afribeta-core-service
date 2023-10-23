@@ -1,25 +1,17 @@
-import { awsConfiguration, azureConfiguration } from "@/config";
+import { azureConfiguration } from "@/config";
 import { Global, Module } from "@nestjs/common";
-import { S3Service } from "./services/s3";
-import { AzureService } from "./services/azure";
+import { AzureStorageService } from "./services/azure";
 
 @Global()
 @Module({
     providers: [
         {
-            provide: S3Service,
+            provide: AzureStorageService,
             useFactory() {
-                return new S3Service(awsConfiguration);
-            },
-        },
-
-        {
-            provide: AzureService,
-            useFactory() {
-                return new AzureService(azureConfiguration);
+                return new AzureStorageService(azureConfiguration);
             },
         },
     ],
-    exports: [S3Service, AzureService],
+    exports: [AzureStorageService],
 })
 export class UploadModule {}

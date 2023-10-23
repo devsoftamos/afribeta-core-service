@@ -7,8 +7,13 @@ import {
     ParseIntPipe,
     ValidationPipe,
     UseGuards,
+    Body,
+    Post,
+    HttpCode,
+    HttpStatus,
 } from "@nestjs/common";
 import {
+    AuthorizeAgentToMerchantUpgradeAgentDto,
     FetchAllMerchantsDto,
     FetchMerchantAgentsDto,
     ListMerchantAgentsDto,
@@ -53,6 +58,19 @@ export class AdminUserController {
             fetchMerchantsAgentDto,
             user,
             id
+        );
+    }
+
+    @HttpCode(HttpStatus.OK)
+    @Post("agent/:id/upgrade")
+    async authorizeAgentUpgrade(
+        @Param("id", ParseIntPipe) id: number,
+        @Body(ValidationPipe)
+        authorizeAgentToMerchantUpgradeAgentDto: AuthorizeAgentToMerchantUpgradeAgentDto
+    ) {
+        return await this.usersService.authorizeAgentToMerchantUpgradeRequest(
+            id,
+            authorizeAgentToMerchantUpgradeAgentDto
         );
     }
 

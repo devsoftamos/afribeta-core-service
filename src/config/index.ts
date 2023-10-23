@@ -135,22 +135,6 @@ const runtimeEnvironment: RequiredEnvironment[] = [
         type: RequiredEnvironmentTypes.String,
     },
     {
-        name: "AWS_ACCESS_KEY_ID",
-        type: RequiredEnvironmentTypes.String,
-    },
-    {
-        name: "AWS_SECRET_ACCESS_KEY",
-        type: RequiredEnvironmentTypes.String,
-    },
-    {
-        name: "AWS_REGION",
-        type: RequiredEnvironmentTypes.String,
-    },
-    {
-        name: "AWS_S3_BUCKET",
-        type: RequiredEnvironmentTypes.String,
-    },
-    {
         name: "BUYPOWER_BASE_URL",
         type: RequiredEnvironmentTypes.String,
     },
@@ -187,18 +171,18 @@ const runtimeEnvironment: RequiredEnvironment[] = [
         type: RequiredEnvironmentTypes.String,
     },
 
-    // {
-    //     name: "POLARIS_API_KEY",
-    //     type: RequiredEnvironmentTypes.String,
-    // },
-    // {
-    //     name: "POLARIS_CLIENT_SECRET",
-    //     type: RequiredEnvironmentTypes.String,
-    // },
-    // {
-    //     name: "POLARIS_BASE_URL",
-    //     type: RequiredEnvironmentTypes.String,
-    // },
+    {
+        name: "AZURE_STORAGE_NAME",
+        type: RequiredEnvironmentTypes.String,
+    },
+    {
+        name: "AZURE_STORAGE_KEY",
+        type: RequiredEnvironmentTypes.String,
+    },
+    {
+        name: "KYC_UPLOAD_DIR",
+        type: RequiredEnvironmentTypes.String,
+    },
 ];
 
 validate(runtimeEnvironment);
@@ -277,35 +261,15 @@ export const fsdh360BankOptions: FSDH360BankOptions = {
 export const fsdh360ApiKeyAuth = process.env.FSDH360_API_KEY_AUTH;
 export const fsdh360Ips = process.env.FSDH360_IPS.split(",");
 
-//AWS
-export interface AWSConfiguration {
-    accessKeyId: string;
-    secretAccessKey: string;
-    region: string;
-    s3Bucket: string;
-}
-
-export const awsConfiguration: AWSConfiguration = {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-    region: process.env.AWS_REGION,
-    s3Bucket: process.env.AWS_S3_BUCKET,
-};
-
 //Azure
-
 export interface AzureConfiguration {
     storageName: string;
     storageKey: string;
-    storageContainer: string;
-    strorageUrl: string;
 }
 
 export const azureConfiguration: AzureConfiguration = {
     storageName: process.env.AZURE_STORAGE_NAME,
     storageKey: process.env.AZURE_STORAGE_KEY,
-    storageContainer: process.env.AZURE_STORAGE_CONTAINER,
-    strorageUrl: process.env.AZURE_STORAGE_URL,
 };
 
 //polaris bank
@@ -367,3 +331,11 @@ export const SUBAGENT_MD_METER_COMMISSION_PERCENT = process.env
 export const DEFAULT_CAPPING_MULTIPLIER = process.env.DEFAULT_CAPPING_MULTIPLIER
     ? parseInt(process.env.DEFAULT_CAPPING_MULTIPLIER)
     : 1000;
+
+interface StorageDirConfig {
+    kycInfo: string;
+}
+
+export const storageDirConfig: StorageDirConfig = {
+    kycInfo: process.env.KYC_UPLOAD_DIR,
+};

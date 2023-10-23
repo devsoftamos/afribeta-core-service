@@ -2,6 +2,7 @@ import {
     AGENT_MD_METER_COMMISSION_CAP_AMOUNT,
     agentPostAccountCreateTemplate,
     DB_TRANSACTION_TIMEOUT,
+    storageDirConfig,
 } from "@/config";
 import { EmailService } from "@/modules/core/email/services";
 import { PrismaService } from "@/modules/core/prisma/services";
@@ -32,11 +33,15 @@ import {
     UpdateProfilePasswordDto,
     UpdateTransactionPinDto,
     VerifyTransactionPinDto,
+    AuthorizeAgentToMerchantUpgradeAgentDto,
+    AgentUpgradeBillServiceCommissionOptions,
+    AuthorizeAgentUpgradeType,
     FetchAllMerchantsDto,
     CountAgentsCreatedDto,
 } from "../dtos";
 import {
     AgentCreationException,
+    AgentUpgradeGenericException,
     DuplicateUserException,
     IncorrectPasswordException,
     InvalidAgentCommissionAssignment,
@@ -50,11 +55,11 @@ import {
 } from "../interfaces";
 import logger from "moment-logger";
 import { SendinblueEmailException } from "@calculusky/transactional-email";
-import { S3Service } from "@/modules/core/upload/services/s3";
 import { BillServiceSlug } from "@/modules/api/bill/interfaces";
 import { RoleSlug } from "../../role/interfaces";
+import { RoleNotFoundException } from "../../role/errors";
 import { endOfMonth, startOfMonth } from "date-fns";
-import { AzureService } from "@/modules/core/upload/services/azure";
+import { AzureStorageService } from "@/modules/core/upload/services/azure";
 
 @Injectable()
 export class UserService {
@@ -63,8 +68,7 @@ export class UserService {
         @Inject(forwardRef(() => AuthService))
         private authService: AuthService,
         private emailService: EmailService,
-        private s3Service: S3Service,
-        private azureService: AzureService
+        private azureStorageService: AzureStorageService
     ) {}
 
     async createUser(options: Prisma.UserCreateInput) {
@@ -330,6 +334,12 @@ export class UserService {
                 slug: RoleSlug.SUB_AGENT,
             },
         });
+        if (!role) {
+            throw new RoleNotFoundException(
+                "Failed to assign role. Role not found",
+                HttpStatus.INTERNAL_SERVER_ERROR
+            );
+        }
         const walletNumber = generateId({ type: "walletNumber" });
         const createAgentOptions: Prisma.UserUncheckedCreateInput = {
             email: verificationData.email,
@@ -566,12 +576,12 @@ export class UserService {
 
     private async uploadKycImage(file: string): Promise<string> {
         const date = Date.now();
-        const directory = "kycInfo";
-        const key = `${directory}/kyc-image-${date}.webp`;
         const body = Buffer.from(file, "base64");
 
-        return await this.azureService.azureUploadCompressedImage({
-            key,
+        return await this.azureStorageService.uploadCompressedImage({
+            dir: storageDirConfig.kycInfo,
+            name: `kyc-image-${date}`,
+            format: "webp",
             body: body,
             quality: 100,
             width: 320,
@@ -778,6 +788,165 @@ export class UserService {
         return buildResponse({
             message: "Merchant Details successfully retrieved",
             data: result,
+        });
+    }
+
+    async authorizeAgentToMerchantUpgradeRequest(
+        agentId: number,
+        options: AuthorizeAgentToMerchantUpgradeAgentDto
+    ) {
+        const agent = await this.prisma.user.findUnique({
+            where: {
+                id: agentId,
+            },
+            select: {
+                id: true,
+                userType: true,
+                isMerchantUpgradable: true,
+                merchantUpgradeStatus: true,
+            },
+        });
+
+        if (!agent) {
+            throw new UserNotFoundException(
+                "Agent could not be found",
+                HttpStatus.NOT_FOUND
+            );
+        }
+
+        if (agent.userType == UserType.MERCHANT) {
+            throw new AgentUpgradeGenericException(
+                "Agent already upgraded",
+                HttpStatus.BAD_REQUEST
+            );
+        }
+
+        if (!agent.isMerchantUpgradable) {
+            throw new AgentUpgradeGenericException(
+                "User account type is not eligible for a merchant upgrade",
+                HttpStatus.BAD_REQUEST
+            );
+        }
+
+        switch (options.authorizeType) {
+            case AuthorizeAgentUpgradeType.APPROVE: {
+                await this.approveAgentUpgradeHandler(
+                    agentId,
+                    options.billServiceCommissions
+                );
+
+                return buildResponse({
+                    message: "Agent successfully upgraded",
+                });
+            }
+
+            case AuthorizeAgentUpgradeType.DECLINE: {
+                await this.declineAgentUpgradeHandler(agentId);
+                return buildResponse({
+                    message: "Agent upgrade successfully declined",
+                });
+            }
+
+            default: {
+                throw new AgentUpgradeGenericException(
+                    "Failed to authorize upgrade request. Invalid authorize type",
+                    HttpStatus.INTERNAL_SERVER_ERROR
+                );
+            }
+        }
+    }
+
+    async validateAgentUpgradeCommissionAssignment(
+        assignedCommissions: AgentUpgradeBillServiceCommissionOptions[]
+    ) {
+        const baseCommissions = await this.prisma.billService.findMany({
+            select: {
+                slug: true,
+                name: true,
+                baseCommissionPercentage: true,
+            },
+        });
+
+        for (const assignedCommission of assignedCommissions) {
+            const baseCommission = baseCommissions.find(
+                (bc) => bc.slug == assignedCommission.billServiceSlug
+            );
+            if (!baseCommission) {
+                throw new InvalidAgentCommissionAssignment(
+                    "The base commission for one of the assigned commissions does not exist",
+                    HttpStatus.BAD_REQUEST
+                );
+            }
+
+            if (!assignedCommission.percentage) {
+                throw new InvalidAgentCommissionAssignment(
+                    "The commission for one of the selected bill services is not set",
+                    HttpStatus.BAD_REQUEST
+                );
+            }
+
+            if (
+                assignedCommission.billServiceSlug !=
+                    BillServiceSlug.IKEJA_ELECTRIC &&
+                assignedCommission.percentage >
+                    baseCommission.baseCommissionPercentage
+            ) {
+                throw new InvalidAgentCommissionAssignment(
+                    `The assigned commission for the bill service, ${baseCommission.name} is greater than the base commission`,
+                    HttpStatus.BAD_REQUEST
+                );
+            }
+        }
+    }
+
+    async approveAgentUpgradeHandler(
+        agentId: number,
+        assignedCommissions: AgentUpgradeBillServiceCommissionOptions[]
+    ) {
+        if (!assignedCommissions) {
+            throw new AgentUpgradeGenericException(
+                "updated billService commission is required",
+                HttpStatus.BAD_REQUEST
+            );
+        }
+
+        this.validateAgentUpgradeCommissionAssignment(assignedCommissions);
+        const role = await this.prisma.role.findUnique({
+            where: {
+                slug: RoleSlug.MERCHANT,
+            },
+        });
+
+        if (!role) {
+            throw new RoleNotFoundException(
+                "Failed to assign merchant role. Role not found",
+                HttpStatus.INTERNAL_SERVER_ERROR
+            );
+        }
+
+        await this.prisma.user.update({
+            where: {
+                id: agentId,
+            },
+            data: {
+                userType: UserType.MERCHANT,
+                merchantUpgradeStatus: MerchantUpgradeStatus.UPGRADED,
+                roleId: role.id,
+                commissions: {
+                    create: assignedCommissions,
+                },
+            },
+        });
+    }
+
+    async declineAgentUpgradeHandler(agentId: number) {
+        await this.prisma.user.update({
+            where: {
+                id: agentId,
+            },
+            data: {
+                merchantUpgradeStatus: MerchantUpgradeStatus.DECLINED,
+            },
         });
     }
 
