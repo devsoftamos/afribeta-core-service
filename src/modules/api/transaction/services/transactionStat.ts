@@ -8,7 +8,7 @@ import {
     startOfWeek,
 } from "date-fns";
 import { User, TransactionStatus } from "@prisma/client";
-import { SuccessfulTransactionsDto } from "../dtos";
+import { SuccessfulTransactionsDto, BillPayment } from "../dtos";
 import { buildResponse } from "@/utils/api-response-util";
 import { Injectable } from "@nestjs/common";
 
@@ -85,18 +85,31 @@ export class TransactionStatService {
     async successfulTransactionsOnBillPayment(
         options: SuccessfulTransactionsDto
     ) {
+        const billPaymentTypesToFilter = [
+            BillPayment.AIRTIME_PURCHASE,
+            BillPayment.AIRTIME_TO_CASH,
+            BillPayment.CABLETV_BILL,
+            BillPayment.DATA_PURCHASE,
+            BillPayment.ELECTRICITY_BILL,
+            BillPayment.INTERNET_BILL,
+        ];
+
         const weekStarts = startOfWeek(new Date(options.date));
         const weekEnds = endOfWeek(new Date(options.date));
         const monthStarts = startOfMonth(new Date(options.date));
         const monthEnds = endOfMonth(new Date(options.date));
-        const startDate = startOfDay(new Date(options.date));
-        const endDate = endOfDay(new Date(options.date));
+        const dayStarts = startOfDay(new Date(options.date));
+        const dayEnds = endOfDay(new Date(options.date));
 
         const monthlyTransactions = await this.prisma.transaction.aggregate({
             _sum: {
                 amount: true,
             },
             where: {
+                type: {
+                    in: billPaymentTypesToFilter,
+                },
+                status: TransactionStatus.SUCCESS,
                 createdAt: {
                     gte: monthStarts,
                     lte: monthEnds,
@@ -109,15 +122,22 @@ export class TransactionStatService {
                 amount: true,
             },
             where: {
+                type: {
+                    in: billPaymentTypesToFilter,
+                },
+                status: TransactionStatus.SUCCESS,
                 createdAt: {
-                    gte: startDate,
-                    lte: endDate,
+                    gte: dayStarts,
+                    lte: dayEnds,
                 },
             },
         });
 
-        const totalWeeklyTransactions = await this.prisma.transaction.count({
+        const weeklyTransactions = await this.prisma.transaction.count({
             where: {
+                type: {
+                    in: billPaymentTypesToFilter,
+                },
                 status: TransactionStatus.SUCCESS,
                 createdAt: {
                     gte: weekStarts,
@@ -125,13 +145,12 @@ export class TransactionStatService {
                 },
             },
         });
-
         return buildResponse({
             message: "Transaction overview fetched successfully",
             data: {
                 monthlyTransactions: monthlyTransactions,
                 dailyTransactions: dailyTransactions,
-                totalWeeklyTransactions: totalWeeklyTransactions,
+                weeklyTransactions: weeklyTransactions,
             },
         });
     }
