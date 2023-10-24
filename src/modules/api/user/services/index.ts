@@ -322,7 +322,7 @@ export class UserService {
 
         //validate commissions
         if (options.billServiceCommissions) {
-            await this.validateAgentCommissionAssignment({
+            await this.validateSubAgentCommissionAssignment({
                 merchantId: user.id,
                 billServiceCommissions: options.billServiceCommissions,
             });
@@ -362,18 +362,32 @@ export class UserService {
             },
         };
 
-        if (options.billServiceCommissions) {
-            createAgentOptions.commissions = {
-                create: options.billServiceCommissions,
-            };
-        }
-
         await this.prisma
             .$transaction(
                 async (tx) => {
                     const user = await tx.user.create({
                         data: createAgentOptions,
                     });
+
+                    if (options.billServiceCommissions) {
+                        createAgentOptions.commissions = {
+                            create: options.billServiceCommissions,
+                        };
+                        const commissions: Prisma.UserCommissionUncheckedCreateInput[] =
+                            options.billServiceCommissions.map((commission) => {
+                                return {
+                                    billServiceSlug: commission.billServiceSlug,
+                                    percentage: commission.percentage,
+                                    subAgentMdMeterCapAmount:
+                                        commission.subAgentMdMeterCapAmount,
+                                    userId: user.id,
+                                };
+                            });
+
+                        await tx.userCommission.createMany({
+                            data: commissions,
+                        });
+                    }
 
                     await tx.accountVerificationRequest.delete({
                         where: { email: verificationData.email },
@@ -419,7 +433,7 @@ export class UserService {
         });
     }
 
-    async validateAgentCommissionAssignment(
+    async validateSubAgentCommissionAssignment(
         options: ValidateAgentCommissionAssignmentOptions
     ) {
         const merchantBillCommissions =
@@ -444,7 +458,7 @@ export class UserService {
             );
             if (!merchantServiceCommission) {
                 throw new InvalidAgentCommissionAssignment(
-                    "One of the billServiceSlug field is invalid or the selected bill service commission for the agent is not available for the merchant",
+                    "One of the billServiceSlug field is invalid or the selected bill service commission for the sub agent is not available for the merchant",
                     HttpStatus.BAD_REQUEST
                 );
             }
@@ -455,7 +469,7 @@ export class UserService {
             ) {
                 if (!billCommission.subAgentMdMeterCapAmount) {
                     throw new InvalidAgentCommissionAssignment(
-                        "Invalid commission assignment for Ikeja Electric. Capped amount for MD Meter is required",
+                        "Invalid commission assignment for Ikeja Electric. Capped amount for the Sub Agent MD Meter is required",
                         HttpStatus.BAD_REQUEST
                     );
                 }
@@ -473,7 +487,7 @@ export class UserService {
 
             if (!billCommission.percentage) {
                 throw new InvalidAgentCommissionAssignment(
-                    "The commission for one of the selected bill services is not set",
+                    `The commission for one of the selected bill services, ${merchantServiceCommission.billService.name} is not set`,
                     HttpStatus.BAD_REQUEST
                 );
             }
@@ -482,7 +496,7 @@ export class UserService {
                 billCommission.percentage > merchantServiceCommission.percentage
             ) {
                 throw new InvalidAgentCommissionAssignment(
-                    `One of the selected bill service, ${merchantServiceCommission.billService.name} commission for the agent is greater than the corresponding merchant's commission`,
+                    `One of the selected bill service, ${merchantServiceCommission.billService.name} commission for the sub agent is greater than the corresponding merchant's commission`,
                     HttpStatus.BAD_REQUEST
                 );
             }
@@ -932,6 +946,7 @@ export class UserService {
                 userType: UserType.MERCHANT,
                 merchantUpgradeStatus: MerchantUpgradeStatus.UPGRADED,
                 roleId: role.id,
+                kycStatus: KYC_STATUS.APPROVED,
                 commissions: {
                     create: assignedCommissions,
                 },
@@ -946,6 +961,7 @@ export class UserService {
             },
             data: {
                 merchantUpgradeStatus: MerchantUpgradeStatus.DECLINED,
+                kycStatus: KYC_STATUS.DECLINED,
             },
         });
     }

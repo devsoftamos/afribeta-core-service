@@ -42,6 +42,7 @@ enum IdentificationMeans {
 enum KYC_STATUS {
   PENDING
   APPROVED
+  DECLINED
 }
 
 model User {
@@ -63,7 +64,7 @@ model User {
   isMerchantUpgradable        Boolean                @default(false)
   merchantUpgradeStatus       MerchantUpgradeStatus?
   transactionPin              String?
-  roleId                      Int
+  roleId                      Int?
   ipAddress                   String?
   notificationToken           String?
   isVerified                  Boolean                @default(true) //email verification
@@ -75,7 +76,7 @@ model User {
   bankAccount                 BankAccount?
   createdUsers                User[]                 @relation(name: "creatorAndCreatedUser")
   creator                     User?                  @relation(name: "creatorAndCreatedUser", fields: [createdById], references: [id])
-  role                        Role                   @relation(fields: [roleId], references: [id])
+  role                        Role?                  @relation(fields: [roleId], references: [id], onDelete: SetNull)
   wallet                      Wallet?
   passwordResetRequest        PasswordResetRequest?
   transactions                Transaction[]          @relation(name: "userToTransaction")
@@ -178,7 +179,7 @@ model Role {
   id           Int              @id @default(autoincrement())
   name         String           @unique
   slug         String           @unique
-  isAssignable Boolean          @default(false) //
+  isAppDefault Boolean          @default(true)
   createdAt    DateTime         @default(now())
   updatedAt    DateTime         @updatedAt
   users        User[]
@@ -363,7 +364,7 @@ model Transaction {
   companyCommission            Float?            @default(0)
   serviceTransactionCode       String?
   serviceTransactionCode2      String?
-  isPayoutRecommended          Boolean            @default(false)
+  isPayoutRecommended          Boolean           @default(false)
 
   billProviderId            Int?
   billPaymentReference      String?
