@@ -43,4 +43,14 @@ export class TransactionStatController {
             user
         );
     }
+
+    @Get("successful/bill-payment")
+    async successfulBillPaymentTransactions(
+        @Query(ValidationPipe)
+        successfulTransactionsDto: SuccessfulTransactionsDto
+    ) {
+        return await this.transactionStatService.successfulTransactionsOnBillPayment(
+            successfulTransactionsDto
+        );
+    }
 }
