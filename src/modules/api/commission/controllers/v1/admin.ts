@@ -14,7 +14,7 @@ import { UpdateSingleBillCommissionDto } from "../../dtos";
 @Controller({
     path: "admin/commission",
 })
-export class CommissionController {
+export class AdminCommissionController {
     constructor(private readonly commissionService: CommissionService) {}
 
     @Get()

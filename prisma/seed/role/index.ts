@@ -2,12 +2,16 @@ import { Prisma } from "@prisma/client";
 
 export const roles: Prisma.RoleUncheckedCreateInput[] = [
     {
-        name: "Agent",
-        slug: "agent",
-    },
-    {
         name: "Customer",
         slug: "customer",
+    },
+    {
+        name: "Sub Agent",
+        slug: "sub-agent",
+    },
+    {
+        name: "Agent",
+        slug: "agent",
     },
     {
         name: "Merchant",
@@ -18,27 +22,23 @@ export const roles: Prisma.RoleUncheckedCreateInput[] = [
         slug: "super-admin",
     },
     {
-        name: "Admin",
-        slug: "admin",
-    },
-    {
-        name: "Sub Agent",
-        slug: "sub-agent",
-    },
-    {
         name: "Marketer",
         slug: "marketer",
+        isAppDefault: false,
     },
     {
-        name: "Marketer Head",
-        slug: "marketer-head",
+        name: "Head of Marketing",
+        slug: "head-of-marketing",
+        isAppDefault: false,
     },
     {
         name: "Accountant",
         slug: "accountant",
+        isAppDefault: false,
     },
     {
         name: "Customer Care",
         slug: "customer-care",
+        isAppDefault: false,
     },
 ];
