@@ -30,7 +30,7 @@ export enum Action {
     //admin
     ReadReport = "report.read",
     ReadUserBalance = "user_balance.read",
-    ManageAccount = "account.manage",
+    AuthorizeAccount = "account.authorize",
     AuthorizeKYC = "kyc.authorize",
     ReadTransaction = "transaction.read",
     AuthorizePayout = "payout.authorize",

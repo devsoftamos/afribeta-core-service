@@ -15,8 +15,8 @@ export const permissions: Prisma.PermissionUncheckedCreateInput[] = [
         description: "Enquiry",
     },
     {
-        name: Action.ManageAccount,
-        description: "Activation and Deactivation of accounts",
+        name: Action.AuthorizeAccount,
+        description: "Activation and Deactivation of Accounts",
     },
     {
         name: Action.AuthorizeKYC,
