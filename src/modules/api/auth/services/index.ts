@@ -68,7 +68,7 @@ export class AuthService {
         return await bcrypt.compare(password, hash);
     }
 
-    async validateAdminAccount(userType: UserType) {
+    validateAdminAccount(userType: UserType) {
         const adminUserTypes: UserType[] = [
             UserType.ADMIN,
             UserType.SUPER_ADMIN,
@@ -82,7 +82,7 @@ export class AuthService {
         }
     }
 
-    async validateUserAccount(userType: UserType) {
+    validateUserAccount(userType: UserType) {
         const userTypes: UserType[] = [
             UserType.CUSTOMER,
             UserType.AGENT,
@@ -328,6 +328,7 @@ export class AuthService {
                 },
             },
         });
+
         if (!user) {
             throw new InvalidCredentialException(
                 "Incorrect email or password",
@@ -359,6 +360,7 @@ export class AuthService {
             options.password,
             user.password
         );
+
         if (!isValidPassword) {
             throw new InvalidCredentialException(
                 "Incorrect email or password",
