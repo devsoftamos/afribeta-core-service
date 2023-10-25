@@ -84,7 +84,7 @@ export class AdminTransactionController {
     @Post("payout/recommend/:id")
     @UseGuards(AbilitiesGuard)
     @CheckAbilities(new Ability.FundWithdrawRecommendAbility())
-    async recommendPyout(@Param("id", ParseIntPipe) id: number) {
+    async recommendPayout(@Param("id", ParseIntPipe) id: number) {
         return await this.transactionService.recommendPayout(id);
     }
 }
