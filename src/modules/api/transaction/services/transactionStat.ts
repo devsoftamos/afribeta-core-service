@@ -55,7 +55,13 @@ export class TransactionStatService {
         });
     }
 
-    async fetchTotalCommission(options: SuccessfulTransactionsDto, user: User) {
+    async fetchMerchantTotalCommission(
+        options: SuccessfulTransactionsDto,
+        user: User
+    ) {
+        const startDate = startOfMonth(new Date(options.date));
+        const endDate = endOfMonth(new Date(options.date));
+
         const agentCommission = await this.prisma.transaction.aggregate({
             _sum: {
                 merchantCommission: true,
@@ -125,30 +131,52 @@ export class TransactionStatService {
         });
     }
 
-    //successful transactions on bill purchase/payment
-    async successfulTransactionsOnBillPayment(
-        options: SuccessfulTransactionsDto
-    ) {
-        const monthlyTransactions = await this.aggregateBillPaymentTransactions(
-            this.getDateRange(options.date).monthStarts,
-            this.getDateRange(options.date).monthEnds
+    async fetchTotalTransactions(options: SuccessfulTransactionsDto) {
+        const startDate = startOfMonth(new Date(options.date));
+        const endDate = endOfMonth(new Date(options.date));
+
+        const successfulTransactions = await this.aggregateTotalTransaction(
+            startDate,
+            endDate,
+            TransactionStatus.SUCCESS
         );
 
-        const dailyTransactions = await this.aggregateBillPaymentTransactions(
-            this.getDateRange(options.date).dayStarts,
-            this.getDateRange(options.date).dayEnds
+        const failedTransactions = await this.aggregateTotalTransaction(
+            startDate,
+            endDate,
+            TransactionStatus.FAILED
         );
 
-        const weeklyTransactions = await this.aggregateBillPaymentTransactions(
-            this.getDateRange(options.date).weekStarts,
-            this.getDateRange(options.date).weekEnds
-        );
         return buildResponse({
-            message: "Transaction overview fetched successfully",
+            message: "Transaction statistics retrieved successfully",
             data: {
-                monthlyTransactions: monthlyTransactions._sum.amount || 0,
-                dailyTransactions: dailyTransactions._sum.amount || 0,
-                weeklyTransactions: weeklyTransactions._sum.amount || 0,
+                successfulTransactions: successfulTransactions._sum.amount || 0,
+                failedTransactions: failedTransactions._sum.amount || 0,
+            },
+        });
+    }
+
+    async fetchTotalCommission(options: SuccessfulTransactionsDto) {
+        const startDate = startOfMonth(new Date(options.date));
+        const endDate = endOfMonth(new Date(options.date));
+
+        const totalCommission = await this.prisma.transaction.aggregate({
+            _sum: {
+                commission: true,
+            },
+            where: {
+                status: TransactionStatus.SUCCESS,
+                createdAt: {
+                    gte: startDate,
+                    lte: endDate,
+                },
+            },
+        });
+
+        return buildResponse({
+            message: "Total commission fetched successfully",
+            data: {
+                commission: totalCommission._sum.commission,
             },
         });
     }

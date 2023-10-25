@@ -95,4 +95,11 @@ export class AdminUserController {
     async createUser(@Body(ValidationPipe) createUserDto: CreateUserDto) {
         return await this.usersService.createNewUser(createUserDto);
     }
+
+    @Get("count/merchant")
+    async countMerchants(
+        @Query(ValidationPipe) countAgentsCreatedDto: CountAgentsCreatedDto
+    ) {
+        return this.usersService.countMerchants(countAgentsCreatedDto);
+    }
 }
