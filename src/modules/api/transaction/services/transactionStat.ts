@@ -8,7 +8,7 @@ import {
     startOfWeek,
 } from "date-fns";
 import { User, TransactionStatus } from "@prisma/client";
-import { SuccessfulTransactionsDto, BillPayment } from "../dtos";
+import { SuccessfulTransactionsDto } from "../dtos";
 import { buildResponse } from "@/utils/api-response-util";
 import { Injectable } from "@nestjs/common";
 
@@ -59,9 +59,6 @@ export class TransactionStatService {
         options: SuccessfulTransactionsDto,
         user: User
     ) {
-        const startDate = startOfMonth(new Date(options.date));
-        const endDate = endOfMonth(new Date(options.date));
-
         const agentCommission = await this.prisma.transaction.aggregate({
             _sum: {
                 merchantCommission: true,
@@ -132,18 +129,15 @@ export class TransactionStatService {
     }
 
     async fetchTotalTransactions(options: SuccessfulTransactionsDto) {
-        const startDate = startOfMonth(new Date(options.date));
-        const endDate = endOfMonth(new Date(options.date));
-
         const successfulTransactions = await this.aggregateTotalTransaction(
-            startDate,
-            endDate,
+            this.getDateRange(options.date).monthStarts,
+            this.getDateRange(options.date).monthEnds,
             TransactionStatus.SUCCESS
         );
 
         const failedTransactions = await this.aggregateTotalTransaction(
-            startDate,
-            endDate,
+            this.getDateRange(options.date).monthStarts,
+            this.getDateRange(options.date).monthEnds,
             TransactionStatus.FAILED
         );
 
@@ -157,9 +151,6 @@ export class TransactionStatService {
     }
 
     async fetchTotalCommission(options: SuccessfulTransactionsDto) {
-        const startDate = startOfMonth(new Date(options.date));
-        const endDate = endOfMonth(new Date(options.date));
-
         const totalCommission = await this.prisma.transaction.aggregate({
             _sum: {
                 commission: true,
@@ -167,8 +158,8 @@ export class TransactionStatService {
             where: {
                 status: TransactionStatus.SUCCESS,
                 createdAt: {
-                    gte: startDate,
-                    lte: endDate,
+                    gte: this.getDateRange(options.date).monthStarts,
+                    lte: this.getDateRange(options.date).monthEnds,
                 },
             },
         });
@@ -176,7 +167,7 @@ export class TransactionStatService {
         return buildResponse({
             message: "Total commission fetched successfully",
             data: {
-                commission: totalCommission._sum.commission,
+                commission: totalCommission._sum.commission || 0,
             },
         });
     }

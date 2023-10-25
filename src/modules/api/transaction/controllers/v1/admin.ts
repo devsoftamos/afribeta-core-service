@@ -87,4 +87,13 @@ export class AdminTransactionController {
     async recommendPayout(@Param("id", ParseIntPipe) id: number) {
         return await this.transactionService.recommendPayout(id);
     }
+
+    @Get("report")
+    async GetAdminReport(
+        @Query(ValidationPipe) transactionHistoryDto: TransactionHistoryDto
+    ) {
+        return this.transactionService.adminTransactionReport(
+            transactionHistoryDto
+        );
+    }
 }
