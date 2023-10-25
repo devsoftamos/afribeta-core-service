@@ -93,14 +93,16 @@ export class TransactionStatService {
         });
     }
 
-    billPaymentTypesToFilter = [
-        BillPayment.AIRTIME_PURCHASE,
-        BillPayment.AIRTIME_TO_CASH,
-        BillPayment.CABLETV_BILL,
-        BillPayment.DATA_PURCHASE,
-        BillPayment.ELECTRICITY_BILL,
-        BillPayment.INTERNET_BILL,
-    ];
+    private async getBillPaymentsToFilter() {
+        return [
+            BillPayment.AIRTIME_PURCHASE,
+            BillPayment.AIRTIME_TO_CASH,
+            BillPayment.CABLETV_BILL,
+            BillPayment.DATA_PURCHASE,
+            BillPayment.ELECTRICITY_BILL,
+            BillPayment.INTERNET_BILL,
+        ];
+    }
 
     private async aggregateBillPaymentTransactions(
         startDate: Date,
@@ -112,7 +114,7 @@ export class TransactionStatService {
             },
             where: {
                 type: {
-                    in: this.billPaymentTypesToFilter,
+                    in: await this.getBillPaymentsToFilter(),
                 },
                 status: TransactionStatus.SUCCESS,
                 createdAt: {
