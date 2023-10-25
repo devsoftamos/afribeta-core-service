@@ -6,6 +6,8 @@ import {
     SendVerificationCodeDto,
     PasswordResetRequestDto,
     UpdatePasswordDto,
+    UserSigInDto,
+    UserSignInAppType,
 } from "../dtos";
 import {
     DuplicateUserException,
@@ -46,6 +48,7 @@ import {
     LoginMeta,
     LoginPlatform,
     LoginResponseData,
+    SignInOptions,
     SignupResponseData,
 } from "../interfaces";
 import { SMS } from "@/modules/core/sms";
@@ -88,6 +91,26 @@ export class AuthService {
             UserType.AGENT,
             UserType.MERCHANT,
         ];
+
+        if (!userTypes.includes(userType)) {
+            throw new InvalidCredentialException(
+                "Incorrect email or password",
+                HttpStatus.UNAUTHORIZED
+            );
+        }
+    }
+
+    validateCustomerAccount(userType: UserType) {
+        if (userType !== UserType.CUSTOMER) {
+            throw new InvalidCredentialException(
+                "Incorrect email or password",
+                HttpStatus.UNAUTHORIZED
+            );
+        }
+    }
+
+    validateAgencyAccount(userType: UserType) {
+        const userTypes: UserType[] = [UserType.AGENT, UserType.MERCHANT];
 
         if (!userTypes.includes(userType)) {
             throw new InvalidCredentialException(
@@ -298,7 +321,7 @@ export class AuthService {
     }
 
     async signIn(
-        options: SignInDto,
+        options: SignInOptions,
         loginPlatform: LoginPlatform
     ): Promise<ApiResponse<LoginResponseData>> {
         const user = await this.prisma.user.findUnique({
@@ -354,6 +377,27 @@ export class AuthService {
             }
         }
 
+        //validate user app type for user login
+        if (options.appType && loginPlatform === LoginPlatform.USER) {
+            switch (options.appType) {
+                case UserSignInAppType.CUSTOMER: {
+                    this.validateCustomerAccount(user.userType);
+                    break;
+                }
+                case UserSignInAppType.AGENCY: {
+                    this.validateAgencyAccount(user.userType);
+                    break;
+                }
+
+                default: {
+                    throw new AuthGenericException(
+                        "Invalid user login app type",
+                        HttpStatus.INTERNAL_SERVER_ERROR
+                    );
+                }
+            }
+        }
+
         const permissions = user.role.permissions.map((p) => p.permission.name);
 
         const isValidPassword = await this.comparePassword(
@@ -393,7 +437,7 @@ export class AuthService {
     }
 
     async userSignIn(
-        options: SignInDto
+        options: UserSigInDto
     ): Promise<ApiResponse<LoginResponseData>> {
         return await this.signIn(options, LoginPlatform.USER);
     }

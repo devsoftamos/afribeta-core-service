@@ -19,9 +19,9 @@ import { Request } from "express";
 import {
     PasswordResetRequestDto,
     SendVerificationCodeDto,
-    SignInDto,
     SignUpDto,
     UpdatePasswordDto,
+    UserSigInDto,
 } from "../../dtos";
 import { AuthGuard } from "../../guard";
 import { AuthService } from "../../services";
@@ -43,7 +43,7 @@ export class AuthController {
     @HttpCode(HttpStatus.OK)
     @Post("login")
     async signIn(
-        @Body(ValidationPipe) signInDto: SignInDto
+        @Body(ValidationPipe) signInDto: UserSigInDto
     ): Promise<ApiResponse> {
         return await this.authService.userSignIn(signInDto);
     }
