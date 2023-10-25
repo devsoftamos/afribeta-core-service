@@ -22,10 +22,12 @@ export class AbilityFactory {
                 },
             },
         });
-        // let permissions = [];
-        // if (role.permissions.length) {
-        //     permissions = role.permissions.map((p) => p.permission.name);
-        // }
+        let permissions = [];
+        if (role.permissions.length) {
+            permissions = role.permissions.map((p) => p.permission.name);
+        }
+
+        console.log(permissions);
 
         const agencyRoleTypes = [
             RoleSlug.MERCHANT,
@@ -51,12 +53,6 @@ export class AbilityFactory {
         can(Action.CreateBankAccount, "BankAccount");
         can(Action.CreateKYC, "User");
 
-        if (role.slug !== RoleSlug.MERCHANT) {
-            cannot(Action.ViewSubAgent, "User").because(
-                "Your account type does not have sufficient permission to view sub agent resource"
-            );
-        }
-
         //merchant only
         if (role.slug !== RoleSlug.MERCHANT) {
             cannot(Action.FundSubAgent, "User").because(
@@ -68,19 +64,19 @@ export class AbilityFactory {
             cannot(Action.CreateSubAgent, "User").because(
                 "Your account type does not have sufficient permission to create agent"
             );
-        }
-
-        if (role.slug !== RoleSlug.SUB_AGENT) {
-            cannot(Action.FundRequest, "User").because(
-                "Your account type does not have sufficient permission for fund request"
+            cannot(Action.ViewSubAgent, "User").because(
+                "Your account type does not have sufficient permission to view sub agent resource"
             );
         }
+
+        //all agency
         if (!agencyRoleTypes.includes(role.slug as any)) {
             cannot(Action.FundWalletFromCommission, "Wallet").because(
                 "Your account type does not have sufficient permission to fund wallet from commission wallet"
             );
         }
 
+        //agent and merchant
         if (!mainAgencyTypes.includes(role.slug as any)) {
             cannot(Action.PayoutRequest, "User").because(
                 "Your account type does not have sufficient permission for payout request"
@@ -93,11 +89,22 @@ export class AbilityFactory {
             );
         }
 
+        //sub agent
+        if (role.slug !== RoleSlug.SUB_AGENT) {
+            cannot(Action.FundRequest, "User").because(
+                "Your account type does not have sufficient permission for fund request"
+            );
+        }
+
+        //agent
         if (role.slug !== RoleSlug.AGENT) {
             cannot(Action.CreateKYC, "User").because(
                 "Your account type does not have sufficient permission to add KYC"
             );
         }
+
+        //admins
+
         return build();
     }
 }
