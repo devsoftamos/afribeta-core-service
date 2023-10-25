@@ -1,6 +1,6 @@
 import { KYC_STATUS, User, UserType } from "@prisma/client";
 import { Request } from "express";
-import { SignInDto, UserSigInDto } from "../dtos";
+import { UserSigInDto } from "../dtos";
 import { Optional } from "@/utils";
 
 export interface RequestWithUser extends Request {
