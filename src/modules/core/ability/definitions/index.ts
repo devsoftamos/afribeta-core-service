@@ -45,5 +45,4 @@ export class CreateKYCAbility implements RequiredRule {
     subject: Subjects = "User";
 }
 
-
 //admin

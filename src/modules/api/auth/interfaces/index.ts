@@ -1,5 +1,7 @@
 import { KYC_STATUS, User, UserType } from "@prisma/client";
 import { Request } from "express";
+import { SignInDto, UserSigInDto } from "../dtos";
+import { Optional } from "@/utils";
 
 export interface RequestWithUser extends Request {
     user: User;
@@ -56,3 +58,5 @@ export enum LoginPlatform {
     ADMIN = "ADMIN",
     USER = "USER",
 }
+
+export type SignInOptions = Optional<UserSigInDto, "appType">;

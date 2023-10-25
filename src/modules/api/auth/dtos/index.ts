@@ -66,6 +66,15 @@ export class SignInDto {
     password: string;
 }
 
+export enum UserSignInAppType {
+    AGENCY = "AGENCY",
+    CUSTOMER = "CUSTOMER",
+}
+export class UserSigInDto extends SignInDto {
+    @IsEnum(UserSignInAppType)
+    appType: UserSignInAppType;
+}
+
 export class SendVerificationCodeDto {
     @IsEmail({}, { message: "Invalid email address" })
     email: string;
