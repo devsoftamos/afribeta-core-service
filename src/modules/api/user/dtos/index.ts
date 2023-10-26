@@ -6,7 +6,6 @@ import {
     IsArray,
     IsBase64,
     IsBooleanString,
-    IsDateString,
     IsEmail,
     IsEnum,
     IsInt,
@@ -228,9 +227,16 @@ export class CreateUserDto {
     @IsEmail()
     email: string;
 
+    @IsNotEmpty()
+    @IsString()
+    password: string;
+
     @IsPhoneNumber("NG")
     @Length(11, 11, {
         message: "Phone number must be valid containing 11 digits",
     })
     phone: string;
+
+    @IsNumberString()
+    roleId: number;
 }
