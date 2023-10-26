@@ -106,5 +106,5 @@ export class UpdatePayoutStatusDto {
 
 export class SuccessfulTransactionsDto {
     @IsDateString()
-    date: string;
+    date: Date;
 }

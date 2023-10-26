@@ -58,7 +58,6 @@ import { SendinblueEmailException } from "@calculusky/transactional-email";
 import { BillServiceSlug } from "@/modules/api/bill/interfaces";
 import { RoleSlug } from "../../role/interfaces";
 import { RoleNotFoundException } from "../../role/errors";
-import { endOfMonth, startOfMonth } from "date-fns";
 import { AzureStorageService } from "@/modules/core/upload/services/azure";
 
 @Injectable()
@@ -1076,11 +1075,13 @@ export class UserService {
             );
         }
 
-        const hashedPassword = await this.authService.hashPassword("pass1234");
+        const hashedPassword = await this.authService.hashPassword(
+            options.password
+        );
 
         const role = await this.prisma.role.findUnique({
             where: {
-                slug: RoleSlug.ADMIN,
+                id: +options.roleId,
             },
         });
 
