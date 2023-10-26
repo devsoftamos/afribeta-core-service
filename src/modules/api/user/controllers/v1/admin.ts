@@ -84,14 +84,14 @@ export class AdminUserController {
         return await this.usersService.getAllMerchants(fetchAllMerchantsDto);
     }
 
-    @Get("list-users")
+    @Get()
     async fetchAllUsers(
         @Query(ValidationPipe) fetchAllUsersDto: ListMerchantAgentsDto
     ) {
         return await this.usersService.fetchAllUsers(fetchAllUsersDto);
     }
 
-    @Post("create-user")
+    @Post()
     async createUser(@Body(ValidationPipe) createUserDto: CreateUserDto) {
         return await this.usersService.createNewUser(createUserDto);
     }

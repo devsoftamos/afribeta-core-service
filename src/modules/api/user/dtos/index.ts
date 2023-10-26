@@ -11,7 +11,6 @@ import {
     IsInt,
     IsNotEmpty,
     IsNumber,
-    IsNumberString,
     IsOptional,
     IsPhoneNumber,
     IsString,
@@ -237,6 +236,6 @@ export class CreateUserDto {
     })
     phone: string;
 
-    @IsNumberString()
+    @IsInt()
     roleId: number;
 }
