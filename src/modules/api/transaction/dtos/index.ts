@@ -6,7 +6,6 @@ import {
     IsNumberString,
     IsOptional,
     IsString,
-    IsDateString,
 } from "class-validator";
 
 import { TransactionStatus } from "@prisma/client";

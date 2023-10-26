@@ -15,7 +15,6 @@ import {
     AdminTransactionHistoryDto,
     MerchantTransactionHistoryDto,
     TransactionHistoryDto,
-    TransactionReportType,
     UpdatePayoutStatus,
     UpdatePayoutStatusDto,
     VerifyTransactionDto,
@@ -26,7 +25,6 @@ import {
     InvalidTransactionVerificationProvider,
     TransactionNotFoundException,
 } from "../errors";
-import { InvalidTransactionVerificationProvider } from "../errors";
 import { endOfMonth, startOfMonth } from "date-fns";
 
 @Injectable()
