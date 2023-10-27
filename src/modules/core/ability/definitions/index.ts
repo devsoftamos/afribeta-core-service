@@ -1,5 +1,6 @@
 import { Action, RequiredRule, Subjects } from "../interfaces";
 
+//*********************default app user ********************** */
 export class CreateSubAgentAbility implements RequiredRule {
     action: Action = Action.CreateSubAgent;
     subject: Subjects = "User";
@@ -45,4 +46,108 @@ export class CreateKYCAbility implements RequiredRule {
     subject: Subjects = "User";
 }
 
-//admin
+//***************** admin ***************************
+export class ReadUserAbility implements RequiredRule {
+    action: Action = Action.ReadUser;
+    subject: Subjects = "User";
+}
+
+export class ReadUserBalanceAbility implements RequiredRule {
+    action: Action = Action.ReadUserBalance;
+    subject: Subjects = "Wallet";
+}
+
+export class AccountActivationAndDeactivationAbility implements RequiredRule {
+    action: Action = Action.AccountActivationAndDeactivation;
+    subject: Subjects = "User";
+}
+
+export class AuthorizeAgentUpgradeAbility implements RequiredRule {
+    action: Action = Action.AuthorizeAgentUpgrade;
+    subject: Subjects = "User";
+}
+
+export class ReadTransactionAbility implements RequiredRule {
+    action: Action = Action.ReadTransaction;
+    subject: Subjects = "Transaction";
+}
+
+export class AuthorizePayoutAbility implements RequiredRule {
+    action: Action = Action.AuthorizePayout;
+    subject: Subjects = "Transaction";
+}
+
+export class ReadPayoutAbility implements RequiredRule {
+    action: Action = Action.ReadPayout;
+    subject: Subjects = "Transaction";
+}
+
+export class ReadThirdPartyWalletBalanceAbility implements RequiredRule {
+    action: Action = Action.ReadThirdPartyWalletBalance;
+    subject: Subjects = "Wallet";
+}
+
+export class ReadUsersWalletSummaryAbility implements RequiredRule {
+    action: Action = Action.ReadUsersWalletSummary;
+    subject: Subjects = "Wallet";
+}
+
+export class FundWithdrawRecommendAbility implements RequiredRule {
+    action: Action = Action.FundWithdrawRecommend;
+    subject: Subjects = "Transaction";
+}
+
+export class CreateAdminAbility implements RequiredRule {
+    action: Action = Action.CreateAdmin;
+    subject: Subjects = "User";
+}
+
+export class CreateRoleAbility implements RequiredRule {
+    action: Action = Action.CreateRole;
+    subject: Subjects = "Role";
+}
+
+export class ReadRoleAbility implements RequiredRule {
+    action: Action = Action.ReadRole;
+    subject: Subjects = "Role";
+}
+
+export class ReadPermissionAbility implements RequiredRule {
+    action: Action = Action.ReadPermission;
+    subject: Subjects = "Permission";
+}
+
+export class AssignRoleAbility implements RequiredRule {
+    action: Action = Action.AssignRole;
+    subject: Subjects = "User";
+}
+
+export class AssignPermissionAbility implements RequiredRule {
+    action: Action = Action.AssignPermission;
+    subject: Subjects = "RolePermission";
+}
+
+//
+export class ReadCommissionAbility implements RequiredRule {
+    action: Action = Action.ReadCommission;
+    subject: Subjects = "BillService";
+}
+
+export class UpdateCommissionAbility implements RequiredRule {
+    action: Action = Action.UpdateCommission;
+    subject: Subjects = "BillService";
+}
+
+export class ReadKycAbility implements RequiredRule {
+    action: Action = Action.ReadKyc;
+    subject: Subjects = "KycInformation";
+}
+
+export class P {
+    readonly readKycAbility = new ReadKycAbility();
+    readonly createSubAgentAbility: CreateSubAgentAbility;
+    constructor() {
+        this.createSubAgentAbility = new CreateSubAgentAbility();
+        this.readKycAbility = new ReadKycAbility();
+    }
+}
