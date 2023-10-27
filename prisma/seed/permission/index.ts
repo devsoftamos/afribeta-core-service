@@ -1,4 +1,4 @@
-import { Action } from "@/modules/core/ability/interfaces";
+import { Action } from "../../../src/modules/core/ability/interfaces";
 import { Prisma } from "@prisma/client";
 
 export const permissions: Prisma.PermissionUncheckedCreateInput[] = [
@@ -11,16 +11,16 @@ export const permissions: Prisma.PermissionUncheckedCreateInput[] = [
         description: "View single user wallet balance",
     },
     {
-        name: "enquiry",
-        description: "Enquiry",
+        name: Action.ReadUser,
+        description: "View Users",
     },
     {
-        name: Action.AuthorizeAccount,
+        name: Action.AccountActivationAndDeactivation,
         description: "Activation and Deactivation of Accounts",
     },
     {
-        name: Action.AuthorizeKYC,
-        description: "Approve or Decline KYC",
+        name: Action.AuthorizeAgentUpgrade,
+        description: "Approve/Decline Agent Upgrade Request",
     },
     {
         name: Action.ReadTransaction,
@@ -46,5 +46,41 @@ export const permissions: Prisma.PermissionUncheckedCreateInput[] = [
     {
         name: Action.ReadUsersWalletSummary,
         description: "Users Wallet Balance Summary",
+    },
+    {
+        name: Action.CreateAdmin,
+        description: "Create Admin Users",
+    },
+    {
+        name: Action.CreateRole,
+        description: "Create Role and Assign Permissions",
+    },
+    {
+        name: Action.ReadRole,
+        description: "View Roles",
+    },
+    {
+        name: Action.AssignRole,
+        description: "Assign Roles",
+    },
+    {
+        name: Action.ReadPermission,
+        description: "View Permissions",
+    },
+    {
+        name: Action.AssignPermission,
+        description: "Assign Permissions to Roles",
+    },
+    {
+        name: Action.ReadCommission,
+        description: "View Commission",
+    },
+    {
+        name: Action.UpdateCommission,
+        description: "Update Commission",
+    },
+    {
+        name: Action.ReadKyc,
+        description: "View KYC Information",
     },
 ];

@@ -21,6 +21,12 @@ import {
 import { User as UserModel } from "@prisma/client";
 import { UserService } from "../../services";
 import { AuthGuard } from "@/modules/api/auth/guard";
+import { AbilitiesGuard } from "@/modules/core/ability/guards";
+import { CheckAbilities } from "@/modules/core/ability/decorator";
+import {
+    AuthorizeAgentUpgradeAbility,
+    ReadUserAbility,
+} from "@/modules/core/ability";
 
 @UseGuards(AuthGuard)
 @Controller({
@@ -30,6 +36,8 @@ export class AdminUserController {
     constructor(private readonly usersService: UserService) {}
 
     @Get("merchant")
+    @UseGuards(AbilitiesGuard)
+    @CheckAbilities(new ReadUserAbility())
     async fetchMerchants(
         @Query(ValidationPipe) fetchMerchantsDto: FetchMerchantAgentsDto
     ) {
@@ -37,6 +45,8 @@ export class AdminUserController {
     }
 
     @Get("customer")
+    @UseGuards(AbilitiesGuard)
+    @CheckAbilities(new ReadUserAbility())
     async fetchCustomers(
         @Query(ValidationPipe) fetchCustomersDto: ListMerchantAgentsDto
     ) {
@@ -44,11 +54,15 @@ export class AdminUserController {
     }
 
     @Get("merchant/:id")
+    @UseGuards(AbilitiesGuard)
+    @CheckAbilities(new ReadUserAbility())
     async getMerchantDetails(@Param("id", ParseIntPipe) id: number) {
         return await this.usersService.merchantDetails(id);
     }
 
     @Get("merchant/:id/agent")
+    @UseGuards(AbilitiesGuard)
+    @CheckAbilities(new ReadUserAbility())
     async fetchMerchantAgents(
         @Query(ValidationPipe) fetchMerchantsAgentDto: ListMerchantAgentsDto,
         @User() user: UserModel,
@@ -63,6 +77,8 @@ export class AdminUserController {
 
     @HttpCode(HttpStatus.OK)
     @Post("agent/:id/upgrade")
+    @UseGuards(AbilitiesGuard)
+    @CheckAbilities(new AuthorizeAgentUpgradeAbility())
     async authorizeAgentUpgrade(
         @Param("id", ParseIntPipe) id: number,
         @Body(ValidationPipe)
@@ -75,6 +91,8 @@ export class AdminUserController {
     }
 
     @Get("overview/merchants")
+    @UseGuards(AbilitiesGuard)
+    @CheckAbilities(new ReadUserAbility())
     async fetchAllMerchants(
         @Query(ValidationPipe) fetchAllMerchantsDto: FetchAllMerchantsDto
     ) {

@@ -1,4 +1,14 @@
-import { User, Transaction, Wallet, BankAccount } from "@prisma/client";
+import {
+    User,
+    Transaction,
+    Wallet,
+    BankAccount,
+    Role,
+    Permission,
+    RolePermission,
+    BillService,
+    KycInformation,
+} from "@prisma/client";
 import { PureAbility } from "@casl/ability";
 import { PrismaQuery, Subjects as PrismaSubjects } from "@casl/prisma";
 
@@ -7,6 +17,11 @@ export type Subjects = PrismaSubjects<{
     Transaction: Transaction;
     Wallet: Wallet;
     BankAccount: BankAccount;
+    Role: Role;
+    Permission: Permission;
+    RolePermission: RolePermission;
+    BillService: BillService;
+    KycInformation: KycInformation;
 }>;
 
 export type AppAbility = PureAbility<[string, Subjects], PrismaQuery>;
@@ -29,15 +44,25 @@ export enum Action {
 
     //admin
     ReadReport = "report.read",
+    ReadUser = "user.read",
     ReadUserBalance = "user_balance.read",
-    AuthorizeAccount = "account.authorize",
-    AuthorizeKYC = "kyc.authorize",
+    AccountActivationAndDeactivation = "account.activate_deactivate",
+    AuthorizeAgentUpgrade = "agent.upgrade.authorize",
     ReadTransaction = "transaction.read",
     AuthorizePayout = "payout.authorize",
     ReadPayout = "payout.read",
     ReadThirdPartyWalletBalance = "third_party_wallet.read",
     ReadUsersWalletSummary = "wallet_summary.read",
     FundWithdrawRecommend = "fund.withdraw.recommend",
+    CreateAdmin = "admin.create",
+    CreateRole = "role.create",
+    ReadRole = "role.read",
+    ReadPermission = "permission.read",
+    AssignRole = "role.assign",
+    AssignPermission = "permission.assign",
+    ReadCommission = "commission.read",
+    UpdateCommission = "commission.update",
+    ReadKyc = "kyc.read",
 }
 
 export interface RequiredRule {

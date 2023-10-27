@@ -27,7 +27,7 @@ export class AbilityFactory {
             permissions = role.permissions.map((p) => p.permission.name);
         }
 
-        console.log(permissions);
+        console.log(permissions, "*****");
 
         const agencyRoleTypes = [
             RoleSlug.MERCHANT,
@@ -52,6 +52,28 @@ export class AbilityFactory {
         can(Action.ReadBankAccount, "BankAccount");
         can(Action.CreateBankAccount, "BankAccount");
         can(Action.CreateKYC, "User");
+
+        //admin
+        can(Action.AccountActivationAndDeactivation, "User");
+        can(Action.AuthorizeAgentUpgrade, "User");
+        can(Action.ReadReport, "Transaction");
+        can(Action.ReadUser, "User");
+        can(Action.ReadUserBalance, "Wallet");
+        can(Action.ReadTransaction, "Transaction");
+        can(Action.ReadThirdPartyWalletBalance, "Wallet");
+        can(Action.AuthorizePayout, "Transaction");
+        can(Action.ReadPayout, "Transaction");
+        can(Action.FundWithdrawRecommend, "Transaction");
+        can(Action.ReadUsersWalletSummary, "Wallet");
+        can(Action.CreateRole, "Role");
+        can(Action.ReadRole, "Role");
+        can(Action.AssignRole, "User");
+        can(Action.ReadPermission, "Permission");
+        can(Action.AssignPermission, "RolePermission");
+        can(Action.CreateAdmin, "User");
+        can(Action.ReadCommission, "BillService");
+        can(Action.UpdateCommission, "BillService");
+        can(Action.ReadKyc, "KycInformation");
 
         //merchant only
         if (role.slug !== RoleSlug.MERCHANT) {
@@ -104,6 +126,142 @@ export class AbilityFactory {
         }
 
         //admins
+        if (role.slug !== RoleSlug.SUPER_ADMIN) {
+            //read user
+            if (!permissions.includes(Action.ReadUser)) {
+                cannot(Action.ReadUser, "User").because(
+                    "Insufficient permission to view user(s)"
+                );
+            }
+
+            //read report
+            if (!permissions.includes(Action.ReadReport)) {
+                cannot(Action.ReadReport, "Transaction").because(
+                    "Insufficient permission to view report"
+                );
+            }
+
+            //read user wallet balance
+            if (!permissions.includes(Action.ReadUserBalance)) {
+                cannot(Action.ReadUserBalance, "Wallet").because(
+                    "Insufficient permission to view user wallet balance"
+                );
+            }
+
+            //activate/deactivation of account
+            if (
+                !permissions.includes(Action.AccountActivationAndDeactivation)
+            ) {
+                cannot(Action.AccountActivationAndDeactivation, "User").because(
+                    "Insufficient permission for account activation and deactivation"
+                );
+            }
+
+            //Approve/decline agent upgrade request
+            if (!permissions.includes(Action.AuthorizeAgentUpgrade)) {
+                cannot(Action.AuthorizeAgentUpgrade, "User").because(
+                    "Insufficient permission to authorize agent upgrade"
+                );
+            }
+
+            //Read user transactions
+            if (!permissions.includes(Action.ReadTransaction)) {
+                cannot(Action.ReadTransaction, "Transaction").because(
+                    "Insufficient permission to view user transaction"
+                );
+            }
+
+            //approve/decline payout request
+            if (!permissions.includes(Action.AuthorizePayout)) {
+                cannot(Action.AuthorizePayout, "Transaction").because(
+                    "Insufficient permission to authorize payout request"
+                );
+            }
+
+            //Read/view payout request
+            if (!permissions.includes(Action.ReadPayout)) {
+                cannot(Action.ReadPayout, "Transaction").because(
+                    "Insufficient permission to view user(s)"
+                );
+            }
+
+            //Read third party wallet balance
+            if (!permissions.includes(Action.ReadThirdPartyWalletBalance)) {
+                cannot(Action.ReadThirdPartyWalletBalance, "Wallet").because(
+                    "Insufficient permission to view third party wallet balance"
+                );
+            }
+
+            //read summary of user wallet balance
+            if (!permissions.includes(Action.ReadUsersWalletSummary)) {
+                cannot(Action.ReadUsersWalletSummary, "Wallet").because(
+                    "Insufficient permission to user view users wallet summary"
+                );
+            }
+
+            //Recommend fund withdrawal
+            if (!permissions.includes(Action.FundWithdrawRecommend)) {
+                cannot(Action.FundWithdrawRecommend, "Transaction").because(
+                    "Insufficient permission to recommend payout request"
+                );
+            }
+
+            //create role
+            if (!permissions.includes(Action.CreateRole)) {
+                cannot(Action.CreateRole, "Role").because(
+                    "Insufficient permission to view create role"
+                );
+            }
+
+            //read role
+            if (!permissions.includes(Action.ReadRole)) {
+                cannot(Action.ReadRole, "Role").because(
+                    "Insufficient permission to view role(s)"
+                );
+            }
+
+            //read permission
+            if (!permissions.includes(Action.ReadPermission)) {
+                cannot(Action.ReadPermission, "Permission").because(
+                    "Insufficient permission to view permission(s)"
+                );
+            }
+
+            //Assign role
+            if (!permissions.includes(Action.AssignRole)) {
+                cannot(Action.AssignRole, "User").because(
+                    "Insufficient permission to assign role"
+                );
+            }
+
+            //assign permissions to roles
+            if (!permissions.includes(Action.AssignPermission)) {
+                cannot(Action.ReadUser, "RolePermission").because(
+                    "Insufficient permission to assign permissions to role"
+                );
+            }
+
+            //
+            if (!permissions.includes(Action.ReadCommission)) {
+                cannot(Action.ReadCommission, "BillService").because(
+                    "Insufficient permission to view commissions"
+                );
+            }
+
+            //update commission
+            if (!permissions.includes(Action.UpdateCommission)) {
+                cannot(Action.UpdateCommission, "BillService").because(
+                    "Insufficient permission to update permission"
+                );
+            }
+
+            //view KYC info
+            if (!permissions.includes(Action.ReadKyc)) {
+                cannot(Action.ReadKyc, "KycInformation").because(
+                    "Insufficient permission to view KYC Information"
+                );
+            }
+        }
 
         return build();
     }
