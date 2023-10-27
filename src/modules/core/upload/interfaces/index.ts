@@ -15,7 +15,8 @@ export interface CompressImageOptions extends UploadFileOptions {
 }
 
 export interface DeleteFileOptions {
-    key: string;
+    blobUrl: string;
+    dir: string;
 }
 
 export interface IUploadService {
