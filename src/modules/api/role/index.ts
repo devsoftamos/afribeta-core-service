@@ -1,10 +1,10 @@
 import { Global, Module } from "@nestjs/common";
 import { RolesService } from "./services";
-import { RolesController } from "./controllers";
+import { AdminRolesController } from "./controllers/admin";
 
 @Global()
 @Module({
-    controllers: [RolesController],
+    controllers: [AdminRolesController],
     providers: [RolesService],
     exports: [],
 })

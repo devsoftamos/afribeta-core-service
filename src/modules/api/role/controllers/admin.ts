@@ -12,9 +12,9 @@ import { FetchRolesDto } from "../dtos";
 
 @UseGuards(AuthGuard)
 @Controller({
-    path: "role",
+    path: "admin/role",
 })
-export class RolesController {
+export class AdminRolesController {
     constructor(private readonly rolesService: RolesService) {}
 
     @Get()
