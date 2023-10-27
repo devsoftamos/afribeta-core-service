@@ -15,10 +15,12 @@ export interface CompressImageOptions extends UploadFileOptions {
 }
 
 export interface DeleteFileOptions {
-    key: string;
+    blobUrl: string;
+    dir: string;
 }
 
 export interface IUploadService {
     uploadFile(options: UploadFileOptions): Promise<string>;
     uploadCompressedImage(options: CompressImageOptions): Promise<string>;
+    deleteFile(options: DeleteFileOptions): Promise<boolean>;
 }

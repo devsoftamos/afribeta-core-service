@@ -1,8 +1,13 @@
 import { AzureConfiguration } from "@/config";
-import { BlobServiceClient, BlockBlobClient } from "@azure/storage-blob";
+import {
+    BlobClient,
+    BlobServiceClient,
+    BlockBlobClient,
+} from "@azure/storage-blob";
 import { Injectable } from "@nestjs/common";
 import {
     CompressImageOptions,
+    DeleteFileOptions,
     IUploadService,
     ImageFormat,
     UploadFileOptions,
@@ -38,6 +43,15 @@ export class AzureStorageService
         return containerClient.getBlockBlobClient(blobName);
     }
 
+    private getBlobClient(blobName: string, containerName: string): BlobClient {
+        const connectionString = this.buildConnectionString();
+        const blobServiceClient =
+            BlobServiceClient.fromConnectionString(connectionString);
+        const containerClient =
+            blobServiceClient.getContainerClient(containerName);
+        return containerClient.getBlobClient(blobName);
+    }
+
     async uploadFile(options: UploadFileOptions): Promise<string> {
         const blobName = this.buildBlobName(options.name, options.format);
         const blockBlobClient = this.getBlockBlobClient(blobName, options.dir);
@@ -54,5 +68,15 @@ export class AzureStorageService
         const blockBlobClient = this.getBlockBlobClient(blobName, options.dir);
         await blockBlobClient.uploadData(compressedBuffer);
         return blockBlobClient.url;
+    }
+
+    async deleteFile(options: DeleteFileOptions): Promise<boolean> {
+        const blobUrl = options.blobUrl;
+        const blobName = blobUrl.split("/").slice(-1)[0];
+        const blobClient = this.getBlobClient(blobName, options.dir);
+        await blobClient.delete({
+            deleteSnapshots: "include",
+        });
+        return true;
     }
 }

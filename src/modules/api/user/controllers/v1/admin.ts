@@ -7,13 +7,14 @@ import {
     ParseIntPipe,
     ValidationPipe,
     UseGuards,
-    Body,
     Post,
-    HttpCode,
+    Body,
     HttpStatus,
+    HttpCode,
 } from "@nestjs/common";
 import {
     AuthorizeAgentToMerchantUpgradeAgentDto,
+    CreateUserDto,
     FetchAllMerchantsDto,
     FetchMerchantAgentsDto,
     ListMerchantAgentsDto,
@@ -23,10 +24,7 @@ import { UserService } from "../../services";
 import { AuthGuard } from "@/modules/api/auth/guard";
 import { AbilitiesGuard } from "@/modules/core/ability/guards";
 import { CheckAbilities } from "@/modules/core/ability/decorator";
-import {
-    AuthorizeAgentUpgradeAbility,
-    ReadUserAbility,
-} from "@/modules/core/ability";
+import * as Ability from "@/modules/core/ability";
 
 @UseGuards(AuthGuard)
 @Controller({
@@ -37,7 +35,7 @@ export class AdminUserController {
 
     @Get("merchant")
     @UseGuards(AbilitiesGuard)
-    @CheckAbilities(new ReadUserAbility())
+    @CheckAbilities(new Ability.ReadUserAbility())
     async fetchMerchants(
         @Query(ValidationPipe) fetchMerchantsDto: FetchMerchantAgentsDto
     ) {
@@ -46,7 +44,7 @@ export class AdminUserController {
 
     @Get("customer")
     @UseGuards(AbilitiesGuard)
-    @CheckAbilities(new ReadUserAbility())
+    @CheckAbilities(new Ability.ReadUserAbility())
     async fetchCustomers(
         @Query(ValidationPipe) fetchCustomersDto: ListMerchantAgentsDto
     ) {
@@ -55,14 +53,14 @@ export class AdminUserController {
 
     @Get("merchant/:id")
     @UseGuards(AbilitiesGuard)
-    @CheckAbilities(new ReadUserAbility())
+    @CheckAbilities(new Ability.ReadUserAbility())
     async getMerchantDetails(@Param("id", ParseIntPipe) id: number) {
         return await this.usersService.merchantDetails(id);
     }
 
     @Get("merchant/:id/agent")
     @UseGuards(AbilitiesGuard)
-    @CheckAbilities(new ReadUserAbility())
+    @CheckAbilities(new Ability.ReadUserAbility())
     async fetchMerchantAgents(
         @Query(ValidationPipe) fetchMerchantsAgentDto: ListMerchantAgentsDto,
         @User() user: UserModel,
@@ -78,7 +76,7 @@ export class AdminUserController {
     @HttpCode(HttpStatus.OK)
     @Post("agent/:id/upgrade")
     @UseGuards(AbilitiesGuard)
-    @CheckAbilities(new AuthorizeAgentUpgradeAbility())
+    @CheckAbilities(new Ability.AuthorizeAgentUpgradeAbility())
     async authorizeAgentUpgrade(
         @Param("id", ParseIntPipe) id: number,
         @Body(ValidationPipe)
@@ -90,12 +88,28 @@ export class AdminUserController {
         );
     }
 
-    @Get("overview/merchants")
+    @Get("overview/merchant")
     @UseGuards(AbilitiesGuard)
-    @CheckAbilities(new ReadUserAbility())
+    @CheckAbilities(new Ability.ReadUserAbility())
     async fetchAllMerchants(
         @Query(ValidationPipe) fetchAllMerchantsDto: FetchAllMerchantsDto
     ) {
         return await this.usersService.getAllMerchants(fetchAllMerchantsDto);
+    }
+
+    @Get()
+    @UseGuards(AbilitiesGuard)
+    @CheckAbilities(new Ability.ReadUserAbility())
+    async fetchAllUsers(
+        @Query(ValidationPipe) fetchAllUsersDto: ListMerchantAgentsDto
+    ) {
+        return await this.usersService.fetchAllUsers(fetchAllUsersDto);
+    }
+
+    @Post()
+    @UseGuards(AbilitiesGuard)
+    @CheckAbilities(new Ability.CreateAdminAbility())
+    async createUser(@Body(ValidationPipe) createUserDto: CreateUserDto) {
+        return await this.usersService.createNewUser(createUserDto);
     }
 }

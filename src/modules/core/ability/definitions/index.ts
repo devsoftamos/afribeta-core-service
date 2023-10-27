@@ -142,12 +142,3 @@ export class ReadKycAbility implements RequiredRule {
     action: Action = Action.ReadKyc;
     subject: Subjects = "KycInformation";
 }
-
-export class P {
-    readonly readKycAbility = new ReadKycAbility();
-    readonly createSubAgentAbility: CreateSubAgentAbility;
-    constructor() {
-        this.createSubAgentAbility = new CreateSubAgentAbility();
-        this.readKycAbility = new ReadKycAbility();
-    }
-}
