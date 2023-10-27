@@ -27,8 +27,6 @@ export class AbilityFactory {
             permissions = role.permissions.map((p) => p.permission.name);
         }
 
-        console.log(permissions, "*****");
-
         const agencyRoleTypes = [
             RoleSlug.MERCHANT,
             RoleSlug.SUB_AGENT,
