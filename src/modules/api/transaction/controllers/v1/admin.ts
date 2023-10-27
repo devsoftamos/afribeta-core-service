@@ -60,7 +60,7 @@ export class AdminTransactionController {
     }
 
     @Get("recent")
-    async getrecentTransactions(
+    async getRecentTransactions(
         @Query(ValidationPipe) transactionHistoryDto: TransactionHistoryDto
     ) {
         return await this.transactionService.adminRecentTransactions(
@@ -69,7 +69,7 @@ export class AdminTransactionController {
     }
 
     @Post("payout/recommend/:id")
-    async recommendPyout(@Param("id", ParseIntPipe) id: number) {
+    async recommendPayout(@Param("id", ParseIntPipe) id: number) {
         return await this.transactionService.recommendPayout(id);
     }
 }
