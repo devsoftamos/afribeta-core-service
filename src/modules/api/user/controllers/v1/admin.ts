@@ -74,7 +74,7 @@ export class AdminUserController {
         );
     }
 
-    @Get("overview/merchants")
+    @Get("overview/merchant")
     async fetchAllMerchants(
         @Query(ValidationPipe) fetchAllMerchantsDto: FetchAllMerchantsDto
     ) {
