@@ -19,6 +19,7 @@ import {
     AuthTokenValidationException,
     InvalidAuthTokenException,
     PrismaNetworkException,
+    UserUnauthorizedException,
 } from "../errors";
 import {
     DataStoredInToken,
@@ -30,7 +31,6 @@ import {
 import { Observable } from "rxjs";
 import { createHmac } from "crypto";
 import logger from "moment-logger";
-import { Reflector } from "@nestjs/core";
 import { Status } from "@prisma/client";
 
 @Injectable()
@@ -96,15 +96,16 @@ export class AuthGuard implements CanActivate {
 
 @Injectable()
 export class IsEnabledGuard implements CanActivate {
-    constructor(private reflector: Reflector) {}
-
     async canActivate(context: ExecutionContext): Promise<boolean> {
         const request = context.switchToHttp().getRequest();
         const user = request.user;
         if (user && user.status === Status.ENABLED) {
             return true;
         }
-        return false;
+        throw new UserUnauthorizedException(
+            "User account is disabled",
+            HttpStatus.UNAUTHORIZED
+        );
     }
 }
 
