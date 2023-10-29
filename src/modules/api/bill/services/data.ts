@@ -292,7 +292,7 @@ export class DataBillService {
 
         return {
             paymentReference: paymentReference,
-            totalAmount: transactionCreateOptions.totalAmount
+            totalAmount: transactionCreateOptions.totalAmount,
         };
     }
 
