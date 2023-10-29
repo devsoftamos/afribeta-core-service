@@ -15,7 +15,7 @@ import { AuthGuard } from "@/modules/api/auth/guard";
     path: "admin/commission/statistics",
 })
 @Injectable()
-export class AdminCommissionStatistics {
+export class AdminCommissionStatController {
     constructor(
         private readonly commissionStatService: CommissionStatService
     ) {}
