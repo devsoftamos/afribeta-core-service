@@ -19,6 +19,7 @@ import {
     AuthTokenValidationException,
     InvalidAuthTokenException,
     PrismaNetworkException,
+    UserUnauthorizedException,
 } from "../errors";
 import {
     DataStoredInToken,
@@ -30,6 +31,7 @@ import {
 import { Observable } from "rxjs";
 import { createHmac } from "crypto";
 import logger from "moment-logger";
+import { Status } from "@prisma/client";
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -89,6 +91,21 @@ export class AuthGuard implements CanActivate {
     private extractTokenFromHeader(request: Request): string | undefined {
         const [type, token] = request.headers.authorization?.split(" ") ?? [];
         return type === "Bearer" ? token : undefined;
+    }
+}
+
+@Injectable()
+export class IsEnabledGuard implements CanActivate {
+    async canActivate(context: ExecutionContext): Promise<boolean> {
+        const request = context.switchToHttp().getRequest();
+        const user = request.user;
+        if (user && user.status === Status.ENABLED) {
+            return true;
+        }
+        throw new UserUnauthorizedException(
+            "User account is disabled",
+            HttpStatus.UNAUTHORIZED
+        );
     }
 }
 
