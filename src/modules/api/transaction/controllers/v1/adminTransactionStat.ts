@@ -28,16 +28,6 @@ export class AdminTransactionStatController {
         );
     }
 
-    @Get("commission")
-    async GetTotalCommission(
-        @Query(ValidationPipe)
-        successfulTransactionsDto: SuccessfulTransactionsDto
-    ) {
-        return await this.transactionStatService.fetchTotalCommission(
-            successfulTransactionsDto
-        );
-    }
-
     @Get()
     async GetTotalTransactions(
         @Query(ValidationPipe)
