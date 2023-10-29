@@ -16,10 +16,6 @@ export interface FormatCableTVNetworkOutput {
     name: string;
 }
 
-export interface CableTVPurchaseInitializationHandlerOutput {
-    paymentReference: string;
-}
-
 export interface CompleteCableTVPurchaseTransactionOptions
     extends CompleteBillPurchaseTransactionOptions {
     serviceTransactionCode: string;

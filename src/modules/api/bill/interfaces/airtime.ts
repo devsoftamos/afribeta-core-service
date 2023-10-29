@@ -16,10 +16,6 @@ export interface FormatAirtimeNetworkInput {
     };
 }
 
-export interface AirtimePurchaseInitializationHandlerOutput {
-    paymentReference: string;
-}
-
 export interface CompleteAirtimePurchaseTransactionOptions
     extends CompleteBillPurchaseTransactionOptions {
     billServiceSlug: string; //network provider
