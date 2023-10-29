@@ -39,7 +39,6 @@ import {
     CompletePowerPurchaseTransactionOptions,
     CompleteBillPurchaseUserOptions,
     BillPurchaseInitializationHandlerOptions,
-    PowerPurchaseInitializationHandlerOutput,
     ProcessBillPaymentOptions,
     BillProviderSlug,
     CompleteBillPurchaseOptions,
@@ -49,6 +48,7 @@ import {
     BillProviderSlugForPower,
     VerifyPurchase,
     VerifyPowerPurchaseData,
+    PurchaseInitializationHandlerOutput,
 } from "../interfaces";
 import logger from "moment-logger";
 import { UserNotFoundException } from "../../user";
@@ -229,11 +229,11 @@ export class PowerBillService {
             );
         }
 
-        const response = (resp: PowerPurchaseInitializationHandlerOutput) => {
+        const response = (resp: PurchaseInitializationHandlerOutput) => {
             return buildResponse({
                 message: "Power payment successfully initialized",
                 data: {
-                    amount: options.amount + options.serviceCharge,
+                    amount: resp.totalAmount,
                     email: user.email,
                     reference: resp.paymentReference,
                 },
@@ -290,7 +290,7 @@ export class PowerBillService {
 
     async handlePowerPurchaseInitialization(
         options: BillPurchaseInitializationHandlerOptions<PurchasePowerDto>
-    ): Promise<PowerPurchaseInitializationHandlerOutput> {
+    ): Promise<PurchaseInitializationHandlerOutput> {
         const { billProvider, paymentChannel, purchaseOptions, user } = options;
 
         const paymentReference = generateId({ type: "reference" });
@@ -323,10 +323,23 @@ export class PowerBillService {
                 senderIdentifier: purchaseOptions.meterNumber,
                 billServiceSlug: purchaseOptions.billService,
                 provider: purchaseOptions.billProvider,
-                serviceCharge: purchaseOptions.serviceCharge,
                 serviceTransactionCode: purchaseOptions.meterCode,
                 merchantId: user.createdById,
             };
+
+        //handle service charge
+        const hasServiceCharge = this.billService.isServiceChargeApplicable({
+            billType: transactionCreateOptions.type,
+            serviceCharge: options.purchaseOptions.serviceCharge,
+            userType: user.userType,
+        });
+        if (hasServiceCharge) {
+            transactionCreateOptions.serviceCharge =
+                purchaseOptions.serviceCharge;
+
+            transactionCreateOptions.totalAmount =
+                purchaseOptions.amount + purchaseOptions.serviceCharge;
+        }
 
         switch (billProvider.slug) {
             //iRecharge provider
@@ -369,6 +382,7 @@ export class PowerBillService {
 
         return {
             paymentReference: paymentReference,
+            totalAmount: transactionCreateOptions.totalAmount,
         };
     }
 

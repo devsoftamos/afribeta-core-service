@@ -175,3 +175,14 @@ export enum BillServiceSlug {
     SMILE = "smile-internet",
     SPECTRANET = "spectranet-internet",
 }
+
+export interface CheckServiceChargeOptions {
+    userType: UserType;
+    serviceCharge: number;
+    billType: TransactionType;
+}
+
+export interface PurchaseInitializationHandlerOutput {
+    paymentReference: string;
+    totalAmount: number;
+}

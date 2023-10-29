@@ -21,6 +21,7 @@ import {
     ProcessBillPaymentOptions,
     WalletChargeHandler,
     BillServiceSlug,
+    CheckServiceChargeOptions,
 } from "../interfaces";
 import logger from "moment-logger";
 import { PowerBillService } from "./power";
@@ -34,6 +35,7 @@ import {
     DEFAULT_CAPPING_MULTIPLIER,
 } from "@/config";
 import {
+    BillPaymentValidationException,
     ComputeBillCommissionException,
     PayBillCommissionException,
     WalletChargeException,
@@ -1011,5 +1013,29 @@ export class BillService {
         } catch (error) {
             logger.error(error);
         }
+    }
+
+    isServiceChargeApplicable(options: CheckServiceChargeOptions): boolean {
+        if (options.userType != UserType.CUSTOMER) {
+            return false;
+        }
+
+        const chargeableBills: TransactionType[] = [
+            TransactionType.ELECTRICITY_BILL,
+            TransactionType.CABLETV_BILL,
+        ];
+
+        if (!chargeableBills.includes(options.billType)) {
+            return false;
+        }
+
+        if (!options.serviceCharge) {
+            throw new BillPaymentValidationException(
+                "Service charge is required for the account type",
+                HttpStatus.BAD_REQUEST
+            );
+        }
+
+        return true;
     }
 }

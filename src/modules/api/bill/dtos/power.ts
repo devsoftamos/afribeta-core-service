@@ -22,6 +22,7 @@ export class PurchasePowerDto {
     @IsNumber()
     amount: number;
 
+    @IsOptional()
     @IsNumber()
     serviceCharge: number;
 
