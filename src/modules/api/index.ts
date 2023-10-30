@@ -12,6 +12,7 @@ import { BullModule } from "@nestjs/bull";
 import { redisUrl } from "@/config";
 import { CommissionModule } from "./commission";
 import { RolesModule } from "./role";
+import { PermissionModule } from "./permissions";
 
 @Module({
     imports: [
@@ -29,6 +30,7 @@ import { RolesModule } from "./role";
         }),
         CommissionModule,
         RolesModule,
+        PermissionModule,
     ],
 })
 export class APIModule {}
