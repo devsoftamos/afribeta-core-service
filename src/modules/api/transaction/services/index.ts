@@ -407,6 +407,15 @@ export class TransactionService {
         if (options.transactionId) {
             queryOptions.where.transactionId = options.transactionId;
         }
+        if (options.phone) {
+            queryOptions.where.OR = [
+                { senderIdentifier: options.phone },
+                { receiverIdentifier: options.phone },
+            ];
+        }
+        if (options.meterNo) {
+            queryOptions.where.senderIdentifier = options.meterNo;
+        }
         if (options.date) {
             queryOptions.where.createdAt = { gte: startDate, lte: endDate };
         }
@@ -427,6 +436,7 @@ export class TransactionService {
         const transactions = await this.prisma.transaction.findMany(
             queryOptions
         );
+        console.log(transactions);
         if (options.pagination) {
             paginationMeta.pageCount = transactions.length;
         }
