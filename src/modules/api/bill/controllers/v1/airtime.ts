@@ -1,4 +1,4 @@
-import { AuthGuard } from "@/modules/api/auth/guard";
+import { AuthGuard, IsEnabledGuard } from "@/modules/api/auth/guard";
 import { User } from "@/modules/api/user";
 import {
     Body,
@@ -17,7 +17,7 @@ import { PurchaseAirtimeDto } from "../../dtos/airtime";
 import { InitializeBillPaymentGuard } from "../../guard";
 import { AirtimeBillService } from "../../services/airtime";
 
-@UseGuards(AuthGuard)
+@UseGuards(AuthGuard, IsEnabledGuard)
 @Controller({
     path: "bill/airtime",
 })
