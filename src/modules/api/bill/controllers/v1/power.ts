@@ -1,4 +1,4 @@
-import { AuthGuard } from "@/modules/api/auth/guard";
+import { AuthGuard, IsEnabledGuard } from "@/modules/api/auth/guard";
 import { User } from "@/modules/api/user";
 import {
     Body,
@@ -18,7 +18,7 @@ import { GetMeterInfoDto, PurchasePowerDto } from "../../dtos/power";
 import { InitializeBillPaymentGuard } from "../../guard";
 import { PowerBillService } from "../../services/power";
 
-@UseGuards(AuthGuard)
+@UseGuards(AuthGuard, IsEnabledGuard)
 @Controller({
     path: "bill/power",
 })

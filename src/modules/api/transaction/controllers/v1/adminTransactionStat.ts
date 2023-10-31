@@ -1,4 +1,4 @@
-import { AuthGuard } from "@/modules/api/auth/guard";
+import { AuthGuard, IsEnabledGuard } from "@/modules/api/auth/guard";
 import {
     Controller,
     Get,
@@ -9,7 +9,7 @@ import {
 import { TransactionStatService } from "../../services/transactionStat";
 import { SuccessfulTransactionsDto } from "../../dtos";
 
-@UseGuards(AuthGuard)
+@UseGuards(AuthGuard, IsEnabledGuard)
 @Controller({
     path: "admin/transaction/statistics",
 })

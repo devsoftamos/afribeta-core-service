@@ -1,4 +1,4 @@
-import { AuthGuard } from "@/modules/api/auth/guard";
+import { AuthGuard, IsEnabledGuard } from "@/modules/api/auth/guard";
 import { User } from "@/modules/api/user";
 import {
     Controller,
@@ -11,7 +11,7 @@ import { User as UserModel } from "@prisma/client";
 import { TransactionStatService } from "../../services/transactionStat";
 import { SuccessfulTransactionsDto } from "../../dtos";
 
-@UseGuards(AuthGuard)
+@UseGuards(AuthGuard, IsEnabledGuard)
 @Controller({
     path: "transaction/statistics",
 })

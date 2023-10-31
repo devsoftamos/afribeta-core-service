@@ -2,9 +2,9 @@ import { Controller, Get, UseGuards } from "@nestjs/common";
 import { CommissionService } from "../../services";
 import { User } from "@/modules/api/user";
 import { User as UserModel } from "@prisma/client";
-import { AuthGuard } from "@/modules/api/auth/guard";
+import { AuthGuard, IsEnabledGuard } from "@/modules/api/auth/guard";
 
-@UseGuards(AuthGuard)
+@UseGuards(AuthGuard, IsEnabledGuard)
 @Controller({
     path: "commission",
 })
