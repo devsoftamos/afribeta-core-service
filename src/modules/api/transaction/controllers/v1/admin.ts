@@ -1,4 +1,4 @@
-import { AuthGuard, IsEnabledGuard } from "@/modules/api/auth/guard";
+import { AuthGuard, EnabledAccountGuard } from "@/modules/api/auth/guard";
 import {
     Controller,
     Get,
@@ -22,7 +22,7 @@ import { AbilitiesGuard } from "@/modules/core/ability/guards";
 import { CheckAbilities } from "@/modules/core/ability/decorator";
 import * as Ability from "@/modules/core/ability";
 
-@UseGuards(AuthGuard, IsEnabledGuard)
+@UseGuards(AuthGuard, EnabledAccountGuard)
 @Controller({
     path: "admin/transaction",
 })

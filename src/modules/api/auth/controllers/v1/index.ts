@@ -23,7 +23,7 @@ import {
     UpdatePasswordDto,
     UserSigInDto,
 } from "../../dtos";
-import { AuthGuard } from "../../guard";
+import { AuthGuard, EnabledAccountGuard } from "../../guard";
 import { AuthService } from "../../services";
 
 @Controller({
@@ -75,7 +75,7 @@ export class AuthController {
         return await this.authService.updatePassword(updatePasswordDto);
     }
 
-    @UseGuards(AuthGuard, AbilitiesGuard)
+    @UseGuards(AuthGuard, EnabledAccountGuard, AbilitiesGuard)
     @CheckAbilities(new CreateSubAgentAbility())
     @HttpCode(HttpStatus.OK)
     @Post("verify-agent-email")

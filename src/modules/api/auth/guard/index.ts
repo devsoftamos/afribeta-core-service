@@ -19,7 +19,7 @@ import {
     AuthTokenValidationException,
     InvalidAuthTokenException,
     PrismaNetworkException,
-    UserUnauthorizedException,
+    UserAccountDisabledException,
 } from "../errors";
 import {
     DataStoredInToken,
@@ -95,14 +95,14 @@ export class AuthGuard implements CanActivate {
 }
 
 @Injectable()
-export class IsEnabledGuard implements CanActivate {
+export class EnabledAccountGuard implements CanActivate {
     async canActivate(context: ExecutionContext): Promise<boolean> {
         const request = context.switchToHttp().getRequest();
         const user = request.user;
         if (user && user.status === Status.ENABLED) {
             return true;
         }
-        throw new UserUnauthorizedException(
+        throw new UserAccountDisabledException(
             "User account is disabled",
             HttpStatus.UNAUTHORIZED
         );
