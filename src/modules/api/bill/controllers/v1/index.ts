@@ -1,4 +1,4 @@
-import { AuthGuard, IsEnabledGuard } from "@/modules/api/auth/guard";
+import { AuthGuard, EnabledAccountGuard } from "@/modules/api/auth/guard";
 import { User } from "@/modules/api/user";
 import {
     Controller,
@@ -11,7 +11,7 @@ import { User as UserModel } from "@prisma/client";
 import { PaginationDto } from "../../dtos";
 import { BillService } from "../../services";
 
-@UseGuards(AuthGuard, IsEnabledGuard)
+@UseGuards(AuthGuard, EnabledAccountGuard)
 @Controller({
     path: "bill",
 })

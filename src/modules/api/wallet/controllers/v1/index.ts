@@ -1,4 +1,4 @@
-import { AuthGuard, IsEnabledGuard } from "@/modules/api/auth/guard";
+import { AuthGuard, EnabledAccountGuard } from "@/modules/api/auth/guard";
 import { User } from "@/modules/api/user";
 import {
     FundSubAgentAbility,
@@ -38,7 +38,7 @@ import {
 } from "../../dto";
 import { WalletService } from "../../services";
 
-@UseGuards(AuthGuard, IsEnabledGuard)
+@UseGuards(AuthGuard, EnabledAccountGuard)
 @Controller({
     path: "wallet",
 })

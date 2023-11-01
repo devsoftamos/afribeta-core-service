@@ -1,4 +1,4 @@
-import { AuthGuard, IsEnabledGuard } from "@/modules/api/auth/guard";
+import { AuthGuard, EnabledAccountGuard } from "@/modules/api/auth/guard";
 
 import {
     Controller,
@@ -10,7 +10,7 @@ import {
 import { RolesService } from "../services";
 import { FetchRolesDto } from "../dtos";
 
-@UseGuards(AuthGuard, IsEnabledGuard)
+@UseGuards(AuthGuard, EnabledAccountGuard)
 @Controller({
     path: "admin/role",
 })
