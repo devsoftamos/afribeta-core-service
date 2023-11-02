@@ -404,17 +404,12 @@ export class TransactionService {
             },
         };
 
-        if (options.transactionId) {
-            queryOptions.where.transactionId = options.transactionId;
-        }
-        if (options.phone) {
+        if (options.referenceId) {
             queryOptions.where.OR = [
-                { senderIdentifier: options.phone },
-                { receiverIdentifier: options.phone },
+                { transactionId: options.referenceId },
+                { senderIdentifier: options.referenceId },
+                { receiverIdentifier: options.referenceId },
             ];
-        }
-        if (options.meterNo) {
-            queryOptions.where.senderIdentifier = options.meterNo;
         }
         if (options.date) {
             queryOptions.where.createdAt = { gte: startDate, lte: endDate };
@@ -436,7 +431,7 @@ export class TransactionService {
         const transactions = await this.prisma.transaction.findMany(
             queryOptions
         );
-        console.log(transactions);
+
         if (options.pagination) {
             paginationMeta.pageCount = transactions.length;
         }
@@ -450,79 +445,79 @@ export class TransactionService {
         });
     }
 
-    async adminTransactionReport(options: TransactionHistoryDto) {
-        const paginationMeta: Partial<PaginationMeta> = {};
+    // async adminTransactionReport(options: TransactionHistoryDto) {
+    //     const paginationMeta: Partial<PaginationMeta> = {};
 
-        const queryOptions: Prisma.TransactionFindManyArgs = {
-            orderBy: { createdAt: "desc" },
-            where: {},
-            select: {
-                id: true,
-                amount: true,
-                shortDescription: true,
-                paymentStatus: true,
-                status: true,
-                transactionId: true,
-                paymentChannel: true,
-                merchantCommission: true,
-                commission: true,
-                flow: true,
-                type: true,
-                createdAt: true,
-            },
-        };
+    //     const queryOptions: Prisma.TransactionFindManyArgs = {
+    //         orderBy: { createdAt: "desc" },
+    //         where: {},
+    //         select: {
+    //             id: true,
+    //             amount: true,
+    //             shortDescription: true,
+    //             paymentStatus: true,
+    //             status: true,
+    //             transactionId: true,
+    //             paymentChannel: true,
+    //             merchantCommission: true,
+    //             commission: true,
+    //             flow: true,
+    //             type: true,
+    //             createdAt: true,
+    //         },
+    //     };
 
-        switch (options.type) {
-            case TransactionReportType.AIRTIME_PURCHASE: {
-                queryOptions.where.type =
-                    TransactionReportType.AIRTIME_PURCHASE;
-                break;
-            }
-            case TransactionReportType.CABLETV_BILL: {
-                queryOptions.where.type = TransactionReportType.CABLETV_BILL;
-                break;
-            }
-            case TransactionReportType.DATA_PURCHASE: {
-                queryOptions.where.type = TransactionReportType.DATA_PURCHASE;
-                break;
-            }
-            case TransactionReportType.ELECTRICITY_BILL: {
-                queryOptions.where.type =
-                    TransactionReportType.ELECTRICITY_BILL;
-                break;
-            }
-            case TransactionReportType.PAYOUT: {
-                queryOptions.where.type = TransactionReportType.PAYOUT;
-                break;
-            }
-        }
+    //     switch (options.type) {
+    //         case TransactionReportType.AIRTIME_PURCHASE: {
+    //             queryOptions.where.type =
+    //                 TransactionReportType.AIRTIME_PURCHASE;
+    //             break;
+    //         }
+    //         case TransactionReportType.CABLETV_BILL: {
+    //             queryOptions.where.type = TransactionReportType.CABLETV_BILL;
+    //             break;
+    //         }
+    //         case TransactionReportType.DATA_PURCHASE: {
+    //             queryOptions.where.type = TransactionReportType.DATA_PURCHASE;
+    //             break;
+    //         }
+    //         case TransactionReportType.ELECTRICITY_BILL: {
+    //             queryOptions.where.type =
+    //                 TransactionReportType.ELECTRICITY_BILL;
+    //             break;
+    //         }
+    //         case TransactionReportType.PAYOUT: {
+    //             queryOptions.where.type = TransactionReportType.PAYOUT;
+    //             break;
+    //         }
+    //     }
 
-        if (options.pagination) {
-            const page = +options.page || 1;
-            const limit = +options.limit || 10;
-            const offset = (page - 1) * limit;
-            queryOptions.skip = offset;
-            queryOptions.take = limit;
-            const count = await this.prisma.transaction.count({
-                where: queryOptions.where,
-            });
-            paginationMeta.totalCount = count;
-            paginationMeta.perPage = limit;
-        }
+    //     if (options.pagination) {
+    //         const page = +options.page || 1;
+    //         const limit = +options.limit || 10;
+    //         const offset = (page - 1) * limit;
+    //         queryOptions.skip = offset;
+    //         queryOptions.take = limit;
+    //         const count = await this.prisma.transaction.count({
+    //             where: queryOptions.where,
+    //         });
+    //         paginationMeta.totalCount = count;
+    //         paginationMeta.perPage = limit;
+    //     }
 
-        const transactions = await this.prisma.transaction.findMany(
-            queryOptions
-        );
-        if (options.pagination) {
-            paginationMeta.pageCount = transactions.length;
-        }
+    //     const transactions = await this.prisma.transaction.findMany(
+    //         queryOptions
+    //     );
+    //     if (options.pagination) {
+    //         paginationMeta.pageCount = transactions.length;
+    //     }
 
-        return buildResponse({
-            message: "Admin report retrieved successfully",
-            data: {
-                meta: paginationMeta,
-                records: transactions,
-            },
-        });
-    }
+    //     return buildResponse({
+    //         message: "Admin report retrieved successfully",
+    //         data: {
+    //             meta: paginationMeta,
+    //             records: transactions,
+    //         },
+    //     });
+    // }
 }
