@@ -21,12 +21,12 @@ import {
 } from "../../dtos";
 import { User as UserModel } from "@prisma/client";
 import { UserService } from "../../services";
-import { AuthGuard, EnabledAccountGuard } from "@/modules/api/auth/guard";
+import { AuthGuard } from "@/modules/api/auth/guard";
 import { AbilitiesGuard } from "@/modules/core/ability/guards";
 import { CheckAbilities } from "@/modules/core/ability/decorator";
 import * as Ability from "@/modules/core/ability";
 
-@UseGuards(AuthGuard, EnabledAccountGuard)
+@UseGuards(AuthGuard)
 @Controller({
     path: "admin/user",
 })
