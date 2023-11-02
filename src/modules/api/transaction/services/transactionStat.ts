@@ -8,7 +8,7 @@ import {
     startOfWeek,
 } from "date-fns";
 import { User, TransactionStatus } from "@prisma/client";
-import { SuccessfulTransactionsDto, BillPayment } from "../dtos";
+import { SuccessfulTransactionsDto } from "../dtos";
 import { buildResponse } from "@/utils/api-response-util";
 import { Injectable } from "@nestjs/common";
 
@@ -55,44 +55,6 @@ export class TransactionStatService {
         });
     }
 
-    async fetchTotalCommission(options: SuccessfulTransactionsDto, user: User) {
-        const agentCommission = await this.prisma.transaction.aggregate({
-            _sum: {
-                merchantCommission: true,
-            },
-            where: {
-                user: {
-                    createdById: user.id,
-                },
-                createdAt: {
-                    gte: this.getDateRange(options.date).monthStarts,
-                    lte: this.getDateRange(options.date).monthEnds,
-                },
-            },
-        });
-        const merchantCommission = await this.prisma.transaction.aggregate({
-            _sum: {
-                commission: true,
-            },
-            where: {
-                userId: user.id,
-                createdAt: {
-                    gte: this.getDateRange(options.date).monthStarts,
-                    lte: this.getDateRange(options.date).monthEnds,
-                },
-            },
-        });
-
-        const totalCommission =
-            merchantCommission._sum.commission +
-            agentCommission._sum.merchantCommission;
-
-        return buildResponse({
-            message: "Total commission fetched successfully",
-            data: totalCommission,
-        });
-    }
-
     private async getBillPaymentsToFilter() {
         return [
             BillPayment.AIRTIME_PURCHASE,
@@ -125,30 +87,24 @@ export class TransactionStatService {
         });
     }
 
-    //successful transactions on bill purchase/payment
-    async successfulTransactionsOnBillPayment(
-        options: SuccessfulTransactionsDto
-    ) {
-        const monthlyTransactions = await this.aggregateBillPaymentTransactions(
+    async fetchTotalTransactions(options: SuccessfulTransactionsDto) {
+        const successfulTransactions = await this.aggregateTotalTransaction(
             this.getDateRange(options.date).monthStarts,
-            this.getDateRange(options.date).monthEnds
+            this.getDateRange(options.date).monthEnds,
+            TransactionStatus.SUCCESS
         );
 
-        const dailyTransactions = await this.aggregateBillPaymentTransactions(
-            this.getDateRange(options.date).dayStarts,
-            this.getDateRange(options.date).dayEnds
+        const failedTransactions = await this.aggregateTotalTransaction(
+            this.getDateRange(options.date).monthStarts,
+            this.getDateRange(options.date).monthEnds,
+            TransactionStatus.FAILED
         );
 
-        const weeklyTransactions = await this.aggregateBillPaymentTransactions(
-            this.getDateRange(options.date).weekStarts,
-            this.getDateRange(options.date).weekEnds
-        );
         return buildResponse({
-            message: "Transaction overview fetched successfully",
+            message: "Transaction statistics retrieved successfully",
             data: {
-                monthlyTransactions: monthlyTransactions._sum.amount || 0,
-                dailyTransactions: dailyTransactions._sum.amount || 0,
-                weeklyTransactions: weeklyTransactions._sum.amount || 0,
+                successfulTransactions: successfulTransactions._sum.amount || 0,
+                failedTransactions: failedTransactions._sum.amount || 0,
             },
         });
     }

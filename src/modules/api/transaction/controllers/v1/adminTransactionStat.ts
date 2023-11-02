@@ -27,4 +27,14 @@ export class AdminTransactionStatController {
             successfulTransactionsDto
         );
     }
+
+    @Get()
+    async GetTotalTransactions(
+        @Query(ValidationPipe)
+        successfulTransactionsDto: SuccessfulTransactionsDto
+    ) {
+        return await this.transactionStatService.fetchTotalTransactions(
+            successfulTransactionsDto
+        );
+    }
 }

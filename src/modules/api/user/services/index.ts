@@ -1104,4 +1104,24 @@ export class UserService {
             message: "User created successfully",
         });
     }
+
+    async countMerchants(options: CountAgentsCreatedDto) {
+        const startDate = startOfMonth(new Date(options.date));
+        const endDate = endOfMonth(new Date(options.date));
+
+        const merchants = await this.prisma.user.count({
+            where: {
+                userType: UserType.MERCHANT,
+                createdAt: {
+                    gte: startDate,
+                    lte: endDate,
+                },
+            },
+        });
+
+        return buildResponse({
+            message: "Number of available merchants retrieved successfully",
+            data: merchants,
+        });
+    }
 }

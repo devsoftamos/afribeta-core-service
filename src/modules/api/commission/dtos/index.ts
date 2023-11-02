@@ -1,4 +1,4 @@
-import { IsEnum, IsNumber } from "class-validator";
+import { IsDateString, IsEnum, IsNumber } from "class-validator";
 import { BillServiceSlug } from "../../user";
 
 export class UpdateSingleBillCommissionDto {
@@ -9,4 +9,9 @@ export class UpdateSingleBillCommissionDto {
         maxDecimalPlaces: 2,
     })
     percentage: number;
+}
+
+export class FetchCommissionDto {
+    @IsDateString()
+    date: Date;
 }
