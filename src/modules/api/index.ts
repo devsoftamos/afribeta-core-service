@@ -11,8 +11,7 @@ import { WebExtension } from "./webExtension";
 import { BullModule } from "@nestjs/bull";
 import { redisUrl } from "@/config";
 import { CommissionModule } from "./commission";
-import { RolesModule } from "./role";
-import { PermissionModule } from "./permissions";
+import { AccessControlModule } from "./accessControl";
 
 @Module({
     imports: [
@@ -29,8 +28,7 @@ import { PermissionModule } from "./permissions";
             url: redisUrl,
         }),
         CommissionModule,
-        RolesModule,
-        PermissionModule,
+        AccessControlModule,
     ],
 })
 export class APIModule {}
