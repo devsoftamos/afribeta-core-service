@@ -1,4 +1,4 @@
-import { IsArray, IsOptional, IsString } from "class-validator";
+import { IsArray, IsInt, IsOptional, IsString } from "class-validator";
 
 export class FetchRolesDto {
     @IsOptional()
@@ -11,5 +11,6 @@ export class CreateRoleDto {
     roleName: string;
 
     @IsArray()
-    permissions: Array<number>;
+    @IsInt({ each: true })
+    permissions: number[];
 }
