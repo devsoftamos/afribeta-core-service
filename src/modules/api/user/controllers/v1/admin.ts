@@ -13,6 +13,8 @@ import {
     HttpCode,
 } from "@nestjs/common";
 import {
+    AuthorizeAgentToMerchantUpgradeAgentDto,
+    CountAgentsCreatedDto,
     CreateUserDto,
     FetchAllMerchantsDto,
     FetchMerchantAgentsDto,
