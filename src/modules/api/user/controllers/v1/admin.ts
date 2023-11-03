@@ -14,6 +14,7 @@ import {
 } from "@nestjs/common";
 import {
     AuthorizeAgentToMerchantUpgradeAgentDto,
+    CountAgentsCreatedDto,
     CreateUserDto,
     FetchAllMerchantsDto,
     FetchMerchantAgentsDto,
