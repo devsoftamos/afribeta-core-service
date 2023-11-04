@@ -1,10 +1,9 @@
 import { PrismaService } from "@/modules/core/prisma/services";
 import { Prisma } from "@prisma/client";
 import { CreateRoleDto, FetchRolesDto } from "../dtos";
-import { buildResponse } from "@/utils";
+import { buildResponse, generateSlug } from "@/utils";
 import { HttpStatus, Injectable } from "@nestjs/common";
-import slugify from "slugify";
-import { DuplicateRoleException, RoleNotFoundException } from "../errors";
+import { DuplicateRoleException, PermissionNotFoundException } from "../errors";
 
 @Injectable()
 export class AccessControlService {
@@ -12,7 +11,6 @@ export class AccessControlService {
 
     async fetchRoles(options: FetchRolesDto) {
         const queryOptions: Prisma.RoleFindManyArgs = {
-            where: {},
             select: {
                 name: true,
             },
@@ -30,8 +28,8 @@ export class AccessControlService {
         });
     }
 
-    private async validatePermission(permission: Array<number>) {
-        const permissions = await this.prisma.permission.findMany({
+    private async validatePermission(permission: number[]) {
+        const count = await this.prisma.permission.count({
             where: {
                 id: {
                     in: permission,
@@ -39,7 +37,7 @@ export class AccessControlService {
             },
         });
 
-        return permissions.length === permission.length;
+        return count === permission.length;
     }
 
     async createRoles(options: CreateRoleDto) {
@@ -55,13 +53,13 @@ export class AccessControlService {
             );
         }
 
-        const slug = slugify(options.roleName, { lower: true });
+        const slug = generateSlug(options.roleName);
 
-        const permissions = options.permissions;
-
-        const permissionExists = await this.validatePermission(permissions);
+        const permissionExists = await this.validatePermission(
+            options.permissions
+        );
         if (!permissionExists) {
-            throw new RoleNotFoundException(
+            throw new PermissionNotFoundException(
                 "Permission not found",
                 HttpStatus.BAD_REQUEST
             );
@@ -80,12 +78,10 @@ export class AccessControlService {
                 },
             });
 
-            const roleId = role.id;
-
-            for (const permission of permissions) {
+            for (const permission of options.permissions) {
                 await tx.rolePermission.create({
                     data: {
-                        roleId: roleId,
+                        roleId: role.id,
                         permissionId: permission,
                     },
                 });
