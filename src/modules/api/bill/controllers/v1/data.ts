@@ -1,4 +1,4 @@
-import { AuthGuard } from "@/modules/api/auth/guard";
+import { AuthGuard, EnabledAccountGuard } from "@/modules/api/auth/guard";
 import { User } from "@/modules/api/user";
 import {
     Body,
@@ -18,7 +18,7 @@ import { GetDataBundleDto, PurchaseDataDto } from "../../dtos/data";
 import { InitializeBillPaymentGuard } from "../../guard";
 import { DataBillService } from "../../services/data";
 
-@UseGuards(AuthGuard)
+@UseGuards(AuthGuard, EnabledAccountGuard)
 @Controller({
     path: "bill/data",
 })
