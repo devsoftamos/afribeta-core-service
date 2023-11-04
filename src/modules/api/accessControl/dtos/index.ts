@@ -7,7 +7,7 @@ export class FetchRolesDto {
 }
 
 export class CreateRoleDto {
-    @IsString()
+    @IsString({ message: "Role name must be a string" })
     roleName: string;
 
     @IsArray()
