@@ -8,7 +8,7 @@ import {
     startOfWeek,
 } from "date-fns";
 import { User, TransactionStatus } from "@prisma/client";
-import { SuccessfulTransactionsDto } from "../dtos";
+import { BillPayment, SuccessfulTransactionsDto } from "../dtos";
 import { buildResponse } from "@/utils/api-response-util";
 import { Injectable } from "@nestjs/common";
 
@@ -66,9 +66,10 @@ export class TransactionStatService {
         ];
     }
 
-    private async aggregateBillPaymentTransactions(
+    private async aggregateTotalTransaction(
         startDate: Date,
-        endDate: Date
+        endDate: Date,
+        status: TransactionStatus
     ) {
         return await this.prisma.transaction.aggregate({
             _sum: {
@@ -78,7 +79,7 @@ export class TransactionStatService {
                 type: {
                     in: await this.getBillPaymentsToFilter(),
                 },
-                status: TransactionStatus.SUCCESS,
+                status: status,
                 createdAt: {
                     gte: startDate,
                     lte: endDate,
@@ -105,6 +106,37 @@ export class TransactionStatService {
             data: {
                 successfulTransactions: successfulTransactions._sum.amount || 0,
                 failedTransactions: failedTransactions._sum.amount || 0,
+            },
+        });
+    }
+
+    //successful transactions on bill purchase/payment
+    async successfulTransactionsOnBillPayment(
+        options: SuccessfulTransactionsDto
+    ) {
+        const monthlyTransactions = await this.aggregateTotalTransaction(
+            this.getDateRange(options.date).monthStarts,
+            this.getDateRange(options.date).monthEnds,
+            TransactionStatus.SUCCESS
+        );
+
+        const dailyTransactions = await this.aggregateTotalTransaction(
+            this.getDateRange(options.date).dayStarts,
+            this.getDateRange(options.date).dayEnds,
+            TransactionStatus.SUCCESS
+        );
+
+        const weeklyTransactions = await this.aggregateTotalTransaction(
+            this.getDateRange(options.date).weekStarts,
+            this.getDateRange(options.date).weekEnds,
+            TransactionStatus.SUCCESS
+        );
+        return buildResponse({
+            message: "Transaction overview fetched successfully",
+            data: {
+                monthlyTransactions: monthlyTransactions._sum.amount || 0,
+                dailyTransactions: dailyTransactions._sum.amount || 0,
+                weeklyTransactions: weeklyTransactions._sum.amount || 0,
             },
         });
     }

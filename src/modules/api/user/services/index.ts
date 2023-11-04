@@ -38,6 +38,7 @@ import {
     AuthorizeAgentUpgradeType,
     FetchAllMerchantsDto,
     CreateUserDto,
+    CountAgentsCreatedDto,
 } from "../dtos";
 import {
     AgentCreationException,
@@ -59,6 +60,7 @@ import { BillServiceSlug } from "@/modules/api/bill/interfaces";
 import { RoleSlug } from "../../role/interfaces";
 import { RoleNotFoundException } from "../../role/errors";
 import { AzureStorageService } from "@/modules/core/upload/services/azure";
+import { endOfMonth, startOfMonth } from "date-fns";
 
 @Injectable()
 export class UserService {
