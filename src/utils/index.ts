@@ -58,9 +58,9 @@ export const computeCap = (commission: number) => {
 };
 
 export const generateSlug = (input: string) => {
-    const options: {
-        strict: true;
-        lower: true;
+    const options = {
+        strict: true,
+        lower: true,
     };
     return slugify(input, options);
 };
