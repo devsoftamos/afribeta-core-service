@@ -38,7 +38,12 @@ export class AccessControlService {
             },
         });
 
-        return count === permission.length;
+        if (count !== permission.length) {
+            throw new PermissionNotFoundException(
+                "Permission not found",
+                HttpStatus.BAD_REQUEST
+            );
+        }
     }
 
     async createRoles(options: CreateRoleDto) {
@@ -55,16 +60,7 @@ export class AccessControlService {
         }
 
         const slug = generateSlug(options.roleName);
-
-        const permissionExists = await this.validatePermission(
-            options.permissions
-        );
-        if (!permissionExists) {
-            throw new PermissionNotFoundException(
-                "Permission not found",
-                HttpStatus.BAD_REQUEST
-            );
-        }
+        await this.validatePermission(options.permissions);
 
         const createRoleOptions: Prisma.RoleUncheckedCreateInput = {
             name: options.roleName,
