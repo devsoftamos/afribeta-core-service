@@ -385,6 +385,7 @@ model Transaction {
   @@index([paymentReference, paymentStatus])
   @@index([transactionId])
   @@index([type])
+  @@fulltext([paymentReference, senderIdentifier, receiverIdentifier])
   @@map("Transactions")
 }
 

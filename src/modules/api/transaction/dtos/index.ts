@@ -5,9 +5,7 @@ import {
     IsNumber,
     IsNumberString,
     IsOptional,
-    IsPhoneNumber,
     IsString,
-    Length,
 } from "class-validator";
 
 import { TransactionStatus } from "@prisma/client";
@@ -121,20 +119,14 @@ export class AdminTransactionHistoryDto {
 
     @IsOptional()
     @IsString()
-    transactionId: string;
-
-    @IsOptional()
-    @IsPhoneNumber("NG")
-    @Length(11, 11, {
-        message: "Phone number must be valid containing 11 digits",
-    })
-    phone: string;
-
-    @IsOptional()
-    @IsString()
-    meterNo: string;
+    referenceId: string;
 
     @IsOptional()
     @IsDateString()
     date: string;
+}
+
+export class SuccessfulTransactionsDto {
+    @IsDateString()
+    date: Date;
 }
