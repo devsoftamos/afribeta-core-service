@@ -411,7 +411,6 @@ export class TransactionService {
 
         return buildResponse({
             message: "Payout recommended successfully",
-            data: {},
         });
     }
 
@@ -562,15 +561,15 @@ export class TransactionService {
             },
         };
 
-        if (options.referenceId) {
+        if (options.searchName) {
             (queryOptions.where.paymentReference = {
-                search: options.referenceId,
+                search: options.searchName,
             }),
                 (queryOptions.where.senderIdentifier = {
-                    search: options.referenceId,
+                    search: options.searchName,
                 }),
-                (queryOptions.where.receiverIdentifier = {
-                    search: options.referenceId,
+                (queryOptions.where.transactionId = {
+                    search: options.searchName,
                 });
         }
         if (options.date) {

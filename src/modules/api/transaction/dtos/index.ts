@@ -119,7 +119,7 @@ export class AdminTransactionHistoryDto {
 
     @IsOptional()
     @IsString()
-    referenceId: string;
+    searchName: string;
 
     @IsOptional()
     @IsDateString()
