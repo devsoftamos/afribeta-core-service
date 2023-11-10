@@ -40,7 +40,7 @@ export class AccessControlService {
 
         if (count !== permission.length) {
             throw new PermissionNotFoundException(
-                "Permission not found",
+                "At least one permission in the provided array is invalid",
                 HttpStatus.BAD_REQUEST
             );
         }
