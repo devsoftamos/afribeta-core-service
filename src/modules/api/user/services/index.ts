@@ -1010,4 +1010,36 @@ export class UserService {
             data: agent,
         });
     }
+
+    async customerDetails(id: number) {
+        const userExists = await this.prisma.user.findUnique({
+            where: {
+                id: id,
+            },
+        });
+
+        if (!userExists || userExists.userType !== UserType.CUSTOMER) {
+            throw new UserNotFoundException(
+                "Customer account does not exist",
+                HttpStatus.NOT_FOUND
+            );
+        }
+
+        const customer = await this.prisma.user.findUnique({
+            where: {
+                id: id,
+            },
+            select: {
+                firstName: true,
+                lastName: true,
+                email: true,
+                phone: true,
+            },
+        });
+
+        return buildResponse({
+            message: "Customer details retrieved successfully",
+            data: customer,
+        });
+    }
 }
