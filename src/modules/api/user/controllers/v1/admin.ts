@@ -120,4 +120,11 @@ export class AdminUserController {
     ) {
         return this.usersService.countMerchants(countAgentsCreatedDto);
     }
+
+    @Get("merchant/:id/details")
+    @UseGuards(AbilitiesGuard)
+    @CheckAbilities(new Ability.ReadUserAbility())
+    async getAgentDetails(@Param("id", ParseIntPipe) id: number) {
+        return await this.usersService.getAgentDetails(id);
+    }
 }
