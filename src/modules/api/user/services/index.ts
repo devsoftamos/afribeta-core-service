@@ -1007,9 +1007,7 @@ export class UserService {
 
         return buildResponse({
             message: "Agent details retrieved successfully",
-            data: {
-                record: agent,
-            },
+            data: agent,
         });
     }
 }
