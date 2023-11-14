@@ -1126,4 +1126,52 @@ export class UserService {
             data: merchants,
         });
     }
+
+    async getAgentDetails(id: number) {
+        const userExists = await this.prisma.user.findUnique({
+            where: {
+                id: id,
+            },
+        });
+
+        if (!userExists || userExists.userType !== UserType.AGENT) {
+            throw new UserNotFoundException(
+                "Agent account does not exist",
+                HttpStatus.NOT_FOUND
+            );
+        }
+
+        const agent = await this.prisma.user.findUnique({
+            where: {
+                id: id,
+            },
+            select: {
+                firstName: true,
+                lastName: true,
+                email: true,
+                phone: true,
+                state: {
+                    select: {
+                        name: true,
+                    },
+                },
+                kycInformation: {
+                    select: {
+                        address: true,
+                        cacDocumentUrl: true,
+                        nextOfKinName: true,
+                        identificationMeans: true,
+                        identificationMeansDocumentUrl: true,
+                        nextOfKinPhone: true,
+                        nextOfKinAddress: true,
+                    },
+                },
+            },
+        });
+
+        return buildResponse({
+            message: "Agent details retrieved successfully",
+            data: agent,
+        });
+    }
 }
