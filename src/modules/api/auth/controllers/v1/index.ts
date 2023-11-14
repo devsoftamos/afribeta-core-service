@@ -20,6 +20,7 @@ import {
     PasswordResetRequestDto,
     SendVerificationCodeDto,
     SignUpDto,
+    SubAgentAccountCreateVerificationDto,
     UpdatePasswordDto,
     UserSigInDto,
 } from "../../dtos";
@@ -79,13 +80,26 @@ export class AuthController {
     @CheckAbilities(new CreateSubAgentAbility())
     @HttpCode(HttpStatus.OK)
     @Post("verify-agent-email")
-    async sendAgentAccountVerificationEmail(
+    async sendSubAgentAccountVerificationEmail(
         @Body(ValidationPipe) sendVerificationCodeDto: SendVerificationCodeDto,
         @User() user: UserModel
     ) {
-        return await this.authService.sendAgentAccountVerificationEmail(
+        return await this.authService.sendSubAgentAccountVerificationEmail(
             sendVerificationCodeDto,
             user
+        );
+    }
+
+    @UseGuards(AuthGuard, EnabledAccountGuard, AbilitiesGuard)
+    @CheckAbilities(new CreateSubAgentAbility())
+    @HttpCode(HttpStatus.OK)
+    @Post("verify-subagent-otp")
+    async verifySubAgentEmailVerificationCode(
+        @Body(ValidationPipe)
+        subAgentAccountCreateVerificationDto: SubAgentAccountCreateVerificationDto
+    ) {
+        return await this.authService.verifySubAgentEmailVerificationCode(
+            subAgentAccountCreateVerificationDto
         );
     }
 }

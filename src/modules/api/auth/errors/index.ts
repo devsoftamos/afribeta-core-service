@@ -47,3 +47,7 @@ export class AuthGenericException extends HttpException {
 export class UserAccountDisabledException extends HttpException {
     name = "UserAccountDisabledException";
 }
+
+export class VerificationCodeGenericException extends HttpException {
+    name = "VerificationCodeGenericException";
+}

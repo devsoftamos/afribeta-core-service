@@ -100,3 +100,8 @@ export class UpdatePasswordDto {
     @IsString()
     resetCode: string;
 }
+
+export class SubAgentAccountCreateVerificationDto {
+    @IsString()
+    verificationCode: string;
+}

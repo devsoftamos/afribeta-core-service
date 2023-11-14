@@ -8,6 +8,7 @@ import {
     UpdatePasswordDto,
     UserSigInDto,
     UserSignInAppType,
+    SubAgentAccountCreateVerificationDto,
 } from "../dtos";
 import {
     DuplicateUserException,
@@ -533,7 +534,7 @@ export class AuthService {
         });
     }
 
-    async sendAgentAccountVerificationEmail(
+    async sendSubAgentAccountVerificationEmail(
         options: SendVerificationCodeDto,
         user: User
     ): Promise<ApiResponse> {
@@ -597,7 +598,7 @@ export class AuthService {
             }
 
             return buildResponse({
-                message: `An email verification code has been sent to the agent's email, ${options.email}`,
+                message: `An email verification code has been sent to the email, ${options.email}`,
             });
         } catch (error) {
             logger.error(error);
@@ -621,5 +622,45 @@ export class AuthService {
                 }
             }
         }
+    }
+
+    async verifySubAgentEmailVerificationCode(
+        options: SubAgentAccountCreateVerificationDto
+    ) {
+        const verificationData =
+            await this.prisma.accountVerificationRequest.findUnique({
+                where: { code: options.verificationCode },
+            });
+
+        if (!verificationData) {
+            throw new InvalidEmailVerificationCodeException(
+                "Verification code not found",
+                HttpStatus.NOT_FOUND
+            );
+        }
+
+        //check verification expiration
+        const timeDifference =
+            Date.now() - verificationData.updatedAt.getTime();
+        const timeDiffInMin = timeDifference / (1000 * 60);
+        if (timeDiffInMin > 30) {
+            throw new VerificationCodeExpiredException(
+                "The verification code has expired. Kindly request for a new one",
+                HttpStatus.BAD_REQUEST
+            );
+        }
+
+        await this.prisma.accountVerificationRequest.update({
+            where: {
+                id: verificationData.id,
+            },
+            data: {
+                isVerified: true,
+            },
+        });
+
+        return buildResponse({
+            message: "Email successfully verified",
+        });
     }
 }

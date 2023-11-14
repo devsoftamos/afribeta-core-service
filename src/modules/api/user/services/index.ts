@@ -20,6 +20,7 @@ import {
     InvalidEmailVerificationCodeException,
     SendVerificationEmailException,
     VerificationCodeExpiredException,
+    VerificationCodeGenericException,
 } from "../../auth";
 import { AuthService } from "../../auth/services";
 import {
@@ -310,14 +311,10 @@ export class UserService {
             );
         }
 
-        //check verification expiration
-        const timeDifference =
-            Date.now() - verificationData.updatedAt.getTime();
-        const timeDiffInMin = timeDifference / (1000 * 60);
-        if (timeDiffInMin > 30) {
-            throw new VerificationCodeExpiredException(
-                "The verification code has expired. Kindly request for a new one",
-                HttpStatus.BAD_REQUEST
+        if (!verificationData.isVerified) {
+            throw new VerificationCodeGenericException(
+                "Please verify the OTP code and proceed",
+                HttpStatus.NOT_FOUND
             );
         }
 
