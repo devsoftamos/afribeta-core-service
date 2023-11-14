@@ -118,7 +118,14 @@ export class AdminUserController {
     async countMerchants(
         @Query(ValidationPipe) countAgentsCreatedDto: CountAgentsCreatedDto
     ) {
-        return this.usersService.countMerchants(countAgentsCreatedDto);
+        return await this.usersService.countMerchants(countAgentsCreatedDto);
+    }
+
+    @Get("customer/:id")
+    @UseGuards(AbilitiesGuard)
+    @CheckAbilities(new Ability.ReadUserAbility())
+    async getCustomerDetails(@Param("id", ParseIntPipe) id: number) {
+        return await this.usersService.customerDetails(id);
     }
 
     @Get("agent/:id/kyc")
