@@ -64,6 +64,15 @@ export class AdminTransactionController {
         );
     }
 
+    @Get("payout/recommended")
+    async GetPayouts(
+        @Query(ValidationPipe) viewPayoutStatusDto: ViewPayoutStatusDto
+    ) {
+        return await this.transactionService.fetchRecommendedPayouts(
+            viewPayoutStatusDto
+        );
+    }
+
     @Get("payout/:id")
     @UseGuards(AbilitiesGuard)
     @CheckAbilities(new Ability.ReadPayoutAbility())
@@ -94,17 +103,8 @@ export class AdminTransactionController {
         @Query(ValidationPipe)
         adminTransactionHistoryDto: AdminTransactionHistoryDto
     ) {
-        return await this.transactionService.getAllTransactions(
-            adminTransactionHistoryDto
-        );
-    }
-
-    @Get("recommended")
-    async GetPayouts(
-        @Query(ValidationPipe) viewPayoutStatusDto: ViewPayoutStatusDto
-    ) {
-        return await this.transactionService.fetchRecommendedPayouts(
-            viewPayoutStatusDto
+        return await this.transactionService.adminTransactionReport(
+            transactionHistoryDto
         );
     }
 }

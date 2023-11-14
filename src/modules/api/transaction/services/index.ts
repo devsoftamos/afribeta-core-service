@@ -727,7 +727,7 @@ export class TransactionService {
         );
 
         if (options.pagination) {
-            paginationMeta.pageCount = transactions.length;
+            paginationMeta.pageCount = transaction.length;
         }
 
         return buildResponse({
