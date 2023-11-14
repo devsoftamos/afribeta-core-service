@@ -1,4 +1,4 @@
-import { AuthGuard } from "@/modules/api/auth/guard";
+import { AuthGuard, EnabledAccountGuard } from "@/modules/api/auth/guard";
 import { User } from "@/modules/api/user";
 import { ViewSubAgentAbility } from "@/modules/core/ability";
 import { CheckAbilities } from "@/modules/core/ability/decorator";
@@ -16,7 +16,7 @@ import { User as UserModel } from "@prisma/client";
 import { TransactionHistoryDto, VerifyTransactionDto } from "../../dtos";
 import { TransactionService } from "../../services";
 
-@UseGuards(AuthGuard)
+@UseGuards(AuthGuard, EnabledAccountGuard)
 @Controller({
     path: "transaction",
 })

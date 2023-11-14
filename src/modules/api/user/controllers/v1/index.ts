@@ -1,5 +1,5 @@
 import { RequestWithUser } from "@/modules/api/auth";
-import { AuthGuard } from "@/modules/api/auth/guard";
+import { AuthGuard, EnabledAccountGuard } from "@/modules/api/auth/guard";
 import {
     CreateKYCAbility,
     CreateSubAgentAbility,
@@ -34,7 +34,7 @@ import {
 } from "../../dtos";
 import { UserService } from "../../services";
 
-@UseGuards(AuthGuard)
+@UseGuards(AuthGuard, EnabledAccountGuard)
 @Controller({
     path: "user",
 })

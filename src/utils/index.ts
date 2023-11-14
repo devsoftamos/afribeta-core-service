@@ -2,6 +2,7 @@ import { customAlphabet, urlAlphabet } from "nanoid";
 import { TransactionIdOption } from "./interfaces";
 import { AES } from "crypto-js";
 import { DEFAULT_CAPPING_MULTIPLIER, encryptSecret } from "@/config";
+import slugify from "slugify";
 
 export * from "./api-response-util";
 export * from "./interfaces";
@@ -54,4 +55,12 @@ export const encrypt = (data: any) => {
 
 export const computeCap = (commission: number) => {
     return commission * DEFAULT_CAPPING_MULTIPLIER;
+};
+
+export const generateSlug = (input: string) => {
+    const options = {
+        strict: true,
+        lower: true,
+    };
+    return slugify(input, options);
 };

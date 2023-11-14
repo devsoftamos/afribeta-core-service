@@ -7,3 +7,7 @@ export class RoleNotFoundException extends HttpException {
 export class DuplicateRoleException extends HttpException {
     name = "DuplicateRoleException";
 }
+
+export class PermissionNotFoundException extends HttpException {
+    name = "PermissionNotFoundException";
+}
