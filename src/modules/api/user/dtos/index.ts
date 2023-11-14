@@ -6,6 +6,7 @@ import {
     IsArray,
     IsBase64,
     IsBooleanString,
+    IsDateString,
     IsEmail,
     IsEnum,
     IsInt,
@@ -263,4 +264,9 @@ export class CreateUserDto {
 
     @IsInt()
     roleId: number;
+}
+
+export class CountAgentsCreatedDto {
+    @IsDateString()
+    date: Date;
 }
