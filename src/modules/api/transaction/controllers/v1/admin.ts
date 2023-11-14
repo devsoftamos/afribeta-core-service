@@ -98,4 +98,13 @@ export class AdminTransactionController {
             adminTransactionHistoryDto
         );
     }
+
+    @Get("recommended")
+    async GetPayouts(
+        @Query(ValidationPipe) viewPayoutStatusDto: ViewPayoutStatusDto
+    ) {
+        return await this.transactionService.fetchRecommendedPayouts(
+            viewPayoutStatusDto
+        );
+    }
 }
