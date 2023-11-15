@@ -34,6 +34,7 @@ export enum TransactionReportType {
     DATA_PURCHASE = "DATA_PURCHASE",
     CABLETV_BILL = "CABLETV_BILL",
     PAYOUT = "PAYOUT",
+    COMMISSION = "COMMISSION",
 }
 
 export class VerifyTransactionDto {

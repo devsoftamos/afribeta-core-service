@@ -9,6 +9,7 @@ import {
     UserType,
     TransactionStatus,
     TransactionType,
+    WalletFundTransactionFlow,
 } from "@prisma/client";
 import { UserNotFoundException } from "../../user";
 import {
@@ -585,6 +586,14 @@ export class TransactionService {
             case TransactionReportType.PAYOUT: {
                 queryOptions.where.type = TransactionReportType.PAYOUT;
                 break;
+            }
+            case TransactionReportType.COMMISSION: {
+                queryOptions.where.walletFundTransactionFlow = {
+                    in: [
+                        WalletFundTransactionFlow.COMMISSION_BALANCE_TO_MAIN_BALANCE,
+                        WalletFundTransactionFlow.FROM_PAID_COMMISSION,
+                    ],
+                };
             }
         }
 
