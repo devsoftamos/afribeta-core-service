@@ -1714,4 +1714,32 @@ export class WalletService {
             data: data,
         });
     }
+
+    async getTotalWalletBalance() {
+        const totalBalance = await this.prisma.wallet.aggregate({
+            _sum: {
+                commissionBalance: true,
+                mainBalance: true,
+            },
+        });
+
+        const openingBalance = await this.prisma.walletOpeningBalance.aggregate(
+            {
+                _sum: {
+                    commission: true,
+                    main: true,
+                },
+            }
+        );
+
+        return buildResponse({
+            message: "wallet balance overview retrieved successfully",
+            data: {
+                walletBalance: totalBalance._sum.mainBalance || 0,
+                walletOpeningBalance: openingBalance._sum.main || 0,
+                commissionOpeningBalance: openingBalance._sum.main || 0,
+                commissionBalance: totalBalance._sum.commissionBalance || 0,
+            },
+        });
+    }
 }
