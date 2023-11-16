@@ -1031,7 +1031,9 @@ export class UserService {
 
         return buildResponse({
             message: "Agents fetched successfully",
-            data: agents,
+            data: {
+                agents: agents,
+            },
         });
     }
 
