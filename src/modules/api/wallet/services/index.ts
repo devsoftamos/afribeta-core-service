@@ -57,6 +57,7 @@ import {
     VerifyWalletToBankTransferTransaction,
     VerifyWalletToWalletTransferTransaction,
     VerifyWalletTransaction,
+    WalletBalance,
     WalletFundProvider,
     WalletToBankTransferStatus,
 } from "../interfaces";
@@ -90,8 +91,6 @@ import {
     NotificationGenericException,
 } from "../../notification";
 import { BankAccountNotFoundException } from "../../bank";
-import { Cron } from "@nestjs/schedule";
-
 @Injectable()
 export class WalletService {
     constructor(
@@ -1716,20 +1715,25 @@ export class WalletService {
         });
     }
 
-    private async aggregateTotalWalletBalance() {
-        return await this.prisma.wallet.aggregate({
+    async aggregateTotalWalletBalance(): Promise<WalletBalance> {
+        const result = await this.prisma.wallet.aggregate({
             _sum: {
                 commissionBalance: true,
                 mainBalance: true,
             },
         });
+
+        return {
+            commissionBalance: result._sum.commissionBalance,
+            mainBalance: result._sum.mainBalance,
+        };
     }
 
     async getTotalWalletBalance() {
         const mainWalletBalance = (await this.aggregateTotalWalletBalance())
-            ._sum.mainBalance;
+            .mainBalance;
         const mainCommissionBalance = (await this.aggregateTotalWalletBalance())
-            ._sum.commissionBalance;
+            .commissionBalance;
 
         const openingBalance =
             await this.prisma.walletOpeningBalance.findUnique({
@@ -1750,35 +1754,5 @@ export class WalletService {
                 commissionOpeningBalance: openingBalance.commission || 0,
             },
         });
-    }
-
-    @Cron("59 23 * * *", {
-        timeZone: "Africa/Lagos",
-    })
-    async aggregateWalletOpeningBalance() {
-        try {
-            const mainWalletBalance = (await this.aggregateTotalWalletBalance())
-                ._sum.mainBalance;
-            const mainCommissionBalance = (
-                await this.aggregateTotalWalletBalance()
-            )._sum.commissionBalance;
-
-            await this.prisma.walletOpeningBalance.upsert({
-                where: {
-                    id: 1,
-                },
-                update: {
-                    main: mainWalletBalance,
-                    commission: mainCommissionBalance,
-                },
-                create: {
-                    main: mainWalletBalance,
-                    commission: mainCommissionBalance,
-                },
-            });
-            console.log("Wallet opening balance updated successfully");
-        } catch (error) {
-            console.log(error);
-        }
     }
 }
