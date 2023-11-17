@@ -90,6 +90,7 @@ import {
     NotificationGenericException,
 } from "../../notification";
 import { BankAccountNotFoundException } from "../../bank";
+import { Cron } from "@nestjs/schedule";
 
 @Injectable()
 export class WalletService {
@@ -1715,31 +1716,69 @@ export class WalletService {
         });
     }
 
-    async getTotalWalletBalance() {
-        const totalBalance = await this.prisma.wallet.aggregate({
+    private async aggregateTotalWalletBalance() {
+        return await this.prisma.wallet.aggregate({
             _sum: {
                 commissionBalance: true,
                 mainBalance: true,
             },
         });
+    }
 
-        const openingBalance = await this.prisma.walletOpeningBalance.aggregate(
-            {
-                _sum: {
-                    commission: true,
-                    main: true,
+    async getTotalWalletBalance() {
+        const mainWalletBalance = (await this.aggregateTotalWalletBalance())
+            ._sum.mainBalance;
+        const mainCommissionBalance = (await this.aggregateTotalWalletBalance())
+            ._sum.commissionBalance;
+
+        const openingBalance =
+            await this.prisma.walletOpeningBalance.findUnique({
+                where: {
+                    id: 1,
                 },
-            }
-        );
-
+                select: {
+                    main: true,
+                    commission: true,
+                },
+            });
         return buildResponse({
             message: "wallet balance overview retrieved successfully",
             data: {
-                walletBalance: totalBalance._sum.mainBalance || 0,
-                walletOpeningBalance: openingBalance._sum.main || 0,
-                commissionOpeningBalance: openingBalance._sum.main || 0,
-                commissionBalance: totalBalance._sum.commissionBalance || 0,
+                mainWalletBalance: mainWalletBalance || 0,
+                mainCommissionBalance: mainCommissionBalance || 0,
+                walletOpeningBalance: openingBalance.main || 0,
+                commissionOpeningBalance: openingBalance.commission || 0,
             },
         });
+    }
+
+    @Cron("59 23 * * *", {
+        timeZone: "Africa/Lagos",
+    })
+    async aggregateWalletOpeningBalance() {
+        try {
+            const mainWalletBalance = (await this.aggregateTotalWalletBalance())
+                ._sum.mainBalance;
+            const mainCommissionBalance = (
+                await this.aggregateTotalWalletBalance()
+            )._sum.commissionBalance;
+
+            await this.prisma.walletOpeningBalance.upsert({
+                where: {
+                    id: 1,
+                },
+                update: {
+                    main: mainWalletBalance,
+                    commission: mainCommissionBalance,
+                },
+                create: {
+                    main: mainWalletBalance,
+                    commission: mainCommissionBalance,
+                },
+            });
+            console.log("Wallet opening balance updated successfully");
+        } catch (error) {
+            console.log(error);
+        }
     }
 }
