@@ -1724,14 +1724,15 @@ export class WalletService {
         });
 
         return {
-            commissionBalance: result._sum.commissionBalance,
-            mainBalance: result._sum.mainBalance,
+            commissionBalance: result._sum.commissionBalance || 0,
+            mainBalance: result._sum.mainBalance || 0,
         };
     }
 
     async getTotalWalletBalance() {
         const mainWalletBalance = (await this.aggregateTotalWalletBalance())
             .mainBalance;
+
         const mainCommissionBalance = (await this.aggregateTotalWalletBalance())
             .commissionBalance;
 
@@ -1748,8 +1749,8 @@ export class WalletService {
         return buildResponse({
             message: "wallet balance overview retrieved successfully",
             data: {
-                mainWalletBalance: mainWalletBalance || 0,
-                mainCommissionBalance: mainCommissionBalance || 0,
+                mainWalletBalance: mainWalletBalance,
+                mainCommissionBalance: mainCommissionBalance,
                 walletOpeningBalance: openingBalance.main || 0,
                 commissionOpeningBalance: openingBalance.commission || 0,
             },
