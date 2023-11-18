@@ -110,7 +110,6 @@ export class TransactionStatService {
         });
     }
 
-    //successful transactions on bill purchase/payment
     async successfulTransactionsOnBillPayment(
         options: SuccessfulTransactionsDto
     ) {
@@ -138,6 +137,44 @@ export class TransactionStatService {
                 dailyTransactions: dailyTransactions._sum.amount || 0,
                 weeklyTransactions: weeklyTransactions._sum.amount || 0,
             },
+        });
+    }
+
+    async fetchTotalCommission(options: SuccessfulTransactionsDto, user: User) {
+        const startDate = startOfMonth(new Date(options.date));
+        const endDate = endOfMonth(new Date(options.date));
+        const agentCommission = await this.prisma.transaction.aggregate({
+            _sum: {
+                merchantCommission: true,
+            },
+            where: {
+                user: {
+                    createdById: user.id,
+                },
+                createdAt: {
+                    gte: startDate,
+                    lte: endDate,
+                },
+            },
+        });
+        const merchantCommission = await this.prisma.transaction.aggregate({
+            _sum: {
+                commission: true,
+            },
+            where: {
+                userId: user.id,
+                createdAt: {
+                    gte: startDate,
+                    lte: endDate,
+                },
+            },
+        });
+        const totalCommission =
+            merchantCommission._sum.commission +
+            agentCommission._sum.merchantCommission;
+        return buildResponse({
+            message: "Total commission fetched successfully",
+            data: totalCommission,
         });
     }
 }

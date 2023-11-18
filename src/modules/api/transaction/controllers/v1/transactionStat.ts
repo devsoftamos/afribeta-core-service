@@ -32,13 +32,15 @@ export class TransactionStatController {
         );
     }
 
-    @Get()
-    async GetTotalTransactions(
+    @Get("commission")
+    async GetTotalCommission(
         @Query(ValidationPipe)
-        successfulTransactionsDto: SuccessfulTransactionsDto
+        successfulTransactionsDto: SuccessfulTransactionsDto,
+        @User() user: UserModel
     ) {
-        return this.transactionStatService.fetchTotalTransactions(
-            successfulTransactionsDto
+        return await this.transactionStatService.fetchTotalCommission(
+            successfulTransactionsDto,
+            user
         );
     }
 }

@@ -38,8 +38,8 @@ import {
     AgentUpgradeBillServiceCommissionOptions,
     AuthorizeAgentUpgradeType,
     FetchAllMerchantsDto,
-    CreateUserDto,
     CountAgentsCreatedDto,
+    CreateUserDto,
 } from "../dtos";
 import {
     AgentCreationException,
@@ -59,9 +59,9 @@ import logger from "moment-logger";
 import { SendinblueEmailException } from "@calculusky/transactional-email";
 import { BillServiceSlug } from "@/modules/api/bill/interfaces";
 import { RoleSlug } from "../../role/interfaces";
+import { endOfMonth, startOfMonth } from "date-fns";
 import { RoleNotFoundException } from "../../role/errors";
 import { AzureStorageService } from "@/modules/core/upload/services/azure";
-import { endOfMonth, startOfMonth } from "date-fns";
 
 @Injectable()
 export class UserService {
@@ -1012,6 +1012,28 @@ export class UserService {
         });
     }
 
+    async countAgentsCreated(options: CountAgentsCreatedDto, user: User) {
+        const startDate = startOfMonth(new Date(options.date));
+        const endDate = endOfMonth(new Date(options.date));
+
+        const agents = await this.prisma.user.count({
+            where: {
+                createdById: user.id,
+                createdAt: {
+                    gte: startDate,
+                    lte: endDate,
+                },
+            },
+        });
+
+        return buildResponse({
+            message: "Agents fetched successfully",
+            data: {
+                agents: agents,
+            },
+        });
+    }
+
     async fetchAllUsers(options: ListMerchantAgentsDto) {
         const paginationMeta: Partial<PaginationMeta> = {};
 
@@ -1169,6 +1191,38 @@ export class UserService {
         return buildResponse({
             message: "Agent details retrieved successfully",
             data: agent,
+        });
+    }
+
+    async customerDetails(id: number) {
+        const userExists = await this.prisma.user.findUnique({
+            where: {
+                id: id,
+            },
+        });
+
+        if (!userExists || userExists.userType !== UserType.CUSTOMER) {
+            throw new UserNotFoundException(
+                "Customer account does not exist",
+                HttpStatus.NOT_FOUND
+            );
+        }
+
+        const customer = await this.prisma.user.findUnique({
+            where: {
+                id: id,
+            },
+            select: {
+                firstName: true,
+                lastName: true,
+                email: true,
+                phone: true,
+            },
+        });
+
+        return buildResponse({
+            message: "Customer details retrieved successfully",
+            data: customer,
         });
     }
 }

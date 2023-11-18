@@ -242,6 +242,11 @@ export class FetchAllMerchantsDto {
     limit: number;
 }
 
+export class CountAgentsCreatedDto {
+    @IsDateString()
+    date: string;
+}
+
 export class CreateUserDto {
     @IsString()
     firstName: string;
@@ -264,9 +269,4 @@ export class CreateUserDto {
 
     @IsInt()
     roleId: number;
-}
-
-export class CountAgentsCreatedDto {
-    @IsDateString()
-    date: Date;
 }

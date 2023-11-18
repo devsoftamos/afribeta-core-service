@@ -9,9 +9,11 @@ import {
     UserType,
     TransactionStatus,
     TransactionType,
+    WalletFundTransactionFlow,
 } from "@prisma/client";
 import { UserNotFoundException } from "../../user";
 import {
+    AdminTransactionHistoryDto,
     MerchantTransactionHistoryDto,
     TransactionHistoryDto,
     TransactionReportType,
@@ -25,6 +27,7 @@ import {
     InvalidTransactionVerificationProvider,
     TransactionNotFoundException,
 } from "../errors";
+import { endOfMonth, startOfMonth } from "date-fns";
 
 @Injectable()
 export class TransactionService {
@@ -409,54 +412,6 @@ export class TransactionService {
 
         return buildResponse({
             message: "Payout recommended successfully",
-            data: {},
-        });
-    }
-
-    async adminRecentTransactions(options: TransactionHistoryDto) {
-        const paginationMeta: Partial<PaginationMeta> = {};
-
-        const queryOptions: Prisma.TransactionFindManyArgs = {
-            orderBy: { createdAt: "desc" },
-            where: {},
-            select: {
-                transactionId: true,
-                amount: true,
-                paymentChannel: true,
-                paymentStatus: true,
-                flow: true,
-                shortDescription: true,
-                createdAt: true,
-            },
-        };
-
-        if (options.pagination) {
-            const page = +options.page || 1;
-            const limit = +options.limit || 10;
-            const offset = (page - 1) * limit;
-            queryOptions.skip = offset;
-            queryOptions.take = limit;
-            const count = await this.prisma.transaction.count({
-                where: queryOptions.where,
-            });
-            paginationMeta.totalCount = count;
-            paginationMeta.perPage = limit;
-        }
-
-        const recentTransactions = await this.prisma.transaction.findMany(
-            queryOptions
-        );
-
-        if (options.pagination) {
-            paginationMeta.pageCount = recentTransactions.length;
-        }
-
-        return buildResponse({
-            message: "Recent transactions retrieved successfully",
-            data: {
-                meta: paginationMeta,
-                records: recentTransactions,
-            },
         });
     }
 
@@ -541,6 +496,117 @@ export class TransactionService {
         });
     }
 
+    async adminRecentTransactions(options: TransactionHistoryDto) {
+        const paginationMeta: Partial<PaginationMeta> = {};
+
+        const queryOptions: Prisma.TransactionFindManyArgs = {
+            orderBy: { createdAt: "desc" },
+            where: {},
+            select: {
+                transactionId: true,
+                amount: true,
+                paymentChannel: true,
+                paymentStatus: true,
+                flow: true,
+                shortDescription: true,
+                createdAt: true,
+            },
+        };
+
+        if (options.pagination) {
+            const page = +options.page || 1;
+            const limit = +options.limit || 10;
+            const offset = (page - 1) * limit;
+            queryOptions.skip = offset;
+            queryOptions.take = limit;
+            const count = await this.prisma.transaction.count({
+                where: queryOptions.where,
+            });
+            paginationMeta.totalCount = count;
+            paginationMeta.perPage = limit;
+        }
+
+        const recentTransactions = await this.prisma.transaction.findMany(
+            queryOptions
+        );
+
+        if (options.pagination) {
+            paginationMeta.pageCount = recentTransactions.length;
+        }
+
+        return buildResponse({
+            message: "Recent transactions retrieved successfully",
+            data: {
+                meta: paginationMeta,
+                records: recentTransactions,
+            },
+        });
+    }
+
+    async getAllTransactions(options: AdminTransactionHistoryDto) {
+        const paginationMeta: Partial<PaginationMeta> = {};
+
+        const startDate = startOfMonth(new Date(options.date));
+        const endDate = endOfMonth(new Date(options.date));
+
+        const queryOptions: Prisma.TransactionFindManyArgs = {
+            orderBy: { createdAt: "desc" },
+            where: {},
+            select: {
+                transactionId: true,
+                type: true,
+                amount: true,
+                paymentChannel: true,
+                status: true,
+                createdAt: true,
+            },
+        };
+
+        if (options.searchName) {
+            (queryOptions.where.paymentReference = {
+                search: options.searchName,
+            }),
+                (queryOptions.where.senderIdentifier = {
+                    search: options.searchName,
+                }),
+                (queryOptions.where.transactionId = {
+                    search: options.searchName,
+                });
+        }
+        if (options.date) {
+            queryOptions.where.createdAt = { gte: startDate, lte: endDate };
+        }
+
+        if (options.pagination) {
+            const page = +options.page || 1;
+            const limit = +options.limit || 10;
+            const offset = (page - 1) * limit;
+            queryOptions.skip = offset;
+            queryOptions.take = limit;
+            const count = await this.prisma.transaction.count({
+                where: queryOptions.where,
+            });
+            paginationMeta.totalCount = count;
+            paginationMeta.perPage = limit;
+        }
+
+        const transactions = await this.prisma.transaction.findMany(
+            queryOptions
+        );
+
+        if (options.pagination) {
+            paginationMeta.pageCount = transactions.length;
+        }
+
+        return buildResponse({
+            message: "Transactions retrieved successfully",
+            data: {
+                meta: paginationMeta,
+                records: transactions,
+            },
+        });
+    }
+
     async adminTransactionReport(options: TransactionHistoryDto) {
         const paginationMeta: Partial<PaginationMeta> = {};
 
@@ -585,6 +651,14 @@ export class TransactionService {
             case TransactionReportType.PAYOUT: {
                 queryOptions.where.type = TransactionReportType.PAYOUT;
                 break;
+            }
+            case TransactionReportType.COMMISSION: {
+                queryOptions.where.walletFundTransactionFlow = {
+                    in: [
+                        WalletFundTransactionFlow.COMMISSION_BALANCE_TO_MAIN_BALANCE,
+                        WalletFundTransactionFlow.FROM_PAID_COMMISSION,
+                    ],
+                };
             }
         }
 

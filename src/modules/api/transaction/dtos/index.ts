@@ -34,6 +34,7 @@ export enum TransactionReportType {
     DATA_PURCHASE = "DATA_PURCHASE",
     CABLETV_BILL = "CABLETV_BILL",
     PAYOUT = "PAYOUT",
+    COMMISSION = "COMMISSION",
 }
 
 export class VerifyTransactionDto {
@@ -102,6 +103,28 @@ export class UpdatePayoutStatusDto {
 
     @IsEnum(UpdatePayoutStatus)
     status: UpdatePayoutStatus;
+}
+
+export class AdminTransactionHistoryDto {
+    @IsOptional()
+    @IsBooleanString()
+    pagination: string;
+
+    @IsOptional()
+    @IsNumberString()
+    page: string;
+
+    @IsOptional()
+    @IsNumberString()
+    limit: string;
+
+    @IsOptional()
+    @IsString()
+    searchName: string;
+
+    @IsOptional()
+    @IsDateString()
+    date: string;
 }
 
 export class SuccessfulTransactionsDto {
