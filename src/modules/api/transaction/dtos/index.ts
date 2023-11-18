@@ -105,6 +105,28 @@ export class UpdatePayoutStatusDto {
     status: UpdatePayoutStatus;
 }
 
+export class AdminTransactionHistoryDto {
+    @IsOptional()
+    @IsBooleanString()
+    pagination: string;
+
+    @IsOptional()
+    @IsNumberString()
+    page: string;
+
+    @IsOptional()
+    @IsNumberString()
+    limit: string;
+
+    @IsOptional()
+    @IsString()
+    searchName: string;
+
+    @IsOptional()
+    @IsDateString()
+    date: string;
+}
+
 export class SuccessfulTransactionsDto {
     @IsDateString()
     date: Date;
