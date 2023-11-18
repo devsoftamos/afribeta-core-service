@@ -13,7 +13,7 @@ import {
 } from "@nestjs/common";
 import { TransactionService } from "../../services";
 import {
-    AdminTransactionHistoryDto,
+    FetchRecommendedPayoutDto,
     MerchantTransactionHistoryDto,
     TransactionHistoryDto,
     UpdatePayoutStatusDto,
@@ -92,7 +92,7 @@ export class AdminTransactionController {
     @Get()
     async getAllTransactions(
         @Query(ValidationPipe)
-        adminTransactionHistoryDto: AdminTransactionHistoryDto
+        transactionHistoryDto: TransactionHistoryDto
     ) {
         return await this.transactionService.adminTransactionReport(
             transactionHistoryDto
@@ -100,11 +100,12 @@ export class AdminTransactionController {
     }
 
     @Get("payout/recommended/list")
-    async GetPayouts(
-        @Query(ValidationPipe) viewPayoutStatusDto: ViewPayoutStatusDto
+    async GetRecommendedPayouts(
+        @Query(ValidationPipe)
+        fetchRecommendedPayoutDto: FetchRecommendedPayoutDto
     ) {
         return await this.transactionService.fetchRecommendedPayouts(
-            viewPayoutStatusDto
+            fetchRecommendedPayoutDto
         );
     }
 }

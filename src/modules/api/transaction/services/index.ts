@@ -14,6 +14,7 @@ import {
 import { UserNotFoundException } from "../../user";
 import {
     AdminTransactionHistoryDto,
+    FetchRecommendedPayoutDto,
     MerchantTransactionHistoryDto,
     TransactionHistoryDto,
     TransactionReportType,
@@ -692,11 +693,12 @@ export class TransactionService {
         });
     }
 
-    async fetchRecommendedPayouts(options: ViewPayoutStatusDto) {
+    async fetchRecommendedPayouts(options: FetchRecommendedPayoutDto) {
         const paginationMeta: Partial<PaginationMeta> = {};
         const queryOptions: Prisma.TransactionFindManyArgs = {
             where: {
                 type: TransactionType.PAYOUT,
+                isPayoutRecommended: true,
             },
             select: {
                 id: true,

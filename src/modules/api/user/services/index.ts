@@ -19,7 +19,6 @@ import {
 import {
     InvalidEmailVerificationCodeException,
     SendVerificationEmailException,
-    VerificationCodeExpiredException,
     VerificationCodeGenericException,
 } from "../../auth";
 import { AuthService } from "../../auth/services";
