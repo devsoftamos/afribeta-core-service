@@ -1,7 +1,7 @@
 import { WalletService } from "@/modules/api/wallet/services";
 import { PrismaService } from "@/modules/core/prisma/services";
-import { Inject, Injectable, forwardRef } from "@nestjs/common";
 import { Cron } from "@nestjs/schedule";
+import { Inject, Injectable, forwardRef } from "@nestjs/common";
 
 @Injectable()
 export class SchedulerService {
