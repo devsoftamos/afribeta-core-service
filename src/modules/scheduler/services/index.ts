@@ -14,13 +14,11 @@ export class SchedulerService {
         timeZone: "Africa/Lagos",
     })
     async aggregateWalletOpeningBalance() {
-        const mainWalletBalance = (
-            await this.walletService.aggregateTotalWalletBalance()
-        ).mainBalance;
+        const retrieveWalletOpeningBalance =
+            await this.walletService.aggregateTotalWalletBalance();
 
-        const mainCommissionBalance = (
-            await this.walletService.aggregateTotalWalletBalance()
-        ).commissionBalance;
+        const mainWalletBalance = retrieveWalletBalance.mainBalance;
+        const mainCommissionBalance = retrieveWalletBalance.commissionBalance;
 
         await this.prisma.walletOpeningBalance.upsert({
             where: {

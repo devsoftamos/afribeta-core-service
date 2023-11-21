@@ -1730,11 +1730,10 @@ export class WalletService {
     }
 
     async getTotalWalletBalance() {
-        const mainWalletBalance = (await this.aggregateTotalWalletBalance())
-            .mainBalance;
+        const retrieveWalletBalance = this.aggregateTotalWalletBalance();
 
-        const mainCommissionBalance = (await this.aggregateTotalWalletBalance())
-            .commissionBalance;
+        const mainWalletBalance = retrieveWalletBalance.mainBalance;
+        const mainCommissionBalance = retrieveWalletBalance.commissionBalance;
 
         const openingBalance =
             await this.prisma.walletOpeningBalance.findUnique({
