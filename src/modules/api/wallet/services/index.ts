@@ -1730,10 +1730,7 @@ export class WalletService {
     }
 
     async getTotalWalletBalance() {
-        const retrieveWalletBalance = this.aggregateTotalWalletBalance();
-
-        const mainWalletBalance = retrieveWalletBalance.mainBalance;
-        const mainCommissionBalance = retrieveWalletBalance.commissionBalance;
+        const retrieveWalletBalance = await this.aggregateTotalWalletBalance();
 
         const openingBalance =
             await this.prisma.walletOpeningBalance.findUnique({
@@ -1748,8 +1745,8 @@ export class WalletService {
         return buildResponse({
             message: "wallet balance overview retrieved successfully",
             data: {
-                mainWalletBalance: mainWalletBalance,
-                mainCommissionBalance: mainCommissionBalance,
+                mainWalletBalance: retrieveWalletBalance.mainBalance,
+                mainCommissionBalance: retrieveWalletBalance.commissionBalance,
                 walletOpeningBalance: openingBalance.main || 0,
                 commissionOpeningBalance: openingBalance.commission || 0,
             },

@@ -17,20 +17,17 @@ export class SchedulerService {
         const retrieveWalletOpeningBalance =
             await this.walletService.aggregateTotalWalletBalance();
 
-        const mainWalletBalance = retrieveWalletBalance.mainBalance;
-        const mainCommissionBalance = retrieveWalletBalance.commissionBalance;
-
         await this.prisma.walletOpeningBalance.upsert({
             where: {
                 id: 1,
             },
             update: {
-                main: mainWalletBalance,
-                commission: mainCommissionBalance,
+                main: retrieveWalletOpeningBalance.mainBalance,
+                commission: retrieveWalletOpeningBalance.commissionBalance,
             },
             create: {
-                main: mainWalletBalance,
-                commission: mainCommissionBalance,
+                main: retrieveWalletOpeningBalance.mainBalance,
+                commission: retrieveWalletOpeningBalance.commissionBalance,
             },
         });
     }
