@@ -39,6 +39,7 @@ import {
     FetchAllMerchantsDto,
     CountAgentsCreatedDto,
     CreateUserDto,
+    EditAgentDto,
 } from "../dtos";
 import {
     AgentCreationException,
@@ -1222,6 +1223,37 @@ export class UserService {
         return buildResponse({
             message: "Customer details retrieved successfully",
             data: customer,
+        });
+    }
+
+    async editAgentDetails(options: EditAgentDto, id: number) {
+        const agentExists = await this.prisma.user.findUnique({
+            where: {
+                id: id,
+            },
+        });
+        if (!agentExists || agentExists.userType !== UserType.AGENT) {
+            throw new UserNotFoundException(
+                "Agent account does not exist",
+                HttpStatus.NOT_FOUND
+            );
+        }
+
+        const updateAgentOptions: Prisma.UserUpdateInput = {
+            businessName: options.businessName,
+            email: options.email,
+            phone: options.phone,
+        };
+
+        await this.prisma.user.update({
+            where: {
+                id: id,
+            },
+            data: updateAgentOptions,
+        });
+
+        return buildResponse({
+            message: "Agent details updated successfully",
         });
     }
 }

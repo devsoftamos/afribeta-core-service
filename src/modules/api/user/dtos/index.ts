@@ -270,3 +270,17 @@ export class CreateUserDto {
     @IsInt()
     roleId: number;
 }
+
+export class EditAgentDto {
+    @IsString()
+    businessName: string;
+
+    @IsEmail({}, { message: "Invalid email address" })
+    email: string;
+
+    @IsPhoneNumber("NG")
+    @Length(11, 11, {
+        message: "Phone number must be valid containing 11 digits",
+    })
+    phone: string;
+}
