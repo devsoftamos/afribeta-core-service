@@ -98,4 +98,13 @@ export class AdminTransactionController {
             adminTransactionHistoryDto
         );
     }
+
+    @Get("report")
+    async GetAdminReport(
+        @Query(ValidationPipe) transactionHistoryDto: TransactionHistoryDto
+    ) {
+        return this.transactionService.adminTransactionReport(
+            transactionHistoryDto
+        );
+    }
 }
