@@ -57,6 +57,7 @@ import {
     VerifyWalletToBankTransferTransaction,
     VerifyWalletToWalletTransferTransaction,
     VerifyWalletTransaction,
+    WalletBalance,
     WalletFundProvider,
     WalletToBankTransferStatus,
 } from "../interfaces";
@@ -90,7 +91,6 @@ import {
     NotificationGenericException,
 } from "../../notification";
 import { BankAccountNotFoundException } from "../../bank";
-
 @Injectable()
 export class WalletService {
     constructor(
@@ -1712,6 +1712,44 @@ export class WalletService {
         return buildResponse({
             message: "Payout request transaction successfully verified",
             data: data,
+        });
+    }
+
+    async aggregateTotalWalletBalance(): Promise<WalletBalance> {
+        const result = await this.prisma.wallet.aggregate({
+            _sum: {
+                commissionBalance: true,
+                mainBalance: true,
+            },
+        });
+
+        return {
+            commissionBalance: result._sum.commissionBalance || 0,
+            mainBalance: result._sum.mainBalance || 0,
+        };
+    }
+
+    async getTotalWalletBalance() {
+        const retrieveWalletBalance = await this.aggregateTotalWalletBalance();
+
+        const openingBalance =
+            await this.prisma.walletOpeningBalance.findUnique({
+                where: {
+                    id: 1,
+                },
+                select: {
+                    main: true,
+                    commission: true,
+                },
+            });
+        return buildResponse({
+            message: "wallet balance overview retrieved successfully",
+            data: {
+                mainWalletBalance: retrieveWalletBalance.mainBalance,
+                mainCommissionBalance: retrieveWalletBalance.commissionBalance,
+                walletOpeningBalance: openingBalance.main || 0,
+                commissionOpeningBalance: openingBalance.commission || 0,
+            },
         });
     }
 }

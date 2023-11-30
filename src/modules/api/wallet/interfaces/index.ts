@@ -116,3 +116,8 @@ export interface FundSubAgentHandlerOptions {
 }
 
 export type PayoutRequestTransaction = VerifyWalletTransaction;
+
+export interface WalletBalance {
+    commissionBalance: number;
+    mainBalance: number;
+}
