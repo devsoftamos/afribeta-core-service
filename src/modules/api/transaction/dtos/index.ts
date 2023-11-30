@@ -131,3 +131,17 @@ export class SuccessfulTransactionsDto {
     @IsDateString()
     date: Date;
 }
+
+export class FetchRecommendedPayoutDto {
+    @IsOptional()
+    @IsBooleanString()
+    pagination: string;
+
+    @IsOptional()
+    @IsNumberString()
+    page: string;
+
+    @IsOptional()
+    @IsNumberString()
+    limit: string;
+}

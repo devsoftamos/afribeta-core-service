@@ -14,6 +14,7 @@ import {
 import { UserNotFoundException } from "../../user";
 import {
     AdminTransactionHistoryDto,
+    FetchRecommendedPayoutDto,
     MerchantTransactionHistoryDto,
     TransactionHistoryDto,
     TransactionReportType,
@@ -371,6 +372,7 @@ export class TransactionService {
                 destinationBankAccountNumber: true,
                 totalAmount: true,
                 paymentStatus: true,
+                isPayoutRecommended: true,
             },
         });
 
@@ -687,6 +689,54 @@ export class TransactionService {
             data: {
                 meta: paginationMeta,
                 records: transactions,
+            },
+        });
+    }
+
+    async fetchRecommendedPayouts(options: FetchRecommendedPayoutDto) {
+        const paginationMeta: Partial<PaginationMeta> = {};
+        const queryOptions: Prisma.TransactionFindManyArgs = {
+            where: {
+                type: TransactionType.PAYOUT,
+                isPayoutRecommended: true,
+            },
+            select: {
+                id: true,
+                amount: true,
+                destinationBankName: true,
+                destinationBankAccountNumber: true,
+                totalAmount: true,
+                paymentStatus: true,
+                isPayoutRecommended: true,
+            },
+        };
+
+        if (options.pagination) {
+            const page = +options.page || 1;
+            const limit = +options.limit || 10;
+            const offset = (page - 1) * limit;
+            queryOptions.skip = offset;
+            queryOptions.take = limit;
+            const count = await this.prisma.transaction.count({
+                where: queryOptions.where,
+            });
+            paginationMeta.totalCount = count;
+            paginationMeta.perPage = limit;
+        }
+
+        const transaction = await this.prisma.transaction.findMany(
+            queryOptions
+        );
+
+        if (options.pagination) {
+            paginationMeta.pageCount = transaction.length;
+        }
+
+        return buildResponse({
+            message: "Recommended payouts retrieved successfully",
+            data: {
+                meta: paginationMeta,
+                records: transaction,
             },
         });
     }
