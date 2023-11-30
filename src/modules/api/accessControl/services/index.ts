@@ -13,6 +13,7 @@ export class AccessControlService {
         const queryOptions: Prisma.RoleFindManyArgs = {
             where: {},
             select: {
+                id: true,
                 name: true,
             },
         };
