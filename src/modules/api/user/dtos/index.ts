@@ -273,10 +273,10 @@ export class CreateUserDto {
 
 export class EditAgentDto {
     @IsString()
-    businessName: string;
+    firstName: string;
 
-    @IsEmail({}, { message: "Invalid email address" })
-    email: string;
+    @IsString()
+    lastName: string;
 
     @IsPhoneNumber("NG")
     @Length(11, 11, {

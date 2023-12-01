@@ -1240,8 +1240,8 @@ export class UserService {
         }
 
         const updateAgentOptions: Prisma.UserUpdateInput = {
-            businessName: options.businessName,
-            email: options.email,
+            firstName: options.firstName,
+            lastName: options.lastName,
             phone: options.phone,
         };
 
