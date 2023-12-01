@@ -32,8 +32,10 @@ export enum Action {
     Read = "read",
     Update = "update",
     Delete = "delete",
-    CreateSubAgent = "subagent.create", //Create Agent
+    CreateSubAgent = "subagent.create", //Create Subagent
+    UpdateSubAgent = "subagent.update", //Update subagent
     ViewSubAgent = "subagent.view", //merchant view sub-agent
+    DeleteSubAgent = "subagent.delete",
     FundSubAgent = "subagent.fund", //merchant fund sub agent
     FundRequest = "fund.request", //Sub agent request fund from merchant
     FundWalletFromCommission = "wallet.fund.from.commission", //Fund main wallet from commission wallet

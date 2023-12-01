@@ -50,6 +50,8 @@ export class AbilityFactory {
         can(Action.ReadBankAccount, "BankAccount");
         can(Action.CreateBankAccount, "BankAccount");
         can(Action.CreateKYC, "User");
+        can(Action.UpdateSubAgent, "User");
+        can(Action.DeleteSubAgent, "User");
 
         //admin
         can(Action.AccountActivationAndDeactivation, "User");
@@ -76,16 +78,22 @@ export class AbilityFactory {
         //merchant only
         if (role.slug !== RoleSlug.MERCHANT) {
             cannot(Action.FundSubAgent, "User").because(
-                "Insufficient permission. Account type cannot fund a sub agent account"
+                "Insufficient permission. Account type cannot fund a subagent account"
             );
             cannot(Action.ViewSubAgent, "User").because(
-                "Your account type does not have sufficient permission to view agent resource"
+                "Your account type does not have sufficient permission to view subagent resource"
             );
             cannot(Action.CreateSubAgent, "User").because(
                 "Your account type does not have sufficient permission to create agent"
             );
             cannot(Action.ViewSubAgent, "User").because(
-                "Your account type does not have sufficient permission to view sub agent resource"
+                "Your account type does not have sufficient permission to view subagent resource"
+            );
+            cannot(Action.ViewSubAgent, "User").because(
+                "Your account type does not have sufficient permission to update subagent resource"
+            );
+            cannot(Action.DeleteSubAgent, "User").because(
+                "Your account type does not have sufficient permission to delete subagent resource"
             );
         }
 

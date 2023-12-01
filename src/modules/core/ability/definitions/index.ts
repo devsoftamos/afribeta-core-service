@@ -11,6 +11,16 @@ export class ViewSubAgentAbility implements RequiredRule {
     subject: Subjects = "User";
 }
 
+export class UpdateSubAgentAbility implements RequiredRule {
+    action: Action = Action.UpdateSubAgent;
+    subject: Subjects = "User";
+}
+
+export class DeleteSubAgentAbility implements RequiredRule {
+    action: Action = Action.DeleteSubAgent;
+    subject: Subjects = "User";
+}
+
 export class FundSubAgentAbility implements RequiredRule {
     action: Action = Action.FundSubAgent;
     subject: Subjects = "User";

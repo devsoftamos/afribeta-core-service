@@ -7,9 +7,15 @@ import { ListAgencyCommission, ListMerchantCommission } from "../interfaces";
 import {
     AGENT_MD_METER_COMMISSION_CAP_AMOUNT,
     AGENT_MD_METER_COMMISSION_PERCENT,
+    SUBAGENT_MD_METER_COMMISSION_PERCENT,
 } from "@/config";
-import { UpdateSingleBillCommissionDto } from "../dtos";
+import {
+    DeleteSubagentCommissionDto,
+    UpdateSingleBillCommissionDto,
+    UpdateSubagentCommissionDto,
+} from "../dtos";
 import { BillCommissionException } from "../errors";
+import { UserNotFoundException } from "../../user";
 
 @Injectable()
 export class CommissionService {
@@ -183,6 +189,211 @@ export class CommissionService {
 
         return buildResponse({
             message: "Base commission successfully updated",
+        });
+    }
+
+    async merchantGetSubagentsBillCommissions(
+        user: User,
+        subagentId: number
+    ): Promise<ApiResponse> {
+        const subagentUser = await this.prisma.user.findFirst({
+            where: {
+                id: subagentId,
+                createdById: user.id,
+            },
+            select: {
+                id: true,
+            },
+        });
+
+        if (!subagentUser) {
+            throw new UserNotFoundException(
+                "Subagent not found",
+                HttpStatus.NOT_FOUND
+            );
+        }
+
+        const billCommissions = await this.prisma.userCommission.findMany({
+            where: {
+                userId: subagentUser.id,
+            },
+            select: {
+                percentage: true,
+                subAgentMdMeterCapAmount: true,
+                billService: {
+                    select: {
+                        name: true,
+                        slug: true,
+                        type: true,
+                    },
+                },
+            },
+        });
+
+        const result: ListMerchantCommission[] = billCommissions.map((bc) => {
+            if (bc.billService.slug == BillServiceSlug.IKEJA_ELECTRIC) {
+                return {
+                    name: bc.billService.name,
+                    slug: bc.billService.slug,
+                    type: bc.billService.type,
+                    commission: bc.percentage,
+                    cap:
+                        bc.billService.type == BillType.ELECTRICITY
+                            ? computeCap(bc.percentage)
+                            : null,
+                    commissionMd: SUBAGENT_MD_METER_COMMISSION_PERCENT,
+                    capMd: bc.subAgentMdMeterCapAmount,
+                };
+            }
+            return {
+                name: bc.billService.name,
+                slug: bc.billService.slug,
+                type: bc.billService.type,
+                commission: bc.percentage,
+                cap:
+                    bc.billService.type == BillType.ELECTRICITY
+                        ? computeCap(bc.percentage)
+                        : null,
+            };
+        });
+
+        return buildResponse({
+            message: "Bill service commissions successfully retrieved",
+            data: result,
+        });
+    }
+
+    async merchantUpdateSubagentCommission(
+        subagentId: number,
+        options: UpdateSubagentCommissionDto,
+        user: User
+    ) {
+        const subagentUser = await this.prisma.user.findFirst({
+            where: {
+                id: subagentId,
+                createdById: user.id,
+            },
+            select: {
+                id: true,
+            },
+        });
+
+        if (!subagentUser) {
+            throw new UserNotFoundException(
+                "Subagent not found",
+                HttpStatus.NOT_FOUND
+            );
+        }
+
+        //validate
+        const subagentDbCommission =
+            await this.prisma.userCommission.findUnique({
+                where: {
+                    userId_billServiceSlug: {
+                        billServiceSlug: options.billServiceSlug,
+                        userId: subagentId,
+                    },
+                },
+            });
+        const merchantDbCommission =
+            await this.prisma.userCommission.findUnique({
+                where: {
+                    userId_billServiceSlug: {
+                        billServiceSlug: options.billServiceSlug,
+                        userId: user.id,
+                    },
+                },
+            });
+
+        if (!subagentDbCommission) {
+            throw new BillCommissionException(
+                "Bill commission not previously assigned to the subagent",
+                HttpStatus.NOT_FOUND
+            );
+        }
+        if (!merchantDbCommission) {
+            throw new BillCommissionException(
+                "Bill commission not found on merchant account",
+                HttpStatus.NOT_FOUND
+            );
+        }
+        if (options.commission > merchantDbCommission.percentage) {
+            throw new BillCommissionException(
+                "Your subagent commission must not be greater than your commission",
+                HttpStatus.NOT_FOUND
+            );
+        }
+
+        await this.prisma.userCommission.update({
+            where: {
+                userId_billServiceSlug: {
+                    userId: subagentId,
+                    billServiceSlug: options.billServiceSlug,
+                },
+            },
+            data: {
+                subAgentMdMeterCapAmount:
+                    options.subAgentMdMeterCapAmount ??
+                    subagentDbCommission.subAgentMdMeterCapAmount,
+                percentage:
+                    options.commission ?? subagentDbCommission.percentage,
+            },
+        });
+
+        return buildResponse({
+            message: "commission successfully updated",
+        });
+    }
+
+    async merchantDeleteSubagentCommission(
+        subagentId: number,
+        options: DeleteSubagentCommissionDto,
+        user: User
+    ) {
+        const subagentUser = await this.prisma.user.findFirst({
+            where: {
+                id: subagentId,
+                createdById: user.id,
+            },
+            select: {
+                id: true,
+            },
+        });
+
+        if (!subagentUser) {
+            throw new UserNotFoundException(
+                "Subagent not found",
+                HttpStatus.NOT_FOUND
+            );
+        }
+        const subagentDbCommission =
+            await this.prisma.userCommission.findUnique({
+                where: {
+                    userId_billServiceSlug: {
+                        billServiceSlug: options.billServiceSlug,
+                        userId: subagentId,
+                    },
+                },
+            });
+
+        if (!subagentDbCommission) {
+            throw new BillCommissionException(
+                "Bill commission not found",
+                HttpStatus.NOT_FOUND
+            );
+        }
+
+        await this.prisma.userCommission.delete({
+            where: {
+                userId_billServiceSlug: {
+                    userId: subagentId,
+                    billServiceSlug: options.billServiceSlug,
+                },
+            },
+        });
+
+        return buildResponse({
+            message: "commission successfully deleted",
         });
     }
 }
