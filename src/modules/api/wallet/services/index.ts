@@ -343,7 +343,8 @@ export class WalletService {
         });
     }
 
-    //Withdraw fund from wallet to bank account
+    //send money from wallet to a bank
+
     async initializeWalletWithdrawal(
         options: InitializeWithdrawalDto,
         user: User

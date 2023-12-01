@@ -17,3 +17,15 @@ export interface ListAgencyCommission {
     name: string;
     slug: string;
 }
+
+export interface ListSubagentCommission {
+    type: BillType;
+    name: string;
+    slug: string;
+    baseCommission: number;
+    subagentCommission: number;
+    baseCap?: number;
+    cap?: number;
+    baseMdCapAmount?: number;
+    mdCapAmount?: number;
+}

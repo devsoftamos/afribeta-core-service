@@ -1,9 +1,13 @@
 import { PrismaService } from "@/modules/core/prisma/services";
-import { ApiResponse, buildResponse, computeCap } from "@/utils";
+import { ApiResponse, buildResponse, computeCap, groupBy } from "@/utils";
 import { HttpStatus, Injectable } from "@nestjs/common";
 import { BillType, User } from "@prisma/client";
 import { BillServiceSlug } from "../../bill/interfaces";
-import { ListAgencyCommission, ListMerchantCommission } from "../interfaces";
+import {
+    ListAgencyCommission,
+    ListMerchantCommission,
+    ListSubagentCommission,
+} from "../interfaces";
 import {
     AGENT_MD_METER_COMMISSION_CAP_AMOUNT,
     AGENT_MD_METER_COMMISSION_PERCENT,
@@ -213,12 +217,14 @@ export class CommissionService {
             );
         }
 
-        const billCommissions = await this.prisma.userCommission.findMany({
+        const userCommissions = await this.prisma.userCommission.findMany({
             where: {
-                userId: subagentUser.id,
+                OR: [{ userId: subagentUser.id }, { userId: user.id }],
             },
             select: {
+                userId: true,
                 percentage: true,
+                billServiceSlug: true,
                 subAgentMdMeterCapAmount: true,
                 billService: {
                     select: {
@@ -230,32 +236,53 @@ export class CommissionService {
             },
         });
 
-        const result: ListMerchantCommission[] = billCommissions.map((bc) => {
-            if (bc.billService.slug == BillServiceSlug.IKEJA_ELECTRIC) {
+        const groupedCommissions = groupBy("billServiceSlug", userCommissions);
+
+        const result: ListSubagentCommission[] = groupedCommissions
+            .map((groupedCommission): ListSubagentCommission => {
+                const subagentCommission = groupedCommission.find(
+                    (p) => p.userId == subagentUser.id
+                );
+                if (!subagentCommission) {
+                    return;
+                }
+
+                const merchantCommission = groupedCommission.find(
+                    (p) => p.userId == user.id
+                );
+                if (!merchantCommission) {
+                    return;
+                }
+
+                const isIE =
+                    subagentCommission.billService.slug ==
+                    BillServiceSlug.IKEJA_ELECTRIC;
+
                 return {
-                    name: bc.billService.name,
-                    slug: bc.billService.slug,
-                    type: bc.billService.type,
-                    commission: bc.percentage,
+                    baseCommission: merchantCommission.percentage,
+                    name: subagentCommission.billService.name,
+                    slug: subagentCommission.billServiceSlug,
+                    subagentCommission: subagentCommission.percentage,
+                    type: subagentCommission.billService.type,
                     cap:
-                        bc.billService.type == BillType.ELECTRICITY
-                            ? computeCap(bc.percentage)
+                        subagentCommission.billService.type ==
+                        BillType.ELECTRICITY
+                            ? computeCap(subagentCommission.percentage)
                             : null,
-                    commissionMd: SUBAGENT_MD_METER_COMMISSION_PERCENT,
-                    capMd: bc.subAgentMdMeterCapAmount,
-                };
-            }
-            return {
-                name: bc.billService.name,
-                slug: bc.billService.slug,
-                type: bc.billService.type,
-                commission: bc.percentage,
-                cap:
-                    bc.billService.type == BillType.ELECTRICITY
-                        ? computeCap(bc.percentage)
+                    baseCap:
+                        merchantCommission.billService.type ==
+                        BillType.ELECTRICITY
+                            ? computeCap(merchantCommission.percentage)
+                            : null,
+                    baseMdCapAmount: isIE
+                        ? AGENT_MD_METER_COMMISSION_CAP_AMOUNT
                         : null,
-            };
-        });
+                    mdCapAmount: isIE
+                        ? subagentCommission.subAgentMdMeterCapAmount
+                        : null,
+                };
+            })
+            .filter((bc) => !!bc == true);
 
         return buildResponse({
             message: "Bill service commissions successfully retrieved",

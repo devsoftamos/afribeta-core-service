@@ -1,5 +1,5 @@
 import { customAlphabet, urlAlphabet } from "nanoid";
-import { TransactionIdOption } from "./interfaces";
+import { GroupBy, TransactionIdOption } from "./interfaces";
 import { AES } from "crypto-js";
 import { DEFAULT_CAPPING_MULTIPLIER, encryptSecret } from "@/config";
 import slugify from "slugify";
@@ -64,3 +64,15 @@ export const generateSlug = (input: string) => {
     };
     return slugify(input, options);
 };
+
+export function groupBy<TData extends Record<string, any>>(
+    key: string,
+    data: TData[]
+): TData[][] {
+    const list = data.reduce((hash, obj) => {
+        hash[obj[key]] = (hash[obj[key]] || []).concat(obj);
+        return hash;
+    }, {});
+
+    return Object.values(list);
+}
