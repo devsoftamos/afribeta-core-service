@@ -11,11 +11,13 @@ import {
     Body,
     HttpStatus,
     HttpCode,
+    Patch,
 } from "@nestjs/common";
 import {
     AuthorizeAgentToMerchantUpgradeAgentDto,
     CountAgentsCreatedDto,
     CreateUserDto,
+    EditAgentDto,
     FetchAllMerchantsDto,
     FetchMerchantAgentsDto,
     ListMerchantAgentsDto,
@@ -133,5 +135,15 @@ export class AdminUserController {
     @CheckAbilities(new Ability.ReadUserAbility())
     async getAgentDetails(@Param("id", ParseIntPipe) id: number) {
         return await this.usersService.getAgentDetails(id);
+    }
+
+    @Patch("agent/:id")
+    @UseGuards(AbilitiesGuard)
+    @CheckAbilities(new Ability.ReadUserAbility())
+    async editAgentDetails(
+        @Param("id", ParseIntPipe) id: number,
+        @Body(ValidationPipe) editAgentDto: EditAgentDto
+    ) {
+        return await this.usersService.editAgentDetails(editAgentDto, id);
     }
 }
