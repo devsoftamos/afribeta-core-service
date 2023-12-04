@@ -311,7 +311,7 @@ export class PowerBillService {
                 userId: user.id,
                 accountId: purchaseOptions.phone,
                 billPaymentReference: billPaymentReference,
-                billProviderId: 2, //billProvider.id,
+                billProviderId: billProvider.id,
                 meterType: purchaseOptions.meterType,
                 paymentChannel: paymentChannel,
                 paymentReference: paymentReference,
