@@ -754,6 +754,19 @@ export class TransactionService {
                 billServiceSlug: true,
                 packageType: true,
                 token: true,
+                receiverIdentifier: true,
+                destinationBankName: true,
+                destinationBankAccountName: true,
+                destinationBankAccountNumber: true,
+                user: {
+                    select: {
+                        wallet: {
+                            select: {
+                                walletNumber: true,
+                            },
+                        },
+                    },
+                },
             },
         });
 
@@ -793,6 +806,36 @@ export class TransactionService {
                     meterNumber: transaction.senderIdentifier,
                     amount: transaction.amount,
                     token: transaction.token,
+                    package: transaction.packageType,
+                };
+                break;
+            }
+            case TransactionType.CABLETV_BILL: {
+                response = {
+                    serviceCharge: transaction.shortDescription,
+                    billService: transaction.billServiceSlug,
+                    amount: transaction.amount,
+                    phone: transaction.receiverIdentifier,
+                    package: transaction.packageType,
+                    smartCardNo: transaction.senderIdentifier,
+                };
+                break;
+            }
+            case TransactionType.PAYOUT: {
+                response = {
+                    serviceCharge: transaction.shortDescription,
+                    bankName: transaction.destinationBankName,
+                    accountNumber: transaction.destinationBankAccountNumber,
+                    accountName: transaction.destinationBankAccountName,
+                    amount: transaction.amount,
+                };
+                break;
+            }
+            case TransactionType.WALLET_FUND: {
+                response = {
+                    serviceCharge: transaction.shortDescription,
+                    amount: transaction.amount,
+                    walletNumber: transaction.user.wallet.walletNumber,
                 };
             }
         }
