@@ -740,4 +740,66 @@ export class TransactionService {
             },
         });
     }
+
+    async fetchTransactionDetails(id: number) {
+        const transaction = await this.prisma.transaction.findUnique({
+            where: {
+                id: id,
+            },
+            select: {
+                type: true,
+                shortDescription: true,
+                senderIdentifier: true,
+                amount: true,
+                billServiceSlug: true,
+                packageType: true,
+                token: true,
+            },
+        });
+
+        if (!transaction) {
+            throw new TransactionNotFoundException(
+                "Transaction not found",
+                HttpStatus.NOT_FOUND
+            );
+        }
+
+        let response;
+
+        switch (transaction.type) {
+            case TransactionType.AIRTIME_PURCHASE: {
+                response = {
+                    amount: transaction.amount,
+                    billService: transaction.billServiceSlug,
+                    serviceCharge: transaction.shortDescription,
+                    phone: transaction.senderIdentifier,
+                };
+                break;
+            }
+            case TransactionType.DATA_PURCHASE: {
+                response = {
+                    serviceCharge: transaction.shortDescription,
+                    billService: transaction.billServiceSlug,
+                    data: transaction.packageType,
+                    phone: transaction.senderIdentifier,
+                    amount: transaction.amount,
+                };
+                break;
+            }
+            case TransactionType.ELECTRICITY_BILL: {
+                response = {
+                    serviceCharge: transaction.shortDescription,
+                    billService: transaction.billServiceSlug,
+                    meterNumber: transaction.senderIdentifier,
+                    amount: transaction.amount,
+                    token: transaction.token,
+                };
+            }
+        }
+
+        return buildResponse({
+            message: "transaction details fetched successfully",
+            data: response,
+        });
+    }
 }
