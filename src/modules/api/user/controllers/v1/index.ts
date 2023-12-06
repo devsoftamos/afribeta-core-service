@@ -13,6 +13,8 @@ import {
     Get,
     HttpCode,
     HttpStatus,
+    Param,
+    ParseIntPipe,
     Patch,
     Post,
     Query,
@@ -32,6 +34,7 @@ import {
     UpdateTransactionPinDto,
     VerifyTransactionPinDto,
     CountAgentsCreatedDto,
+    EditAgentDto,
 } from "../../dtos";
 import { UserService } from "../../services";
 
@@ -145,8 +148,6 @@ export class UserController {
     }
 
     @Patch("agent/:id")
-    @UseGuards(AbilitiesGuard)
-    @CheckAbilities(new Ability.ReadUserAbility())
     async editAgentDetails(
         @Param("id", ParseIntPipe) id: number,
         @Body(ValidationPipe) editAgentDto: EditAgentDto
