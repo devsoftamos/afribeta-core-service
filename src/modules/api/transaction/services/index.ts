@@ -740,4 +740,109 @@ export class TransactionService {
             },
         });
     }
+
+    async fetchTransactionDetails(id: number) {
+        const transaction = await this.prisma.transaction.findUnique({
+            where: {
+                id: id,
+            },
+            select: {
+                type: true,
+                shortDescription: true,
+                senderIdentifier: true,
+                amount: true,
+                billServiceSlug: true,
+                packageType: true,
+                token: true,
+                receiverIdentifier: true,
+                destinationBankName: true,
+                destinationBankAccountName: true,
+                destinationBankAccountNumber: true,
+                user: {
+                    select: {
+                        wallet: {
+                            select: {
+                                walletNumber: true,
+                            },
+                        },
+                    },
+                },
+            },
+        });
+
+        if (!transaction) {
+            throw new TransactionNotFoundException(
+                "Transaction not found",
+                HttpStatus.NOT_FOUND
+            );
+        }
+
+        let response;
+
+        switch (transaction.type) {
+            case TransactionType.AIRTIME_PURCHASE: {
+                response = {
+                    amount: transaction.amount,
+                    billService: transaction.billServiceSlug,
+                    serviceCharge: transaction.shortDescription,
+                    phone: transaction.senderIdentifier,
+                };
+                break;
+            }
+            case TransactionType.DATA_PURCHASE: {
+                response = {
+                    serviceCharge: transaction.shortDescription,
+                    billService: transaction.billServiceSlug,
+                    data: transaction.packageType,
+                    phone: transaction.senderIdentifier,
+                    amount: transaction.amount,
+                };
+                break;
+            }
+            case TransactionType.ELECTRICITY_BILL: {
+                response = {
+                    serviceCharge: transaction.shortDescription,
+                    billService: transaction.billServiceSlug,
+                    meterNumber: transaction.senderIdentifier,
+                    amount: transaction.amount,
+                    token: transaction.token,
+                    package: transaction.packageType,
+                };
+                break;
+            }
+            case TransactionType.CABLETV_BILL: {
+                response = {
+                    serviceCharge: transaction.shortDescription,
+                    billService: transaction.billServiceSlug,
+                    amount: transaction.amount,
+                    phone: transaction.receiverIdentifier,
+                    package: transaction.packageType,
+                    smartCardNo: transaction.senderIdentifier,
+                };
+                break;
+            }
+            case TransactionType.PAYOUT: {
+                response = {
+                    serviceCharge: transaction.shortDescription,
+                    bankName: transaction.destinationBankName,
+                    accountNumber: transaction.destinationBankAccountNumber,
+                    accountName: transaction.destinationBankAccountName,
+                    amount: transaction.amount,
+                };
+                break;
+            }
+            case TransactionType.WALLET_FUND: {
+                response = {
+                    serviceCharge: transaction.shortDescription,
+                    amount: transaction.amount,
+                    walletNumber: transaction.user.wallet.walletNumber,
+                };
+            }
+        }
+
+        return buildResponse({
+            message: "transaction details fetched successfully",
+            data: response,
+        });
+    }
 }

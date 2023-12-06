@@ -68,4 +68,9 @@ export class TransactionController {
             user
         );
     }
+
+    @Get("details/:id")
+    async fetchTransactionDetails(@Param("id", ParseIntPipe) id: number) {
+        return await this.transactionService.fetchTransactionDetails(id);
+    }
 }
