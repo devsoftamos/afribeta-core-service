@@ -143,4 +143,14 @@ export class UserController {
             user
         );
     }
+
+    @Patch("agent/:id")
+    @UseGuards(AbilitiesGuard)
+    @CheckAbilities(new Ability.ReadUserAbility())
+    async editAgentDetails(
+        @Param("id", ParseIntPipe) id: number,
+        @Body(ValidationPipe) editAgentDto: EditAgentDto
+    ) {
+        return await this.userService.editAgentDetails(editAgentDto, id);
+    }
 }
