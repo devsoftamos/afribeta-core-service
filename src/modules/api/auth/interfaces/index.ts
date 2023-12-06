@@ -40,6 +40,7 @@ export interface LoginMeta {
     kycStatus: KYC_STATUS;
     isWalletCreated: boolean;
     userType: UserType;
+    transactionPin: string;
     role: {
         name: string;
         slug: string;

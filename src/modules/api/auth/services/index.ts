@@ -335,6 +335,7 @@ export class AuthService {
                 kycStatus: true,
                 isWalletCreated: true,
                 userType: true,
+                transactionPin: true,
                 role: {
                     select: {
                         name: true,
@@ -421,6 +422,7 @@ export class AuthService {
             kycStatus: user.kycStatus,
             isWalletCreated: user.isWalletCreated,
             userType: user.userType,
+            transactionPin: user.transactionPin,
             role: {
                 name: user.role.name,
                 slug: user.role.slug,
