@@ -272,12 +272,15 @@ export class CreateUserDto {
 }
 
 export class EditAgentDto {
+    @IsOptional()
     @IsString()
     firstName: string;
 
+    @IsOptional()
     @IsString()
     lastName: string;
 
+    @IsOptional()
     @IsPhoneNumber("NG")
     @Length(11, 11, {
         message: "Phone number must be valid containing 11 digits",
