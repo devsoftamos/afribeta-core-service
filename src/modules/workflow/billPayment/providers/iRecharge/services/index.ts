@@ -176,11 +176,14 @@ export class IRechargeWorkflowService implements BillPaymentWorkflow {
 
             return {
                 accessToken: getMeterInfo.access_token,
+                meter: {
+                    minimumAmount: +getMeterInfo.customer.minimumAmount,
+                    maximumAmount: null,
+                    meterAccountType: null,
+                },
                 customer: {
                     address: getMeterInfo.customer.address,
                     name: getMeterInfo.customer.name,
-                    minimumAmount: +getMeterInfo.customer.minimumAmount,
-                    maximumAmount: null,
                 },
             };
         } catch (error) {

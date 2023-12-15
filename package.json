@@ -33,6 +33,7 @@
         "@azure/identity": "^3.3.2",
         "@azure/storage-blob": "^12.16.0",
         "@boxpositron/vre": "^1.0.0",
+        "@calculusky/ikeja-electric-sdk": "file:../../../calculusky/projects/ikeja_electric",
         "@calculusky/transactional-email": "^1.0.4",
         "@casl/ability": "^6.5.0",
         "@casl/prisma": "^1.4.1",

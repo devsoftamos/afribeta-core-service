@@ -12,6 +12,7 @@ import { FSDH360BankOptions } from "@/libs/fsdh360Bank/interfaces";
 import { PolarisBankOptions } from "@/libs/polarisBank/interfaces";
 import { Termii } from "@/libs/sms";
 import { IBuyPower } from "@/libs/buyPower";
+import { IkejaElectricOptions } from "@calculusky/ikeja-electric-sdk";
 
 export * from "./constants";
 
@@ -183,6 +184,23 @@ const runtimeEnvironment: RequiredEnvironment[] = [
         name: "KYC_UPLOAD_DIR",
         type: RequiredEnvironmentTypes.String,
     },
+    //ikeja electric
+    {
+        name: "IKEJA_ELECTRIC_APPID",
+        type: RequiredEnvironmentTypes.String,
+    },
+    {
+        name: "IKEJA_ELECTRIC_CIS_PASSWORD",
+        type: RequiredEnvironmentTypes.String,
+    },
+    {
+        name: "IKEJA_ELECTRIC_SFTP_PASSWORD",
+        type: RequiredEnvironmentTypes.String,
+    },
+    {
+        name: "IKEJA_ELECTRIC_SFTP_USERNAME",
+        type: RequiredEnvironmentTypes.String,
+    },
 ];
 
 validate(runtimeEnvironment);
@@ -338,4 +356,12 @@ interface StorageDirConfig {
 
 export const storageDirConfig: StorageDirConfig = {
     kycInfo: process.env.KYC_UPLOAD_DIR,
+};
+
+//ikeja electric
+export const ieConfig: IkejaElectricOptions = {
+    appId: process.env.IKEJA_ELECTRIC_APPID,
+    cisPassword: process.env.IKEJA_ELECTRIC_CIS_PASSWORD,
+    sftpPassword: process.env.IKEJA_ELECTRIC_SFTP_PASSWORD,
+    sftpUsername: process.env.IKEJA_ELECTRIC_SFTP_USERNAME,
 };

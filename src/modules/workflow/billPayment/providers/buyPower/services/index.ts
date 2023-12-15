@@ -87,11 +87,15 @@ export class BuyPowerWorkflowService implements BillPaymentWorkflow {
             });
 
             return {
+                accessToken: null,
+                meter: {
+                    minimumAmount: resp.data.minVendAmount,
+                    maximumAmount: resp.data.maxVendAmount,
+                    meterAccountType: null,
+                },
                 customer: {
                     address: resp.data.address,
                     name: resp.data.name,
-                    minimumAmount: resp.data.minVendAmount,
-                    maximumAmount: resp.data.maxVendAmount,
                 },
             };
         } catch (error) {
