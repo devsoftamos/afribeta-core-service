@@ -175,6 +175,7 @@ export class BuyPowerWorkflowService implements BillPaymentWorkflow {
                 meterToken: resp.data.token,
                 units: resp.data.units,
                 demandCategory: resp.data.demandCategory,
+                receiptNO: resp.data.receiptNo,
             };
         } catch (error) {
             switch (true) {
@@ -242,6 +243,7 @@ export class BuyPowerWorkflowService implements BillPaymentWorkflow {
                 networkProviderReference: resp.data.vendRef.toString(),
                 amount: resp.data.totalAmountPaid,
                 phone: options.vtuNumber,
+                receiptNO: resp.data.receiptNo,
             };
         } catch (error) {
             logger.error(error);
@@ -305,6 +307,7 @@ export class BuyPowerWorkflowService implements BillPaymentWorkflow {
 
             return {
                 networkProviderReference: resp.data.vendRef.toString(),
+                receiptNO: resp.data.receiptNo,
             };
         } catch (error) {
             logger.error(error);
@@ -373,6 +376,7 @@ export class BuyPowerWorkflowService implements BillPaymentWorkflow {
                 networkProviderReference: resp.data.vendRef.toString(),
                 amount: resp.data.totalAmountPaid,
                 receiver: options.vtuNumber,
+                receiptNO: resp.data.receiptNo,
             };
         } catch (error) {
             logger.error(error);
@@ -434,6 +438,7 @@ export class BuyPowerWorkflowService implements BillPaymentWorkflow {
 
             return {
                 vendRef: resp.data.vendRef.toString(),
+                receiptNO: resp.data.receiptNo,
             };
         } catch (error) {
             logger.error(error);

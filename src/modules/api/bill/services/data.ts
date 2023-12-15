@@ -475,6 +475,7 @@ export class DataBillService {
                         paymentChannel: options.isWalletPayment
                             ? PaymentChannel.WALLET
                             : options.transaction.paymentChannel,
+                        billPaymentReceiptNO: vendDataResp.receiptNO,
                     },
                 });
 

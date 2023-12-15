@@ -656,6 +656,7 @@ export class CableTVBillService {
                         paymentChannel: options.isWalletPayment
                             ? PaymentChannel.WALLET
                             : options.transaction.paymentChannel,
+                        billPaymentReceiptNO: vendCableTVResp?.receiptNO,
                     },
                 });
 

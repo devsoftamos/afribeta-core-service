@@ -102,6 +102,7 @@ export class BuypowerReQueryQueueProcessor {
                 {
                     meterToken: powerVendInfo.token,
                     units: powerVendInfo.units,
+                    receiptNO: powerVendInfo.receiptNo,
                 }
             );
             return true;
@@ -134,7 +135,9 @@ export class BuypowerReQueryQueueProcessor {
         const { orderId, transactionId, isWalletPayment } = options.data;
 
         try {
-            await this.buyPowerWorkflowService.reQuery(orderId);
+            const airtimeRequery = await this.buyPowerWorkflowService.reQuery(
+                orderId
+            );
 
             const transaction = await this.prisma.transaction.findUnique({
                 where: { id: transactionId },
@@ -181,12 +184,18 @@ export class BuypowerReQueryQueueProcessor {
                 },
             });
 
-            await this.airtimeBillService.successPurchaseHandler({
-                billProvider: billProvider,
-                transaction: transaction,
-                user: user,
-                isWalletPayment: isWalletPayment,
-            });
+            await this.airtimeBillService.successPurchaseHandler(
+                {
+                    billProvider: billProvider,
+                    transaction: transaction,
+                    user: user,
+                    isWalletPayment: isWalletPayment,
+                },
+                {
+                    receiptNO: airtimeRequery.receiptNo,
+                    networkProviderReference: airtimeRequery.vendRef,
+                }
+            );
             return true;
         } catch (error) {
             switch (true) {
@@ -276,6 +285,7 @@ export class BuypowerReQueryQueueProcessor {
                 },
                 {
                     networkProviderReference: vendResp.vendRef,
+                    receiptNO: vendResp.receiptNo,
                 }
             );
             return true;
@@ -369,6 +379,7 @@ export class BuypowerReQueryQueueProcessor {
                     amount: transaction.amount,
                     networkProviderReference: vendResp.vendRef,
                     receiver: transaction.senderIdentifier,
+                    receiptNO: vendResp.receiptNo,
                 }
             );
             return true;
@@ -462,6 +473,7 @@ export class BuypowerReQueryQueueProcessor {
                 },
                 {
                     vendRef: vendResp.vendRef,
+                    receiptNO: vendResp.receiptNo,
                 }
             );
             return true;

@@ -431,7 +431,7 @@ export class AirtimeBillService {
 
     async successPurchaseHandler(
         options: CompleteBillPurchaseOptions<CompleteAirtimePurchaseTransactionOptions>,
-        vendAirtimeResp?: VendAirtimeResponse
+        vendAirtimeResp: VendAirtimeResponse
     ): Promise<CompleteAirtimePurchaseOutput> {
         await this.prisma.$transaction(
             async (tx) => {
@@ -445,6 +445,7 @@ export class AirtimeBillService {
                         paymentChannel: options.isWalletPayment
                             ? PaymentChannel.WALLET
                             : options.transaction.paymentChannel,
+                        billPaymentReceiptNO: vendAirtimeResp.receiptNO,
                     },
                 });
 

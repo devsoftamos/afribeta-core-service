@@ -231,6 +231,7 @@ export class IRechargeWorkflowService implements BillPaymentWorkflow {
             return {
                 meterToken: vendPowerResp.meter_token,
                 units: vendPowerResp.units,
+                receiptNO: vendPowerResp.ref,
             };
         } catch (error) {
             logger.error(error);
@@ -342,6 +343,7 @@ export class IRechargeWorkflowService implements BillPaymentWorkflow {
             });
             return {
                 networkProviderReference: response.ref,
+                receiptNO: response.ref,
             };
         } catch (error) {
             logger.error(error);
@@ -434,6 +436,7 @@ export class IRechargeWorkflowService implements BillPaymentWorkflow {
                 networkProviderReference: resp.ref,
                 amount: resp.amount,
                 phone: resp.receiver,
+                receiptNO: resp.ref,
             };
         } catch (error) {
             logger.error(error);
@@ -558,6 +561,7 @@ export class IRechargeWorkflowService implements BillPaymentWorkflow {
                 networkProviderReference: response.ref,
                 amount: response.amount,
                 receiver: response.receiver,
+                receiptNO: response.ref,
             };
         } catch (error) {
             logger.error(error);
@@ -819,6 +823,7 @@ export class IRechargeWorkflowService implements BillPaymentWorkflow {
             });
             return {
                 vendRef: response.ref,
+                receiptNO: response.ref,
             };
         } catch (error) {
             logger.error(error);

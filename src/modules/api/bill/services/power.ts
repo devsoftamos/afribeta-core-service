@@ -552,6 +552,7 @@ export class PowerBillService {
                         paymentChannel: options.isWalletPayment
                             ? PaymentChannel.WALLET
                             : options.transaction.paymentChannel,
+                        billPaymentReceiptNO: vendPowerResp.receiptNO,
                     },
                 });
 

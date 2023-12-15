@@ -44,6 +44,7 @@ export interface VendPowerResponse {
     units: string;
     meterToken: string;
     demandCategory?: "MD" | "NMD";
+    receiptNO: string;
 }
 
 export enum NetworkDataProvider {
@@ -78,6 +79,7 @@ export interface VendDataOptions {
 
 export interface VendDataResponse {
     networkProviderReference: string;
+    receiptNO: string;
 }
 
 export interface VendAirtimeOptions {
@@ -90,8 +92,9 @@ export interface VendAirtimeOptions {
 
 export interface VendAirtimeResponse {
     networkProviderReference: string;
-    amount: number;
-    phone: string;
+    amount?: number;
+    phone?: string;
+    receiptNO: string;
 }
 
 //TV
@@ -120,6 +123,7 @@ export interface VendTVOptions {
 
 export interface VendCableTVResponse {
     vendRef: string;
+    receiptNO: string;
 }
 
 export interface GetSmartCardInfoOptions {
@@ -165,6 +169,7 @@ export interface VendInternetResponse {
     networkProviderReference: string;
     amount: number;
     receiver: string;
+    receiptNO: string;
 }
 
 export interface getSmileDeviceInfoOptions {

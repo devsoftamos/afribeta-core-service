@@ -370,6 +370,7 @@ model Transaction {
 
   billProviderId            Int?
   billPaymentReference      String?
+  billPaymentReceiptNO      String?
   walletFundTransactionFlow WalletFundTransactionFlow?
   billServiceSlug           String?
   merchantId                Int?
