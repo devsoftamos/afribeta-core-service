@@ -17,7 +17,6 @@ import {
     AuthorizeAgentToMerchantUpgradeAgentDto,
     CountAgentsCreatedDto,
     CreateUserDto,
-    EditAgentDto,
     FetchAllMerchantsDto,
     FetchMerchantAgentsDto,
     ListMerchantAgentsDto,
