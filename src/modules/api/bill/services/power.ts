@@ -78,6 +78,7 @@ import {
     BuyPowerReQueryQueue,
     BuypowerReQueryJobOptions,
 } from "../queues";
+import { IkejaElectricWorkflowService } from "@/modules/workflow/billPayment/providers/ikejaElectric/services";
 
 @Injectable()
 export class PowerBillService {
@@ -90,23 +91,23 @@ export class PowerBillService {
         private smsService: SmsService,
         private buyPowerWorkflowService: BuyPowerWorkflowService,
         @InjectQueue(BillQueue.BUYPOWER_REQUERY)
-        private buypowerReQueryQueue: Queue<BuypowerReQueryJobOptions>
+        private buypowerReQueryQueue: Queue<BuypowerReQueryJobOptions>,
+        private ieWorkflowService: IkejaElectricWorkflowService
     ) {}
 
     async getElectricDiscos(): Promise<ApiResponse> {
         let discos: FormattedElectricDiscoData[] = [];
 
         //Always fetch ikeja by default
-        const ikejaProvider = await this.prisma.billProvider.findUnique({
+        const ikejaProvider = await this.prisma.billProvider.findFirst({
             where: {
                 slug: BillProviderSlugForPower.IKEJA_ELECTRIC,
+                isActive: true,
             },
         });
 
         const queryOptions = {
-            where: {
-                billProviderSlug: ikejaProvider.slug,
-            },
+            where: {},
             select: {
                 billProviderSlug: true,
                 billServiceSlug: true,
@@ -121,13 +122,16 @@ export class PowerBillService {
             },
         };
 
-        if (ikejaProvider && ikejaProvider.isActive) {
+        if (ikejaProvider) {
+            queryOptions.where = {
+                billProviderSlug: ikejaProvider.slug,
+            };
             const ikejaDiscos =
-                await this.prisma.billProviderElectricDisco.findMany(
+                await this.prisma.billProviderElectricDisco.findFirst(
                     queryOptions
                 );
 
-            discos = this.formatDiscosOutput(ikejaDiscos);
+            discos = this.formatDiscosOutput([ikejaDiscos]);
         }
 
         //priority on set default provider
@@ -153,12 +157,15 @@ export class PowerBillService {
         }
 
         if (randomBillProvider) {
-            queryOptions.where.billProviderSlug = randomBillProvider.slug;
+            queryOptions.where = {
+                billProviderSlug: randomBillProvider.slug,
+            };
             const randomDiscos =
                 await this.prisma.billProviderElectricDisco.findMany(
                     queryOptions
                 );
             const formattedDiscos = this.formatDiscosOutput(randomDiscos);
+
             discos = [...discos, ...formattedDiscos];
         }
 
@@ -346,28 +353,32 @@ export class PowerBillService {
             case BillProviderSlug.IRECHARGE: {
                 if (!purchaseOptions.accessToken) {
                     throw new PowerPurchaseInitializationHandlerException(
-                        `Access token is required for ${BillProviderSlug.IRECHARGE} provider`,
+                        `Access token is required for the selected provider`,
                         HttpStatus.BAD_REQUEST
                     );
                 }
                 transactionCreateOptions.serviceTransactionCode2 =
                     purchaseOptions.accessToken;
-            }
-            //buypower provider
-            case BillProviderSlugForPower.BUYPOWER: {
                 break;
             }
 
             //Ikeja Electric provider
             case BillProviderSlugForPower.IKEJA_ELECTRIC: {
+                if (!purchaseOptions.meterAccountType) {
+                    throw new PowerPurchaseInitializationHandlerException(
+                        "Meter account type is required for the selected provider",
+                        HttpStatus.BAD_REQUEST
+                    );
+                }
+                transactionCreateOptions.meterAccountType =
+                    purchaseOptions.meterAccountType;
+                transactionCreateOptions.billPaymentReference =
+                    this.ieWorkflowService.generateOrderNo();
                 break;
             }
 
             default: {
-                throw new PowerPurchaseInitializationHandlerException(
-                    "Third party power vending provider not integrated or supported",
-                    HttpStatus.NOT_IMPLEMENTED
-                );
+                break;
             }
         }
 
@@ -409,6 +420,7 @@ export class PowerBillService {
                         serviceTransactionCode2: true,
                         meterType: true,
                         billServiceSlug: true,
+                        meterAccountType: true,
                     },
                 });
 
@@ -520,6 +532,21 @@ export class PowerBillService {
                     );
                 }
 
+                case BillProviderSlugForPower.IKEJA_ELECTRIC: {
+                    vendPowerResp = await this.ieWorkflowService.vendPower({
+                        amount: options.transaction.amount,
+                        meterNumber: options.transaction.senderIdentifier,
+                        meterType: options.transaction.meterType as MeterType,
+                        meterAccountType: options.transaction.meterAccountType,
+                        referenceId: options.transaction.billPaymentReference,
+                    });
+
+                    return await this.successPurchaseHandler(
+                        options,
+                        vendPowerResp
+                    );
+                }
+
                 default: {
                     throw new VendPowerFailureException(
                         "Failed to complete power purchase. Bill provider not integrated",
@@ -528,6 +555,7 @@ export class PowerBillService {
                 }
             }
         } catch (error) {
+            //TODO
             return await this.autoSwitchProviderOnVendFailureHandler(
                 options,
                 error
@@ -812,8 +840,17 @@ export class PowerBillService {
                     data: resp,
                 });
             }
+
             case BillProviderSlugForPower.IKEJA_ELECTRIC: {
-                break;
+                const resp = await this.ieWorkflowService.getMeterInfo({
+                    meterNumber: options.meterNumber,
+                    meterType: options.meterType,
+                });
+
+                return buildResponse({
+                    message: "meter successfully retrieved",
+                    data: resp,
+                });
             }
 
             case BillProviderSlugForPower.BUYPOWER: {
@@ -852,7 +889,6 @@ export class PowerBillService {
                         accountId: options.transaction.accountId,
                         amount: options.transaction.amount,
                         discoCode: billProviderDiscoInfo.prepaidMeterCode,
-
                         email: options.user.email,
                         meterNumber: options.transaction.senderIdentifier,
                         referenceId: options.transaction.billPaymentReference,

@@ -80,14 +80,17 @@ export class IkejaElectricWorkflowService
         try {
             switch (options.meterType) {
                 case i.MeterType.PREPAID: {
-                    const resp = await this.ie.power.purchaseCredit({
-                        accountType: options.meterAccountType,
-                        amountTendered: options.amount,
-                        kind: "PREPAY",
-                        orderNO: options.referenceId,
-                        paidType: this.paidType,
-                        requestNO: options.meterNumber,
-                    });
+                    const resp = await this.ie.power.purchaseCredit(
+                        {
+                            accountType: options.meterAccountType,
+                            amountTendered: options.amount,
+                            kind: "PREPAY",
+                            orderNO: options.referenceId,
+                            paidType: this.paidType,
+                            requestNO: options.meterNumber,
+                        },
+                        { acknowledge: true }
+                    );
 
                     return {
                         meterToken: resp.token,
@@ -99,14 +102,17 @@ export class IkejaElectricWorkflowService
 
                 //postpaid
                 default: {
-                    const resp = await this.ie.power.purchaseCredit({
-                        accountType: options.meterAccountType,
-                        amountTendered: options.amount,
-                        kind: "POSTPAY",
-                        orderNO: options.referenceId,
-                        paidType: this.paidType,
-                        requestNO: options.meterNumber,
-                    });
+                    const resp = await this.ie.power.purchaseCredit(
+                        {
+                            accountType: options.meterAccountType,
+                            amountTendered: options.amount,
+                            kind: "POSTPAY",
+                            orderNO: options.referenceId,
+                            paidType: this.paidType,
+                            requestNO: options.meterNumber,
+                        },
+                        { acknowledge: true }
+                    );
 
                     return {
                         receiptNO: resp.receiptNO,

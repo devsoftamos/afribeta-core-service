@@ -329,7 +329,7 @@ enum PaymentStatus {
 
 enum MeterAccountType {
   MD
-  NON_MD
+  NMD
 }
 
 model Transaction {

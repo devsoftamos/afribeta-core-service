@@ -8,6 +8,7 @@ import {
 } from "class-validator";
 import { PaymentProvider } from ".";
 import { BillProviderSlugForPower, MeterType } from "../interfaces";
+import { MeterAccountType } from "@prisma/client";
 
 export class PurchasePowerDto {
     @IsEnum(PaymentProvider)
@@ -51,6 +52,10 @@ export class PurchasePowerDto {
     @IsOptional()
     @IsString()
     accessToken: string;
+
+    @IsOptional()
+    @IsEnum(MeterAccountType)
+    meterAccountType: MeterAccountType;
 }
 
 export class GetMeterInfoDto {
