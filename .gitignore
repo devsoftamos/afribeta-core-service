@@ -40,7 +40,7 @@ lerna-debug.log*
 pnpm-lock.yaml
 
 #npm
-package-lock.json
+
 
 #env
 .env
