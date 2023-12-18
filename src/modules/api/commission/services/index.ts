@@ -11,7 +11,6 @@ import {
 import {
     AGENT_MD_METER_COMMISSION_CAP_AMOUNT,
     AGENT_MD_METER_COMMISSION_PERCENT,
-    SUBAGENT_MD_METER_COMMISSION_PERCENT,
 } from "@/config";
 import {
     DeleteSubagentCommissionDto,

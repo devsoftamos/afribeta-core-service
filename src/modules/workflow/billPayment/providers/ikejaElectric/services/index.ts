@@ -1,4 +1,5 @@
 import IkejaElectric, {
+    CSVFileContent,
     IkejaElectricError,
 } from "@calculusky/ikeja-electric-sdk";
 import { HttpStatus, Injectable } from "@nestjs/common";
@@ -9,8 +10,15 @@ import * as e from "../errors";
 export class IkejaElectricWorkflowService
     implements i.PowerBillPaymentWorkflow
 {
-    private readonly paidType: "POS";
-    constructor(private ie: IkejaElectric) {}
+    readonly paidType: "POS";
+    constructor(private ie: IkejaElectric) {
+        this.paidType = "POS";
+    }
+
+    generateOrderNo(date?: Date) {
+        return this.ie.misc.generateOrderNo(date);
+    }
+
     async getMeterInfo(
         options: i.GetMeterInfoOptions
     ): Promise<i.GetMeterResponse> {
@@ -139,7 +147,7 @@ export class IkejaElectricWorkflowService
         }
     }
 
-    generateOrderNo(date?: Date) {
-        return this.ie.misc.generateOrderNo(date);
+    async uploadReconciliationFile(content: CSVFileContent) {
+        return await this.ie.reconciler.uploadReconciliationFile(content);
     }
 }

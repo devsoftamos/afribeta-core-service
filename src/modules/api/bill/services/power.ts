@@ -555,7 +555,6 @@ export class PowerBillService {
                 }
             }
         } catch (error) {
-            //TODO
             return await this.autoSwitchProviderOnVendFailureHandler(
                 options,
                 error

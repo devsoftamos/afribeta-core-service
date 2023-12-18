@@ -4,7 +4,7 @@ import { Cron } from "@nestjs/schedule";
 import { Inject, Injectable, forwardRef } from "@nestjs/common";
 
 @Injectable()
-export class SchedulerService {
+export class WalletSchedulerService {
     constructor(
         private prisma: PrismaService,
         @Inject(forwardRef(() => WalletService))

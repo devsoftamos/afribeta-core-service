@@ -51,6 +51,7 @@ export interface VendPowerResponse {
     meterToken?: string;
     demandCategory?: "MD" | "NMD";
     receiptNO: string;
+    purchaseDate?: Date;
 }
 
 export enum NetworkDataProvider {

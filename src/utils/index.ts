@@ -1,5 +1,5 @@
 import { customAlphabet, urlAlphabet } from "nanoid";
-import { GroupBy, TransactionIdOption } from "./interfaces";
+import { TransactionIdOption } from "./interfaces";
 import { AES } from "crypto-js";
 import { DEFAULT_CAPPING_MULTIPLIER, encryptSecret } from "@/config";
 import slugify from "slugify";
