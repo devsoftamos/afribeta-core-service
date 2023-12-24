@@ -170,15 +170,6 @@ const runtimeEnvironment: RequiredEnvironment[] = [
         name: "REDIS_PASSWORD",
         type: RequiredEnvironmentTypes.String,
     },
-
-    {
-        name: "AZURE_STORAGE_NAME",
-        type: RequiredEnvironmentTypes.String,
-    },
-    {
-        name: "AZURE_STORAGE_KEY",
-        type: RequiredEnvironmentTypes.String,
-    },
     {
         name: "KYC_UPLOAD_DIR",
         type: RequiredEnvironmentTypes.String,
@@ -280,17 +271,6 @@ export const fsdh360BankOptions: FSDH360BankOptions = {
 };
 export const fsdh360ApiKeyAuth = process.env.FSDH360_API_KEY_AUTH;
 export const fsdh360Ips = process.env.FSDH360_IPS.split(",");
-
-//Azure
-export interface AzureConfiguration {
-    storageName: string;
-    storageKey: string;
-}
-
-export const azureConfiguration: AzureConfiguration = {
-    storageName: process.env.AZURE_STORAGE_NAME,
-    storageKey: process.env.AZURE_STORAGE_KEY,
-};
 
 //polaris bank
 export const polarisBankOptions: PolarisBankOptions = {
