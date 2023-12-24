@@ -183,6 +183,26 @@ const runtimeEnvironment: RequiredEnvironment[] = [
         name: "KYC_UPLOAD_DIR",
         type: RequiredEnvironmentTypes.String,
     },
+    {
+        name: "OCEAN_SPACE_ACCESS_KEY",
+        type: RequiredEnvironmentTypes.String,
+    },
+    {
+        name: "OCEAN_SPACE_SECRET_KEY",
+        type: RequiredEnvironmentTypes.String,
+    },
+    {
+        name: "OCEAN_SPACE_REGION",
+        type: RequiredEnvironmentTypes.String,
+    },
+    {
+        name: "OCEAN_SPACE_BUCKET_NAME",
+        type: RequiredEnvironmentTypes.String,
+    },
+    {
+        name: "OCEAN_SPACE_UPLOAD_ENDPOINT",
+        type: RequiredEnvironmentTypes.String,
+    },
 ];
 
 validate(runtimeEnvironment);
@@ -338,4 +358,21 @@ interface StorageDirConfig {
 
 export const storageDirConfig: StorageDirConfig = {
     kycInfo: process.env.KYC_UPLOAD_DIR,
+};
+
+//AWS
+export interface OceanSpaceConfiguration {
+    accessKey: string;
+    secretKey: string;
+    region: string;
+    bucketName: string;
+    endpoint: string;
+}
+
+export const oceanSpaceConfiguration: OceanSpaceConfiguration = {
+    accessKey: process.env.OCEAN_SPACE_ACCESS_KEY,
+    secretKey: process.env.OCEAN_SPACE_SECRET_KEY,
+    region: process.env.OCEAN_SPACE_REGION,
+    bucketName: process.env.OCEAN_SPACE_BUCKET_NAME,
+    endpoint: process.env.OCEAN_SPACE_UPLOAD_ENDPOINT,
 };

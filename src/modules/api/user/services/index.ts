@@ -61,17 +61,23 @@ import { BillServiceSlug } from "@/modules/api/bill/interfaces";
 import { RoleSlug } from "../../role/interfaces";
 import { endOfMonth, startOfMonth } from "date-fns";
 import { RoleNotFoundException } from "../../role/errors";
-import { AzureStorageService } from "@/modules/core/upload/services/azure";
+import { UploadFactory } from "@/modules/core/upload/services";
+import { OceanSpaceService } from "@/modules/core/upload/services/oceanSpace";
 
 @Injectable()
 export class UserService {
+    private uploadService: OceanSpaceService;
     constructor(
         private prisma: PrismaService,
         @Inject(forwardRef(() => AuthService))
         private authService: AuthService,
         private emailService: EmailService,
-        private azureStorageService: AzureStorageService
-    ) {}
+        private uploadFactory: UploadFactory
+    ) {
+        this.uploadService = this.uploadFactory.build({
+            provider: "ocean_space",
+        });
+    }
 
     async createUser(options: Prisma.UserCreateInput) {
         return await this.prisma.user.create({
@@ -568,29 +574,11 @@ export class UserService {
         });
     }
 
-    async getSingleAgent(id: number, user: User) {
-        const subAgent = await this.prisma.user.findFirst({
-            where: {
-                id: id,
-                createdById: user.id,
-            },
-        });
-        if (!subAgent) {
-            throw new UserNotFoundException(
-                "Sub Agent account not found",
-                HttpStatus.NOT_FOUND
-            );
-        }
-
-        //TODO: complete
-        return subAgent;
-    }
-
     private async uploadKycImage(file: string): Promise<string> {
         const date = Date.now();
         const body = Buffer.from(file, "base64");
 
-        return await this.azureStorageService.uploadCompressedImage({
+        return await this.uploadService.uploadCompressedImage({
             dir: storageDirConfig.kycInfo,
             name: `kyc-image-${date}`,
             format: "webp",
