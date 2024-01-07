@@ -7,7 +7,6 @@ import { AllExceptionsFilter } from "@/core/exception/http";
 import { classValidatorPipeInstance } from "@/core/pipe";
 import { PrismaService } from "@/modules/core/prisma/services";
 import * as morgan from "morgan";
-import { json } from "express";
 import { frontendDevOrigin, manualEnvironment, redisUrl } from "@/config";
 import waitForRedis from "../utils/wait-for-redis";
 import { NestExpressApplication } from "@nestjs/platform-express";
