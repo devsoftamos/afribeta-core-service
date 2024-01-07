@@ -15,6 +15,7 @@ import {
     UserType,
     VirtualAccountProvider,
     WalletFundTransactionFlow,
+    WalletSetupStatus,
 } from "@prisma/client";
 import { UserNotFoundException } from "@/modules/api/user";
 import { UserService } from "@/modules/api/user/services";
@@ -154,6 +155,7 @@ export class WalletService {
                     },
                     data: {
                         isWalletCreated: true,
+                        walletSetupStatus: WalletSetupStatus.ACTIVE,
                     },
                 });
             });
@@ -201,9 +203,19 @@ export class WalletService {
         await this.paystackService.assignDedicatedValidatedVirtualAccount(
             paystackDynamicVirtualAccountCreationOptions
         );
+
+        await this.prisma.user.update({
+            where: {
+                id: user.id,
+            },
+            data: {
+                walletSetupStatus: WalletSetupStatus.PENDING,
+            },
+        });
+
         return buildResponse({
             message:
-                "Your Afribeta wallet would be created after we have successfully verified your bank details",
+                "Your wallet would be created after we have successfully verified your bank details",
         });
     }
 

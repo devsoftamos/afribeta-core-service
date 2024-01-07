@@ -110,6 +110,7 @@ export class UserService {
                 email: true,
                 identifier: true,
                 phone: true,
+                walletSetupStatus: true,
             },
         });
         return buildResponse({

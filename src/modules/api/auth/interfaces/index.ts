@@ -1,4 +1,4 @@
-import { KYC_STATUS, User, UserType } from "@prisma/client";
+import { KYC_STATUS, User, UserType, WalletSetupStatus } from "@prisma/client";
 import { Request } from "express";
 import { UserSigInDto } from "../dtos";
 import { Optional } from "@/utils";
@@ -41,6 +41,7 @@ export interface LoginMeta {
     isWalletCreated: boolean;
     userType: UserType;
     transactionPin: string;
+    walletSetupStatus: WalletSetupStatus;
     role: {
         name: string;
         slug: string;
