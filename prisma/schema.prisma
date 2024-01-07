@@ -45,6 +45,11 @@ enum KYC_STATUS {
   DECLINED
 }
 
+enum WalletSetupStatus {
+  PENDING
+  ACTIVE
+}
+
 model User {
   id                          Int                    @id @default(autoincrement())
   identifier                  String                 @unique
@@ -71,6 +76,7 @@ model User {
   kycStatus                   KYC_STATUS?
   isWalletCreated             Boolean                @default(false) //for wallet
   isDeleted                   Boolean?               @default(false)
+  walletSetupStatus           WalletSetupStatus?
   createdAt                   DateTime               @default(now())
   updatedAt                   DateTime               @updatedAt
   bankAccount                 BankAccount?
