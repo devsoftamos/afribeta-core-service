@@ -3,6 +3,7 @@ import {
     FSDH360BankAuthenticationError,
     FSDH360BankError,
     FSDH360BankStaticVirtualAccountError,
+    FSDH360BankVerifyBvnError,
 } from "./errors";
 import {
     FSDH360BankOptions,
@@ -13,6 +14,10 @@ import {
     CreateStaticVirtualAccountOptions,
     CreateStaticVirtualAccountResponse,
 } from "./interfaces/virtualAccount";
+import {
+    BvnVerificationOptions,
+    BvnVerificationResponse,
+} from "./interfaces/verifyBvn";
 export * from "./errors";
 export * from "./interfaces";
 
@@ -97,6 +102,34 @@ export class FSDH360Bank {
             const err = new FSDH360BankStaticVirtualAccountError(
                 error.response.data?.detail ??
                     "Failed to create static virtual account"
+            );
+            err.status = error.response.status;
+            throw err;
+        }
+    }
+
+    async verifyBvn(options: BvnVerificationOptions) {
+        try {
+            await this.authenticate();
+            const requestOptions: AxiosRequestConfig<BvnVerificationOptions> = {
+                headers: this.getHeader(),
+                method: "POST",
+                url: "https://bvn-api-test.fsdhgroup.com/api/VerifySingleBVN",
+                baseURL: "",
+                data: {
+                    bvn: options.bvn,
+                },
+            };
+            const { data } = await this.axios<BvnVerificationResponse>(
+                requestOptions
+            );
+            return data;
+        } catch (error) {
+            if (!Axios.isAxiosError(error)) {
+                throw error;
+            }
+            const err = new FSDH360BankVerifyBvnError(
+                error.response.data?.detail ?? "Failed to verify BVN"
             );
             err.status = error.response.status;
             throw err;
