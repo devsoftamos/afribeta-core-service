@@ -114,8 +114,7 @@ export class FSDH360Bank {
             const requestOptions: AxiosRequestConfig<BvnVerificationOptions> = {
                 headers: this.getHeader(),
                 method: "POST",
-                url: "https://bvn-api-test.fsdhgroup.com/api/VerifySingleBVN",
-                baseURL: "",
+                baseURL: this.instanceOptions.identityUrl,
                 data: {
                     bvn: options.bvn,
                 },
