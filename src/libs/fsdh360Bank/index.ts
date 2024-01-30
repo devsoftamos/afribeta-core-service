@@ -28,6 +28,10 @@ export class FSDH360Bank {
         baseURL: this.instanceOptions.baseUrl,
     });
 
+    private axiosBVNInstance: AxiosInstance = Axios.create({
+        baseURL: this.instanceOptions.identityUrl,
+    });
+
     private authToken: string;
 
     private async authenticate() {
@@ -120,9 +124,10 @@ export class FSDH360Bank {
                     bvn: options.bvn,
                 },
             };
-            const { data } = await this.axios<BvnVerificationResponse>(
-                requestOptions
-            );
+            const { data } =
+                await this.axiosBVNInstance<BvnVerificationResponse>(
+                    requestOptions
+                );
             return data;
         } catch (error) {
             if (!Axios.isAxiosError(error)) {
