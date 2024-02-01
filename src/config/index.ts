@@ -268,7 +268,9 @@ export const fsdh360BankOptions: FSDH360BankOptions = {
     clientId: process.env.FSDH360_CLIENT_ID,
     clientSecret: process.env.FSDH360_CLIENT_SECRET,
     merchantAccountNumber: process.env.FSDH360_MERCHANT_ACCOUNT_NUMBER,
+    identityUrl: process.env.FSDH360_IDENTITY_BASE_URL,
 };
+
 export const fsdh360ApiKeyAuth = process.env.FSDH360_API_KEY_AUTH;
 export const fsdh360Ips = process.env.FSDH360_IPS.split(",");
 

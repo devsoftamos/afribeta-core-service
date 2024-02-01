@@ -5,6 +5,7 @@ export interface FSDH360BankOptions {
     clientId: string;
     clientSecret: string;
     tokenUrl: string;
+    identityUrl: string;
     merchantAccountNumber: string;
 }
 
