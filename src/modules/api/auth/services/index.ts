@@ -54,6 +54,7 @@ import {
 } from "../interfaces";
 import { SMS } from "@/modules/core/sms";
 import { SmsMessage, smsMessage } from "@/core/smsMessage";
+import { IdentityVerificationService } from "../../identityVerification/services";
 
 @Injectable()
 export class AuthService {
@@ -61,7 +62,8 @@ export class AuthService {
         private jwtService: JwtService,
         private smsService: SmsService,
         private prisma: PrismaService,
-        private emailService: EmailService
+        private emailService: EmailService,
+        private identity: IdentityVerificationService
     ) {}
 
     async hashPassword(password: string): Promise<string> {
@@ -353,6 +355,11 @@ export class AuthService {
                     },
                 },
             },
+        });
+
+        const iden = this.identity.VerifyUserBVN({
+            bvn: "22222222222",
+            user: user,
         });
 
         if (!user) {
