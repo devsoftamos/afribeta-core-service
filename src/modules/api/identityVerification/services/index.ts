@@ -9,16 +9,18 @@ import { BVNVerificationDto } from "../dtos";
 export class IdentityVerificationService {
     constructor(private fsdhBank: FSDH360BankService) {}
 
-    async VerifyUserBVN(options: BVNVerificationDto, user: User) {
+    async VerifyUserBVN(options: BVNVerificationDto) {
         try {
             const verifyBVN = await this.fsdhBank.verifyBVN({
                 bvn: options.bvn,
             });
 
+            logger.log(verifyBVN, "bvnVer");
+
             if (verifyBVN.firstName !== null) {
                 if (
-                    user.firstName !== verifyBVN.firstName &&
-                    user.lastName !== verifyBVN.lastName
+                    options.firstName !== verifyBVN.firstName &&
+                    options.lastName !== verifyBVN.lastName
                 ) {
                     throw new BvnVerificationException(
                         "BVN verification failed",
