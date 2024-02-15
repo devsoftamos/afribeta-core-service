@@ -4,6 +4,7 @@ import { User } from "@prisma/client";
 import { BvnVerificationException } from "../errors";
 import logger from "moment-logger";
 import { BVNVerificationDto } from "../dtos";
+import { formatName } from "@/utils";
 
 @Injectable()
 export class IdentityVerificationService {
@@ -19,8 +20,8 @@ export class IdentityVerificationService {
 
             if (verifyBVN.firstName !== null) {
                 if (
-                    options.firstName !== verifyBVN.firstName &&
-                    options.lastName !== verifyBVN.lastName
+                    options.firstName !== formatName(verifyBVN.firstName) &&
+                    options.lastName !== formatName(verifyBVN.lastName)
                 ) {
                     throw new BvnVerificationException(
                         "BVN verification failed",
