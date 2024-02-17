@@ -92,6 +92,8 @@ import {
     NotificationGenericException,
 } from "../../notification";
 import { BankAccountNotFoundException } from "../../bank";
+import { IdentityVerificationService } from "../../identityVerification/services";
+import { BvnVerificationException } from "../../identityVerification/errors";
 @Injectable()
 export class WalletService {
     constructor(
@@ -100,7 +102,8 @@ export class WalletService {
         private userService: UserService,
         private providusService: ProvidusService,
         private fsdh360BankService: FSDH360BankService,
-        private squadGTBankService: SquadGTBankService
+        private squadGTBankService: SquadGTBankService,
+        private identityVerification: IdentityVerificationService
     ) {}
 
     async processWebhookWalletAndVirtualAccountCreation(
@@ -183,6 +186,21 @@ export class WalletService {
             throw new DuplicateWalletException(
                 "Wallet already exists",
                 HttpStatus.BAD_REQUEST
+            );
+        }
+
+        const verifyCustomerBVN = await this.identityVerification.VerifyUserBVN(
+            {
+                bvn: options.bvn,
+                firstName: user.firstName,
+                lastName: user.lastName,
+            }
+        );
+
+        if (!verifyCustomerBVN) {
+            throw new BvnVerificationException(
+                "User BVN verification failed",
+                HttpStatus.NOT_ACCEPTABLE
             );
         }
 
@@ -718,6 +736,19 @@ export class WalletService {
         }
 
         const accountName = `${user.firstName} ${user.lastName}`;
+
+        const verifyAgentBVN = await this.identityVerification.VerifyUserBVN({
+            bvn: options.bvn,
+            firstName: user.firstName,
+            lastName: user.lastName,
+        });
+
+        if (!verifyAgentBVN) {
+            throw new BvnVerificationException(
+                "Agent BVN verification failed",
+                HttpStatus.NOT_ACCEPTABLE
+            );
+        }
 
         const providusAccountDetail = await this.providusService
             .createVirtualAccount({
