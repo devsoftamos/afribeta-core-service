@@ -92,8 +92,7 @@ import {
     NotificationGenericException,
 } from "../../notification";
 import { BankAccountNotFoundException } from "../../bank";
-import { IdentityVerificationService } from "../../identityVerification/services";
-import { BvnVerificationException } from "../../identityVerification/errors";
+import { IdentityVerificationService } from "@/modules/core/identityVerification/services";
 @Injectable()
 export class WalletService {
     constructor(
@@ -189,20 +188,11 @@ export class WalletService {
             );
         }
 
-        const verifyCustomerBVN = await this.identityVerification.VerifyUserBVN(
-            {
-                bvn: options.bvn,
-                firstName: user.firstName,
-                lastName: user.lastName,
-            }
-        );
-
-        if (!verifyCustomerBVN) {
-            throw new BvnVerificationException(
-                "User BVN verification failed",
-                HttpStatus.NOT_ACCEPTABLE
-            );
-        }
+        await this.identityVerification.verifyUserBVN({
+            bvn: options.bvn,
+            firstName: user.firstName,
+            lastName: user.lastName,
+        });
 
         const paystackDynamicVirtualAccountCreationOptions: AssignDedicatedVirtualAccountWithValidationOptions =
             {
@@ -233,7 +223,7 @@ export class WalletService {
 
         return buildResponse({
             message:
-                "Your wallet would be created after we have successfully verified your bank details",
+                "Verification successful. Your wallet would be created shortly",
         });
     }
 
@@ -737,18 +727,11 @@ export class WalletService {
 
         const accountName = `${user.firstName} ${user.lastName}`;
 
-        const verifyAgentBVN = await this.identityVerification.VerifyUserBVN({
+        await this.identityVerification.verifyUserBVN({
             bvn: options.bvn,
             firstName: user.firstName,
             lastName: user.lastName,
         });
-
-        if (!verifyAgentBVN) {
-            throw new BvnVerificationException(
-                "Agent BVN verification failed",
-                HttpStatus.NOT_ACCEPTABLE
-            );
-        }
 
         const providusAccountDetail = await this.providusService
             .createVirtualAccount({
