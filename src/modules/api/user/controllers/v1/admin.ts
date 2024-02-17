@@ -11,13 +11,11 @@ import {
     Body,
     HttpStatus,
     HttpCode,
-    Patch,
 } from "@nestjs/common";
 import {
     AuthorizeAgentToMerchantUpgradeAgentDto,
     CountAgentsCreatedDto,
     CreateUserDto,
-    EditAgentDto,
     FetchAllMerchantsDto,
     FetchMerchantAgentsDto,
     ListMerchantAgentsDto,

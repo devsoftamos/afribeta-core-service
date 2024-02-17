@@ -1,3 +1,4 @@
+import { MeterAccountType } from "@prisma/client";
 import { CompleteBillPurchaseTransactionOptions } from ".";
 
 export interface CompletePowerPurchaseTransactionOptions
@@ -7,6 +8,7 @@ export interface CompletePowerPurchaseTransactionOptions
     accountId: string;
     meterType: string;
     billServiceSlug: string;
+    meterAccountType: MeterAccountType;
 }
 
 export interface CompletePowerPurchaseOutput {
