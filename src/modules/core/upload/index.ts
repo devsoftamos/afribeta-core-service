@@ -1,17 +1,9 @@
-import { azureConfiguration } from "@/config";
 import { Global, Module } from "@nestjs/common";
-import { AzureStorageService } from "./services/azure";
+import { UploadFactory } from "./services";
 
 @Global()
 @Module({
-    providers: [
-        {
-            provide: AzureStorageService,
-            useFactory() {
-                return new AzureStorageService(azureConfiguration);
-            },
-        },
-    ],
-    exports: [AzureStorageService],
+    providers: [UploadFactory],
+    exports: [UploadFactory],
 })
 export class UploadModule {}

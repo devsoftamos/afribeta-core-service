@@ -336,6 +336,7 @@ export class AuthService {
                 isWalletCreated: true,
                 userType: true,
                 transactionPin: true,
+                walletSetupStatus: true,
                 role: {
                     select: {
                         name: true,
@@ -423,6 +424,7 @@ export class AuthService {
             isWalletCreated: user.isWalletCreated,
             userType: user.userType,
             transactionPin: user.transactionPin,
+            walletSetupStatus: user.walletSetupStatus,
             role: {
                 name: user.role.name,
                 slug: user.role.slug,

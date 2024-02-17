@@ -45,7 +45,7 @@ export const generateId = (options: TransactionIdOption): string => {
 };
 
 export const formatName = (name: string) => {
-    const formatted = name.trim();
+    const formatted = name.trim().toLowerCase();
     return `${formatted.charAt(0).toUpperCase()}${formatted.slice(1)}`;
 };
 

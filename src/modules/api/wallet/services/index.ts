@@ -15,6 +15,7 @@ import {
     UserType,
     VirtualAccountProvider,
     WalletFundTransactionFlow,
+    WalletSetupStatus,
 } from "@prisma/client";
 import { UserNotFoundException } from "@/modules/api/user";
 import { UserService } from "@/modules/api/user/services";
@@ -91,6 +92,8 @@ import {
     NotificationGenericException,
 } from "../../notification";
 import { BankAccountNotFoundException } from "../../bank";
+import { IdentityVerificationService } from "../../identityVerification/services";
+import { BvnVerificationException } from "../../identityVerification/errors";
 @Injectable()
 export class WalletService {
     constructor(
@@ -99,7 +102,8 @@ export class WalletService {
         private userService: UserService,
         private providusService: ProvidusService,
         private fsdh360BankService: FSDH360BankService,
-        private squadGTBankService: SquadGTBankService
+        private squadGTBankService: SquadGTBankService,
+        private identityVerification: IdentityVerificationService
     ) {}
 
     async processWebhookWalletAndVirtualAccountCreation(
@@ -154,6 +158,7 @@ export class WalletService {
                     },
                     data: {
                         isWalletCreated: true,
+                        walletSetupStatus: WalletSetupStatus.ACTIVE,
                     },
                 });
             });
@@ -184,6 +189,21 @@ export class WalletService {
             );
         }
 
+        const verifyCustomerBVN = await this.identityVerification.VerifyUserBVN(
+            {
+                bvn: options.bvn,
+                firstName: user.firstName,
+                lastName: user.lastName,
+            }
+        );
+
+        if (!verifyCustomerBVN) {
+            throw new BvnVerificationException(
+                "User BVN verification failed",
+                HttpStatus.NOT_ACCEPTABLE
+            );
+        }
+
         const paystackDynamicVirtualAccountCreationOptions: AssignDedicatedVirtualAccountWithValidationOptions =
             {
                 bvn: options.bvn,
@@ -201,9 +221,19 @@ export class WalletService {
         await this.paystackService.assignDedicatedValidatedVirtualAccount(
             paystackDynamicVirtualAccountCreationOptions
         );
+
+        await this.prisma.user.update({
+            where: {
+                id: user.id,
+            },
+            data: {
+                walletSetupStatus: WalletSetupStatus.PENDING,
+            },
+        });
+
         return buildResponse({
             message:
-                "Your Afribeta wallet would be created after we have successfully verified your bank details",
+                "Your wallet would be created after we have successfully verified your bank details",
         });
     }
 
@@ -706,6 +736,19 @@ export class WalletService {
         }
 
         const accountName = `${user.firstName} ${user.lastName}`;
+
+        const verifyAgentBVN = await this.identityVerification.VerifyUserBVN({
+            bvn: options.bvn,
+            firstName: user.firstName,
+            lastName: user.lastName,
+        });
+
+        if (!verifyAgentBVN) {
+            throw new BvnVerificationException(
+                "Agent BVN verification failed",
+                HttpStatus.NOT_ACCEPTABLE
+            );
+        }
 
         const providusAccountDetail = await this.providusService
             .createVirtualAccount({

@@ -171,17 +171,28 @@ const runtimeEnvironment: RequiredEnvironment[] = [
         name: "REDIS_PASSWORD",
         type: RequiredEnvironmentTypes.String,
     },
-
-    {
-        name: "AZURE_STORAGE_NAME",
-        type: RequiredEnvironmentTypes.String,
-    },
-    {
-        name: "AZURE_STORAGE_KEY",
-        type: RequiredEnvironmentTypes.String,
-    },
     {
         name: "KYC_UPLOAD_DIR",
+        type: RequiredEnvironmentTypes.String,
+    },
+    {
+        name: "OCEAN_SPACE_ACCESS_KEY",
+        type: RequiredEnvironmentTypes.String,
+    },
+    {
+        name: "OCEAN_SPACE_SECRET_KEY",
+        type: RequiredEnvironmentTypes.String,
+    },
+    {
+        name: "OCEAN_SPACE_REGION",
+        type: RequiredEnvironmentTypes.String,
+    },
+    {
+        name: "OCEAN_SPACE_BUCKET_NAME",
+        type: RequiredEnvironmentTypes.String,
+    },
+    {
+        name: "OCEAN_SPACE_UPLOAD_ENDPOINT",
         type: RequiredEnvironmentTypes.String,
     },
     //ikeja electric
@@ -275,20 +286,11 @@ export const fsdh360BankOptions: FSDH360BankOptions = {
     clientId: process.env.FSDH360_CLIENT_ID,
     clientSecret: process.env.FSDH360_CLIENT_SECRET,
     merchantAccountNumber: process.env.FSDH360_MERCHANT_ACCOUNT_NUMBER,
+    identityUrl: process.env.FSDH360_IDENTITY_BASE_URL,
 };
+
 export const fsdh360ApiKeyAuth = process.env.FSDH360_API_KEY_AUTH;
 export const fsdh360Ips = process.env.FSDH360_IPS.split(",");
-
-//Azure
-export interface AzureConfiguration {
-    storageName: string;
-    storageKey: string;
-}
-
-export const azureConfiguration: AzureConfiguration = {
-    storageName: process.env.AZURE_STORAGE_NAME,
-    storageKey: process.env.AZURE_STORAGE_KEY,
-};
 
 //polaris bank
 export const polarisBankOptions: PolarisBankOptions = {
@@ -364,4 +366,21 @@ export const ieConfig: IkejaElectricOptions = {
     cisPassword: process.env.IKEJA_ELECTRIC_CIS_PASSWORD,
     sftpPassword: process.env.IKEJA_ELECTRIC_SFTP_PASSWORD,
     sftpUsername: process.env.IKEJA_ELECTRIC_SFTP_USERNAME,
+}
+
+//Digital Ocean
+export interface OceanSpaceConfiguration {
+    accessKey: string;
+    secretKey: string;
+    region: string;
+    bucketName: string;
+    endpoint: string;
+}
+
+export const oceanSpaceConfiguration: OceanSpaceConfiguration = {
+    accessKey: process.env.OCEAN_SPACE_ACCESS_KEY,
+    secretKey: process.env.OCEAN_SPACE_SECRET_KEY,
+    region: process.env.OCEAN_SPACE_REGION,
+    bucketName: process.env.OCEAN_SPACE_BUCKET_NAME,
+    endpoint: process.env.OCEAN_SPACE_UPLOAD_ENDPOINT,
 };

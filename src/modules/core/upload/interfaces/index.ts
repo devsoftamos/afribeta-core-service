@@ -1,6 +1,6 @@
 export type ImageFormat = "webp" | "jpeg" | "png";
 
-export interface UploadFileOptions {
+export interface UploadImageOptions {
     dir: string;
     name: string;
     body: Buffer;
@@ -8,19 +8,23 @@ export interface UploadFileOptions {
     format: ImageFormat;
 }
 
-export interface CompressImageOptions extends UploadFileOptions {
+export interface CompressImageOptions extends UploadImageOptions {
     quality?: number;
     width?: number;
     height?: number;
 }
 
 export interface DeleteFileOptions {
-    blobUrl: string;
-    dir: string;
+    key: string;
 }
 
 export interface IUploadService {
-    uploadFile(options: UploadFileOptions): Promise<string>;
+    uploadImage(options: UploadImageOptions): Promise<string>;
     uploadCompressedImage(options: CompressImageOptions): Promise<string>;
     deleteFile(options: DeleteFileOptions): Promise<boolean>;
 }
+
+type Provider = "ocean_space";
+export type BuildOptions = {
+    provider: Provider;
+};

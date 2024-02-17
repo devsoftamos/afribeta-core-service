@@ -10,6 +10,7 @@ import { WalletModule } from "./wallet";
 import { WebExtension } from "./webExtension";
 import { CommissionModule } from "./commission";
 import { AccessControlModule } from "./accessControl";
+import { IdentityVerificationModule } from "./identityVerification";
 
 @Module({
     imports: [
@@ -24,6 +25,7 @@ import { AccessControlModule } from "./accessControl";
         LocationModule,
         CommissionModule,
         AccessControlModule,
+        IdentityVerificationModule,
     ],
 })
 export class APIModule {}
