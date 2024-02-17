@@ -148,6 +148,8 @@ export class IkejaElectricWorkflowService
     }
 
     async uploadReconciliationFile(content: CSVFileContent) {
-        return await this.ie.reconciler.uploadReconciliationFile(content);
+        return await this.ie.reconciler.uploadReconciliationFile(content, {
+            notify: true,
+        });
     }
 }
