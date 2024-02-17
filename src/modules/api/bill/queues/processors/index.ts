@@ -58,6 +58,7 @@ export class BuypowerReQueryQueueProcessor {
                     serviceTransactionCode2: true,
                     meterType: true,
                     billServiceSlug: true,
+                    meterAccountType: true,
                 },
             });
 

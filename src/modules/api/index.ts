@@ -8,8 +8,6 @@ import { TransactionModule } from "./transaction";
 import { UserModule } from "./user";
 import { WalletModule } from "./wallet";
 import { WebExtension } from "./webExtension";
-import { BullModule } from "@nestjs/bull";
-import { redisUrl } from "@/config";
 import { CommissionModule } from "./commission";
 import { AccessControlModule } from "./accessControl";
 import { IdentityVerificationModule } from "./identityVerification";
@@ -25,9 +23,6 @@ import { IdentityVerificationModule } from "./identityVerification";
         BillModule,
         NotificationModule,
         LocationModule,
-        BullModule.forRoot({
-            url: redisUrl,
-        }),
         CommissionModule,
         AccessControlModule,
         IdentityVerificationModule,

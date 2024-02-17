@@ -1,5 +1,7 @@
 import { BullModuleOptions } from "@nestjs/bull";
 import { BillQueue } from "./interfaces";
+import { BullBoardQueueOptions } from "@bull-board/nestjs";
+import { BullAdapter } from "@bull-board/api/bullAdapter";
 export * from "./interfaces";
 
 export const buypowerReQueryOptions: BullModuleOptions = {
@@ -13,3 +15,9 @@ export const buypowerReQueryOptions: BullModuleOptions = {
 };
 
 export const billQueueConfig: BullModuleOptions[] = [buypowerReQueryOptions];
+export const billBoardQueueConfig: BullBoardQueueOptions[] = [
+    {
+        name: BillQueue.BUYPOWER_REQUERY,
+        adapter: BullAdapter,
+    },
+];

@@ -112,4 +112,17 @@ const buyPower = [
     },
 ];
 
-export const billProviderElectricDiscos = [...iRecharge, ...buyPower];
+const ikejaElectric = [
+    {
+        billProviderSlug: "ikeja-electric",
+        billServiceSlug: "ikeja-electric",
+        prepaidMeterCode: "MN",
+        postpaidMeterCode: "CN",
+    },
+];
+
+export const billProviderElectricDiscos = [
+    ...iRecharge,
+    ...buyPower,
+    ...ikejaElectric,
+];
