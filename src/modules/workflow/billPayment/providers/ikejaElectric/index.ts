@@ -14,6 +14,10 @@ import IkejaElectric from "@calculusky/ikeja-electric-sdk";
                     cisPassword: ieConfig.cisPassword,
                     sftpPassword: ieConfig.sftpPassword,
                     sftpUsername: ieConfig.sftpUsername,
+                    cisHost: ieConfig.cisHost,
+                    cisPort: ieConfig.cisPort,
+                    sftpHost: ieConfig.sftpHost,
+                    sftpPort: ieConfig.sftpPort,
                 });
                 return new IkejaElectricWorkflowService(ie);
             },

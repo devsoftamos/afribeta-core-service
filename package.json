@@ -32,13 +32,11 @@
         "postinstall": "npm run prisma:generate"
     },
     "dependencies": {
-        "@azure/identity": "^3.3.2",
-        "@azure/storage-blob": "^12.16.0",
         "@boxpositron/vre": "^1.0.0",
         "@bull-board/api": "^5.10.2",
         "@bull-board/express": "^5.10.2",
         "@bull-board/nestjs": "^5.10.2",
-        "@calculusky/ikeja-electric-sdk": "^1.0.0",
+        "@calculusky/ikeja-electric-sdk": "^1.0.1",
         "@calculusky/transactional-email": "^1.0.4",
         "@casl/ability": "^6.5.0",
         "@casl/prisma": "^1.4.1",

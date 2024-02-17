@@ -212,6 +212,22 @@ const runtimeEnvironment: RequiredEnvironment[] = [
         name: "IKEJA_ELECTRIC_SFTP_USERNAME",
         type: RequiredEnvironmentTypes.String,
     },
+    {
+        name: "IKEJA_ELECTRIC_CIS_HOST",
+        type: RequiredEnvironmentTypes.String,
+    },
+    {
+        name: "IKEJA_ELECTRIC_CIS_PORT",
+        type: RequiredEnvironmentTypes.Number,
+    },
+    {
+        name: "IKEJA_ELECTRIC_SFTP_HOST",
+        type: RequiredEnvironmentTypes.String,
+    },
+    {
+        name: "IKEJA_ELECTRIC_SFTP_PORT",
+        type: RequiredEnvironmentTypes.Number,
+    },
 ];
 
 validate(runtimeEnvironment);
@@ -250,11 +266,8 @@ export const paystackConfiguration: PaystackOptions = {
     secretKey: process.env.PAYSTACK_SECRET_KEY,
 };
 
-//Error stack
-export const showStack = process.env.STACK_MODE == "show_error_stack";
-
-//manual env
-export const manualEnvironment = process.env.MANUAL_ENVIRONMENT;
+//env
+export const isDevEnvironment = process.env.ENVIRONMENT == "development";
 
 //IRecharge
 export const iRechargeOptions: IRechargeOptions = {
@@ -366,7 +379,11 @@ export const ieConfig: IkejaElectricOptions = {
     cisPassword: process.env.IKEJA_ELECTRIC_CIS_PASSWORD,
     sftpPassword: process.env.IKEJA_ELECTRIC_SFTP_PASSWORD,
     sftpUsername: process.env.IKEJA_ELECTRIC_SFTP_USERNAME,
-}
+    cisHost: process.env.IKEJA_ELECTRIC_CIS_HOST,
+    cisPort: +process.env.IKEJA_ELECTRIC_CIS_PORT,
+    sftpHost: process.env.IKEJA_ELECTRIC_SFTP_HOST,
+    sftpPort: +process.env.IKEJA_ELECTRIC_SFTP_PORT,
+};
 
 //Digital Ocean
 export interface OceanSpaceConfiguration {

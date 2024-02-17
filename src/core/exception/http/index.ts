@@ -1,4 +1,4 @@
-import { showStack } from "@/config";
+import { isDevEnvironment } from "@/config";
 import { ValidationException } from "@/core/pipe/error";
 import {
     ExceptionFilter,
@@ -34,7 +34,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
                     success: false,
                     message: "Failed Validation",
                     errors: exceptionResponse,
-                    stack: showStack ? exception.stack : undefined, //only show stack in development
+                    stack: isDevEnvironment ? exception.stack : undefined, //only show stack in development
                 };
                 return httpAdapter.reply(
                     ctx.getResponse(),
@@ -50,7 +50,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
                         httpStatus == 500
                             ? "Something went wrong"
                             : exception.message,
-                    stack: showStack ? exception.stack : undefined, //only show stack in development
+                    stack: isDevEnvironment ? exception.stack : undefined, //only show stack in development
                 };
                 httpAdapter.reply(ctx.getResponse(), responseBody, httpStatus);
             }
