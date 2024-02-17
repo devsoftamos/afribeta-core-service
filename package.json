@@ -37,7 +37,7 @@
         "@bull-board/api": "^5.10.2",
         "@bull-board/express": "^5.10.2",
         "@bull-board/nestjs": "^5.10.2",
-        "@calculusky/ikeja-electric-sdk": "file:../../../calculusky/projects/ikeja_electric",
+        "@calculusky/ikeja-electric-sdk": "^1.0.0",
         "@calculusky/transactional-email": "^1.0.4",
         "@casl/ability": "^6.5.0",
         "@casl/prisma": "^1.4.1",
