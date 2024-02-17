@@ -12,7 +12,7 @@ export const ikejaElectricReconciliationOptions: BullModuleOptions = {
         removeOnFail: true,
         removeOnComplete: true,
         repeat: {
-            cron: "*/1 * * * *", // "* 1 * * *",
+            cron: "0 1 * * *",
             tz: "Africa/Lagos",
         },
     },
