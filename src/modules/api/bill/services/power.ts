@@ -366,7 +366,7 @@ export class PowerBillService {
             case BillProviderSlugForPower.IKEJA_ELECTRIC: {
                 if (!purchaseOptions.meterAccountType) {
                     throw new PowerPurchaseInitializationHandlerException(
-                        "Meter account type is required for the selected provider",
+                        "meterAccountType field is required for the selected provider",
                         HttpStatus.BAD_REQUEST
                     );
                 }
