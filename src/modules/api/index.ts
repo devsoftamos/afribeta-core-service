@@ -12,7 +12,6 @@ import { BullModule } from "@nestjs/bull";
 import { redisUrl } from "@/config";
 import { CommissionModule } from "./commission";
 import { AccessControlModule } from "./accessControl";
-import { IdentityVerificationModule } from "./identityVerification";
 
 @Module({
     imports: [
@@ -30,7 +29,6 @@ import { IdentityVerificationModule } from "./identityVerification";
         }),
         CommissionModule,
         AccessControlModule,
-        IdentityVerificationModule,
     ],
 })
 export class APIModule {}
