@@ -18,6 +18,9 @@ import IkejaElectric from "@calculusky/ikeja-electric-sdk";
                     cisPort: ieConfig.cisPort,
                     sftpHost: ieConfig.sftpHost,
                     sftpPort: ieConfig.sftpPort,
+                    settings: {
+                        mode: ieConfig.settings.mode,
+                    },
                 });
                 return new IkejaElectricWorkflowService(ie);
             },

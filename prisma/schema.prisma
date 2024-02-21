@@ -412,19 +412,20 @@ model UserCommission {
 }
 
 model BillProvider {
-  id           Int                             @id @default(autoincrement())
-  name         String
-  slug         String                          @unique
-  isActive     Boolean?                        @default(true)
-  isDefault    Boolean?                        @default(false)
-  createdAt    DateTime                        @default(now())
-  updatedAt    DateTime                        @updatedAt
-  transactions Transaction[]
-  discos       BillProviderElectricDisco[]
-  airtimes     BillProviderDataBundleNetwork[]
-  dataBundles  BillProviderAirtimeNetwork[]
-  cableTVs     BillProviderCableTVNetwork[]
-  internets    BillProviderInternetNetwork[]
+  id            Int                             @id @default(autoincrement())
+  name          String
+  slug          String                          @unique
+  isActive      Boolean?                        @default(true)
+  isDefault     Boolean?                        @default(false)
+  walletBalance Int?
+  createdAt     DateTime                        @default(now())
+  updatedAt     DateTime                        @updatedAt
+  transactions  Transaction[]
+  discos        BillProviderElectricDisco[]
+  airtimes      BillProviderDataBundleNetwork[]
+  dataBundles   BillProviderAirtimeNetwork[]
+  cableTVs      BillProviderCableTVNetwork[]
+  internets     BillProviderInternetNetwork[]
 
   @@map("BillProviders")
 }

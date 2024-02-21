@@ -228,6 +228,10 @@ const runtimeEnvironment: RequiredEnvironment[] = [
         name: "IKEJA_ELECTRIC_SFTP_PORT",
         type: RequiredEnvironmentTypes.Number,
     },
+    {
+        name: "ENVIRONMENT",
+        type: RequiredEnvironmentTypes.String,
+    },
 ];
 
 validate(runtimeEnvironment);
@@ -383,6 +387,9 @@ export const ieConfig: IkejaElectricOptions = {
     cisPort: +process.env.IKEJA_ELECTRIC_CIS_PORT,
     sftpHost: process.env.IKEJA_ELECTRIC_SFTP_HOST,
     sftpPort: +process.env.IKEJA_ELECTRIC_SFTP_PORT,
+    settings: {
+        mode: isDevEnvironment ? "development" : "production",
+    },
 };
 
 //Digital Ocean
