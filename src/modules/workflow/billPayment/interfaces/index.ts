@@ -52,6 +52,7 @@ export interface VendPowerResponse {
     demandCategory?: "MD" | "NMD";
     receiptNO: string;
     purchaseDate?: Date;
+    walletBalance?: number;
 }
 
 export enum NetworkDataProvider {

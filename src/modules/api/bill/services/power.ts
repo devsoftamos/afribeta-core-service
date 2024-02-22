@@ -49,6 +49,7 @@ import {
     VerifyPurchase,
     VerifyPowerPurchaseData,
     PurchaseInitializationHandlerOutput,
+    BillServiceSlug,
 } from "../interfaces";
 import logger from "moment-logger";
 import { UserNotFoundException } from "../../user";
@@ -566,32 +567,25 @@ export class PowerBillService {
         options: CompleteBillPurchaseOptions<CompletePowerPurchaseTransactionOptions>,
         vendPowerResp: VendPowerResponse
     ): Promise<CompletePowerPurchaseOutput> {
-        await this.prisma.$transaction(
-            async (tx) => {
-                await tx.transaction.update({
-                    where: {
-                        id: options.transaction.id,
-                    },
-                    data: {
-                        units: vendPowerResp.units,
-                        token: vendPowerResp.meterToken,
-                        status: TransactionStatus.SUCCESS,
-                        paymentChannel: options.isWalletPayment
-                            ? PaymentChannel.WALLET
-                            : options.transaction.paymentChannel,
-                        billPaymentReceiptNO: vendPowerResp.receiptNO,
-                    },
-                });
-
-                this.billEvent.emit("pay-bill-commission", {
-                    transactionId: options.transaction.id,
-                    userType: options.user.userType,
-                });
+        const trans = await this.prisma.transaction.update({
+            where: {
+                id: options.transaction.id,
             },
-            {
-                timeout: DB_TRANSACTION_TIMEOUT,
-            }
-        );
+            data: {
+                units: vendPowerResp.units,
+                token: vendPowerResp.meterToken,
+                status: TransactionStatus.SUCCESS,
+                paymentChannel: options.isWalletPayment
+                    ? PaymentChannel.WALLET
+                    : options.transaction.paymentChannel,
+                billPaymentReceiptNO: vendPowerResp.receiptNO,
+            },
+        });
+
+        this.billEvent.emit("pay-bill-commission", {
+            transactionId: options.transaction.id,
+            userType: options.user.userType,
+        });
 
         if (options.transaction.meterType == MeterType.PREPAID) {
             await this.smsService
@@ -605,6 +599,19 @@ export class PowerBillService {
                             units: vendPowerResp.units,
                         },
                     }),
+                })
+                .catch(() => false);
+        }
+
+        if (trans.billServiceSlug == BillServiceSlug.IKEJA_ELECTRIC) {
+            await this.prisma.billProvider
+                .update({
+                    where: {
+                        id: trans.billProviderId,
+                    },
+                    data: {
+                        walletBalance: vendPowerResp.walletBalance,
+                    },
                 })
                 .catch(() => false);
         }

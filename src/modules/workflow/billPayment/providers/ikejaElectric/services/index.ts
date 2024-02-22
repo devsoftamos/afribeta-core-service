@@ -105,6 +105,7 @@ export class IkejaElectricWorkflowService
                         receiptNO: resp.receiptNO,
                         units: resp.units.toString(),
                         demandCategory: resp.accountType,
+                        walletBalance: resp.walletBalance,
                     };
                 }
 
@@ -125,6 +126,7 @@ export class IkejaElectricWorkflowService
                     return {
                         receiptNO: resp.receiptNO,
                         demandCategory: resp.accountType,
+                        walletBalance: resp.walletBalance,
                     };
                 }
             }
