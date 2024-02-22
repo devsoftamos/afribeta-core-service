@@ -47,3 +47,8 @@ export class IRechargeCableTVException extends HttpException {
 export class IRechargeVendCableTVException extends IRechargeCableTVException {
     name = "IRechargeVendCableTVException";
 }
+
+//wallet
+export class IRechargeWalletException extends HttpException {
+    name = "IRechargeWalletException";
+}

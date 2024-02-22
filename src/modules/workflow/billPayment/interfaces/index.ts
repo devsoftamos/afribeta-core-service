@@ -206,4 +206,5 @@ export type BillPaymentWorkflow = {
     getSmartCardInfo(
         options: GetSmartCardInfoOptions
     ): Promise<GetSmartCardInfoResponse>;
+    getWalletBalance(): Promise<number>;
 } & PowerBillPaymentWorkflow;

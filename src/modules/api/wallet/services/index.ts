@@ -93,6 +93,10 @@ import {
 } from "../../notification";
 import { BankAccountNotFoundException } from "../../bank";
 import { IdentityVerificationService } from "@/modules/core/identityVerification/services";
+import { IRechargeWorkflowService } from "@/modules/workflow/billPayment/providers/iRecharge/services";
+import { BuyPowerWorkflowService } from "@/modules/workflow/billPayment/providers/buyPower/services";
+import { IkejaElectricWorkflowService } from "@/modules/workflow/billPayment/providers/ikejaElectric/services";
+import { BillProviderSlugForPower } from "../../bill/interfaces";
 @Injectable()
 export class WalletService {
     constructor(
@@ -102,7 +106,10 @@ export class WalletService {
         private providusService: ProvidusService,
         private fsdh360BankService: FSDH360BankService,
         private squadGTBankService: SquadGTBankService,
-        private identityVerification: IdentityVerificationService
+        private identityVerification: IdentityVerificationService,
+        private iRechargeWorkflowService: IRechargeWorkflowService,
+        private buyPowerWorkflowService: BuyPowerWorkflowService,
+        private ieWorkflowService: IkejaElectricWorkflowService
     ) {}
 
     async processWebhookWalletAndVirtualAccountCreation(
@@ -1776,6 +1783,25 @@ export class WalletService {
                 mainCommissionBalance: retrieveWalletBalance.commissionBalance,
                 walletOpeningBalance: openingBalance.main || 0,
                 commissionOpeningBalance: openingBalance.commission || 0,
+            },
+        });
+    }
+
+    async getOrgWalletBalance() {
+        const [buyPowerBal, iRechargeBal, ieProvider] = await Promise.all([
+            this.buyPowerWorkflowService.getWalletBalance(),
+            this.iRechargeWorkflowService.getWalletBalance(),
+            this.prisma.billProvider.findUnique({
+                where: { slug: BillProviderSlugForPower.IKEJA_ELECTRIC },
+            }),
+        ]);
+
+        return buildResponse({
+            message: "wallet successfully retrieved",
+            data: {
+                buyPower: buyPowerBal,
+                iRecharge: iRechargeBal,
+                ikeja: ieProvider.walletBalance,
             },
         });
     }

@@ -53,3 +53,8 @@ export class BuyPowerVendCableTVException extends BuyPowerCableTVException {
 export class BuyPowerRequeryException extends HttpException {
     name = "BuyPowerRequeryException";
 }
+
+//wallet
+export class BuyPowerWalletException extends HttpException {
+    name = "BuyPowerWalletException";
+}

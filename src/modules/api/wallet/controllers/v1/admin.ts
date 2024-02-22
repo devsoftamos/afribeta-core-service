@@ -13,4 +13,9 @@ export class AdminWalletController {
     async openingBalance() {
         return this.walletService.getTotalWalletBalance();
     }
+
+    @Get("vending/balance")
+    async getOrgWalletBalance() {
+        return this.walletService.getOrgWalletBalance();
+    }
 }

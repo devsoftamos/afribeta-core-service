@@ -46,6 +46,7 @@ import {
     IRechargeVendDataException,
     IRechargeVendInternetException,
     IRechargeVendPowerException,
+    IRechargeWalletException,
 } from "../errors";
 
 @Injectable()
@@ -846,6 +847,18 @@ export class IRechargeWorkflowService implements BillPaymentWorkflow {
                     );
                 }
             }
+        }
+    }
+
+    async getWalletBalance(): Promise<number> {
+        try {
+            const { wallet_balance } = await this.iRecharge.getWalletBalance();
+            return +wallet_balance;
+        } catch (error) {
+            throw new IRechargeWalletException(
+                error.message ?? "Failed to retrieve wallet balance",
+                HttpStatus.SERVICE_UNAVAILABLE
+            );
         }
     }
 }

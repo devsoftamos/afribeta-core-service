@@ -35,6 +35,7 @@ import {
     BuyPowerVendInProgressException,
     BuyPowerVendInternetException,
     BuyPowerVendPowerException,
+    BuyPowerWalletException,
 } from "../errors";
 import logger from "moment-logger";
 import { BuyPowerError } from "@/libs/buyPower/errors";
@@ -743,6 +744,18 @@ export class BuyPowerWorkflowService implements BillPaymentWorkflow {
                     );
                 }
             }
+        }
+    }
+
+    async getWalletBalance(): Promise<number> {
+        try {
+            const { data } = await this.buyPower.walletBalance();
+            return data.balance;
+        } catch (error) {
+            throw new BuyPowerWalletException(
+                error.message ?? "Failed to retrieve wallet balance",
+                HttpStatus.SERVICE_UNAVAILABLE
+            );
         }
     }
 }
