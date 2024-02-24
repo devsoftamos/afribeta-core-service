@@ -125,9 +125,9 @@ export class AdminTransactionController {
         );
     }
 
-    @Get(":id")
-    @UseGuards(AbilitiesGuard)
-    @CheckAbilities(new Ability.ReadTransactionAbility())
+    @Get("single/:id")
+    // @UseGuards(AbilitiesGuard)
+    // @CheckAbilities(new Ability.ReadTransactionAbility())
     async getTransaction(@Param("id", ParseIntPipe) id: number) {
         return await this.transactionService.fetchTransactionDetails(id);
     }

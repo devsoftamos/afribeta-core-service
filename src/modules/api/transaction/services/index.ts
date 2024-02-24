@@ -814,6 +814,7 @@ export class TransactionService {
         switch (transaction.type) {
             case TransactionType.AIRTIME_PURCHASE: {
                 response = {
+                    type: transaction.type,
                     amount: transaction.amount,
                     billService: transaction.billServiceSlug,
                     serviceCharge: transaction.shortDescription,
@@ -823,6 +824,7 @@ export class TransactionService {
             }
             case TransactionType.DATA_PURCHASE: {
                 response = {
+                    type: transaction.type,
                     serviceCharge: transaction.shortDescription,
                     billService: transaction.billServiceSlug,
                     data: transaction.packageType,
@@ -833,6 +835,7 @@ export class TransactionService {
             }
             case TransactionType.ELECTRICITY_BILL: {
                 response = {
+                    type: transaction.type,
                     serviceCharge: transaction.shortDescription,
                     billService: transaction.billServiceSlug,
                     meterNumber: transaction.senderIdentifier,
@@ -844,6 +847,7 @@ export class TransactionService {
             }
             case TransactionType.CABLETV_BILL: {
                 response = {
+                    type: transaction.type,
                     serviceCharge: transaction.shortDescription,
                     billService: transaction.billServiceSlug,
                     amount: transaction.amount,
@@ -855,6 +859,7 @@ export class TransactionService {
             }
             case TransactionType.PAYOUT: {
                 response = {
+                    type: transaction.type,
                     serviceCharge: transaction.shortDescription,
                     bankName: transaction.destinationBankName,
                     accountNumber: transaction.destinationBankAccountNumber,
@@ -865,6 +870,7 @@ export class TransactionService {
             }
             case TransactionType.WALLET_FUND: {
                 response = {
+                    type: transaction.type,
                     serviceCharge: transaction.shortDescription,
                     amount: transaction.amount,
                     walletNumber: transaction.user.wallet.walletNumber,
