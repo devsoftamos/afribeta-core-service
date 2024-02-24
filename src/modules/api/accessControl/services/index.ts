@@ -11,7 +11,9 @@ export class AccessControlService {
 
     async fetchRoles(options: FetchRolesDto) {
         const queryOptions: Prisma.RoleFindManyArgs = {
-            where: {},
+            where: {
+                isAdmin: true,
+            },
             select: {
                 id: true,
                 name: true,

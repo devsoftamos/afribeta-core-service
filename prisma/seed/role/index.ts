@@ -4,18 +4,22 @@ export const roles: Prisma.RoleUncheckedCreateInput[] = [
     {
         name: "Customer",
         slug: "customer",
+        isAdmin: false,
     },
     {
         name: "Sub Agent",
         slug: "sub-agent",
+        isAdmin: false,
     },
     {
         name: "Agent",
         slug: "agent",
+        isAdmin: false,
     },
     {
         name: "Merchant",
         slug: "merchant",
+        isAdmin: false,
     },
 
     //admins
@@ -26,21 +30,17 @@ export const roles: Prisma.RoleUncheckedCreateInput[] = [
     {
         name: "Marketer",
         slug: "marketer",
-        isAppDefault: false,
     },
     {
         name: "Marketing Unit Head",
         slug: "marketing-unit-head",
-        isAppDefault: false,
     },
     {
         name: "Accountant",
         slug: "accountant",
-        isAppDefault: false,
     },
     {
         name: "Customer Care",
         slug: "customer-care",
-        isAppDefault: false,
     },
 ];

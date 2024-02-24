@@ -183,14 +183,14 @@ model AccountVerificationRequest {
 
 //Roles
 model Role {
-  id           Int              @id @default(autoincrement())
-  name         String           @unique
-  slug         String           @unique
-  isAppDefault Boolean          @default(true)
-  createdAt    DateTime         @default(now())
-  updatedAt    DateTime         @updatedAt
-  users        User[]
-  permissions  RolePermission[]
+  id          Int              @id @default(autoincrement())
+  name        String           @unique
+  slug        String           @unique
+  isAdmin     Boolean          @default(true)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  users       User[]
+  permissions RolePermission[]
 
   @@fulltext([name])
   @@map("Roles")
