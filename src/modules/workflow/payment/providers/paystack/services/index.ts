@@ -118,7 +118,7 @@ export class PaystackService {
                     } else {
                         throw new PaystackBankException(
                             error.message,
-                            HttpStatus.INTERNAL_SERVER_ERROR
+                            HttpStatus.BAD_REQUEST
                         );
                     }
                 }
@@ -126,7 +126,7 @@ export class PaystackService {
                 default: {
                     throw new PaystackWorkflowException(
                         "Failed to resolve bank account. Please try again",
-                        HttpStatus.INTERNAL_SERVER_ERROR
+                        HttpStatus.BAD_REQUEST
                     );
                 }
             }

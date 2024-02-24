@@ -10,12 +10,14 @@ import {
     TransactionStatus,
     TransactionType,
     WalletFundTransactionFlow,
+    PaymentStatus,
 } from "@prisma/client";
 import { UserNotFoundException } from "../../user";
 import {
     AdminTransactionHistoryDto,
     FetchRecommendedPayoutDto,
     MerchantTransactionHistoryDto,
+    QueryTransactionStatus,
     TransactionHistoryDto,
     TransactionReportType,
     UpdatePayoutStatus,
@@ -555,12 +557,14 @@ export class TransactionService {
             orderBy: { createdAt: "desc" },
             where: {},
             select: {
+                id: true,
                 transactionId: true,
                 type: true,
                 amount: true,
                 paymentChannel: true,
                 status: true,
                 createdAt: true,
+                paymentStatus: true,
             },
         };
 
@@ -579,6 +583,31 @@ export class TransactionService {
             queryOptions.where.createdAt = { gte: startDate, lte: endDate };
         }
 
+        //filter bu status
+        if (options.status) {
+            switch (options.status) {
+                case QueryTransactionStatus.SUCCESS: {
+                    queryOptions.where.status = TransactionStatus.SUCCESS;
+                    break;
+                }
+                case QueryTransactionStatus.PENDING: {
+                    queryOptions.where.status = TransactionStatus.PENDING;
+                    break;
+                }
+                case QueryTransactionStatus.FAILED: {
+                    queryOptions.where.status = TransactionStatus.FAILED;
+                    break;
+                }
+                case QueryTransactionStatus.REFUNDED: {
+                    queryOptions.where.paymentStatus = PaymentStatus.REFUNDED;
+                    break;
+                }
+
+                default:
+                    break;
+            }
+        }
+
         if (options.pagination) {
             const page = +options.page || 1;
             const limit = +options.limit || 10;
@@ -590,6 +619,7 @@ export class TransactionService {
             });
             paginationMeta.totalCount = count;
             paginationMeta.perPage = limit;
+            paginationMeta.page = page;
         }
 
         const transactions = await this.prisma.transaction.findMany(
@@ -628,6 +658,7 @@ export class TransactionService {
                 flow: true,
                 type: true,
                 createdAt: true,
+                companyCommission: true,
             },
         };
 
@@ -675,6 +706,7 @@ export class TransactionService {
             });
             paginationMeta.totalCount = count;
             paginationMeta.perPage = limit;
+            paginationMeta.page = page;
         }
 
         const transactions = await this.prisma.transaction.findMany(

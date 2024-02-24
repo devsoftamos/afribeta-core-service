@@ -13,6 +13,7 @@ import {
 } from "@nestjs/common";
 import { TransactionService } from "../../services";
 import {
+    AdminTransactionHistoryDto,
     FetchRecommendedPayoutDto,
     MerchantTransactionHistoryDto,
     TransactionHistoryDto,
@@ -90,16 +91,20 @@ export class AdminTransactionController {
     }
 
     @Get()
+    @UseGuards(AbilitiesGuard)
+    @CheckAbilities(new Ability.ReadTransactionAbility())
     async getAllTransactions(
         @Query(ValidationPipe)
-        transactionHistoryDto: TransactionHistoryDto
+        transactionHistoryDto: AdminTransactionHistoryDto
     ) {
-        return await this.transactionService.adminTransactionReport(
+        return await this.transactionService.getAllTransactions(
             transactionHistoryDto
         );
     }
 
     @Get("payout/recommended/list")
+    @UseGuards(AbilitiesGuard)
+    @CheckAbilities(new Ability.ReadPayoutAbility())
     async GetRecommendedPayouts(
         @Query(ValidationPipe)
         fetchRecommendedPayoutDto: FetchRecommendedPayoutDto
@@ -110,11 +115,20 @@ export class AdminTransactionController {
     }
 
     @Get("report")
-    async GetAdminReport(
+    @UseGuards(AbilitiesGuard)
+    @CheckAbilities(new Ability.ReadReportAbility())
+    async getAdminReport(
         @Query(ValidationPipe) transactionHistoryDto: TransactionHistoryDto
     ) {
         return this.transactionService.adminTransactionReport(
             transactionHistoryDto
         );
+    }
+
+    @Get(":id")
+    @UseGuards(AbilitiesGuard)
+    @CheckAbilities(new Ability.ReadTransactionAbility())
+    async getTransaction(@Param("id", ParseIntPipe) id: number) {
+        return await this.transactionService.fetchTransactionDetails(id);
     }
 }

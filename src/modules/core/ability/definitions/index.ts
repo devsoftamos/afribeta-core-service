@@ -152,3 +152,8 @@ export class ReadKycAbility implements RequiredRule {
     action: Action = Action.ReadKyc;
     subject: Subjects = "KycInformation";
 }
+
+export class ReadReportAbility implements RequiredRule {
+    action: Action = Action.ReadReport;
+    subject: Subjects = "Transaction";
+}

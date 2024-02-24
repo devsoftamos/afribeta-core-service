@@ -105,6 +105,13 @@ export class UpdatePayoutStatusDto {
     status: UpdatePayoutStatus;
 }
 
+export enum QueryTransactionStatus {
+    PENDING = "PENDING",
+    SUCCESS = "SUCCESS",
+    FAILED = "FAILED",
+    REFUNDED = "REFUNDED",
+}
+
 export class AdminTransactionHistoryDto {
     @IsOptional()
     @IsBooleanString()
@@ -125,6 +132,10 @@ export class AdminTransactionHistoryDto {
     @IsOptional()
     @IsDateString()
     date: string;
+
+    @IsOptional()
+    @IsEnum(QueryTransactionStatus)
+    status: QueryTransactionStatus;
 }
 
 export class SuccessfulTransactionsDto {
