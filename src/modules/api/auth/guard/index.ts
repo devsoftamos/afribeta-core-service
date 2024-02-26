@@ -103,8 +103,8 @@ export class EnabledAccountGuard implements CanActivate {
             return true;
         }
         throw new UserAccountDisabledException(
-            "User account is disabled",
-            HttpStatus.UNAUTHORIZED
+            "Account is disabled. Kindly contact customer support",
+            HttpStatus.BAD_REQUEST
         );
     }
 }

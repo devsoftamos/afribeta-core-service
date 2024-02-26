@@ -20,8 +20,8 @@ export class AccessControlService {
             },
         };
 
-        if (options.roleName) {
-            queryOptions.where.name = { search: options.roleName };
+        if (options.searchName) {
+            queryOptions.where.name = { search: options.searchName };
         }
 
         const roles = await this.prisma.role.findMany(queryOptions);

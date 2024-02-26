@@ -11,13 +11,16 @@ import {
     Body,
     HttpStatus,
     HttpCode,
+    Patch,
 } from "@nestjs/common";
 import {
     AuthorizeAgentToMerchantUpgradeAgentDto,
     CountAgentsCreatedDto,
     CreateUserDto,
+    EnableOrDisableUserDto,
     FetchAllMerchantsDto,
     FetchMerchantAgentsDto,
+    ListAdminUsers,
     ListMerchantAgentsDto,
 } from "../../dtos";
 import { User as UserModel } from "@prisma/client";
@@ -101,10 +104,8 @@ export class AdminUserController {
     @Get()
     @UseGuards(AbilitiesGuard)
     @CheckAbilities(new Ability.ReadUserAbility())
-    async fetchAllUsers(
-        @Query(ValidationPipe) fetchAllUsersDto: ListMerchantAgentsDto
-    ) {
-        return await this.usersService.fetchAllUsers(fetchAllUsersDto);
+    async fetchAdmins(@Query(ValidationPipe) fetchAdminsDto: ListAdminUsers) {
+        return await this.usersService.fetchAdmins(fetchAdminsDto);
     }
 
     @Post()
@@ -133,5 +134,13 @@ export class AdminUserController {
     @CheckAbilities(new Ability.ReadUserAbility())
     async getAgentDetails(@Param("id", ParseIntPipe) id: number) {
         return await this.usersService.getAgentDetails(id);
+    }
+
+    @Patch("enable-disable-account/:id")
+    async enableOrDisableUserAccount(
+        @Param("id", ParseIntPipe) id: number,
+        @Body(ValidationPipe) bodyDto: EnableOrDisableUserDto
+    ) {
+        return await this.usersService.enableOrDisableUser(id, bodyDto);
     }
 }

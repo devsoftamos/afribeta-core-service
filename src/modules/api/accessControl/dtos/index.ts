@@ -3,7 +3,7 @@ import { IsArray, IsInt, IsOptional, IsString } from "class-validator";
 export class FetchRolesDto {
     @IsOptional()
     @IsString()
-    roleName: string;
+    searchName: string;
 }
 
 export class CreateRoleDto {

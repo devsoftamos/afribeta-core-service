@@ -15,6 +15,7 @@ import {
     User,
     UserType,
     MerchantUpgradeStatus,
+    Status,
 } from "@prisma/client";
 import {
     InvalidEmailVerificationCodeException,
@@ -40,6 +41,8 @@ import {
     CountAgentsCreatedDto,
     CreateUserDto,
     EditAgentDto,
+    EnableOrDisableUserDto,
+    EnableOrDisableUserEnum,
 } from "../dtos";
 import {
     AgentCreationException,
@@ -1023,12 +1026,14 @@ export class UserService {
         });
     }
 
-    async fetchAllUsers(options: ListMerchantAgentsDto) {
+    async fetchAdmins(options: ListMerchantAgentsDto) {
         const paginationMeta: Partial<PaginationMeta> = {};
 
         const queryOptions: Prisma.UserFindManyArgs = {
             orderBy: { createdAt: "desc" },
-            where: {},
+            where: {
+                userType: UserType.ADMIN,
+            },
             select: {
                 id: true,
                 lastName: true,
@@ -1060,6 +1065,7 @@ export class UserService {
             });
             paginationMeta.totalCount = count;
             paginationMeta.perPage = limit;
+            paginationMeta.page = page;
         }
 
         const users = await this.prisma.user.findMany(queryOptions);
@@ -1244,5 +1250,43 @@ export class UserService {
         return buildResponse({
             message: "Agent details updated successfully",
         });
+    }
+
+    async enableOrDisableUser(userId: number, options: EnableOrDisableUserDto) {
+        const user = await this.prisma.user.findUnique({
+            where: {
+                id: userId,
+            },
+            select: { id: true },
+        });
+
+        if (!user) {
+            throw new UserNotFoundException(
+                "user not found",
+                HttpStatus.NOT_FOUND
+            );
+        }
+
+        switch (options.actionType) {
+            case EnableOrDisableUserEnum.ENABLE: {
+                await this.prisma.user.update({
+                    where: { id: userId },
+                    data: { status: Status.ENABLED },
+                });
+
+                return buildResponse({
+                    message: "Account successfully enabled",
+                });
+            }
+            case EnableOrDisableUserEnum.DISABLE: {
+                await this.prisma.user.update({
+                    where: { id: userId },
+                    data: { status: Status.DISABLED },
+                });
+                return buildResponse({
+                    message: "Account successfully disabled",
+                });
+            }
+        }
     }
 }

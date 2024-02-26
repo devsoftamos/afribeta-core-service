@@ -148,6 +148,8 @@ export class ListMerchantAgentsDto {
     searchName: string;
 }
 
+export class ListAdminUsers extends ListMerchantAgentsDto {}
+
 export class FetchMerchantAgentsDto {
     @IsOptional()
     @IsBooleanString()
@@ -286,4 +288,13 @@ export class EditAgentDto {
         message: "Phone number must be valid containing 11 digits",
     })
     phone: string;
+}
+
+export enum EnableOrDisableUserEnum {
+    ENABLE = "ENABLE",
+    DISABLE = "DISABLE",
+}
+export class EnableOrDisableUserDto {
+    @IsEnum(EnableOrDisableUserEnum)
+    actionType: EnableOrDisableUserEnum;
 }
