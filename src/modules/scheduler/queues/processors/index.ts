@@ -10,6 +10,7 @@ import {
     CsvFirstRowContent,
 } from "@calculusky/ikeja-electric-sdk";
 import { MeterType } from "@/modules/workflow/billPayment";
+import logger from "moment-logger";
 
 @Processor(ScheduleQueue.IE_QUEUE)
 export class IkejaElectricQueueProcessor {
@@ -74,11 +75,12 @@ export class IkejaElectricQueueProcessor {
             }
         );
 
-        const resp = await this.ieWorkflowService.uploadReconciliationFile({
+        const fileName = await this.ieWorkflowService.uploadReconciliationFile({
             firstRow: firstRowContent,
             records: transactionRecords,
         });
-
-        console.log(resp, "****************QUEUE********");
+        logger.info(
+            `successfully uploaded reconciliation file, ${fileName} to IE SFTP server`
+        );
     }
 }
