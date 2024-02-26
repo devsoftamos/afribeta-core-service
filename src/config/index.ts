@@ -387,7 +387,7 @@ export const ieConfig: IkejaElectricOptions = {
     cisPort: +process.env.IKEJA_ELECTRIC_CIS_PORT,
     sftpHost: process.env.IKEJA_ELECTRIC_SFTP_HOST,
     sftpPort: +process.env.IKEJA_ELECTRIC_SFTP_PORT,
-    settings: {
+    config: {
         mode: isDevEnvironment ? "development" : "production",
     },
 };
