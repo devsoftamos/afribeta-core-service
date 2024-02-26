@@ -5,6 +5,7 @@ import IkejaElectric, {
 import { HttpStatus, Injectable } from "@nestjs/common";
 import * as i from "../../../interfaces";
 import * as e from "../errors";
+import logger from "moment-logger";
 
 @Injectable()
 export class IkejaElectricWorkflowService
@@ -150,8 +151,12 @@ export class IkejaElectricWorkflowService
     }
 
     async uploadReconciliationFile(content: CSVFileContent) {
-        return await this.ie.reconciler.uploadReconciliationFile(content, {
-            notify: true,
-        });
+        try {
+            return await this.ie.reconciler.uploadReconciliationFile(content, {
+                notify: true,
+            });
+        } catch (error) {
+            logger.error(error);
+        }
     }
 }

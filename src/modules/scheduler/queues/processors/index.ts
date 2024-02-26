@@ -74,9 +74,11 @@ export class IkejaElectricQueueProcessor {
             }
         );
 
-        await this.ieWorkflowService.uploadReconciliationFile({
+        const resp = await this.ieWorkflowService.uploadReconciliationFile({
             firstRow: firstRowContent,
             records: transactionRecords,
         });
+
+        console.log(resp, "****************QUEUE********");
     }
 }
