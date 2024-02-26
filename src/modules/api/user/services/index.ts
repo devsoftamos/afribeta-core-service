@@ -61,11 +61,11 @@ import {
 import logger from "moment-logger";
 import { SendinblueEmailException } from "@calculusky/transactional-email";
 import { BillServiceSlug } from "@/modules/api/bill/interfaces";
-import { RoleSlug } from "../../role/interfaces";
 import { endOfMonth, startOfMonth } from "date-fns";
-import { RoleNotFoundException } from "../../role/errors";
 import { UploadFactory } from "@/modules/core/upload/services";
 import { OceanSpaceService } from "@/modules/core/upload/services/oceanSpace";
+import { RoleNotFoundException } from "../../accessControl/errors";
+import { RoleSlug } from "../../accessControl/interfaces";
 
 @Injectable()
 export class UserService {

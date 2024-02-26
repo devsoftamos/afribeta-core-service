@@ -195,12 +195,6 @@ export class WalletService {
             );
         }
 
-        await this.identityVerification.verifyUserBVN({
-            bvn: options.bvn,
-            firstName: user.firstName,
-            lastName: user.lastName,
-        });
-
         const paystackDynamicVirtualAccountCreationOptions: AssignDedicatedVirtualAccountWithValidationOptions =
             {
                 bvn: options.bvn,
@@ -230,7 +224,7 @@ export class WalletService {
 
         return buildResponse({
             message:
-                "Verification successful. Your wallet would be created shortly",
+                "Your wallet would be created shortly after verifying your BVN",
         });
     }
 

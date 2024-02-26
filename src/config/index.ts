@@ -136,6 +136,10 @@ const runtimeEnvironment: RequiredEnvironment[] = [
         type: RequiredEnvironmentTypes.String,
     },
     {
+        name: "FSDH360_IDENTITY_BASE_URL",
+        type: RequiredEnvironmentTypes.String,
+    },
+    {
         name: "BUYPOWER_BASE_URL",
         type: RequiredEnvironmentTypes.String,
     },

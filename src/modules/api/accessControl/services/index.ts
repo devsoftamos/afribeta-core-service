@@ -49,7 +49,7 @@ export class AccessControlService {
         }
     }
 
-    async createRoles(options: CreateRoleDto) {
+    async createRole(options: CreateRoleDto) {
         const roleExists = await this.prisma.role.findUnique({
             where: {
                 name: options.roleName,
@@ -62,8 +62,8 @@ export class AccessControlService {
             );
         }
 
-        const slug = generateSlug(options.roleName);
         await this.validatePermission(options.permissions);
+        const slug = generateSlug(options.roleName);
 
         const createRoleOptions: Prisma.RoleUncheckedCreateInput = {
             name: options.roleName,
@@ -77,15 +77,11 @@ export class AccessControlService {
                     id: true,
                 },
             });
-
-            for (const permission of options.permissions) {
-                await tx.rolePermission.create({
-                    data: {
-                        roleId: role.id,
-                        permissionId: permission,
-                    },
-                });
-            }
+            const data = options.permissions.map((pId) => ({
+                roleId: role.id,
+                permissionId: pId,
+            }));
+            await tx.rolePermission.createMany({ data: data });
         });
 
         return buildResponse({

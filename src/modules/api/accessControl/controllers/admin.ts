@@ -26,7 +26,7 @@ export class AdminAccessControlController {
 
     @Post("role")
     async createRoles(@Body(ValidationPipe) createRoleDto: CreateRoleDto) {
-        return await this.accessControlService.createRoles(createRoleDto);
+        return await this.accessControlService.createRole(createRoleDto);
     }
 
     @Get("permission")

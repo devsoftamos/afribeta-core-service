@@ -4,7 +4,7 @@ import { AbilityBuilder } from "@casl/ability";
 import { createPrismaAbility } from "@casl/prisma";
 import { Action, AppAbility } from "../interfaces";
 import { PrismaService } from "../../prisma/services";
-import { RoleSlug } from "@/modules/api/role/interfaces";
+import { RoleSlug } from "@/modules/api/accessControl/interfaces";
 
 @Injectable()
 export class AbilityFactory {

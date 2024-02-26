@@ -3,12 +3,16 @@ import { HttpStatus, Injectable } from "@nestjs/common";
 import { BvnVerificationException } from "../errors";
 import { BVNVerificationDto } from "../dtos";
 import { formatName } from "@/utils";
+import { isDevEnvironment } from "@/config";
 
 @Injectable()
 export class IdentityVerificationService {
     constructor(private fsdhBank: FSDH360BankService) {}
 
     async verifyUserBVN(options: BVNVerificationDto) {
+        if (isDevEnvironment) {
+            return;
+        }
         const verifyBVN = await this.fsdhBank.verifyBVN({
             bvn: options.bvn,
         });
