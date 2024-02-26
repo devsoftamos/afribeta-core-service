@@ -1,9 +1,13 @@
 import { PrismaService } from "@/modules/core/prisma/services";
 import { Prisma } from "@prisma/client";
-import { CreateRoleDto, FetchRolesDto } from "../dtos";
+import { CreateRoleDto, FetchRolesDto, UpdateRoleDto } from "../dtos";
 import { buildResponse, generateSlug } from "@/utils";
 import { HttpStatus, Injectable } from "@nestjs/common";
-import { DuplicateRoleException, PermissionNotFoundException } from "../errors";
+import {
+    DuplicateRoleException,
+    PermissionNotFoundException,
+    RoleNotFoundException,
+} from "../errors";
 
 @Injectable()
 export class AccessControlService {
@@ -102,6 +106,54 @@ export class AccessControlService {
         return buildResponse({
             message: "Permissions retrieved successfully",
             data: permissions,
+        });
+    }
+
+    async deleteRole(roleId: number) {
+        const role = await this.prisma.role.findUnique({
+            where: { id: roleId },
+        });
+        if (!role) {
+            throw new RoleNotFoundException(
+                "Role not found",
+                HttpStatus.NOT_FOUND
+            );
+        }
+
+        await this.prisma.role.delete({ where: { id: roleId } });
+
+        return buildResponse({
+            message: "role successfully deleted",
+        });
+    }
+
+    async updateRole(roleId: number, options: UpdateRoleDto) {
+        const role = await this.prisma.role.findUnique({
+            where: { id: roleId },
+        });
+        if (!role) {
+            throw new RoleNotFoundException(
+                "Role not found",
+                HttpStatus.NOT_FOUND
+            );
+        }
+
+        const slug = generateSlug(options.roleName);
+        const updatedRole = await this.prisma.role.update({
+            where: { id: roleId },
+            data: {
+                name: options.roleName,
+                slug: slug,
+            },
+        });
+
+        return buildResponse({
+            message: "role successfully updated",
+            data: {
+                id: updatedRole.id,
+                name: updatedRole.name,
+                slug: updatedRole.slug,
+            },
         });
     }
 }

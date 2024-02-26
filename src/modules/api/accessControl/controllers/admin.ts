@@ -3,7 +3,11 @@ import { AuthGuard } from "@/modules/api/auth/guard";
 import {
     Body,
     Controller,
+    Delete,
     Get,
+    Param,
+    ParseIntPipe,
+    Patch,
     Post,
     Query,
     UseGuards,
@@ -11,7 +15,7 @@ import {
 } from "@nestjs/common";
 
 import { AccessControlService } from "../services";
-import { CreateRoleDto, FetchRolesDto } from "../dtos";
+import { CreateRoleDto, FetchRolesDto, UpdateRoleDto } from "../dtos";
 @UseGuards(AuthGuard)
 @Controller({
     path: "admin/access",
@@ -32,5 +36,18 @@ export class AdminAccessControlController {
     @Get("permission")
     async GetPermissions() {
         return await this.accessControlService.fetchPermissions();
+    }
+
+    @Patch("role/:id")
+    async updateRole(
+        @Param("id", ParseIntPipe) id: number,
+        @Body(ValidationPipe) bodyDto: UpdateRoleDto
+    ) {
+        return await this.accessControlService.updateRole(id, bodyDto);
+    }
+
+    @Delete("role/:id")
+    async deleteRole(@Param("id", ParseIntPipe) id: number) {
+        return await this.accessControlService.deleteRole(id);
     }
 }

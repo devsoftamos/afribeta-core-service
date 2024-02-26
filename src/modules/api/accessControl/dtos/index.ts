@@ -14,3 +14,8 @@ export class CreateRoleDto {
     @IsInt({ each: true })
     permissions: number[];
 }
+
+export class UpdateRoleDto {
+    @IsString({ message: "Role name must be a string" })
+    roleName: string;
+}
