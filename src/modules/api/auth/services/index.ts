@@ -6,6 +6,9 @@ import {
     SendVerificationCodeDto,
     PasswordResetRequestDto,
     UpdatePasswordDto,
+    UserSigInDto,
+    UserSignInAppType,
+    SubAgentAccountCreateVerificationDto,
 } from "../dtos";
 import {
     DuplicateUserException,
@@ -21,6 +24,7 @@ import {
 } from "@prisma/client";
 import { customAlphabet } from "nanoid";
 import {
+    AuthGenericException,
     InvalidCredentialException,
     InvalidEmailVerificationCodeException,
     InvalidPasswordResetToken,
@@ -43,7 +47,9 @@ import { encrypt, formatName, generateId } from "@/utils";
 import {
     AgentVerifyEmailParams,
     LoginMeta,
+    LoginPlatform,
     LoginResponseData,
+    SignInOptions,
     SignupResponseData,
 } from "../interfaces";
 import { SMS } from "@/modules/core/sms";
@@ -66,22 +72,51 @@ export class AuthService {
         return await bcrypt.compare(password, hash);
     }
 
-    async validateAdminUser(email: string) {
-        const admin = await this.prisma.user.findUnique({
-            where: {
-                email: email,
-            },
-        });
-
-        const adminUserType: UserType[] = [
+    validateAdminAccount(userType: UserType) {
+        const adminUserTypes: UserType[] = [
             UserType.ADMIN,
             UserType.SUPER_ADMIN,
         ];
 
-        if (!admin || !adminUserType.includes(admin.userType)) {
-            throw new UserNotFoundException(
-                "admin account does not exist",
-                HttpStatus.NOT_FOUND
+        if (!adminUserTypes.includes(userType)) {
+            throw new InvalidCredentialException(
+                "Incorrect email or password",
+                HttpStatus.UNAUTHORIZED
+            );
+        }
+    }
+
+    validateUserAccount(userType: UserType) {
+        const userTypes: UserType[] = [
+            UserType.CUSTOMER,
+            UserType.AGENT,
+            UserType.MERCHANT,
+        ];
+
+        if (!userTypes.includes(userType)) {
+            throw new InvalidCredentialException(
+                "Incorrect email or password",
+                HttpStatus.UNAUTHORIZED
+            );
+        }
+    }
+
+    validateCustomerAccount(userType: UserType) {
+        if (userType !== UserType.CUSTOMER) {
+            throw new InvalidCredentialException(
+                "Incorrect email or password",
+                HttpStatus.UNAUTHORIZED
+            );
+        }
+    }
+
+    validateAgencyAccount(userType: UserType) {
+        const userTypes: UserType[] = [UserType.AGENT, UserType.MERCHANT];
+
+        if (!userTypes.includes(userType)) {
+            throw new InvalidCredentialException(
+                "Incorrect email or password",
+                HttpStatus.UNAUTHORIZED
             );
         }
     }
@@ -286,7 +321,10 @@ export class AuthService {
         });
     }
 
-    async signIn(options: SignInDto): Promise<ApiResponse<LoginResponseData>> {
+    async signIn(
+        options: SignInOptions,
+        loginPlatform: LoginPlatform
+    ): Promise<ApiResponse<LoginResponseData>> {
         const user = await this.prisma.user.findUnique({
             where: {
                 email: options.email,
@@ -297,6 +335,8 @@ export class AuthService {
                 kycStatus: true,
                 isWalletCreated: true,
                 userType: true,
+                transactionPin: true,
+                walletSetupStatus: true,
                 role: {
                     select: {
                         name: true,
@@ -314,11 +354,51 @@ export class AuthService {
                 },
             },
         });
+
         if (!user) {
             throw new InvalidCredentialException(
                 "Incorrect email or password",
                 HttpStatus.UNAUTHORIZED
             );
+        }
+
+        switch (loginPlatform) {
+            case LoginPlatform.ADMIN: {
+                this.validateAdminAccount(user.userType);
+                break;
+            }
+            case LoginPlatform.USER: {
+                this.validateUserAccount(user.userType);
+                break;
+            }
+
+            default: {
+                throw new AuthGenericException(
+                    "Invalid login platform",
+                    HttpStatus.INTERNAL_SERVER_ERROR
+                );
+            }
+        }
+
+        //validate user app type for user login
+        if (options.appType && loginPlatform === LoginPlatform.USER) {
+            switch (options.appType) {
+                case UserSignInAppType.CUSTOMER: {
+                    this.validateCustomerAccount(user.userType);
+                    break;
+                }
+                case UserSignInAppType.AGENCY: {
+                    this.validateAgencyAccount(user.userType);
+                    break;
+                }
+
+                default: {
+                    throw new AuthGenericException(
+                        "Invalid user login app type",
+                        HttpStatus.INTERNAL_SERVER_ERROR
+                    );
+                }
+            }
         }
 
         const permissions = user.role.permissions.map((p) => p.permission.name);
@@ -327,6 +407,7 @@ export class AuthService {
             options.password,
             user.password
         );
+
         if (!isValidPassword) {
             throw new InvalidCredentialException(
                 "Incorrect email or password",
@@ -342,6 +423,8 @@ export class AuthService {
             kycStatus: user.kycStatus,
             isWalletCreated: user.isWalletCreated,
             userType: user.userType,
+            transactionPin: user.transactionPin,
+            walletSetupStatus: user.walletSetupStatus,
             role: {
                 name: user.role.name,
                 slug: user.role.slug,
@@ -358,12 +441,16 @@ export class AuthService {
         });
     }
 
+    async userSignIn(
+        options: UserSigInDto
+    ): Promise<ApiResponse<LoginResponseData>> {
+        return await this.signIn(options, LoginPlatform.USER);
+    }
+
     async adminSignIn(
         options: SignInDto
     ): Promise<ApiResponse<LoginResponseData>> {
-        await this.validateAdminUser(options.email);
-
-        return await this.signIn(options);
+        return await this.signIn(options, LoginPlatform.ADMIN);
     }
 
     async passwordResetRequest(options: PasswordResetRequestDto) {
@@ -451,7 +538,7 @@ export class AuthService {
         });
     }
 
-    async sendAgentAccountVerificationEmail(
+    async sendSubAgentAccountVerificationEmail(
         options: SendVerificationCodeDto,
         user: User
     ): Promise<ApiResponse> {
@@ -515,7 +602,7 @@ export class AuthService {
             }
 
             return buildResponse({
-                message: `An email verification code has been sent to the agent's email, ${options.email}`,
+                message: `An email verification code has been sent to the email, ${options.email}`,
             });
         } catch (error) {
             logger.error(error);
@@ -539,5 +626,45 @@ export class AuthService {
                 }
             }
         }
+    }
+
+    async verifySubAgentEmailVerificationCode(
+        options: SubAgentAccountCreateVerificationDto
+    ) {
+        const verificationData =
+            await this.prisma.accountVerificationRequest.findUnique({
+                where: { code: options.verificationCode },
+            });
+
+        if (!verificationData) {
+            throw new InvalidEmailVerificationCodeException(
+                "Verification code not found",
+                HttpStatus.NOT_FOUND
+            );
+        }
+
+        //check verification expiration
+        const timeDifference =
+            Date.now() - verificationData.updatedAt.getTime();
+        const timeDiffInMin = timeDifference / (1000 * 60);
+        if (timeDiffInMin > 30) {
+            throw new VerificationCodeExpiredException(
+                "The verification code has expired. Kindly request for a new one",
+                HttpStatus.BAD_REQUEST
+            );
+        }
+
+        await this.prisma.accountVerificationRequest.update({
+            where: {
+                id: verificationData.id,
+            },
+            data: {
+                isVerified: true,
+            },
+        });
+
+        return buildResponse({
+            message: "Email successfully verified",
+        });
     }
 }

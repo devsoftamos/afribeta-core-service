@@ -1,4 +1,4 @@
-import { AuthGuard } from "@/modules/api/auth/guard";
+import { AuthGuard, EnabledAccountGuard } from "@/modules/api/auth/guard";
 import { User } from "@/modules/api/user";
 import {
     Body,
@@ -22,7 +22,7 @@ import {
 import { InitializeBillPaymentGuard } from "../../guard";
 import { InternetBillService } from "../../services/internet";
 
-@UseGuards(AuthGuard)
+@UseGuards(AuthGuard, EnabledAccountGuard)
 @Controller({
     path: "bill/internet",
 })

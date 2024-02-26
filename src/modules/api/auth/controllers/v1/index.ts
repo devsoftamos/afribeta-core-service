@@ -1,5 +1,5 @@
 import { User } from "@/modules/api/user";
-import { CreateAgentAbility } from "@/modules/core/ability";
+import { CreateSubAgentAbility } from "@/modules/core/ability";
 import { CheckAbilities } from "@/modules/core/ability/decorator";
 import { AbilitiesGuard } from "@/modules/core/ability/guards";
 import { ApiResponse } from "@/utils/api-response-util";
@@ -19,11 +19,12 @@ import { Request } from "express";
 import {
     PasswordResetRequestDto,
     SendVerificationCodeDto,
-    SignInDto,
     SignUpDto,
+    SubAgentAccountCreateVerificationDto,
     UpdatePasswordDto,
+    UserSigInDto,
 } from "../../dtos";
-import { AuthGuard } from "../../guard";
+import { AuthGuard, EnabledAccountGuard } from "../../guard";
 import { AuthService } from "../../services";
 
 @Controller({
@@ -43,9 +44,9 @@ export class AuthController {
     @HttpCode(HttpStatus.OK)
     @Post("login")
     async signIn(
-        @Body(ValidationPipe) signInDto: SignInDto
+        @Body(ValidationPipe) signInDto: UserSigInDto
     ): Promise<ApiResponse> {
-        return await this.authService.signIn(signInDto);
+        return await this.authService.userSignIn(signInDto);
     }
 
     @HttpCode(HttpStatus.OK)
@@ -75,17 +76,30 @@ export class AuthController {
         return await this.authService.updatePassword(updatePasswordDto);
     }
 
-    @UseGuards(AuthGuard, AbilitiesGuard)
-    @CheckAbilities(new CreateAgentAbility())
+    @UseGuards(AuthGuard, EnabledAccountGuard, AbilitiesGuard)
+    @CheckAbilities(new CreateSubAgentAbility())
     @HttpCode(HttpStatus.OK)
     @Post("verify-agent-email")
-    async sendAgentAccountVerificationEmail(
+    async sendSubAgentAccountVerificationEmail(
         @Body(ValidationPipe) sendVerificationCodeDto: SendVerificationCodeDto,
         @User() user: UserModel
     ) {
-        return await this.authService.sendAgentAccountVerificationEmail(
+        return await this.authService.sendSubAgentAccountVerificationEmail(
             sendVerificationCodeDto,
             user
+        );
+    }
+
+    @UseGuards(AuthGuard, EnabledAccountGuard, AbilitiesGuard)
+    @CheckAbilities(new CreateSubAgentAbility())
+    @HttpCode(HttpStatus.OK)
+    @Post("verify-subagent-otp")
+    async verifySubAgentEmailVerificationCode(
+        @Body(ValidationPipe)
+        subAgentAccountCreateVerificationDto: SubAgentAccountCreateVerificationDto
+    ) {
+        return await this.authService.verifySubAgentEmailVerificationCode(
+            subAgentAccountCreateVerificationDto
         );
     }
 }

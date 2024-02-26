@@ -50,3 +50,14 @@ export interface BankDetails {
     name: string;
     slug: string;
 }
+
+export interface VerifyBVNOptions {
+    bvn: string;
+}
+
+export interface VerifyBVNResponse {
+    bvn: string;
+    firstName: string;
+    middleName: string;
+    lastName: string;
+}

@@ -53,6 +53,7 @@ import {
     CompleteBillPurchaseOptions,
     CompleteBillPurchaseUserOptions,
     ProcessBillPaymentOptions,
+    PurchaseInitializationHandlerOutput,
     VerifyPurchase,
 } from "../interfaces";
 
@@ -61,7 +62,6 @@ import { DB_TRANSACTION_TIMEOUT } from "@/config";
 import { BillService } from ".";
 import { BillEvent } from "../events";
 import {
-    AirtimePurchaseInitializationHandlerOutput,
     CompleteAirtimePurchaseOutput,
     CompleteAirtimePurchaseTransactionOptions,
     FormatAirtimeNetworkInput,
@@ -183,11 +183,11 @@ export class AirtimeBillService {
             );
         }
 
-        const response = (resp: AirtimePurchaseInitializationHandlerOutput) => {
+        const response = (resp: PurchaseInitializationHandlerOutput) => {
             return buildResponse({
                 message: "Airtime purchase payment successfully initialized",
                 data: {
-                    amount: options.vtuAmount,
+                    amount: resp.totalAmount,
                     email: user.email,
                     reference: resp.paymentReference,
                 },
@@ -244,7 +244,7 @@ export class AirtimeBillService {
 
     async handleAirtimePurchaseInitialization(
         options: BillPurchaseInitializationHandlerOptions<PurchaseAirtimeDto>
-    ): Promise<AirtimePurchaseInitializationHandlerOutput> {
+    ): Promise<PurchaseInitializationHandlerOutput> {
         const paymentReference = generateId({ type: "reference" });
         const billPaymentReference = generateId({
             type: "irecharge_ref",
@@ -270,6 +270,7 @@ export class AirtimeBillService {
                 senderIdentifier: purchaseOptions.vtuNumber,
                 billServiceSlug: purchaseOptions.billService,
                 provider: purchaseOptions.billProvider,
+                merchantId: user.createdById,
             };
 
         const transaction = await this.prisma.transaction.create({
@@ -286,6 +287,7 @@ export class AirtimeBillService {
 
         return {
             paymentReference: paymentReference,
+            totalAmount: transactionCreateOptions.totalAmount,
         };
     }
 
@@ -317,7 +319,7 @@ export class AirtimeBillService {
                 );
             }
 
-            if (transaction.paymentStatus == PaymentStatus.SUCCESS) {
+            if (transaction.paymentStatus !== PaymentStatus.PENDING) {
                 throw new DuplicateDataPurchaseException(
                     "Duplicate webhook airtime purchase payment event",
                     HttpStatus.BAD_REQUEST
@@ -351,6 +353,9 @@ export class AirtimeBillService {
             });
 
             if (!billProvider) {
+                this.billEvent.emit("bill-purchase-failure", {
+                    transactionId: transaction.id,
+                });
                 throw new BillProviderNotFoundException(
                     "Failed to complete airtime purchase. Bill provider not found",
                     HttpStatus.NOT_FOUND
@@ -426,7 +431,7 @@ export class AirtimeBillService {
 
     async successPurchaseHandler(
         options: CompleteBillPurchaseOptions<CompleteAirtimePurchaseTransactionOptions>,
-        vendAirtimeResp?: VendAirtimeResponse
+        vendAirtimeResp: VendAirtimeResponse
     ): Promise<CompleteAirtimePurchaseOutput> {
         await this.prisma.$transaction(
             async (tx) => {
@@ -440,6 +445,7 @@ export class AirtimeBillService {
                         paymentChannel: options.isWalletPayment
                             ? PaymentChannel.WALLET
                             : options.transaction.paymentChannel,
+                        billPaymentReceiptNO: vendAirtimeResp.receiptNO,
                     },
                 });
 
@@ -510,7 +516,7 @@ export class AirtimeBillService {
             );
         }
 
-        if (wallet.mainBalance < transaction.amount) {
+        if (wallet.mainBalance < transaction.totalAmount) {
             this.billEvent.emit("payment-failure", {
                 transactionId: transaction.id,
             });
@@ -542,7 +548,7 @@ export class AirtimeBillService {
 
         try {
             await this.billService.walletChargeHandler({
-                amount: transaction.amount,
+                amount: transaction.totalAmount,
                 transactionId: transaction.id,
                 walletId: wallet.id,
             });

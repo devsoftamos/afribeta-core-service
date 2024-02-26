@@ -1,5 +1,6 @@
 import {
     IsBooleanString,
+    IsDateString,
     IsEnum,
     IsNumber,
     IsNumberString,
@@ -16,6 +17,24 @@ export enum VerifyTransactionProvider {
 export enum UpdatePayoutStatus {
     APPROVED = "APPROVED",
     DECLINED = "DECLINED",
+}
+
+export enum BillPayment {
+    AIRTIME_TO_CASH = "AIRTIME_TO_CASH",
+    DATA_PURCHASE = "DATA_PURCHASE",
+    ELECTRICITY_BILL = "ELECTRICITY_BILL",
+    INTERNET_BILL = "INTERNET_BILL",
+    CABLETV_BILL = "CABLETV_BILL",
+    AIRTIME_PURCHASE = "AIRTIME_PURCHASE",
+}
+
+export enum TransactionReportType {
+    AIRTIME_PURCHASE = "AIRTIME_PURCHASE",
+    ELECTRICITY_BILL = "ELECTRICITY_BILL",
+    DATA_PURCHASE = "DATA_PURCHASE",
+    CABLETV_BILL = "CABLETV_BILL",
+    PAYOUT = "PAYOUT",
+    COMMISSION = "COMMISSION",
 }
 
 export class VerifyTransactionDto {
@@ -38,6 +57,10 @@ export class TransactionHistoryDto {
     @IsOptional()
     @IsNumberString()
     limit: string;
+
+    @IsOptional()
+    @IsEnum(TransactionReportType)
+    type: TransactionReportType;
 }
 
 export class MerchantTransactionHistoryDto {
@@ -80,4 +103,56 @@ export class UpdatePayoutStatusDto {
 
     @IsEnum(UpdatePayoutStatus)
     status: UpdatePayoutStatus;
+}
+
+export enum QueryTransactionStatus {
+    PENDING = "PENDING",
+    SUCCESS = "SUCCESS",
+    FAILED = "FAILED",
+    REFUNDED = "REFUNDED",
+}
+
+export class AdminTransactionHistoryDto {
+    @IsOptional()
+    @IsBooleanString()
+    pagination: string;
+
+    @IsOptional()
+    @IsNumberString()
+    page: string;
+
+    @IsOptional()
+    @IsNumberString()
+    limit: string;
+
+    @IsOptional()
+    @IsString()
+    searchName: string;
+
+    @IsOptional()
+    @IsDateString()
+    date: string;
+
+    @IsOptional()
+    @IsEnum(QueryTransactionStatus)
+    status: QueryTransactionStatus;
+}
+
+export class SuccessfulTransactionsDto {
+    @IsDateString()
+    date: Date;
+}
+
+export class FetchRecommendedPayoutDto {
+    @IsOptional()
+    @IsBooleanString()
+    pagination: string;
+
+    @IsOptional()
+    @IsNumberString()
+    page: string;
+
+    @IsOptional()
+    @IsNumberString()
+    limit: string;
 }

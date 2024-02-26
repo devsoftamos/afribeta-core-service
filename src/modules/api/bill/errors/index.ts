@@ -89,3 +89,7 @@ export class CableTVPurchaseInitializationHandlerException extends HttpException
 export class WalletChargeException extends HttpException {
     name = "WalletChargeException";
 }
+
+export class BillPaymentValidationException extends HttpException {
+    name = "BillPaymentValidationException";
+}

@@ -1,6 +1,10 @@
 import { RequestWithUser } from "@/modules/api/auth";
-import { AuthGuard } from "@/modules/api/auth/guard";
-import { CreateAgentAbility, ViewAgentAbility } from "@/modules/core/ability";
+import { AuthGuard, EnabledAccountGuard } from "@/modules/api/auth/guard";
+import {
+    CreateKYCAbility,
+    CreateSubAgentAbility,
+    ViewSubAgentAbility,
+} from "@/modules/core/ability";
 import { CheckAbilities } from "@/modules/core/ability/decorator";
 import { AbilitiesGuard } from "@/modules/core/ability/guards";
 import {
@@ -9,6 +13,8 @@ import {
     Get,
     HttpCode,
     HttpStatus,
+    Param,
+    ParseIntPipe,
     Patch,
     Post,
     Query,
@@ -27,10 +33,12 @@ import {
     UpdateProfilePasswordDto,
     UpdateTransactionPinDto,
     VerifyTransactionPinDto,
+    CountAgentsCreatedDto,
+    EditAgentDto,
 } from "../../dtos";
 import { UserService } from "../../services";
 
-@UseGuards(AuthGuard)
+@UseGuards(AuthGuard, EnabledAccountGuard)
 @Controller({
     path: "user",
 })
@@ -97,7 +105,7 @@ export class UserController {
 
     @Post("agent")
     @UseGuards(AbilitiesGuard)
-    @CheckAbilities(new CreateAgentAbility())
+    @CheckAbilities(new CreateSubAgentAbility())
     async createAgent(
         @Body(ValidationPipe) createAgentDto: CreateSubAgentDto,
         @User() user: UserModel
@@ -107,7 +115,7 @@ export class UserController {
 
     @Get("agent")
     @UseGuards(AbilitiesGuard)
-    @CheckAbilities(new ViewAgentAbility())
+    @CheckAbilities(new ViewSubAgentAbility())
     async getMerchantAgents(
         @Query(ValidationPipe) listMerchantAgentsDto: ListMerchantAgentsDto,
         @User() user: UserModel
@@ -119,10 +127,31 @@ export class UserController {
     }
 
     @Post("kyc")
+    @UseGuards(AbilitiesGuard)
+    @CheckAbilities(new CreateKYCAbility())
     async createKyc(
         @Body(ValidationPipe) kycDto: CreateKycDto,
         @User() user: UserModel
     ) {
         return await this.userService.createKyc(kycDto, user);
+    }
+
+    @Get("agent/count")
+    async countAgentsCreated(
+        @Query(ValidationPipe) countAgentsCreatedDto: CountAgentsCreatedDto,
+        @User() user: UserModel
+    ) {
+        return await this.userService.countAgentsCreated(
+            countAgentsCreatedDto,
+            user
+        );
+    }
+
+    @Patch("agent/:id")
+    async editAgentDetails(
+        @Param("id", ParseIntPipe) id: number,
+        @Body(ValidationPipe) editAgentDto: EditAgentDto
+    ) {
+        return await this.userService.editAgentDetails(editAgentDto, id);
     }
 }

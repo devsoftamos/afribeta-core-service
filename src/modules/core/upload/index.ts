@@ -1,17 +1,9 @@
-import { awsConfiguration } from "@/config";
 import { Global, Module } from "@nestjs/common";
-import { S3Service } from "./services/s3";
+import { UploadFactory } from "./services";
 
 @Global()
 @Module({
-    providers: [
-        {
-            provide: S3Service,
-            useFactory() {
-                return new S3Service(awsConfiguration);
-            },
-        },
-    ],
-    exports: [S3Service],
+    providers: [UploadFactory],
+    exports: [UploadFactory],
 })
 export class UploadModule {}

@@ -8,6 +8,8 @@ export enum TransactionShortDescription {
     CABLE_TV_PAYMENT = "Cable TV Payment",
     COMMISSION_PAID = "Commission Paid",
     PAYOUT = "Payout",
+    BILL_PAYMENT_REFUND = "Failed Bill Payment Refund",
+    BANK_TRANSFER_REFUND = "Failed Bank Transfer Refund",
 }
 
 export enum TransferServiceProvider {

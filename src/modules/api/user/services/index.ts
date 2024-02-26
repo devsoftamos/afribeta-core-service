@@ -2,6 +2,7 @@ import {
     AGENT_MD_METER_COMMISSION_CAP_AMOUNT,
     agentPostAccountCreateTemplate,
     DB_TRANSACTION_TIMEOUT,
+    storageDirConfig,
 } from "@/config";
 import { EmailService } from "@/modules/core/email/services";
 import { PrismaService } from "@/modules/core/prisma/services";
@@ -14,11 +15,12 @@ import {
     User,
     UserType,
     MerchantUpgradeStatus,
+    Status,
 } from "@prisma/client";
 import {
     InvalidEmailVerificationCodeException,
     SendVerificationEmailException,
-    VerificationCodeExpiredException,
+    VerificationCodeGenericException,
 } from "../../auth";
 import { AuthService } from "../../auth/services";
 import {
@@ -32,9 +34,19 @@ import {
     UpdateProfilePasswordDto,
     UpdateTransactionPinDto,
     VerifyTransactionPinDto,
+    AuthorizeAgentToMerchantUpgradeAgentDto,
+    AgentUpgradeBillServiceCommissionOptions,
+    AuthorizeAgentUpgradeType,
+    FetchAllMerchantsDto,
+    CountAgentsCreatedDto,
+    CreateUserDto,
+    EditAgentDto,
+    EnableOrDisableUserDto,
+    EnableOrDisableUserEnum,
 } from "../dtos";
 import {
     AgentCreationException,
+    AgentUpgradeGenericException,
     DuplicateUserException,
     IncorrectPasswordException,
     InvalidAgentCommissionAssignment,
@@ -48,23 +60,27 @@ import {
 } from "../interfaces";
 import logger from "moment-logger";
 import { SendinblueEmailException } from "@calculusky/transactional-email";
-import { S3Service } from "@/modules/core/upload/services/s3";
-import { AbilityFactory } from "@/modules/core/ability/services";
-import { Action } from "@/modules/core/ability/interfaces";
-import { ForbiddenError, subject } from "@casl/ability";
-import { InsufficientPermissionException } from "@/modules/core/ability/errors";
 import { BillServiceSlug } from "@/modules/api/bill/interfaces";
+import { RoleSlug } from "../../role/interfaces";
+import { endOfMonth, startOfMonth } from "date-fns";
+import { RoleNotFoundException } from "../../role/errors";
+import { UploadFactory } from "@/modules/core/upload/services";
+import { OceanSpaceService } from "@/modules/core/upload/services/oceanSpace";
 
 @Injectable()
 export class UserService {
+    private uploadService: OceanSpaceService;
     constructor(
         private prisma: PrismaService,
         @Inject(forwardRef(() => AuthService))
         private authService: AuthService,
         private emailService: EmailService,
-        private s3Service: S3Service,
-        private abilityFactory: AbilityFactory
-    ) {}
+        private uploadFactory: UploadFactory
+    ) {
+        this.uploadService = this.uploadFactory.build({
+            provider: "ocean_space",
+        });
+    }
 
     async createUser(options: Prisma.UserCreateInput) {
         return await this.prisma.user.create({
@@ -97,6 +113,7 @@ export class UserService {
                 email: true,
                 identifier: true,
                 phone: true,
+                walletSetupStatus: true,
             },
         });
         return buildResponse({
@@ -278,7 +295,6 @@ export class UserService {
     }
 
     async createAgent(options: CreateSubAgentDto, user: User) {
-        // console.log(user);
         //check for duplicate agent
         const email = options.email.trim();
         const userAgent = await this.prisma.user.findUnique({
@@ -289,7 +305,7 @@ export class UserService {
 
         if (userAgent) {
             throw new DuplicateUserException(
-                "An agent with the email already exists",
+                "An account with the email already exist",
                 HttpStatus.BAD_REQUEST
             );
         }
@@ -305,20 +321,16 @@ export class UserService {
             );
         }
 
-        //check verification expiration
-        const timeDifference =
-            Date.now() - verificationData.updatedAt.getTime();
-        const timeDiffInMin = timeDifference / (1000 * 60);
-        if (timeDiffInMin > 30) {
-            throw new VerificationCodeExpiredException(
-                "The verification code has expired. Kindly request for a new one",
-                HttpStatus.BAD_REQUEST
+        if (!verificationData.isVerified) {
+            throw new VerificationCodeGenericException(
+                "Please verify the OTP code and proceed",
+                HttpStatus.NOT_FOUND
             );
         }
 
         //validate commissions
         if (options.billServiceCommissions) {
-            await this.validateAgentCommissionAssignment({
+            await this.validateSubAgentCommissionAssignment({
                 merchantId: user.id,
                 billServiceCommissions: options.billServiceCommissions,
             });
@@ -327,9 +339,15 @@ export class UserService {
         const hashedPassword = await this.authService.hashPassword(password);
         const role = await this.prisma.role.findUnique({
             where: {
-                slug: "sub-agent",
+                slug: RoleSlug.SUB_AGENT,
             },
         });
+        if (!role) {
+            throw new RoleNotFoundException(
+                "Failed to assign role. Role not found",
+                HttpStatus.INTERNAL_SERVER_ERROR
+            );
+        }
         const walletNumber = generateId({ type: "walletNumber" });
         const createAgentOptions: Prisma.UserUncheckedCreateInput = {
             email: verificationData.email,
@@ -352,18 +370,32 @@ export class UserService {
             },
         };
 
-        if (options.billServiceCommissions) {
-            createAgentOptions.commissions = {
-                create: options.billServiceCommissions,
-            };
-        }
-
         await this.prisma
             .$transaction(
                 async (tx) => {
                     const user = await tx.user.create({
                         data: createAgentOptions,
                     });
+
+                    if (options.billServiceCommissions) {
+                        createAgentOptions.commissions = {
+                            create: options.billServiceCommissions,
+                        };
+                        const commissions: Prisma.UserCommissionUncheckedCreateInput[] =
+                            options.billServiceCommissions.map((commission) => {
+                                return {
+                                    billServiceSlug: commission.billServiceSlug,
+                                    percentage: commission.percentage,
+                                    subAgentMdMeterCapAmount:
+                                        commission.subAgentMdMeterCapAmount,
+                                    userId: user.id,
+                                };
+                            });
+
+                        await tx.userCommission.createMany({
+                            data: commissions,
+                        });
+                    }
 
                     await tx.accountVerificationRequest.delete({
                         where: { email: verificationData.email },
@@ -409,7 +441,7 @@ export class UserService {
         });
     }
 
-    async validateAgentCommissionAssignment(
+    async validateSubAgentCommissionAssignment(
         options: ValidateAgentCommissionAssignmentOptions
     ) {
         const merchantBillCommissions =
@@ -434,7 +466,7 @@ export class UserService {
             );
             if (!merchantServiceCommission) {
                 throw new InvalidAgentCommissionAssignment(
-                    "One of the billServiceSlug field is invalid or the selected bill service commission for the agent is not available for the merchant",
+                    "One of the billServiceSlug field is invalid or the selected bill service commission for the sub agent is not available for the merchant",
                     HttpStatus.BAD_REQUEST
                 );
             }
@@ -445,7 +477,7 @@ export class UserService {
             ) {
                 if (!billCommission.subAgentMdMeterCapAmount) {
                     throw new InvalidAgentCommissionAssignment(
-                        "Invalid commission assignment for Ikeja Electric. Capped amount for MD Meter is required",
+                        "Invalid commission assignment for Ikeja Electric. Capped amount for the Sub Agent MD Meter is required",
                         HttpStatus.BAD_REQUEST
                     );
                 }
@@ -463,7 +495,7 @@ export class UserService {
 
             if (!billCommission.percentage) {
                 throw new InvalidAgentCommissionAssignment(
-                    "The commission for one of the selected bill services is not set",
+                    `The commission for one of the selected bill services, ${merchantServiceCommission.billService.name} is not set`,
                     HttpStatus.BAD_REQUEST
                 );
             }
@@ -472,7 +504,7 @@ export class UserService {
                 billCommission.percentage > merchantServiceCommission.percentage
             ) {
                 throw new InvalidAgentCommissionAssignment(
-                    `One of the selected bill service, ${merchantServiceCommission.billService.name} commission for the agent is greater than the corresponding merchant's commission`,
+                    `One of the selected bill service, ${merchantServiceCommission.billService.name} commission for the sub agent is greater than the corresponding merchant's commission`,
                     HttpStatus.BAD_REQUEST
                 );
             }
@@ -546,38 +578,15 @@ export class UserService {
         });
     }
 
-    async getSingleAgent(id: number, user: User) {
-        try {
-            const ability = await this.abilityFactory.createForUser(user);
-            ForbiddenError.from(ability).throwUnlessCan(
-                Action.ViewAgent,
-                subject("User", { createdById: id } as any)
-            );
-        } catch (error) {
-            throw new InsufficientPermissionException(
-                error.message,
-                HttpStatus.FORBIDDEN
-            );
-        }
-
-        return await this.prisma.user.findFirst({
-            where: {
-                id: id,
-                createdById: user.id,
-            },
-        });
-    }
-
     private async uploadKycImage(file: string): Promise<string> {
         const date = Date.now();
-        const directory = "kycInfo";
-        const key = `${directory}/kyc-image-${date}.webp`;
         const body = Buffer.from(file, "base64");
 
-        return await this.s3Service.uploadCompressedImage({
-            key,
-            body: body,
+        return await this.uploadService.uploadCompressedImage({
+            dir: storageDirConfig.kycInfo,
+            name: `kyc-image-${date}`,
             format: "webp",
+            body: body,
             quality: 100,
             width: 320,
         });
@@ -784,5 +793,500 @@ export class UserService {
             message: "Merchant Details successfully retrieved",
             data: result,
         });
+    }
+
+    async authorizeAgentToMerchantUpgradeRequest(
+        agentId: number,
+        options: AuthorizeAgentToMerchantUpgradeAgentDto
+    ) {
+        const agent = await this.prisma.user.findUnique({
+            where: {
+                id: agentId,
+            },
+            select: {
+                id: true,
+                userType: true,
+                isMerchantUpgradable: true,
+                merchantUpgradeStatus: true,
+            },
+        });
+
+        if (!agent) {
+            throw new UserNotFoundException(
+                "Agent could not be found",
+                HttpStatus.NOT_FOUND
+            );
+        }
+
+        if (agent.userType == UserType.MERCHANT) {
+            throw new AgentUpgradeGenericException(
+                "Agent already upgraded",
+                HttpStatus.BAD_REQUEST
+            );
+        }
+
+        if (!agent.isMerchantUpgradable) {
+            throw new AgentUpgradeGenericException(
+                "User account type is not eligible for a merchant upgrade",
+                HttpStatus.BAD_REQUEST
+            );
+        }
+
+        switch (options.authorizeType) {
+            case AuthorizeAgentUpgradeType.APPROVE: {
+                await this.approveAgentUpgradeHandler(
+                    agentId,
+                    options.billServiceCommissions
+                );
+
+                return buildResponse({
+                    message: "Agent successfully upgraded",
+                });
+            }
+
+            case AuthorizeAgentUpgradeType.DECLINE: {
+                await this.declineAgentUpgradeHandler(agentId);
+                return buildResponse({
+                    message: "Agent upgrade successfully declined",
+                });
+            }
+
+            default: {
+                throw new AgentUpgradeGenericException(
+                    "Failed to authorize upgrade request. Invalid authorize type",
+                    HttpStatus.INTERNAL_SERVER_ERROR
+                );
+            }
+        }
+    }
+
+    async validateAgentUpgradeCommissionAssignment(
+        assignedCommissions: AgentUpgradeBillServiceCommissionOptions[]
+    ) {
+        const baseCommissions = await this.prisma.billService.findMany({
+            select: {
+                slug: true,
+                name: true,
+                baseCommissionPercentage: true,
+            },
+        });
+
+        for (const assignedCommission of assignedCommissions) {
+            const baseCommission = baseCommissions.find(
+                (bc) => bc.slug == assignedCommission.billServiceSlug
+            );
+            if (!baseCommission) {
+                throw new InvalidAgentCommissionAssignment(
+                    "The base commission for one of the assigned commissions does not exist",
+                    HttpStatus.BAD_REQUEST
+                );
+            }
+
+            if (!assignedCommission.percentage) {
+                throw new InvalidAgentCommissionAssignment(
+                    "The commission for one of the selected bill services is not set",
+                    HttpStatus.BAD_REQUEST
+                );
+            }
+
+            if (
+                assignedCommission.billServiceSlug !=
+                    BillServiceSlug.IKEJA_ELECTRIC &&
+                assignedCommission.percentage >
+                    baseCommission.baseCommissionPercentage
+            ) {
+                throw new InvalidAgentCommissionAssignment(
+                    `The assigned commission for the bill service, ${baseCommission.name} is greater than the base commission`,
+                    HttpStatus.BAD_REQUEST
+                );
+            }
+        }
+    }
+
+    async approveAgentUpgradeHandler(
+        agentId: number,
+        assignedCommissions: AgentUpgradeBillServiceCommissionOptions[]
+    ) {
+        if (!assignedCommissions) {
+            throw new AgentUpgradeGenericException(
+                "updated billService commission is required",
+                HttpStatus.BAD_REQUEST
+            );
+        }
+
+        this.validateAgentUpgradeCommissionAssignment(assignedCommissions);
+        const role = await this.prisma.role.findUnique({
+            where: {
+                slug: RoleSlug.MERCHANT,
+            },
+        });
+
+        if (!role) {
+            throw new RoleNotFoundException(
+                "Failed to assign merchant role. Role not found",
+                HttpStatus.INTERNAL_SERVER_ERROR
+            );
+        }
+
+        await this.prisma.user.update({
+            where: {
+                id: agentId,
+            },
+            data: {
+                userType: UserType.MERCHANT,
+                merchantUpgradeStatus: MerchantUpgradeStatus.UPGRADED,
+                roleId: role.id,
+                kycStatus: KYC_STATUS.APPROVED,
+                commissions: {
+                    create: assignedCommissions,
+                },
+            },
+        });
+    }
+
+    async declineAgentUpgradeHandler(agentId: number) {
+        await this.prisma.user.update({
+            where: {
+                id: agentId,
+            },
+            data: {
+                merchantUpgradeStatus: MerchantUpgradeStatus.DECLINED,
+                kycStatus: KYC_STATUS.DECLINED,
+            },
+        });
+    }
+
+    async getAllMerchants(options: FetchAllMerchantsDto) {
+        const paginationMeta: Partial<PaginationMeta> = {};
+
+        const queryOptions: Prisma.UserFindManyArgs = {
+            orderBy: { createdAt: "desc" },
+            where: {
+                userType: UserType.MERCHANT,
+            },
+            select: {
+                firstName: true,
+                lastName: true,
+                businessName: true,
+                photo: true,
+                state: {
+                    select: {
+                        name: true,
+                    },
+                },
+            },
+        };
+
+        if (options.pagination) {
+            const page = +options.page || 1;
+            const limit = +options.limit || 10;
+            const offset = (page - 1) * limit;
+            queryOptions.skip = offset;
+            queryOptions.take = limit;
+            const count = await this.prisma.user.count({
+                where: queryOptions.where,
+            });
+            paginationMeta.totalCount = count;
+            paginationMeta.perPage = limit;
+        }
+
+        const merchants = await this.prisma.user.findMany(queryOptions);
+        if (options.pagination) {
+            paginationMeta.pageCount = merchants.length;
+        }
+
+        return buildResponse({
+            message: "Merchants retrieved successfully",
+            data: {
+                meta: paginationMeta,
+                records: merchants,
+            },
+        });
+    }
+
+    async countAgentsCreated(options: CountAgentsCreatedDto, user: User) {
+        const startDate = startOfMonth(new Date(options.date));
+        const endDate = endOfMonth(new Date(options.date));
+
+        const agents = await this.prisma.user.count({
+            where: {
+                createdById: user.id,
+                createdAt: {
+                    gte: startDate,
+                    lte: endDate,
+                },
+            },
+        });
+
+        return buildResponse({
+            message: "Agents fetched successfully",
+            data: {
+                agents: agents,
+            },
+        });
+    }
+
+    async fetchAdmins(options: ListMerchantAgentsDto) {
+        const paginationMeta: Partial<PaginationMeta> = {};
+
+        const queryOptions: Prisma.UserFindManyArgs = {
+            orderBy: { createdAt: "desc" },
+            where: {
+                userType: UserType.ADMIN,
+            },
+            select: {
+                id: true,
+                lastName: true,
+                firstName: true,
+                email: true,
+                phone: true,
+                ipAddress: true,
+                role: {
+                    select: {
+                        name: true,
+                    },
+                },
+            },
+        };
+
+        if (options.searchName) {
+            queryOptions.where.firstName = { search: options.searchName };
+            queryOptions.where.lastName = { search: options.searchName };
+        }
+
+        if (options.pagination) {
+            const page = +options.page || 1;
+            const limit = +options.limit || 10;
+            const offset = (page - 1) * limit;
+            queryOptions.skip = offset;
+            queryOptions.take = limit;
+            const count = await this.prisma.user.count({
+                where: queryOptions.where,
+            });
+            paginationMeta.totalCount = count;
+            paginationMeta.perPage = limit;
+            paginationMeta.page = page;
+        }
+
+        const users = await this.prisma.user.findMany(queryOptions);
+        if (options.pagination) {
+            paginationMeta.pageCount = users.length;
+        }
+
+        return buildResponse({
+            message: "Users fetched successfully",
+            data: {
+                meta: paginationMeta,
+                records: users,
+            },
+        });
+    }
+
+    async createNewUser(options: CreateUserDto) {
+        const user = await this.findUserByEmail(options.email);
+        if (user) {
+            throw new DuplicateUserException(
+                "An account with this email already exists",
+                HttpStatus.BAD_REQUEST
+            );
+        }
+
+        const hashedPassword = await this.authService.hashPassword(
+            options.password
+        );
+
+        const role = await this.prisma.role.findUnique({
+            where: {
+                id: options.roleId,
+            },
+        });
+
+        const createUserOptions: Prisma.UserUncheckedCreateInput = {
+            identifier: generateId({ type: "identifier" }),
+            email: options.email,
+            lastName: options.lastName,
+            firstName: options.firstName,
+            phone: options.phone,
+            password: hashedPassword,
+            userType: UserType.ADMIN,
+            roleId: role.id,
+        };
+
+        await this.prisma.user.create({
+            data: createUserOptions,
+        });
+
+        return buildResponse({
+            message: "User created successfully",
+        });
+    }
+
+    async countMerchants(options: CountAgentsCreatedDto) {
+        const startDate = startOfMonth(new Date(options.date));
+        const endDate = endOfMonth(new Date(options.date));
+
+        const merchants = await this.prisma.user.count({
+            where: {
+                userType: UserType.MERCHANT,
+                createdAt: {
+                    gte: startDate,
+                    lte: endDate,
+                },
+            },
+        });
+
+        return buildResponse({
+            message: "Number of available merchants retrieved successfully",
+            data: merchants,
+        });
+    }
+
+    async getAgentDetails(id: number) {
+        const userExists = await this.prisma.user.findUnique({
+            where: {
+                id: id,
+            },
+        });
+
+        if (!userExists || userExists.userType !== UserType.AGENT) {
+            throw new UserNotFoundException(
+                "Agent account does not exist",
+                HttpStatus.NOT_FOUND
+            );
+        }
+
+        const agent = await this.prisma.user.findUnique({
+            where: {
+                id: id,
+            },
+            select: {
+                firstName: true,
+                lastName: true,
+                email: true,
+                phone: true,
+                state: {
+                    select: {
+                        name: true,
+                    },
+                },
+                kycInformation: {
+                    select: {
+                        address: true,
+                        cacDocumentUrl: true,
+                        nextOfKinName: true,
+                        identificationMeans: true,
+                        identificationMeansDocumentUrl: true,
+                        nextOfKinPhone: true,
+                        nextOfKinAddress: true,
+                    },
+                },
+            },
+        });
+
+        return buildResponse({
+            message: "Agent details retrieved successfully",
+            data: agent,
+        });
+    }
+
+    async customerDetails(id: number) {
+        const userExists = await this.prisma.user.findUnique({
+            where: {
+                id: id,
+            },
+        });
+
+        if (!userExists || userExists.userType !== UserType.CUSTOMER) {
+            throw new UserNotFoundException(
+                "Customer account does not exist",
+                HttpStatus.NOT_FOUND
+            );
+        }
+
+        const customer = await this.prisma.user.findUnique({
+            where: {
+                id: id,
+            },
+            select: {
+                firstName: true,
+                lastName: true,
+                email: true,
+                phone: true,
+            },
+        });
+
+        return buildResponse({
+            message: "Customer details retrieved successfully",
+            data: customer,
+        });
+    }
+
+    async editAgentDetails(options: EditAgentDto, id: number) {
+        const agentExists = await this.prisma.user.findUnique({
+            where: {
+                id: id,
+            },
+        });
+        if (!agentExists || agentExists.userType !== UserType.AGENT) {
+            throw new UserNotFoundException(
+                "Agent account does not exist",
+                HttpStatus.NOT_FOUND
+            );
+        }
+
+        const updateAgentOptions: Prisma.UserUpdateInput = {
+            firstName: options.firstName,
+            lastName: options.lastName,
+            phone: options.phone,
+        };
+
+        await this.prisma.user.update({
+            where: {
+                id: id,
+            },
+            data: updateAgentOptions,
+        });
+
+        return buildResponse({
+            message: "Agent details updated successfully",
+        });
+    }
+
+    async enableOrDisableUser(userId: number, options: EnableOrDisableUserDto) {
+        const user = await this.prisma.user.findUnique({
+            where: {
+                id: userId,
+            },
+            select: { id: true },
+        });
+
+        if (!user) {
+            throw new UserNotFoundException(
+                "user not found",
+                HttpStatus.NOT_FOUND
+            );
+        }
+
+        switch (options.actionType) {
+            case EnableOrDisableUserEnum.ENABLE: {
+                await this.prisma.user.update({
+                    where: { id: userId },
+                    data: { status: Status.ENABLED },
+                });
+
+                return buildResponse({
+                    message: "Account successfully enabled",
+                });
+            }
+            case EnableOrDisableUserEnum.DISABLE: {
+                await this.prisma.user.update({
+                    where: { id: userId },
+                    data: { status: Status.DISABLED },
+                });
+                return buildResponse({
+                    message: "Account successfully disabled",
+                });
+            }
+        }
     }
 }

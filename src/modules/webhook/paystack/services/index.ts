@@ -1,6 +1,7 @@
 import {
     CreateWalletAAndVirtualAccount,
     WalletFundProvider,
+    WalletToBankTransferStatus,
 } from "@/modules/api/wallet";
 import { WalletService } from "@/modules/api/wallet/services";
 import { HttpStatus, Injectable } from "@nestjs/common";
@@ -38,8 +39,6 @@ export class PaystackWebhookService implements PaystackWebhook {
     ) {}
 
     async processWebhookEvent(eventBody: EventBody) {
-        //console.log(eventBody, "****DATA****");
-
         try {
             switch (eventBody.event) {
                 case Event.DedicatedAssignSuccessEvent: {
@@ -159,12 +158,9 @@ export class PaystackWebhookService implements PaystackWebhook {
             }
             //Wallet funding
             if (transaction.type == TransactionType.WALLET_FUND) {
-                // console.log(eventData, "************WEBHOOK*********");
-
                 await this.processWalletFunding(eventData);
             } else {
                 //Bill payment
-                //console.log(eventData, "************WEBHOOK*********");
                 await this.billService.handleWebhookSuccessfulBillPayment({
                     billType: transaction.type,
                     paymentReference: transaction.paymentReference,
@@ -179,7 +175,7 @@ export class PaystackWebhookService implements PaystackWebhook {
         try {
             await this.walletService.processWalletWithdrawal({
                 paymentReference: eventData.reference,
-                paymentStatus: PaymentStatus.SUCCESS,
+                transferToBankStatus: WalletToBankTransferStatus.SUCCESS,
             });
         } catch (error) {
             logger.error(error);
@@ -189,7 +185,7 @@ export class PaystackWebhookService implements PaystackWebhook {
         try {
             await this.walletService.processWalletWithdrawal({
                 paymentReference: eventData.reference,
-                paymentStatus: PaymentStatus.FAILED,
+                transferToBankStatus: WalletToBankTransferStatus.FAILED,
             });
         } catch (error) {
             logger.error(error);

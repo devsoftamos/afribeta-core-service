@@ -4,9 +4,12 @@ import {
     BankDetails,
     CreateVirtualAccountOptions,
     CreateVirtualAccountResponse,
+    VerifyBVNOptions,
+    VerifyBVNResponse,
 } from "../../../interfaces";
 import logger from "moment-logger";
 import {
+    FSDH360BankBvnVerificationException,
     FSDH360BankException,
     FSDH360BankVirtualAccountException,
 } from "../errors";
@@ -38,6 +41,37 @@ export class FSDH360BankService {
             switch (true) {
                 case error instanceof FSDH360BankError: {
                     throw new FSDH360BankVirtualAccountException(
+                        error.message,
+                        HttpStatus.INTERNAL_SERVER_ERROR
+                    );
+                }
+
+                default: {
+                    throw new FSDH360BankException(
+                        error.message,
+                        HttpStatus.INTERNAL_SERVER_ERROR
+                    );
+                }
+            }
+        }
+    }
+
+    async verifyBVN(options: VerifyBVNOptions): Promise<VerifyBVNResponse> {
+        try {
+            const verifyUser = await this.fsdh360Bank.verifyBvn({
+                bvn: options.bvn,
+            });
+            return {
+                bvn: verifyUser.bvn,
+                firstName: verifyUser.firstName,
+                lastName: verifyUser.lastName,
+                middleName: verifyUser.middleName,
+            };
+        } catch (error) {
+            logger.error(error);
+            switch (true) {
+                case error instanceof FSDH360BankError: {
+                    throw new FSDH360BankBvnVerificationException(
                         error.message,
                         HttpStatus.INTERNAL_SERVER_ERROR
                     );

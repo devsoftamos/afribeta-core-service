@@ -13,11 +13,14 @@ import { DataBillService } from "./services/data";
 import { InternetBillService } from "./services/internet";
 import { PowerBillService } from "./services/power";
 import { BullModule } from "@nestjs/bull";
-import { billQueueConfig } from "./queues";
+import { billBoardQueueConfig, billQueueConfig } from "./queues";
 import { BuypowerReQueryQueueProcessor } from "./queues/processors";
-
+import { BullBoardModule } from "@bull-board/nestjs";
 @Module({
-    imports: [BullModule.registerQueue(...billQueueConfig)],
+    imports: [
+        BullModule.registerQueue(...billQueueConfig),
+        BullBoardModule.forFeature(...billBoardQueueConfig),
+    ],
     providers: [
         BillService,
         PowerBillService,

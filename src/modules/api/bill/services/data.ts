@@ -45,10 +45,10 @@ import {
     CompleteBillPurchaseOptions,
     CompleteBillPurchaseUserOptions,
     ProcessBillPaymentOptions,
+    PurchaseInitializationHandlerOutput,
     VerifyPurchase,
 } from "../interfaces";
 import {
-    DataPurchaseInitializationHandlerOutput,
     CompleteDataPurchaseTransactionOptions,
     CompleteDataPurchaseOutput,
     FormatDataBundleNetworkInput,
@@ -188,11 +188,11 @@ export class DataBillService {
             );
         }
 
-        const response = (resp: DataPurchaseInitializationHandlerOutput) => {
+        const response = (resp: PurchaseInitializationHandlerOutput) => {
             return buildResponse({
                 message: "Data purchase payment successfully initialized",
                 data: {
-                    amount: options.price,
+                    amount: resp.totalAmount,
                     email: user.email,
                     reference: resp.paymentReference,
                 },
@@ -249,7 +249,7 @@ export class DataBillService {
 
     async handleDataPurchaseInitialization(
         options: BillPurchaseInitializationHandlerOptions<PurchaseDataDto>
-    ): Promise<DataPurchaseInitializationHandlerOutput> {
+    ): Promise<PurchaseInitializationHandlerOutput> {
         const paymentReference = generateId({ type: "reference" });
         const billPaymentReference = generateId({
             type: "numeric",
@@ -278,6 +278,7 @@ export class DataBillService {
                 senderIdentifier: purchaseOptions.vtuNumber,
                 billServiceSlug: purchaseOptions.billService,
                 provider: purchaseOptions.billProvider,
+                merchantId: user.createdById,
             };
 
         const transaction = await this.prisma.transaction.create({
@@ -291,6 +292,7 @@ export class DataBillService {
 
         return {
             paymentReference: paymentReference,
+            totalAmount: transactionCreateOptions.totalAmount,
         };
     }
 
@@ -323,7 +325,7 @@ export class DataBillService {
                 );
             }
 
-            if (transaction.paymentStatus == PaymentStatus.SUCCESS) {
+            if (transaction.paymentStatus !== PaymentStatus.PENDING) {
                 throw new DuplicateDataPurchaseException(
                     "Duplicate webhook data purchase payment event",
                     HttpStatus.BAD_REQUEST
@@ -357,6 +359,9 @@ export class DataBillService {
             });
 
             if (!billProvider) {
+                this.billEvent.emit("bill-purchase-failure", {
+                    transactionId: transaction.id,
+                });
                 throw new BillProviderNotFoundException(
                     "Failed to complete data purchase. Bill provider not found",
                     HttpStatus.NOT_FOUND
@@ -470,6 +475,7 @@ export class DataBillService {
                         paymentChannel: options.isWalletPayment
                             ? PaymentChannel.WALLET
                             : options.transaction.paymentChannel,
+                        billPaymentReceiptNO: vendDataResp.receiptNO,
                     },
                 });
 
@@ -535,7 +541,7 @@ export class DataBillService {
             );
         }
 
-        if (wallet.mainBalance < transaction.amount) {
+        if (wallet.mainBalance < transaction.totalAmount) {
             this.billEvent.emit("payment-failure", {
                 transactionId: transaction.id,
             });
@@ -569,7 +575,7 @@ export class DataBillService {
         try {
             //charge wallet and update payment status
             await this.billService.walletChargeHandler({
-                amount: transaction.amount,
+                amount: transaction.totalAmount,
                 transactionId: transaction.id,
                 walletId: wallet.id,
             });

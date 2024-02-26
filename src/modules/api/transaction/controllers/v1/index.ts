@@ -1,6 +1,6 @@
-import { AuthGuard } from "@/modules/api/auth/guard";
+import { AuthGuard, EnabledAccountGuard } from "@/modules/api/auth/guard";
 import { User } from "@/modules/api/user";
-import { ViewAgentAbility } from "@/modules/core/ability";
+import { ViewSubAgentAbility } from "@/modules/core/ability";
 import { CheckAbilities } from "@/modules/core/ability/decorator";
 import { AbilitiesGuard } from "@/modules/core/ability/guards";
 import {
@@ -16,7 +16,7 @@ import { User as UserModel } from "@prisma/client";
 import { TransactionHistoryDto, VerifyTransactionDto } from "../../dtos";
 import { TransactionService } from "../../services";
 
-@UseGuards(AuthGuard)
+@UseGuards(AuthGuard, EnabledAccountGuard)
 @Controller({
     path: "transaction",
 })
@@ -45,7 +45,7 @@ export class TransactionController {
 
     @Get("agent/:id/history")
     @UseGuards(AbilitiesGuard)
-    @CheckAbilities(new ViewAgentAbility())
+    @CheckAbilities(new ViewSubAgentAbility())
     async MerchantAgentTransactionHistory(
         @Query(ValidationPipe) transactionHistoryDto: TransactionHistoryDto,
         @User() user: UserModel,
@@ -56,5 +56,21 @@ export class TransactionController {
             user,
             id
         );
+    }
+
+    @Get("merchant/report")
+    async merchantReport(
+        @Query(ValidationPipe) transactionHistoryDto: TransactionHistoryDto,
+        @User() user: UserModel
+    ) {
+        return await this.transactionService.merchantTransactionReport(
+            transactionHistoryDto,
+            user
+        );
+    }
+
+    @Get("details/:id")
+    async fetchTransactionDetails(@Param("id", ParseIntPipe) id: number) {
+        return await this.transactionService.fetchTransactionDetails(id);
     }
 }

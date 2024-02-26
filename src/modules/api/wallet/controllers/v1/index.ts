@@ -1,7 +1,7 @@
-import { AuthGuard } from "@/modules/api/auth/guard";
+import { AuthGuard, EnabledAccountGuard } from "@/modules/api/auth/guard";
 import { User } from "@/modules/api/user";
 import {
-    FundAgentAbility,
+    FundSubAgentAbility,
     FundRequestAbility,
     FundWalletFromCommissionAbility,
     PayoutRequestAbility,
@@ -38,7 +38,7 @@ import {
 } from "../../dto";
 import { WalletService } from "../../services";
 
-@UseGuards(AuthGuard)
+@UseGuards(AuthGuard, EnabledAccountGuard)
 @Controller({
     path: "wallet",
 })
@@ -172,7 +172,7 @@ export class WalletController {
     //Fund sub agent
     @HttpCode(HttpStatus.OK)
     @UseGuards(AbilitiesGuard)
-    @CheckAbilities(new FundAgentAbility())
+    @CheckAbilities(new FundSubAgentAbility())
     @Post("merchant/fund-agent")
     async transferToOSubAgentWallet(
         @Body(ValidationPipe)
@@ -183,6 +183,8 @@ export class WalletController {
     }
 
     @Get("merchant/agent/fund/verify/:reference")
+    @UseGuards(AbilitiesGuard)
+    @CheckAbilities(new FundSubAgentAbility())
     async verifySubAgentFunding(
         @Param(ValidationPipe)
         paymentReferenceDto: PaymentReferenceDto,
@@ -211,7 +213,7 @@ export class WalletController {
     @HttpCode(HttpStatus.OK)
     @Post("merchant/agent/authorize-fund-request")
     @UseGuards(AbilitiesGuard)
-    @CheckAbilities(new FundAgentAbility())
+    @CheckAbilities(new FundSubAgentAbility())
     async authorizeFundRequest(
         @Body(ValidationPipe) authorizeFundRequestDto: AuthorizeFundRequestDto,
         @User() user: UserModel
@@ -249,6 +251,8 @@ export class WalletController {
     }
 
     @Get("payout/verify/:reference")
+    @UseGuards(AbilitiesGuard)
+    @CheckAbilities(new PayoutRequestAbility())
     async verifyPayoutRequest(
         @Param(ValidationPipe)
         paymentReferenceDto: PaymentReferenceDto,

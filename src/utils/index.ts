@@ -1,7 +1,8 @@
 import { customAlphabet, urlAlphabet } from "nanoid";
 import { TransactionIdOption } from "./interfaces";
 import { AES } from "crypto-js";
-import { encryptSecret } from "@/config";
+import { DEFAULT_CAPPING_MULTIPLIER, encryptSecret } from "@/config";
+import slugify from "slugify";
 
 export * from "./api-response-util";
 export * from "./interfaces";
@@ -44,10 +45,34 @@ export const generateId = (options: TransactionIdOption): string => {
 };
 
 export const formatName = (name: string) => {
-    const formatted = name.trim();
+    const formatted = name.trim().toLowerCase();
     return `${formatted.charAt(0).toUpperCase()}${formatted.slice(1)}`;
 };
 
 export const encrypt = (data: any) => {
     return AES.encrypt(JSON.stringify(data), encryptSecret).toString();
 };
+
+export const computeCap = (commission: number) => {
+    return commission * DEFAULT_CAPPING_MULTIPLIER;
+};
+
+export const generateSlug = (input: string) => {
+    const options = {
+        strict: true,
+        lower: true,
+    };
+    return slugify(input, options);
+};
+
+export function groupBy<TData extends Record<string, any>>(
+    key: string,
+    data: TData[]
+): TData[][] {
+    const list = data.reduce((hash, obj) => {
+        hash[obj[key]] = (hash[obj[key]] || []).concat(obj);
+        return hash;
+    }, {});
+
+    return Object.values(list);
+}

@@ -6,6 +6,7 @@ import {
     IsArray,
     IsBase64,
     IsBooleanString,
+    IsDateString,
     IsEmail,
     IsEnum,
     IsInt,
@@ -19,6 +20,7 @@ import {
     Max,
     ValidateNested,
 } from "class-validator";
+import { BillServiceSlug } from "../interfaces";
 
 export class GetUserByIdentifierDto {
     @IsString()
@@ -87,7 +89,7 @@ export class BillServiceCommissionOptions {
     @IsString()
     billServiceSlug: string;
 
-    @IsNumber()
+    @IsNumber({ maxDecimalPlaces: 1 })
     percentage: number;
 
     @IsOptional()
@@ -146,6 +148,8 @@ export class ListMerchantAgentsDto {
     searchName: string;
 }
 
+export class ListAdminUsers extends ListMerchantAgentsDto {}
+
 export class FetchMerchantAgentsDto {
     @IsOptional()
     @IsBooleanString()
@@ -200,4 +204,97 @@ export class CreateKycDto {
         message: "Identification image file must be a valid base64 plain text",
     })
     identificationMeansImageFile: string;
+}
+
+export enum AuthorizeAgentUpgradeType {
+    APPROVE = "APPROVE",
+    DECLINE = "DECLINE",
+}
+
+export class AgentUpgradeBillServiceCommissionOptions {
+    @IsEnum(BillServiceSlug)
+    billServiceSlug: BillServiceSlug;
+
+    @IsNumber({ maxDecimalPlaces: 1 })
+    percentage: number;
+}
+
+export class AuthorizeAgentToMerchantUpgradeAgentDto {
+    @IsEnum(AuthorizeAgentUpgradeType)
+    authorizeType: AuthorizeAgentUpgradeType;
+
+    @IsOptional()
+    @ValidateNested({ each: true })
+    @Type(() => AgentUpgradeBillServiceCommissionOptions)
+    @ArrayMinSize(1)
+    @IsArray()
+    billServiceCommissions: AgentUpgradeBillServiceCommissionOptions[];
+}
+export class FetchAllMerchantsDto {
+    @IsOptional()
+    @IsBooleanString()
+    pagination: string;
+
+    @IsOptional()
+    @IsNumberString()
+    page: number;
+
+    @IsOptional()
+    @IsNumberString()
+    limit: number;
+}
+
+export class CountAgentsCreatedDto {
+    @IsDateString()
+    date: string;
+}
+
+export class CreateUserDto {
+    @IsString()
+    firstName: string;
+
+    @IsString()
+    lastName: string;
+
+    @IsEmail()
+    email: string;
+
+    @IsNotEmpty()
+    @IsString()
+    password: string;
+
+    @IsPhoneNumber("NG")
+    @Length(11, 11, {
+        message: "Phone number must be valid containing 11 digits",
+    })
+    phone: string;
+
+    @IsInt()
+    roleId: number;
+}
+
+export class EditAgentDto {
+    @IsOptional()
+    @IsString()
+    firstName: string;
+
+    @IsOptional()
+    @IsString()
+    lastName: string;
+
+    @IsOptional()
+    @IsPhoneNumber("NG")
+    @Length(11, 11, {
+        message: "Phone number must be valid containing 11 digits",
+    })
+    phone: string;
+}
+
+export enum EnableOrDisableUserEnum {
+    ENABLE = "ENABLE",
+    DISABLE = "DISABLE",
+}
+export class EnableOrDisableUserDto {
+    @IsEnum(EnableOrDisableUserEnum)
+    actionType: EnableOrDisableUserEnum;
 }

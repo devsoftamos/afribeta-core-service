@@ -4,6 +4,7 @@ import { EmailModule } from "./email";
 import { PrismaModule } from "./prisma";
 import { SmsModule } from "./sms";
 import { UploadModule } from "./upload";
+import { IdentityVerificationModule } from "./identityVerification";
 
 @Module({
     imports: [
@@ -12,6 +13,7 @@ import { UploadModule } from "./upload";
         PrismaModule,
         AbilityModule,
         UploadModule,
+        IdentityVerificationModule,
     ],
 })
 export class CoreModule {}

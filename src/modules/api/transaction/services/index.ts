@@ -1,11 +1,7 @@
-import { InsufficientPermissionException } from "@/modules/core/ability/errors";
-import { Action } from "@/modules/core/ability/interfaces";
-import { AbilityFactory } from "@/modules/core/ability/services";
 import { PrismaService } from "@/modules/core/prisma/services";
 import { PaystackService } from "@/modules/workflow/payment/providers/paystack/services";
 import { PaginationMeta } from "@/utils";
 import { ApiResponse, buildResponse } from "@/utils/api-response-util";
-import { ForbiddenError, subject } from "@casl/ability";
 import { forwardRef, HttpStatus, Inject, Injectable } from "@nestjs/common";
 import {
     Prisma,
@@ -13,26 +9,35 @@ import {
     UserType,
     TransactionStatus,
     TransactionType,
+    WalletFundTransactionFlow,
+    PaymentStatus,
 } from "@prisma/client";
 import { UserNotFoundException } from "../../user";
 import {
+    AdminTransactionHistoryDto,
+    FetchRecommendedPayoutDto,
     MerchantTransactionHistoryDto,
+    QueryTransactionStatus,
     TransactionHistoryDto,
+    TransactionReportType,
     UpdatePayoutStatus,
     UpdatePayoutStatusDto,
     VerifyTransactionDto,
     VerifyTransactionProvider,
     ViewPayoutStatusDto,
 } from "../dtos";
-import { InvalidTransactionVerificationProvider } from "../errors";
+import {
+    InvalidTransactionVerificationProvider,
+    TransactionNotFoundException,
+} from "../errors";
+import { endOfMonth, startOfMonth } from "date-fns";
 
 @Injectable()
 export class TransactionService {
     constructor(
         private prisma: PrismaService,
         @Inject(forwardRef(() => PaystackService))
-        private paystackService: PaystackService,
-        private abilityFactory: AbilityFactory
+        private paystackService: PaystackService
     ) {}
 
     async getTransactionByPaymentReference(reference: string) {
@@ -135,11 +140,14 @@ export class TransactionService {
     async viewOwnAgentTransactionHistory(
         options: TransactionHistoryDto,
         user: User,
-        userId: number
+        subAgentId: number
     ) {
         const agent = await this.prisma.user.findUnique({
             where: {
-                id: userId,
+                id_createdById: {
+                    id: subAgentId,
+                    createdById: user.id,
+                },
             },
             select: {
                 createdById: true,
@@ -148,25 +156,12 @@ export class TransactionService {
 
         if (!agent) {
             throw new UserNotFoundException(
-                "Agent could not be found",
+                "Sub Agent could not be found",
                 HttpStatus.NOT_FOUND
             );
         }
 
-        try {
-            const ability = await this.abilityFactory.createForUser(user);
-            ForbiddenError.from(ability).throwUnlessCan(
-                Action.ViewAgent,
-                subject("User", { createdById: agent.createdById } as any)
-            );
-        } catch (error) {
-            throw new InsufficientPermissionException(
-                error.message,
-                HttpStatus.FORBIDDEN
-            );
-        }
-
-        return await this.transactionHistory(options, user, userId);
+        return await this.transactionHistory(options, user, subAgentId);
     }
 
     async merchantTransactionHistory(options: MerchantTransactionHistoryDto) {
@@ -309,7 +304,7 @@ export class TransactionService {
         });
 
         if (!transaction) {
-            throw new UserNotFoundException(
+            throw new TransactionNotFoundException(
                 "Payout request not found",
                 HttpStatus.NOT_FOUND
             );
@@ -379,11 +374,12 @@ export class TransactionService {
                 destinationBankAccountNumber: true,
                 totalAmount: true,
                 paymentStatus: true,
+                isPayoutRecommended: true,
             },
         });
 
         if (!transaction) {
-            throw new UserNotFoundException(
+            throw new TransactionNotFoundException(
                 "Payout request not found",
                 HttpStatus.NOT_FOUND
             );
@@ -392,6 +388,499 @@ export class TransactionService {
         return buildResponse({
             message: "Payout request details retrieved successfully",
             data: transaction,
+        });
+    }
+
+    async recommendPayout(id: number) {
+        const transaction = await this.prisma.transaction.findUnique({
+            where: {
+                id: id,
+            },
+        });
+
+        if (!transaction) {
+            throw new TransactionNotFoundException(
+                "Payout request not found",
+                HttpStatus.NOT_FOUND
+            );
+        }
+
+        await this.prisma.transaction.update({
+            where: {
+                id: id,
+            },
+            data: {
+                isPayoutRecommended: true,
+            },
+        });
+
+        return buildResponse({
+            message: "Payout recommended successfully",
+        });
+    }
+
+    async merchantTransactionReport(
+        options: TransactionHistoryDto,
+        user: User
+    ) {
+        const paginationMeta: Partial<PaginationMeta> = {};
+
+        const queryOptions: Prisma.TransactionFindManyArgs = {
+            orderBy: { createdAt: "desc" },
+            where: {
+                userId: user.id,
+            },
+            select: {
+                id: true,
+                amount: true,
+                shortDescription: true,
+                paymentStatus: true,
+                status: true,
+                transactionId: true,
+                paymentChannel: true,
+                merchantCommission: true,
+                commission: true,
+                flow: true,
+                type: true,
+                createdAt: true,
+            },
+        };
+
+        switch (options.type) {
+            case TransactionReportType.AIRTIME_PURCHASE: {
+                queryOptions.where.type =
+                    TransactionReportType.AIRTIME_PURCHASE;
+                break;
+            }
+            case TransactionReportType.CABLETV_BILL: {
+                queryOptions.where.type = TransactionReportType.CABLETV_BILL;
+                break;
+            }
+            case TransactionReportType.DATA_PURCHASE: {
+                queryOptions.where.type = TransactionReportType.DATA_PURCHASE;
+                break;
+            }
+            case TransactionReportType.ELECTRICITY_BILL: {
+                queryOptions.where.type =
+                    TransactionReportType.ELECTRICITY_BILL;
+                break;
+            }
+            case TransactionReportType.PAYOUT: {
+                queryOptions.where.type = TransactionReportType.PAYOUT;
+                break;
+            }
+        }
+
+        if (options.pagination) {
+            const page = +options.page || 1;
+            const limit = +options.limit || 10;
+            const offset = (page - 1) * limit;
+            queryOptions.skip = offset;
+            queryOptions.take = limit;
+            const count = await this.prisma.transaction.count({
+                where: queryOptions.where,
+            });
+            paginationMeta.totalCount = count;
+            paginationMeta.perPage = limit;
+        }
+
+        const transactions = await this.prisma.transaction.findMany(
+            queryOptions
+        );
+        if (options.pagination) {
+            paginationMeta.pageCount = transactions.length;
+        }
+
+        return buildResponse({
+            message: "Merchant report retrieved successfully",
+            data: {
+                meta: paginationMeta,
+                records: transactions,
+            },
+        });
+    }
+
+    async adminRecentTransactions(options: TransactionHistoryDto) {
+        const paginationMeta: Partial<PaginationMeta> = {};
+
+        const queryOptions: Prisma.TransactionFindManyArgs = {
+            orderBy: { createdAt: "desc" },
+            where: {},
+            select: {
+                transactionId: true,
+                amount: true,
+                paymentChannel: true,
+                paymentStatus: true,
+                flow: true,
+                shortDescription: true,
+                createdAt: true,
+            },
+        };
+
+        if (options.pagination) {
+            const page = +options.page || 1;
+            const limit = +options.limit || 10;
+            const offset = (page - 1) * limit;
+            queryOptions.skip = offset;
+            queryOptions.take = limit;
+            const count = await this.prisma.transaction.count({
+                where: queryOptions.where,
+            });
+            paginationMeta.totalCount = count;
+            paginationMeta.perPage = limit;
+        }
+
+        const recentTransactions = await this.prisma.transaction.findMany(
+            queryOptions
+        );
+
+        if (options.pagination) {
+            paginationMeta.pageCount = recentTransactions.length;
+        }
+
+        return buildResponse({
+            message: "Recent transactions retrieved successfully",
+            data: {
+                meta: paginationMeta,
+                records: recentTransactions,
+            },
+        });
+    }
+
+    async getAllTransactions(options: AdminTransactionHistoryDto) {
+        const paginationMeta: Partial<PaginationMeta> = {};
+
+        const startDate = startOfMonth(new Date(options.date));
+        const endDate = endOfMonth(new Date(options.date));
+
+        const queryOptions: Prisma.TransactionFindManyArgs = {
+            orderBy: { createdAt: "desc" },
+            where: {},
+            select: {
+                id: true,
+                transactionId: true,
+                type: true,
+                amount: true,
+                paymentChannel: true,
+                status: true,
+                createdAt: true,
+                paymentStatus: true,
+            },
+        };
+
+        if (options.searchName) {
+            (queryOptions.where.paymentReference = {
+                search: options.searchName,
+            }),
+                (queryOptions.where.senderIdentifier = {
+                    search: options.searchName,
+                }),
+                (queryOptions.where.transactionId = {
+                    search: options.searchName,
+                });
+        }
+        if (options.date) {
+            queryOptions.where.createdAt = { gte: startDate, lte: endDate };
+        }
+
+        //filter bu status
+        if (options.status) {
+            switch (options.status) {
+                case QueryTransactionStatus.SUCCESS: {
+                    queryOptions.where.status = TransactionStatus.SUCCESS;
+                    break;
+                }
+                case QueryTransactionStatus.PENDING: {
+                    queryOptions.where.status = TransactionStatus.PENDING;
+                    break;
+                }
+                case QueryTransactionStatus.FAILED: {
+                    queryOptions.where.status = TransactionStatus.FAILED;
+                    break;
+                }
+                case QueryTransactionStatus.REFUNDED: {
+                    queryOptions.where.paymentStatus = PaymentStatus.REFUNDED;
+                    break;
+                }
+
+                default:
+                    break;
+            }
+        }
+
+        if (options.pagination) {
+            const page = +options.page || 1;
+            const limit = +options.limit || 10;
+            const offset = (page - 1) * limit;
+            queryOptions.skip = offset;
+            queryOptions.take = limit;
+            const count = await this.prisma.transaction.count({
+                where: queryOptions.where,
+            });
+            paginationMeta.totalCount = count;
+            paginationMeta.perPage = limit;
+            paginationMeta.page = page;
+        }
+
+        const transactions = await this.prisma.transaction.findMany(
+            queryOptions
+        );
+
+        if (options.pagination) {
+            paginationMeta.pageCount = transactions.length;
+        }
+
+        return buildResponse({
+            message: "Transactions retrieved successfully",
+            data: {
+                meta: paginationMeta,
+                records: transactions,
+            },
+        });
+    }
+
+    async adminTransactionReport(options: TransactionHistoryDto) {
+        const paginationMeta: Partial<PaginationMeta> = {};
+
+        const queryOptions: Prisma.TransactionFindManyArgs = {
+            orderBy: { createdAt: "desc" },
+            where: {},
+            select: {
+                id: true,
+                amount: true,
+                shortDescription: true,
+                paymentStatus: true,
+                status: true,
+                transactionId: true,
+                paymentChannel: true,
+                merchantCommission: true,
+                commission: true,
+                flow: true,
+                type: true,
+                createdAt: true,
+                companyCommission: true,
+            },
+        };
+
+        switch (options.type) {
+            case TransactionReportType.AIRTIME_PURCHASE: {
+                queryOptions.where.type =
+                    TransactionReportType.AIRTIME_PURCHASE;
+                break;
+            }
+            case TransactionReportType.CABLETV_BILL: {
+                queryOptions.where.type = TransactionReportType.CABLETV_BILL;
+                break;
+            }
+            case TransactionReportType.DATA_PURCHASE: {
+                queryOptions.where.type = TransactionReportType.DATA_PURCHASE;
+                break;
+            }
+            case TransactionReportType.ELECTRICITY_BILL: {
+                queryOptions.where.type =
+                    TransactionReportType.ELECTRICITY_BILL;
+                break;
+            }
+            case TransactionReportType.PAYOUT: {
+                queryOptions.where.type = TransactionReportType.PAYOUT;
+                break;
+            }
+            case TransactionReportType.COMMISSION: {
+                queryOptions.where.walletFundTransactionFlow = {
+                    in: [
+                        WalletFundTransactionFlow.COMMISSION_BALANCE_TO_MAIN_BALANCE,
+                        WalletFundTransactionFlow.FROM_PAID_COMMISSION,
+                    ],
+                };
+            }
+        }
+
+        if (options.pagination) {
+            const page = +options.page || 1;
+            const limit = +options.limit || 10;
+            const offset = (page - 1) * limit;
+            queryOptions.skip = offset;
+            queryOptions.take = limit;
+            const count = await this.prisma.transaction.count({
+                where: queryOptions.where,
+            });
+            paginationMeta.totalCount = count;
+            paginationMeta.perPage = limit;
+            paginationMeta.page = page;
+        }
+
+        const transactions = await this.prisma.transaction.findMany(
+            queryOptions
+        );
+        if (options.pagination) {
+            paginationMeta.pageCount = transactions.length;
+        }
+
+        return buildResponse({
+            message: "Admin report retrieved successfully",
+            data: {
+                meta: paginationMeta,
+                records: transactions,
+            },
+        });
+    }
+
+    async fetchRecommendedPayouts(options: FetchRecommendedPayoutDto) {
+        const paginationMeta: Partial<PaginationMeta> = {};
+        const queryOptions: Prisma.TransactionFindManyArgs = {
+            where: {
+                type: TransactionType.PAYOUT,
+                isPayoutRecommended: true,
+            },
+            select: {
+                id: true,
+                amount: true,
+                destinationBankName: true,
+                destinationBankAccountNumber: true,
+                totalAmount: true,
+                paymentStatus: true,
+                isPayoutRecommended: true,
+            },
+        };
+
+        if (options.pagination) {
+            const page = +options.page || 1;
+            const limit = +options.limit || 10;
+            const offset = (page - 1) * limit;
+            queryOptions.skip = offset;
+            queryOptions.take = limit;
+            const count = await this.prisma.transaction.count({
+                where: queryOptions.where,
+            });
+            paginationMeta.totalCount = count;
+            paginationMeta.perPage = limit;
+        }
+
+        const transaction = await this.prisma.transaction.findMany(
+            queryOptions
+        );
+
+        if (options.pagination) {
+            paginationMeta.pageCount = transaction.length;
+        }
+
+        return buildResponse({
+            message: "Recommended payouts retrieved successfully",
+            data: {
+                meta: paginationMeta,
+                records: transaction,
+            },
+        });
+    }
+
+    async fetchTransactionDetails(id: number) {
+        const transaction = await this.prisma.transaction.findUnique({
+            where: {
+                id: id,
+            },
+            select: {
+                type: true,
+                shortDescription: true,
+                senderIdentifier: true,
+                amount: true,
+                billServiceSlug: true,
+                packageType: true,
+                token: true,
+                receiverIdentifier: true,
+                destinationBankName: true,
+                destinationBankAccountName: true,
+                destinationBankAccountNumber: true,
+                user: {
+                    select: {
+                        wallet: {
+                            select: {
+                                walletNumber: true,
+                            },
+                        },
+                    },
+                },
+            },
+        });
+
+        if (!transaction) {
+            throw new TransactionNotFoundException(
+                "Transaction not found",
+                HttpStatus.NOT_FOUND
+            );
+        }
+
+        let response;
+
+        switch (transaction.type) {
+            case TransactionType.AIRTIME_PURCHASE: {
+                response = {
+                    type: transaction.type,
+                    amount: transaction.amount,
+                    billService: transaction.billServiceSlug,
+                    serviceCharge: transaction.shortDescription,
+                    phone: transaction.senderIdentifier,
+                };
+                break;
+            }
+            case TransactionType.DATA_PURCHASE: {
+                response = {
+                    type: transaction.type,
+                    serviceCharge: transaction.shortDescription,
+                    billService: transaction.billServiceSlug,
+                    data: transaction.packageType,
+                    phone: transaction.senderIdentifier,
+                    amount: transaction.amount,
+                };
+                break;
+            }
+            case TransactionType.ELECTRICITY_BILL: {
+                response = {
+                    type: transaction.type,
+                    serviceCharge: transaction.shortDescription,
+                    billService: transaction.billServiceSlug,
+                    meterNumber: transaction.senderIdentifier,
+                    amount: transaction.amount,
+                    token: transaction.token,
+                    package: transaction.packageType,
+                };
+                break;
+            }
+            case TransactionType.CABLETV_BILL: {
+                response = {
+                    type: transaction.type,
+                    serviceCharge: transaction.shortDescription,
+                    billService: transaction.billServiceSlug,
+                    amount: transaction.amount,
+                    phone: transaction.receiverIdentifier,
+                    package: transaction.packageType,
+                    smartCardNo: transaction.senderIdentifier,
+                };
+                break;
+            }
+            case TransactionType.PAYOUT: {
+                response = {
+                    type: transaction.type,
+                    serviceCharge: transaction.shortDescription,
+                    bankName: transaction.destinationBankName,
+                    accountNumber: transaction.destinationBankAccountNumber,
+                    accountName: transaction.destinationBankAccountName,
+                    amount: transaction.amount,
+                };
+                break;
+            }
+            case TransactionType.WALLET_FUND: {
+                response = {
+                    type: transaction.type,
+                    serviceCharge: transaction.shortDescription,
+                    amount: transaction.amount,
+                    walletNumber: transaction.user.wallet.walletNumber,
+                };
+            }
+        }
+
+        return buildResponse({
+            message: "transaction details fetched successfully",
+            data: response,
         });
     }
 }

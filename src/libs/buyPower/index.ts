@@ -433,9 +433,17 @@ export class BuyPower {
                 method: "GET",
             };
 
-            const resp = await this.axios<
-                BuyPowerResponse<WalletBalanceResponseData>
-            >(requestOptions);
+            const resp = await this.axios<WalletBalanceResponseData>(
+                requestOptions
+            );
+
+            if (!resp.data) {
+                const error = new BuyPowerError(
+                    "Failed to retrieve wallet balance"
+                );
+                error.status = 500;
+                throw error;
+            }
 
             return {
                 status: true,

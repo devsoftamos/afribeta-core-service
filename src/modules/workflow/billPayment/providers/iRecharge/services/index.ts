@@ -46,6 +46,7 @@ import {
     IRechargeVendDataException,
     IRechargeVendInternetException,
     IRechargeVendPowerException,
+    IRechargeWalletException,
 } from "../errors";
 
 @Injectable()
@@ -176,11 +177,14 @@ export class IRechargeWorkflowService implements BillPaymentWorkflow {
 
             return {
                 accessToken: getMeterInfo.access_token,
+                meter: {
+                    minimumAmount: +getMeterInfo.customer.minimumAmount,
+                    maximumAmount: null,
+                    meterAccountType: null,
+                },
                 customer: {
                     address: getMeterInfo.customer.address,
                     name: getMeterInfo.customer.name,
-                    minimumAmount: +getMeterInfo.customer.minimumAmount,
-                    maximumAmount: null,
                 },
             };
         } catch (error) {
@@ -231,6 +235,7 @@ export class IRechargeWorkflowService implements BillPaymentWorkflow {
             return {
                 meterToken: vendPowerResp.meter_token,
                 units: vendPowerResp.units,
+                receiptNO: vendPowerResp.ref,
             };
         } catch (error) {
             logger.error(error);
@@ -342,6 +347,7 @@ export class IRechargeWorkflowService implements BillPaymentWorkflow {
             });
             return {
                 networkProviderReference: response.ref,
+                receiptNO: response.ref,
             };
         } catch (error) {
             logger.error(error);
@@ -434,6 +440,7 @@ export class IRechargeWorkflowService implements BillPaymentWorkflow {
                 networkProviderReference: resp.ref,
                 amount: resp.amount,
                 phone: resp.receiver,
+                receiptNO: resp.ref,
             };
         } catch (error) {
             logger.error(error);
@@ -558,6 +565,7 @@ export class IRechargeWorkflowService implements BillPaymentWorkflow {
                 networkProviderReference: response.ref,
                 amount: response.amount,
                 receiver: response.receiver,
+                receiptNO: response.ref,
             };
         } catch (error) {
             logger.error(error);
@@ -819,6 +827,7 @@ export class IRechargeWorkflowService implements BillPaymentWorkflow {
             });
             return {
                 vendRef: response.ref,
+                receiptNO: response.ref,
             };
         } catch (error) {
             logger.error(error);
@@ -838,6 +847,18 @@ export class IRechargeWorkflowService implements BillPaymentWorkflow {
                     );
                 }
             }
+        }
+    }
+
+    async getWalletBalance(): Promise<number> {
+        try {
+            const { wallet_balance } = await this.iRecharge.getWalletBalance();
+            return +wallet_balance;
+        } catch (error) {
+            throw new IRechargeWalletException(
+                error.message ?? "Failed to retrieve wallet balance",
+                HttpStatus.SERVICE_UNAVAILABLE
+            );
         }
     }
 }

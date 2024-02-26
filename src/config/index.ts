@@ -12,6 +12,7 @@ import { FSDH360BankOptions } from "@/libs/fsdh360Bank/interfaces";
 import { PolarisBankOptions } from "@/libs/polarisBank/interfaces";
 import { Termii } from "@/libs/sms";
 import { IBuyPower } from "@/libs/buyPower";
+import { IkejaElectricOptions } from "@calculusky/ikeja-electric-sdk";
 
 export * from "./constants";
 
@@ -135,22 +136,6 @@ const runtimeEnvironment: RequiredEnvironment[] = [
         type: RequiredEnvironmentTypes.String,
     },
     {
-        name: "AWS_ACCESS_KEY_ID",
-        type: RequiredEnvironmentTypes.String,
-    },
-    {
-        name: "AWS_SECRET_ACCESS_KEY",
-        type: RequiredEnvironmentTypes.String,
-    },
-    {
-        name: "AWS_REGION",
-        type: RequiredEnvironmentTypes.String,
-    },
-    {
-        name: "AWS_S3_BUCKET",
-        type: RequiredEnvironmentTypes.String,
-    },
-    {
         name: "BUYPOWER_BASE_URL",
         type: RequiredEnvironmentTypes.String,
     },
@@ -186,19 +171,67 @@ const runtimeEnvironment: RequiredEnvironment[] = [
         name: "REDIS_PASSWORD",
         type: RequiredEnvironmentTypes.String,
     },
-
-    // {
-    //     name: "POLARIS_API_KEY",
-    //     type: RequiredEnvironmentTypes.String,
-    // },
-    // {
-    //     name: "POLARIS_CLIENT_SECRET",
-    //     type: RequiredEnvironmentTypes.String,
-    // },
-    // {
-    //     name: "POLARIS_BASE_URL",
-    //     type: RequiredEnvironmentTypes.String,
-    // },
+    {
+        name: "KYC_UPLOAD_DIR",
+        type: RequiredEnvironmentTypes.String,
+    },
+    {
+        name: "OCEAN_SPACE_ACCESS_KEY",
+        type: RequiredEnvironmentTypes.String,
+    },
+    {
+        name: "OCEAN_SPACE_SECRET_KEY",
+        type: RequiredEnvironmentTypes.String,
+    },
+    {
+        name: "OCEAN_SPACE_REGION",
+        type: RequiredEnvironmentTypes.String,
+    },
+    {
+        name: "OCEAN_SPACE_BUCKET_NAME",
+        type: RequiredEnvironmentTypes.String,
+    },
+    {
+        name: "OCEAN_SPACE_UPLOAD_ENDPOINT",
+        type: RequiredEnvironmentTypes.String,
+    },
+    //ikeja electric
+    {
+        name: "IKEJA_ELECTRIC_APPID",
+        type: RequiredEnvironmentTypes.String,
+    },
+    {
+        name: "IKEJA_ELECTRIC_CIS_PASSWORD",
+        type: RequiredEnvironmentTypes.String,
+    },
+    {
+        name: "IKEJA_ELECTRIC_SFTP_PASSWORD",
+        type: RequiredEnvironmentTypes.String,
+    },
+    {
+        name: "IKEJA_ELECTRIC_SFTP_USERNAME",
+        type: RequiredEnvironmentTypes.String,
+    },
+    {
+        name: "IKEJA_ELECTRIC_CIS_HOST",
+        type: RequiredEnvironmentTypes.String,
+    },
+    {
+        name: "IKEJA_ELECTRIC_CIS_PORT",
+        type: RequiredEnvironmentTypes.Number,
+    },
+    {
+        name: "IKEJA_ELECTRIC_SFTP_HOST",
+        type: RequiredEnvironmentTypes.String,
+    },
+    {
+        name: "IKEJA_ELECTRIC_SFTP_PORT",
+        type: RequiredEnvironmentTypes.Number,
+    },
+    {
+        name: "ENVIRONMENT",
+        type: RequiredEnvironmentTypes.String,
+    },
 ];
 
 validate(runtimeEnvironment);
@@ -237,11 +270,8 @@ export const paystackConfiguration: PaystackOptions = {
     secretKey: process.env.PAYSTACK_SECRET_KEY,
 };
 
-//Error stack
-export const showStack = process.env.STACK_MODE == "show_error_stack";
-
-//manual env
-export const manualEnvironment = process.env.MANUAL_ENVIRONMENT;
+//env
+export const isDevEnvironment = process.env.ENVIRONMENT == "development";
 
 //IRecharge
 export const iRechargeOptions: IRechargeOptions = {
@@ -273,24 +303,11 @@ export const fsdh360BankOptions: FSDH360BankOptions = {
     clientId: process.env.FSDH360_CLIENT_ID,
     clientSecret: process.env.FSDH360_CLIENT_SECRET,
     merchantAccountNumber: process.env.FSDH360_MERCHANT_ACCOUNT_NUMBER,
+    identityUrl: process.env.FSDH360_IDENTITY_BASE_URL,
 };
+
 export const fsdh360ApiKeyAuth = process.env.FSDH360_API_KEY_AUTH;
 export const fsdh360Ips = process.env.FSDH360_IPS.split(",");
-
-//AWS
-export interface AWSConfiguration {
-    accessKeyId: string;
-    secretAccessKey: string;
-    region: string;
-    s3Bucket: string;
-}
-
-export const awsConfiguration: AWSConfiguration = {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-    region: process.env.AWS_REGION,
-    s3Bucket: process.env.AWS_S3_BUCKET,
-};
 
 //polaris bank
 export const polarisBankOptions: PolarisBankOptions = {
@@ -329,3 +346,65 @@ export const redisConfiguration: RedisConfig = {
 export const redisUrl = `redis://${redisConfiguration.user}:${redisConfiguration.password}@${redisConfiguration.host}:${redisConfiguration.port}`;
 
 export const frontendDevOrigin = [/^http:\/\/localhost:\d+$/];
+
+//payout charge
+export const PAYOUT_PERCENT_CHARGE = process.env.PAYOUT_PERCENT_CHARGE
+    ? parseFloat(process.env.PAYOUT_PERCENT_CHARGE)
+    : 2.5;
+
+//commission config
+export const AGENT_MD_METER_COMMISSION_CAP_AMOUNT = process.env
+    .AGENT_MD_METER_COMMISSION_CAP_AMOUNT
+    ? parseInt(process.env.AGENT_MD_METER_COMMISSION_CAP_AMOUNT)
+    : 1000;
+export const AGENT_MD_METER_COMMISSION_PERCENT = process.env
+    .AGENT_MD_METER_COMMISSION_PERCENT
+    ? parseFloat(process.env.AGENT_MD_METER_COMMISSION_PERCENT)
+    : 0.25;
+export const SUBAGENT_MD_METER_COMMISSION_PERCENT = process.env
+    .SUBAGENT_MD_METER_COMMISSION_PERCENT
+    ? parseFloat(process.env.SUBAGENT_MD_METER_COMMISSION_PERCENT)
+    : 0.125;
+export const DEFAULT_CAPPING_MULTIPLIER = process.env.DEFAULT_CAPPING_MULTIPLIER
+    ? parseInt(process.env.DEFAULT_CAPPING_MULTIPLIER)
+    : 1000;
+
+interface StorageDirConfig {
+    kycInfo: string;
+}
+
+export const storageDirConfig: StorageDirConfig = {
+    kycInfo: process.env.KYC_UPLOAD_DIR,
+};
+
+//ikeja electric
+export const ieConfig: IkejaElectricOptions = {
+    appId: process.env.IKEJA_ELECTRIC_APPID,
+    cisPassword: process.env.IKEJA_ELECTRIC_CIS_PASSWORD,
+    sftpPassword: process.env.IKEJA_ELECTRIC_SFTP_PASSWORD,
+    sftpUsername: process.env.IKEJA_ELECTRIC_SFTP_USERNAME,
+    cisHost: process.env.IKEJA_ELECTRIC_CIS_HOST,
+    cisPort: +process.env.IKEJA_ELECTRIC_CIS_PORT,
+    sftpHost: process.env.IKEJA_ELECTRIC_SFTP_HOST,
+    sftpPort: +process.env.IKEJA_ELECTRIC_SFTP_PORT,
+    config: {
+        mode: isDevEnvironment ? "development" : "production",
+    },
+};
+
+//Digital Ocean
+export interface OceanSpaceConfiguration {
+    accessKey: string;
+    secretKey: string;
+    region: string;
+    bucketName: string;
+    endpoint: string;
+}
+
+export const oceanSpaceConfiguration: OceanSpaceConfiguration = {
+    accessKey: process.env.OCEAN_SPACE_ACCESS_KEY,
+    secretKey: process.env.OCEAN_SPACE_SECRET_KEY,
+    region: process.env.OCEAN_SPACE_REGION,
+    bucketName: process.env.OCEAN_SPACE_BUCKET_NAME,
+    endpoint: process.env.OCEAN_SPACE_UPLOAD_ENDPOINT,
+};

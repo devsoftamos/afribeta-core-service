@@ -39,3 +39,15 @@ export class PasswordResetCodeExpiredException extends HttpException {
 export class PrismaNetworkException extends HttpException {
     name = "PrismaNetworkException";
 }
+
+export class AuthGenericException extends HttpException {
+    name = "AuthGenericException";
+}
+
+export class UserAccountDisabledException extends HttpException {
+    name = "UserAccountDisabledException";
+}
+
+export class VerificationCodeGenericException extends HttpException {
+    name = "VerificationCodeGenericException";
+}

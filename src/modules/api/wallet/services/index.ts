@@ -8,7 +8,6 @@ import {
     PaymentChannel,
     PaymentStatus,
     Prisma,
-    Transaction,
     TransactionFlow,
     TransactionStatus,
     TransactionType,
@@ -16,6 +15,7 @@ import {
     UserType,
     VirtualAccountProvider,
     WalletFundTransactionFlow,
+    WalletSetupStatus,
 } from "@prisma/client";
 import { UserNotFoundException } from "@/modules/api/user";
 import { UserService } from "@/modules/api/user/services";
@@ -58,7 +58,9 @@ import {
     VerifyWalletToBankTransferTransaction,
     VerifyWalletToWalletTransferTransaction,
     VerifyWalletTransaction,
+    WalletBalance,
     WalletFundProvider,
+    WalletToBankTransferStatus,
 } from "../interfaces";
 import logger from "moment-logger";
 import {
@@ -83,17 +85,18 @@ import { ProvidusService } from "@/modules/workflow/payment/providers/providus/s
 import { FSDH360BankService } from "@/modules/workflow/payment/providers/fsdh360Bank/services";
 import { SquadGTBankService } from "@/modules/workflow/payment/providers/squadGTBank/services";
 import { CreateVirtualAccountResponse } from "@/modules/workflow/payment/interfaces";
-import { AbilityFactory } from "@/modules/core/ability/services";
-import { ForbiddenError, subject } from "@casl/ability";
-import { Action } from "@/modules/core/ability/interfaces";
-import { InsufficientPermissionException } from "@/modules/core/ability/errors";
+
 import {
     InvalidNotificationTypeException,
     NotificationNotFoundException,
     NotificationGenericException,
 } from "../../notification";
 import { BankAccountNotFoundException } from "../../bank";
-
+import { IdentityVerificationService } from "@/modules/core/identityVerification/services";
+import { IRechargeWorkflowService } from "@/modules/workflow/billPayment/providers/iRecharge/services";
+import { BuyPowerWorkflowService } from "@/modules/workflow/billPayment/providers/buyPower/services";
+import { IkejaElectricWorkflowService } from "@/modules/workflow/billPayment/providers/ikejaElectric/services";
+import { BillProviderSlugForPower } from "../../bill/interfaces";
 @Injectable()
 export class WalletService {
     constructor(
@@ -103,7 +106,10 @@ export class WalletService {
         private providusService: ProvidusService,
         private fsdh360BankService: FSDH360BankService,
         private squadGTBankService: SquadGTBankService,
-        private abilityFactory: AbilityFactory
+        private identityVerification: IdentityVerificationService,
+        private iRechargeWorkflowService: IRechargeWorkflowService,
+        private buyPowerWorkflowService: BuyPowerWorkflowService,
+        private ieWorkflowService: IkejaElectricWorkflowService
     ) {}
 
     async processWebhookWalletAndVirtualAccountCreation(
@@ -158,6 +164,7 @@ export class WalletService {
                     },
                     data: {
                         isWalletCreated: true,
+                        walletSetupStatus: WalletSetupStatus.ACTIVE,
                     },
                 });
             });
@@ -188,6 +195,12 @@ export class WalletService {
             );
         }
 
+        await this.identityVerification.verifyUserBVN({
+            bvn: options.bvn,
+            firstName: user.firstName,
+            lastName: user.lastName,
+        });
+
         const paystackDynamicVirtualAccountCreationOptions: AssignDedicatedVirtualAccountWithValidationOptions =
             {
                 bvn: options.bvn,
@@ -205,9 +218,19 @@ export class WalletService {
         await this.paystackService.assignDedicatedValidatedVirtualAccount(
             paystackDynamicVirtualAccountCreationOptions
         );
+
+        await this.prisma.user.update({
+            where: {
+                id: user.id,
+            },
+            data: {
+                walletSetupStatus: WalletSetupStatus.PENDING,
+            },
+        });
+
         return buildResponse({
             message:
-                "Your Afribeta wallet would be created after we have successfully verified your bank details",
+                "Verification successful. Your wallet would be created shortly",
         });
     }
 
@@ -347,7 +370,8 @@ export class WalletService {
         });
     }
 
-    //Withdraw fund from wallet to bank account
+    //send money from wallet to a bank
+
     async initializeWalletWithdrawal(
         options: InitializeWithdrawalDto,
         user: User
@@ -418,6 +442,14 @@ export class WalletService {
     async processWalletWithdrawal(options: ProcessWalletWithdrawalOptions) {
         const transaction = await this.prisma.transaction.findUnique({
             where: { paymentReference: options.paymentReference },
+            select: {
+                id: true,
+                userId: true,
+                status: true,
+                amount: true,
+                serviceCharge: true,
+                transactionId: true,
+            },
         });
         if (!transaction) {
             throw new TransactionNotFoundException(
@@ -426,10 +458,7 @@ export class WalletService {
             );
         }
 
-        if (
-            transaction.status == TransactionStatus.SUCCESS ||
-            transaction.status == TransactionStatus.FAILED
-        ) {
+        if (transaction.status !== TransactionStatus.PENDING) {
             throw new DuplicateWalletWithdrawalTransaction(
                 "Wallet withdrawal transaction already completed",
                 HttpStatus.BAD_REQUEST
@@ -447,26 +476,45 @@ export class WalletService {
             );
         }
 
-        switch (options.paymentStatus) {
-            case PaymentStatus.SUCCESS: {
+        switch (options.transferToBankStatus) {
+            case WalletToBankTransferStatus.SUCCESS: {
                 await this.updateWalletWithdrawalSuccessRecords(
-                    transaction,
+                    transaction.id,
                     options.transferCode
                 );
                 break;
             }
-            case PaymentStatus.FAILED: {
+            case WalletToBankTransferStatus.FAILED: {
                 const totalAmount =
                     transaction.amount + transaction.serviceCharge;
                 await this.prisma.$transaction(async (tx) => {
                     await tx.transaction.update({
                         where: { id: transaction.id },
                         data: {
-                            paymentStatus: PaymentStatus.FAILED,
+                            paymentStatus: PaymentStatus.REFUNDED,
                             status: TransactionStatus.FAILED,
                             serviceTransactionCode: options.transferCode,
                         },
                     });
+                    await tx.transaction.create({
+                        data: {
+                            userId: transaction.userId,
+                            amount: totalAmount,
+                            totalAmount: totalAmount,
+                            flow: TransactionFlow.IN,
+                            status: TransactionStatus.SUCCESS,
+                            transactionId: transaction.transactionId,
+                            type: TransactionType.WALLET_FUND,
+                            walletFundTransactionFlow:
+                                WalletFundTransactionFlow.FROM_FAILED_TRANSACTION,
+                            paymentStatus: PaymentStatus.SUCCESS,
+                            paymentChannel: PaymentChannel.SYSTEM,
+                            paymentReference: generateId({ type: "reference" }),
+                            shortDescription:
+                                TransactionShortDescription.BANK_TRANSFER_REFUND,
+                        },
+                    });
+
                     if (user.userType == UserType.CUSTOMER) {
                         await tx.wallet.update({
                             where: { userId: transaction.userId },
@@ -495,12 +543,12 @@ export class WalletService {
     }
 
     async updateWalletWithdrawalSuccessRecords(
-        transaction: Transaction,
+        transactionId: number,
         transferCode?: string
     ) {
         await this.prisma.$transaction(async (tx) => {
             await tx.transaction.update({
-                where: { id: transaction.id },
+                where: { id: transactionId },
                 data: {
                     status: TransactionStatus.SUCCESS,
                     serviceTransactionCode: transferCode,
@@ -685,6 +733,12 @@ export class WalletService {
         }
 
         const accountName = `${user.firstName} ${user.lastName}`;
+
+        await this.identityVerification.verifyUserBVN({
+            bvn: options.bvn,
+            firstName: user.firstName,
+            lastName: user.lastName,
+        });
 
         const providusAccountDetail = await this.providusService
             .createVirtualAccount({
@@ -1140,27 +1194,17 @@ export class WalletService {
     ): Promise<FundSubAgentHandlerResponse> {
         const agent = await this.prisma.user.findUnique({
             where: {
-                id: options.agentId,
+                id_createdById: {
+                    id: options.agentId,
+                    createdById: user.id,
+                },
             },
         });
 
         if (!agent) {
             throw new UserNotFoundException(
-                "Agent account not found",
+                "Sub Agent account not found",
                 HttpStatus.NOT_FOUND
-            );
-        }
-
-        try {
-            const ability = await this.abilityFactory.createForUser(user);
-            ForbiddenError.from(ability).throwUnlessCan(
-                Action.FundAgent,
-                subject("User", { createdById: agent.createdById } as any)
-            );
-        } catch (error) {
-            throw new InsufficientPermissionException(
-                error.message,
-                HttpStatus.FORBIDDEN
             );
         }
 
@@ -1702,6 +1746,63 @@ export class WalletService {
         return buildResponse({
             message: "Payout request transaction successfully verified",
             data: data,
+        });
+    }
+
+    async aggregateTotalWalletBalance(): Promise<WalletBalance> {
+        const result = await this.prisma.wallet.aggregate({
+            _sum: {
+                commissionBalance: true,
+                mainBalance: true,
+            },
+        });
+
+        return {
+            commissionBalance: result._sum.commissionBalance || 0,
+            mainBalance: result._sum.mainBalance || 0,
+        };
+    }
+
+    async getTotalWalletBalance() {
+        const retrieveWalletBalance = await this.aggregateTotalWalletBalance();
+
+        const openingBalance =
+            await this.prisma.walletOpeningBalance.findUnique({
+                where: {
+                    id: 1,
+                },
+                select: {
+                    main: true,
+                    commission: true,
+                },
+            });
+        return buildResponse({
+            message: "wallet balance overview retrieved successfully",
+            data: {
+                mainWalletBalance: retrieveWalletBalance.mainBalance,
+                mainCommissionBalance: retrieveWalletBalance.commissionBalance,
+                walletOpeningBalance: openingBalance.main || 0,
+                commissionOpeningBalance: openingBalance.commission || 0,
+            },
+        });
+    }
+
+    async getOrgWalletBalance() {
+        const [buyPowerBal, iRechargeBal, ieProvider] = await Promise.all([
+            this.buyPowerWorkflowService.getWalletBalance(),
+            this.iRechargeWorkflowService.getWalletBalance(),
+            this.prisma.billProvider.findUnique({
+                where: { slug: BillProviderSlugForPower.IKEJA_ELECTRIC },
+            }),
+        ]);
+
+        return buildResponse({
+            message: "wallet successfully retrieved",
+            data: {
+                buyPower: buyPowerBal,
+                iRecharge: iRechargeBal,
+                ikeja: ieProvider.walletBalance,
+            },
         });
     }
 }

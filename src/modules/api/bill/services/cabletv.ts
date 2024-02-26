@@ -43,6 +43,7 @@ import {
     CompleteBillPurchaseOptions,
     CompleteBillPurchaseUserOptions,
     ProcessBillPaymentOptions,
+    PurchaseInitializationHandlerOutput,
     VerifyPurchase,
 } from "../interfaces";
 import { FormatDataBundleNetworkOutput } from "../interfaces/data";
@@ -51,7 +52,6 @@ import { DB_TRANSACTION_TIMEOUT } from "@/config";
 import { BillService } from ".";
 import { BillEvent } from "../events";
 import {
-    CableTVPurchaseInitializationHandlerOutput,
     CompleteCableTVPurchaseOutput,
     CompleteCableTVPurchaseTransactionOptions,
     FormatCableTVNetworkInput,
@@ -308,11 +308,11 @@ export class CableTVBillService {
             );
         }
 
-        const response = (resp: CableTVPurchaseInitializationHandlerOutput) => {
+        const response = (resp: PurchaseInitializationHandlerOutput) => {
             return buildResponse({
                 message: "Cable TV purchase payment successfully initialized",
                 data: {
-                    amount: options.price + options.serviceCharge,
+                    amount: resp.totalAmount,
                     email: user.email,
                     reference: resp.paymentReference,
                 },
@@ -371,7 +371,7 @@ export class CableTVBillService {
 
     async handleCableTVPurchaseInitialization(
         options: BillPurchaseInitializationHandlerOptions<PurchaseTVDto>
-    ): Promise<CableTVPurchaseInitializationHandlerOutput> {
+    ): Promise<PurchaseInitializationHandlerOutput> {
         const paymentReference = generateId({ type: "reference" });
         const billPaymentReference = generateId({
             type: "numeric",
@@ -410,8 +410,22 @@ export class CableTVBillService {
                 serviceTransactionCode: purchaseOptions.tvCode,
                 receiverIdentifier: purchaseOptions.phone,
                 description: purchaseOptions.narration,
-                serviceCharge: options.purchaseOptions.serviceCharge,
+                merchantId: user.createdById,
             };
+
+        //handle service charge
+        const hasServiceCharge = this.billService.isServiceChargeApplicable({
+            billType: transactionCreateOptions.type,
+            serviceCharge: options.purchaseOptions.serviceCharge,
+            userType: user.userType,
+        });
+        if (hasServiceCharge) {
+            transactionCreateOptions.serviceCharge =
+                options.purchaseOptions.serviceCharge;
+
+            transactionCreateOptions.totalAmount =
+                options.purchaseOptions.price + purchaseOptions.serviceCharge;
+        }
 
         switch (billProvider.slug) {
             //iRecharge provider
@@ -449,6 +463,7 @@ export class CableTVBillService {
 
         return {
             paymentReference: paymentReference,
+            totalAmount: transactionCreateOptions.totalAmount,
         };
     }
 
@@ -483,7 +498,7 @@ export class CableTVBillService {
                 );
             }
 
-            if (transaction.paymentStatus == PaymentStatus.SUCCESS) {
+            if (transaction.paymentStatus !== PaymentStatus.PENDING) {
                 throw new DuplicateCableTVPurchaseException(
                     "Duplicate webhook cable tv purchase payment event",
                     HttpStatus.BAD_REQUEST
@@ -517,6 +532,9 @@ export class CableTVBillService {
             });
 
             if (!billProvider) {
+                this.billEvent.emit("bill-purchase-failure", {
+                    transactionId: transaction.id,
+                });
                 throw new BillProviderNotFoundException(
                     "Failed to complete cable tv purchase. Bill provider not found",
                     HttpStatus.NOT_FOUND
@@ -638,6 +656,7 @@ export class CableTVBillService {
                         paymentChannel: options.isWalletPayment
                             ? PaymentChannel.WALLET
                             : options.transaction.paymentChannel,
+                        billPaymentReceiptNO: vendCableTVResp?.receiptNO,
                     },
                 });
 
@@ -703,7 +722,7 @@ export class CableTVBillService {
             );
         }
 
-        if (wallet.mainBalance < transaction.amount) {
+        if (wallet.mainBalance < transaction.totalAmount) {
             this.billEvent.emit("payment-failure", {
                 transactionId: transaction.id,
             });
@@ -737,7 +756,7 @@ export class CableTVBillService {
         try {
             //charge wallet and update payment status
             await this.billService.walletChargeHandler({
-                amount: transaction.amount,
+                amount: transaction.totalAmount,
                 transactionId: transaction.id,
                 walletId: wallet.id,
             });

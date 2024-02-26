@@ -10,3 +10,7 @@ export class FSDH360BankAuthenticationError extends FSDH360BankError {
 export class FSDH360BankStaticVirtualAccountError extends FSDH360BankError {
     name = "FSDH360BankStaticVirtualAccountError";
 }
+
+export class FSDH360BankVerifyBvnError extends FSDH360BankError {
+    name = "FSDH360BankVerifyBvnError";
+}

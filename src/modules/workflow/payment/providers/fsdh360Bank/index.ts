@@ -16,6 +16,7 @@ import { FSDH360BankService } from "./services";
                     merchantAccountNumber:
                         fsdh360BankOptions.merchantAccountNumber,
                     tokenUrl: fsdh360BankOptions.tokenUrl,
+                    identityUrl: fsdh360BankOptions.identityUrl,
                 });
 
                 return new FSDH360BankService(fsdh360Bank);

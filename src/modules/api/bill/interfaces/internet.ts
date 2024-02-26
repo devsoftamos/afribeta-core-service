@@ -16,10 +16,6 @@ export interface FormatInternetBundleNetworkOutput {
     name: string;
 }
 
-export interface InternetPurchaseInitializationHandlerOutput {
-    paymentReference: string;
-}
-
 export interface CompleteInternetPurchaseTransactionOptions
     extends CompleteBillPurchaseTransactionOptions {
     billServiceSlug: string; //network provider

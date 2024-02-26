@@ -42,6 +42,12 @@ enum IdentificationMeans {
 enum KYC_STATUS {
   PENDING
   APPROVED
+  DECLINED
+}
+
+enum WalletSetupStatus {
+  PENDING
+  ACTIVE
 }
 
 model User {
@@ -63,19 +69,20 @@ model User {
   isMerchantUpgradable        Boolean                @default(false)
   merchantUpgradeStatus       MerchantUpgradeStatus?
   transactionPin              String?
-  roleId                      Int
+  roleId                      Int?
   ipAddress                   String?
   notificationToken           String?
   isVerified                  Boolean                @default(true) //email verification
   kycStatus                   KYC_STATUS?
   isWalletCreated             Boolean                @default(false) //for wallet
   isDeleted                   Boolean?               @default(false)
+  walletSetupStatus           WalletSetupStatus?
   createdAt                   DateTime               @default(now())
   updatedAt                   DateTime               @updatedAt
   bankAccount                 BankAccount?
   createdUsers                User[]                 @relation(name: "creatorAndCreatedUser")
   creator                     User?                  @relation(name: "creatorAndCreatedUser", fields: [createdById], references: [id])
-  role                        Role                   @relation(fields: [roleId], references: [id])
+  role                        Role?                  @relation(fields: [roleId], references: [id], onDelete: SetNull)
   wallet                      Wallet?
   passwordResetRequest        PasswordResetRequest?
   transactions                Transaction[]          @relation(name: "userToTransaction")
@@ -89,6 +96,7 @@ model User {
   state                       State?                 @relation(fields: [stateId], references: [id])
   lga                         LocalGovernmentArea?   @relation(fields: [localGovernmentAreaId], references: [id])
 
+  @@unique([id, createdById])
   @@fulltext([firstName, lastName])
   @@map("Users")
 }
@@ -163,11 +171,12 @@ model VirtualBankAccount {
 
 //Account Verification
 model AccountVerificationRequest {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
-  code      String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id         Int      @id @default(autoincrement())
+  email      String   @unique
+  code       String   @unique
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  isVerified Boolean  @default(false)
 
   @@map("AccountVerificationRequests")
 }
@@ -177,23 +186,24 @@ model Role {
   id          Int              @id @default(autoincrement())
   name        String           @unique
   slug        String           @unique
+  isAdmin     Boolean          @default(true)
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
   users       User[]
   permissions RolePermission[]
 
+  @@fulltext([name])
   @@map("Roles")
 }
 
 //Permission
 model Permission {
-  id                 Int              @id @default(autoincrement())
-  name               String           @unique
-  description        String
-  isCustomAssignable Boolean          @default(true)
-  createdAt          DateTime         @default(now())
-  updatedAt          DateTime         @updatedAt
-  roles              RolePermission[]
+  id          Int              @id @default(autoincrement())
+  name        String           @unique
+  description String
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  roles       RolePermission[]
 
   @@map("Permissions")
 }
@@ -313,17 +323,19 @@ enum WalletFundTransactionFlow {
   SELF_FUND
   FROM_PAID_COMMISSION
   COMMISSION_BALANCE_TO_MAIN_BALANCE
+  FROM_FAILED_TRANSACTION
 }
 
 enum PaymentStatus {
   PENDING
   SUCCESS
   FAILED
+  REFUNDED
 }
 
 enum MeterAccountType {
   MD
-  NON_MD
+  NMD
 }
 
 model Transaction {
@@ -360,9 +372,11 @@ model Transaction {
   companyCommission            Float?            @default(0)
   serviceTransactionCode       String?
   serviceTransactionCode2      String?
+  isPayoutRecommended          Boolean           @default(false)
 
   billProviderId            Int?
   billPaymentReference      String?
+  billPaymentReceiptNO      String?
   walletFundTransactionFlow WalletFundTransactionFlow?
   billServiceSlug           String?
   merchantId                Int?
@@ -379,6 +393,7 @@ model Transaction {
   @@index([paymentReference, paymentStatus])
   @@index([transactionId])
   @@index([type])
+  @@fulltext([paymentReference, senderIdentifier, transactionId])
   @@map("Transactions")
 }
 
@@ -397,19 +412,20 @@ model UserCommission {
 }
 
 model BillProvider {
-  id           Int                             @id @default(autoincrement())
-  name         String
-  slug         String                          @unique
-  isActive     Boolean?                        @default(true)
-  isDefault    Boolean?                        @default(false)
-  createdAt    DateTime                        @default(now())
-  updatedAt    DateTime                        @updatedAt
-  transactions Transaction[]
-  discos       BillProviderElectricDisco[]
-  airtimes     BillProviderDataBundleNetwork[]
-  dataBundles  BillProviderAirtimeNetwork[]
-  cableTVs     BillProviderCableTVNetwork[]
-  internets    BillProviderInternetNetwork[]
+  id            Int                             @id @default(autoincrement())
+  name          String
+  slug          String                          @unique
+  isActive      Boolean?                        @default(true)
+  isDefault     Boolean?                        @default(false)
+  walletBalance Int?
+  createdAt     DateTime                        @default(now())
+  updatedAt     DateTime                        @updatedAt
+  transactions  Transaction[]
+  discos        BillProviderElectricDisco[]
+  airtimes      BillProviderDataBundleNetwork[]
+  dataBundles   BillProviderAirtimeNetwork[]
+  cableTVs      BillProviderCableTVNetwork[]
+  internets     BillProviderInternetNetwork[]
 
   @@map("BillProviders")
 }
@@ -423,25 +439,23 @@ enum BillType {
 }
 
 model BillService {
-  id                                 Int                             @id @default(autoincrement())
-  name                               String
-  slug                               String                          @unique
-  type                               BillType
-  abbrev                             String?
-  icon                               String
-  baseCommissionPercentage           Float?
-  agentDefaultCommissionPercent      Float?
-  agentDefaultCommissionPercentMd    Float?
-  agentDefaultCommissionPercentNonMd Float?
-  createdAt                          DateTime                        @default(now())
-  updatedAt                          DateTime                        @updatedAt
-  electricBillProviders              BillProviderElectricDisco[]
-  transactions                       Transaction[]
-  dataBundleProviders                BillProviderDataBundleNetwork[]
-  airtimeProviders                   BillProviderAirtimeNetwork[]
-  cableTVProviders                   BillProviderCableTVNetwork[]
-  internetProviders                  BillProviderInternetNetwork[]
-  commissions                        UserCommission[]
+  id                            Int                             @id @default(autoincrement())
+  name                          String
+  slug                          String                          @unique
+  type                          BillType
+  abbrev                        String?
+  icon                          String
+  baseCommissionPercentage      Float?
+  agentDefaultCommissionPercent Float?
+  createdAt                     DateTime                        @default(now())
+  updatedAt                     DateTime                        @updatedAt
+  electricBillProviders         BillProviderElectricDisco[]
+  transactions                  Transaction[]
+  dataBundleProviders           BillProviderDataBundleNetwork[]
+  airtimeProviders              BillProviderAirtimeNetwork[]
+  cableTVProviders              BillProviderCableTVNetwork[]
+  internetProviders             BillProviderInternetNetwork[]
+  commissions                   UserCommission[]
 
   @@map("BillServices")
 }
@@ -541,4 +555,14 @@ model Bank {
   updatedAt DateTime @updatedAt
 
   @@map("Banks")
+}
+
+model WalletOpeningBalance {
+  id         Int      @id @default(autoincrement())
+  main       Int
+  commission Int
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("WalletOpeningBalances")
 }

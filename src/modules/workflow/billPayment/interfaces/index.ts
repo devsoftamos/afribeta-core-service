@@ -3,6 +3,8 @@ export enum MeterType {
     POSTPAID = "POSTPAID",
 }
 
+export type MeterAccountType = "MD" | "NMD";
+
 export interface FormattedElectricDiscoData {
     discoType: string;
     meterType: MeterType;
@@ -13,7 +15,7 @@ export interface FormattedElectricDiscoData {
 }
 
 export interface GetMeterInfoOptions {
-    discoCode: string;
+    discoCode?: string;
     meterNumber: string;
     reference?: string;
     meterType?: MeterType;
@@ -21,29 +23,36 @@ export interface GetMeterInfoOptions {
 
 export interface GetMeterResponse {
     accessToken?: string;
+    meter: {
+        meterAccountType?: MeterAccountType;
+        minimumAmount: number;
+        maximumAmount?: number;
+    };
     customer: {
         name: string;
         address: string;
-        minimumAmount: number;
-        maximumAmount?: number;
     };
 }
 
 export interface VendPowerOptions {
     accessToken?: string;
-    discoCode: string;
-    accountId: string;
-    email: string;
+    discoCode?: string;
+    accountId?: string;
+    email?: string;
     referenceId: string;
     amount: number;
     meterNumber: string;
     meterType?: MeterType;
+    meterAccountType?: MeterAccountType;
 }
 
 export interface VendPowerResponse {
-    units: string;
-    meterToken: string;
+    units?: string;
+    meterToken?: string;
     demandCategory?: "MD" | "NMD";
+    receiptNO: string;
+    purchaseDate?: Date;
+    walletBalance?: number;
 }
 
 export enum NetworkDataProvider {
@@ -78,6 +87,7 @@ export interface VendDataOptions {
 
 export interface VendDataResponse {
     networkProviderReference: string;
+    receiptNO: string;
 }
 
 export interface VendAirtimeOptions {
@@ -90,8 +100,9 @@ export interface VendAirtimeOptions {
 
 export interface VendAirtimeResponse {
     networkProviderReference: string;
-    amount: number;
-    phone: string;
+    amount?: number;
+    phone?: string;
+    receiptNO: string;
 }
 
 //TV
@@ -120,6 +131,7 @@ export interface VendTVOptions {
 
 export interface VendCableTVResponse {
     vendRef: string;
+    receiptNO: string;
 }
 
 export interface GetSmartCardInfoOptions {
@@ -165,15 +177,19 @@ export interface VendInternetResponse {
     networkProviderReference: string;
     amount: number;
     receiver: string;
+    receiptNO: string;
 }
 
 export interface getSmileDeviceInfoOptions {
     deviceId: string;
 }
 
-export interface BillPaymentWorkflow {
+export type PowerBillPaymentWorkflow = {
     getMeterInfo(options: GetMeterInfoOptions): Promise<GetMeterResponse>;
     vendPower(options: VendPowerOptions): Promise<VendPowerResponse>;
+};
+
+export type BillPaymentWorkflow = {
     vendAirtime(options: VendAirtimeOptions): Promise<VendAirtimeResponse>;
     vendData(options: VendDataOptions): Promise<VendDataResponse>;
     vendInternet(options: VendInternetOptions): Promise<VendInternetResponse>;
@@ -190,4 +206,5 @@ export interface BillPaymentWorkflow {
     getSmartCardInfo(
         options: GetSmartCardInfoOptions
     ): Promise<GetSmartCardInfoResponse>;
-}
+    getWalletBalance(): Promise<number>;
+} & PowerBillPaymentWorkflow;

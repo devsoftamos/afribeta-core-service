@@ -9,6 +9,7 @@ import {
     TransactionStatus,
     TransactionType,
     User,
+    UserType,
     WalletFundTransactionFlow,
 } from "@prisma/client";
 import {
@@ -20,6 +21,7 @@ import {
     ProcessBillPaymentOptions,
     WalletChargeHandler,
     BillServiceSlug,
+    CheckServiceChargeOptions,
 } from "../interfaces";
 import logger from "moment-logger";
 import { PowerBillService } from "./power";
@@ -33,6 +35,7 @@ import {
     DEFAULT_CAPPING_MULTIPLIER,
 } from "@/config";
 import {
+    BillPaymentValidationException,
     ComputeBillCommissionException,
     PayBillCommissionException,
     WalletChargeException,
@@ -47,7 +50,10 @@ import {
     generateId,
     PaginationMeta,
 } from "@/utils";
-import { TransactionShortDescription } from "../../transaction";
+import {
+    TransactionNotFoundException,
+    TransactionShortDescription,
+} from "../../transaction";
 
 @Injectable()
 export class BillService {
@@ -173,15 +179,80 @@ export class BillService {
         }
     }
 
+    //update transaction status and refund to user wallet
     async billPurchaseFailureHandler(options: BillPurchaseFailure) {
         try {
-            await this.prisma.transaction.update({
-                where: {
-                    id: options.transactionId,
+            const transaction = await this.prisma.transaction.findUnique({
+                where: { id: options.transactionId },
+                select: {
+                    id: true,
+                    userId: true,
+                    totalAmount: true,
+                    transactionId: true,
                 },
-                data: {
-                    status: TransactionStatus.FAILED,
-                },
+            });
+            if (!transaction) {
+                throw new TransactionNotFoundException(
+                    "Failed to process bill purchase failed event. Transaction ID not found",
+                    HttpStatus.NOT_FOUND
+                );
+            }
+
+            const userWallet = await this.prisma.wallet.findUnique({
+                where: { userId: transaction.userId },
+            });
+
+            if (!userWallet) {
+                return await this.prisma.transaction.update({
+                    where: {
+                        id: options.transactionId,
+                    },
+                    data: {
+                        status: TransactionStatus.FAILED,
+                    },
+                });
+            }
+
+            //refund
+            await this.prisma.$transaction(async (tx) => {
+                await tx.wallet.update({
+                    where: {
+                        userId: transaction.userId,
+                    },
+                    data: {
+                        mainBalance: {
+                            increment: transaction.totalAmount,
+                        },
+                    },
+                });
+                await tx.transaction.update({
+                    where: {
+                        id: transaction.id,
+                    },
+                    data: {
+                        status: TransactionStatus.FAILED,
+                        paymentStatus: PaymentStatus.REFUNDED,
+                    },
+                });
+
+                await tx.transaction.create({
+                    data: {
+                        amount: transaction.totalAmount,
+                        totalAmount: transaction.totalAmount,
+                        flow: TransactionFlow.IN,
+                        status: TransactionStatus.SUCCESS,
+                        paymentStatus: PaymentStatus.SUCCESS,
+                        transactionId: transaction.transactionId,
+                        paymentChannel: PaymentChannel.SYSTEM,
+                        type: TransactionType.WALLET_FUND,
+                        walletFundTransactionFlow:
+                            WalletFundTransactionFlow.FROM_FAILED_TRANSACTION,
+                        userId: transaction.userId,
+                        paymentReference: generateId({ type: "reference" }),
+                        shortDescription:
+                            TransactionShortDescription.BILL_PAYMENT_REFUND,
+                    },
+                });
             });
         } catch (error) {
             logger.error(error);
@@ -382,6 +453,7 @@ export class BillService {
                             slug: true,
                             type: true,
                             baseCommissionPercentage: true,
+                            agentDefaultCommissionPercent: true,
                         },
                     },
                 },
@@ -686,21 +758,27 @@ export class BillService {
                 }
             } else {
                 //Compute for Merchant and upgradable-agents only
-                const commissionConfig =
-                    await this.prisma.userCommission.findUnique({
-                        where: {
-                            userId_billServiceSlug: {
-                                userId: user.id,
-                                billServiceSlug: transaction.billService.slug,
+                let commissionPercent =
+                    transaction.billService.agentDefaultCommissionPercent;
+                if (user.userType == UserType.MERCHANT) {
+                    const commissionConfig =
+                        await this.prisma.userCommission.findUnique({
+                            where: {
+                                userId_billServiceSlug: {
+                                    userId: user.id,
+                                    billServiceSlug:
+                                        transaction.billService.slug,
+                                },
                             },
-                        },
-                    });
+                        });
 
-                if (!commissionConfig) {
-                    throw new ComputeBillCommissionException(
-                        `Bill service commission with slug ${transaction.billService.slug} not assigned to userType, ${user.userType} with user identifier, ${user.identifier}`,
-                        HttpStatus.NOT_FOUND
-                    );
+                    if (!commissionConfig) {
+                        throw new ComputeBillCommissionException(
+                            `Bill service commission with slug ${transaction.billService.slug} not assigned to userType, ${user.userType} with user identifier, ${user.identifier}`,
+                            HttpStatus.NOT_FOUND
+                        );
+                    }
+                    commissionPercent = commissionConfig.percentage;
                 }
 
                 if (
@@ -720,7 +798,7 @@ export class BillService {
                         agentCommission = this.computeCommission({
                             type: "default-cap",
                             amount: transaction.amount,
-                            percentCommission: commissionConfig.percentage,
+                            percentCommission: commissionPercent,
                         }).amount;
                     }
 
@@ -739,13 +817,13 @@ export class BillService {
                         agentCommission = this.computeCommission({
                             amount: transaction.amount,
                             type: "default-cap",
-                            percentCommission: commissionConfig.percentage,
+                            percentCommission: commissionPercent,
                         }).amount;
                     } else {
                         agentCommission = this.computeCommission({
                             amount: transaction.amount,
                             type: "non-capped",
-                            percentCommission: commissionConfig.percentage,
+                            percentCommission: commissionPercent,
                         }).amount;
                     }
 
@@ -935,5 +1013,29 @@ export class BillService {
         } catch (error) {
             logger.error(error);
         }
+    }
+
+    isServiceChargeApplicable(options: CheckServiceChargeOptions): boolean {
+        if (options.userType != UserType.CUSTOMER) {
+            return false;
+        }
+
+        const chargeableBills: TransactionType[] = [
+            TransactionType.ELECTRICITY_BILL,
+            TransactionType.CABLETV_BILL,
+        ];
+
+        if (!chargeableBills.includes(options.billType)) {
+            return false;
+        }
+
+        if (!options.serviceCharge) {
+            throw new BillPaymentValidationException(
+                "Service charge is required for the account type",
+                HttpStatus.BAD_REQUEST
+            );
+        }
+
+        return true;
     }
 }

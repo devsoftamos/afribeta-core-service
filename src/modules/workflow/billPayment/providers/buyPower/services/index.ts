@@ -35,6 +35,7 @@ import {
     BuyPowerVendInProgressException,
     BuyPowerVendInternetException,
     BuyPowerVendPowerException,
+    BuyPowerWalletException,
 } from "../errors";
 import logger from "moment-logger";
 import { BuyPowerError } from "@/libs/buyPower/errors";
@@ -87,11 +88,15 @@ export class BuyPowerWorkflowService implements BillPaymentWorkflow {
             });
 
             return {
+                accessToken: null,
+                meter: {
+                    minimumAmount: resp.data.minVendAmount,
+                    maximumAmount: resp.data.maxVendAmount,
+                    meterAccountType: null,
+                },
                 customer: {
                     address: resp.data.address,
                     name: resp.data.name,
-                    minimumAmount: resp.data.minVendAmount,
-                    maximumAmount: resp.data.maxVendAmount,
                 },
             };
         } catch (error) {
@@ -175,6 +180,7 @@ export class BuyPowerWorkflowService implements BillPaymentWorkflow {
                 meterToken: resp.data.token,
                 units: resp.data.units,
                 demandCategory: resp.data.demandCategory,
+                receiptNO: resp.data.receiptNo,
             };
         } catch (error) {
             switch (true) {
@@ -242,6 +248,7 @@ export class BuyPowerWorkflowService implements BillPaymentWorkflow {
                 networkProviderReference: resp.data.vendRef.toString(),
                 amount: resp.data.totalAmountPaid,
                 phone: options.vtuNumber,
+                receiptNO: resp.data.receiptNo,
             };
         } catch (error) {
             logger.error(error);
@@ -305,6 +312,7 @@ export class BuyPowerWorkflowService implements BillPaymentWorkflow {
 
             return {
                 networkProviderReference: resp.data.vendRef.toString(),
+                receiptNO: resp.data.receiptNo,
             };
         } catch (error) {
             logger.error(error);
@@ -373,6 +381,7 @@ export class BuyPowerWorkflowService implements BillPaymentWorkflow {
                 networkProviderReference: resp.data.vendRef.toString(),
                 amount: resp.data.totalAmountPaid,
                 receiver: options.vtuNumber,
+                receiptNO: resp.data.receiptNo,
             };
         } catch (error) {
             logger.error(error);
@@ -434,6 +443,7 @@ export class BuyPowerWorkflowService implements BillPaymentWorkflow {
 
             return {
                 vendRef: resp.data.vendRef.toString(),
+                receiptNO: resp.data.receiptNo,
             };
         } catch (error) {
             logger.error(error);
@@ -734,6 +744,18 @@ export class BuyPowerWorkflowService implements BillPaymentWorkflow {
                     );
                 }
             }
+        }
+    }
+
+    async getWalletBalance(): Promise<number> {
+        try {
+            const { data } = await this.buyPower.walletBalance();
+            return data.balance;
+        } catch (error) {
+            throw new BuyPowerWalletException(
+                error.message ?? "Failed to retrieve wallet balance",
+                HttpStatus.SERVICE_UNAVAILABLE
+            );
         }
     }
 }

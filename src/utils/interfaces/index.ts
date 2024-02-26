@@ -22,3 +22,5 @@ export interface PaginationMeta {
 export interface Meta {
     [key: string]: string | number;
 }
+
+export type GroupBy<TData> = (key: string, data: TData[]) => any;

@@ -1,4 +1,4 @@
-import { AuthGuard } from "@/modules/api/auth/guard";
+import { AuthGuard, EnabledAccountGuard } from "@/modules/api/auth/guard";
 import { User as UserModel } from "@prisma/client";
 
 import {
@@ -12,7 +12,7 @@ import { ListNotificationDto } from "../../dtos";
 import { NotificationService } from "../../services";
 import { User } from "@/modules/api/user";
 
-@UseGuards(AuthGuard)
+@UseGuards(AuthGuard, EnabledAccountGuard)
 @Controller({
     path: "notification",
 })

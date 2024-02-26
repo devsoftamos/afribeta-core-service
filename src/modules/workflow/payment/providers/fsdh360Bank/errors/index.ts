@@ -7,3 +7,7 @@ export class FSDH360BankException extends HttpException {
 export class FSDH360BankVirtualAccountException extends FSDH360BankException {
     name = "FSDH360BankVirtualAccountException";
 }
+
+export class FSDH360BankBvnVerificationException extends FSDH360BankException {
+    name = "FSDH360BankBvnVerificationException";
+}

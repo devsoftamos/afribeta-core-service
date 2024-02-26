@@ -1,9 +1,5 @@
 import { CompleteBillPurchaseTransactionOptions } from ".";
 
-export interface DataPurchaseInitializationHandlerOutput {
-    paymentReference: string;
-}
-
 export interface CompleteDataPurchaseTransactionOptions
     extends CompleteBillPurchaseTransactionOptions {
     billServiceSlug: string; //network provider

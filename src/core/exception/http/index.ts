@@ -1,4 +1,4 @@
-import { showStack } from "@/config";
+import { isDevEnvironment } from "@/config";
 import { ValidationException } from "@/core/pipe/error";
 import {
     ExceptionFilter,
@@ -16,6 +16,8 @@ export class AllExceptionsFilter implements ExceptionFilter {
     catch(exception: any, host: ArgumentsHost): void {
         // In certain situations `httpAdapter` might not be available in the
         // constructor method, thus we should resolve it here.
+
+        console.log(exception);
         const { httpAdapter } = this.httpAdapterHost;
 
         const ctx = host.switchToHttp();
@@ -32,7 +34,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
                     success: false,
                     message: "Failed Validation",
                     errors: exceptionResponse,
-                    stack: showStack ? exception.stack : undefined, //only show stack in development
+                    stack: isDevEnvironment ? exception.stack : undefined, //only show stack in development
                 };
                 return httpAdapter.reply(
                     ctx.getResponse(),
@@ -48,7 +50,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
                         httpStatus == 500
                             ? "Something went wrong"
                             : exception.message,
-                    stack: showStack ? exception.stack : undefined, //only show stack in development
+                    stack: isDevEnvironment ? exception.stack : undefined, //only show stack in development
                 };
                 httpAdapter.reply(ctx.getResponse(), responseBody, httpStatus);
             }

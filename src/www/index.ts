@@ -7,9 +7,9 @@ import { AllExceptionsFilter } from "@/core/exception/http";
 import { classValidatorPipeInstance } from "@/core/pipe";
 import { PrismaService } from "@/modules/core/prisma/services";
 import * as morgan from "morgan";
-import { json } from "express";
-import { frontendDevOrigin, manualEnvironment, redisUrl } from "@/config";
+import { frontendDevOrigin, isDevEnvironment, redisUrl } from "@/config";
 import waitForRedis from "../utils/wait-for-redis";
+import { NestExpressApplication } from "@nestjs/platform-express";
 
 export interface CreateServerOptions {
     port: number;
@@ -20,12 +20,12 @@ export interface CreateServerOptions {
 export default async (
     options: CreateServerOptions
 ): Promise<INestApplication> => {
-    const app = await NestFactory.create(AppModule, {
+    const app = await NestFactory.create<NestExpressApplication>(AppModule, {
         //logger: false,
     });
 
     let whitelist = options.whitelistedDomains ?? [];
-    if (manualEnvironment == "development") {
+    if (isDevEnvironment) {
         whitelist = whitelist.concat(frontendDevOrigin as any);
     }
 
@@ -39,7 +39,7 @@ export default async (
     app.use(helmet());
     app.enableCors(corsOptions);
     app.use(morgan(options.production ? "combined" : "dev"));
-    app.use(json({ limit: "100mb" }));
+    app.useBodyParser("json", { limit: "100mb" });
 
     app.enableVersioning({
         type: VersioningType.URI,
