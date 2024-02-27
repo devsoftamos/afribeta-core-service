@@ -182,6 +182,11 @@ export class AuthService {
 
             return buildResponse({
                 message: `An email verification code has been sent to your email, ${options.email}`,
+                data: {
+                    email: options.email,
+                    phone: options.phone,
+                    firstName: options.firstName,
+                },
             });
         } catch (error) {
             logger.error(error);
