@@ -19,7 +19,7 @@ export class IdentityVerificationService {
 
         if (!(verifyBVN.firstName && verifyBVN.lastName)) {
             throw new BvnVerificationException(
-                "BVN verification failed",
+                "BVN verification failed. Missing first and last name",
                 HttpStatus.BAD_REQUEST
             );
         }
