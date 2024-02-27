@@ -7,13 +7,13 @@ import { isDevEnvironment } from "@/config";
 
 @Injectable()
 export class IdentityVerificationService {
-    constructor(private fsdhBank: FSDH360BankService) {}
+    constructor(private fsdhBankService: FSDH360BankService) {}
 
     async verifyUserBVN(options: BVNVerificationDto) {
         if (isDevEnvironment) {
             return;
         }
-        const verifyBVN = await this.fsdhBank.verifyBVN({
+        const verifyBVN = await this.fsdhBankService.verifyBVN({
             bvn: options.bvn,
         });
 

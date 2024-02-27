@@ -118,7 +118,7 @@ export class FSDH360Bank {
                 const err = new FSDH360BankVerifyBvnError(
                     "FSDH BVN Identity Base URL Missing"
                 );
-                err.status = 400;
+                err.status = 500;
                 throw err;
             }
             await this.authenticate();

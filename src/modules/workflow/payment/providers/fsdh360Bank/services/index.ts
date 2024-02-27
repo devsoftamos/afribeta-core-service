@@ -71,16 +71,22 @@ export class FSDH360BankService {
             logger.error(error);
             switch (true) {
                 case error instanceof FSDH360BankError: {
+                    if (error.status > 500) {
+                        throw new FSDH360BankBvnVerificationException(
+                            "Please try again later",
+                            HttpStatus.SERVICE_UNAVAILABLE
+                        );
+                    }
                     throw new FSDH360BankBvnVerificationException(
                         error.message,
-                        HttpStatus.INTERNAL_SERVER_ERROR
+                        error.status ?? HttpStatus.INTERNAL_SERVER_ERROR
                     );
                 }
 
                 default: {
-                    throw new FSDH360BankException(
+                    throw new FSDH360BankBvnVerificationException(
                         error.message,
-                        HttpStatus.INTERNAL_SERVER_ERROR
+                        error.status ?? HttpStatus.INTERNAL_SERVER_ERROR
                     );
                 }
             }
