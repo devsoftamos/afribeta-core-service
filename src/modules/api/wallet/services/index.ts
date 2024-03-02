@@ -692,7 +692,7 @@ export class WalletService {
 
         if (!wallet) {
             throw new WalletNotFoundException(
-                "Wallet does not be exist. Kindly verify your KYC information",
+                "Wallet does not exist. Kindly verify your KYC information",
                 HttpStatus.NOT_FOUND
             );
         }

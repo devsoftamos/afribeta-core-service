@@ -1,6 +1,7 @@
 import {
     fsdh360ApiKeyAuth,
     fsdh360Ips,
+    isDevEnvironment,
     jwtSecret,
     paystackSecretKey,
     squadGtBankOptions,
@@ -42,7 +43,6 @@ export class AuthGuard implements CanActivate {
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
         const request = context.switchToHttp().getRequest() as RequestWithUser;
-        console.log(request.ip, "************", request.ips);
         const token = this.extractTokenFromHeader(request);
         if (!token) {
             throw new InvalidAuthTokenException(
@@ -160,6 +160,9 @@ export class FSDH360BankWebhookGuard implements CanActivate {
         const request = context
             .switchToHttp()
             .getRequest() as RequestFromFSDH360Bank;
+        if (isDevEnvironment) {
+            return true;
+        }
 
         if (
             fsdh360ApiKeyAuth == request.headers["api-key-auth"] &&

@@ -31,6 +31,7 @@ import {
     TransactionNotFoundException,
 } from "../errors";
 import { endOfMonth, startOfMonth } from "date-fns";
+import { TransactionDetailResponse } from "../interfaces";
 
 @Injectable()
 export class TransactionService {
@@ -790,6 +791,9 @@ export class TransactionService {
                 destinationBankName: true,
                 destinationBankAccountName: true,
                 destinationBankAccountNumber: true,
+                meterType: true,
+                updatedAt: true,
+                status: true,
                 user: {
                     select: {
                         wallet: {
@@ -809,73 +813,96 @@ export class TransactionService {
             );
         }
 
-        let response;
+        let response: TransactionDetailResponse;
 
         switch (transaction.type) {
             case TransactionType.AIRTIME_PURCHASE: {
                 response = {
                     type: transaction.type,
                     amount: transaction.amount,
-                    billService: transaction.billServiceSlug,
-                    serviceCharge: transaction.shortDescription,
-                    phone: transaction.senderIdentifier,
+                    shortDescription: transaction.shortDescription,
+                    beneficiary: transaction.senderIdentifier,
+                    date: transaction.updatedAt,
+                    status: transaction.status,
                 };
                 break;
             }
             case TransactionType.DATA_PURCHASE: {
                 response = {
                     type: transaction.type,
-                    serviceCharge: transaction.shortDescription,
-                    billService: transaction.billServiceSlug,
-                    data: transaction.packageType,
-                    phone: transaction.senderIdentifier,
+                    shortDescription: transaction.shortDescription,
+                    product: transaction.packageType,
+                    beneficiary: transaction.senderIdentifier,
                     amount: transaction.amount,
+                    date: transaction.updatedAt,
+                    status: transaction.status,
+                };
+                break;
+            }
+            case TransactionType.INTERNET_BILL: {
+                response = {
+                    type: transaction.type,
+                    shortDescription: transaction.shortDescription,
+                    product: transaction.packageType,
+                    beneficiary: transaction.senderIdentifier,
+                    amount: transaction.amount,
+                    date: transaction.updatedAt,
+                    status: transaction.status,
                 };
                 break;
             }
             case TransactionType.ELECTRICITY_BILL: {
                 response = {
                     type: transaction.type,
-                    serviceCharge: transaction.shortDescription,
-                    billService: transaction.billServiceSlug,
-                    meterNumber: transaction.senderIdentifier,
+                    shortDescription: transaction.shortDescription,
+                    beneficiary: transaction.senderIdentifier,
                     amount: transaction.amount,
                     token: transaction.token,
-                    package: transaction.packageType,
+                    meterType: transaction.meterType as any,
+                    date: transaction.updatedAt,
+                    status: transaction.status,
+                    product: transaction.packageType,
                 };
                 break;
             }
             case TransactionType.CABLETV_BILL: {
                 response = {
                     type: transaction.type,
-                    serviceCharge: transaction.shortDescription,
-                    billService: transaction.billServiceSlug,
+                    shortDescription: transaction.shortDescription,
                     amount: transaction.amount,
-                    phone: transaction.receiverIdentifier,
-                    package: transaction.packageType,
-                    smartCardNo: transaction.senderIdentifier,
+                    product: transaction.packageType,
+                    beneficiary: transaction.senderIdentifier,
+                    date: transaction.updatedAt,
+                    status: transaction.status,
                 };
                 break;
             }
-            case TransactionType.PAYOUT: {
-                response = {
-                    type: transaction.type,
-                    serviceCharge: transaction.shortDescription,
-                    bankName: transaction.destinationBankName,
-                    accountNumber: transaction.destinationBankAccountNumber,
-                    accountName: transaction.destinationBankAccountName,
-                    amount: transaction.amount,
-                };
-                break;
-            }
-            case TransactionType.WALLET_FUND: {
-                response = {
-                    type: transaction.type,
-                    serviceCharge: transaction.shortDescription,
-                    amount: transaction.amount,
-                    walletNumber: transaction.user.wallet.walletNumber,
-                };
-            }
+
+            //TODO: complete
+            // case TransactionType.PAYOUT: {
+            //     response = {
+            //         type: transaction.type,
+            //         shortDescription: transaction.shortDescription,
+            //         date: transaction.updatedAt,
+            //         status: transaction.status,
+            //         amount: transaction.amount,
+
+            //         bankName: transaction.destinationBankName,
+            //         accountNumber: transaction.destinationBankAccountNumber,
+            //         accountName: transaction.destinationBankAccountName,
+            //     };
+            //     break;
+            // }
+            // case TransactionType.WALLET_FUND: {
+            //     response = {
+            //         type: transaction.type,
+            //         shortDescription: transaction.shortDescription,
+            //         amount: transaction.amount,
+            //         date: transaction.updatedAt,
+            //         status: transaction.status,
+            //         walletNumber: transaction.user.wallet.walletNumber,
+            //     };
+            // }
         }
 
         return buildResponse({

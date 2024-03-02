@@ -1,3 +1,5 @@
+import { TransactionStatus, TransactionType } from "@prisma/client";
+
 export enum TransactionShortDescription {
     WALLET_FUNDED = "Wallet Funded",
     TRANSFER_FUND = "Transferred Fund",
@@ -15,3 +17,15 @@ export enum TransactionShortDescription {
 export enum TransferServiceProvider {
     PAYSTACK = "PAYSTACK",
 }
+
+export type TransactionDetailResponse = {
+    type: TransactionType;
+    product?: string;
+    amount: number;
+    beneficiary: string;
+    meterType?: string;
+    shortDescription: string;
+    status: TransactionStatus;
+    date: Date;
+    token?: string;
+};
