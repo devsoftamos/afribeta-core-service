@@ -19,9 +19,10 @@ export enum TransferServiceProvider {
 }
 
 export type TransactionDetailResponse = {
-    type: TransactionType;
+    type: TransactionType | "WALLET_TRANSFER" | "COMMISSION" | "DEPOSIT";
     product?: string;
     amount: number;
+    sender?: string;
     beneficiary: string;
     meterType?: string;
     shortDescription: string;

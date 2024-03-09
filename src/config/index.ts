@@ -107,6 +107,8 @@ const runtimeEnvironment: RequiredEnvironment[] = [
         name: "SQUAD_GTBANK_BENEFICIARY_ACCOUNT_NUMBER",
         type: RequiredEnvironmentTypes.String,
     },
+
+    //fsdh
     {
         name: "FSDH360_BASE_URL",
         type: RequiredEnvironmentTypes.String,
@@ -139,6 +141,8 @@ const runtimeEnvironment: RequiredEnvironment[] = [
         name: "FSDH360_IDENTITY_BASE_URL",
         type: RequiredEnvironmentTypes.String,
     },
+
+    //buypower
     {
         name: "BUYPOWER_BASE_URL",
         type: RequiredEnvironmentTypes.String,

@@ -506,7 +506,14 @@ export class TransactionService {
 
         const queryOptions: Prisma.TransactionFindManyArgs = {
             orderBy: { createdAt: "desc" },
-            where: {},
+            where: {
+                walletFundTransactionFlow: {
+                    notIn: [
+                        WalletFundTransactionFlow.TO_BENEFICIARY,
+                        WalletFundTransactionFlow.TO_AGENT,
+                    ], //from benefactor already cover this
+                },
+            },
             select: {
                 transactionId: true,
                 amount: true,
@@ -556,7 +563,14 @@ export class TransactionService {
 
         const queryOptions: Prisma.TransactionFindManyArgs = {
             orderBy: { createdAt: "desc" },
-            where: {},
+            where: {
+                walletFundTransactionFlow: {
+                    notIn: [
+                        WalletFundTransactionFlow.TO_BENEFICIARY,
+                        WalletFundTransactionFlow.TO_AGENT,
+                    ], //from benefactor already cover this
+                },
+            },
             select: {
                 id: true,
                 transactionId: true,
@@ -645,7 +659,14 @@ export class TransactionService {
 
         const queryOptions: Prisma.TransactionFindManyArgs = {
             orderBy: { createdAt: "desc" },
-            where: {},
+            where: {
+                walletFundTransactionFlow: {
+                    notIn: [
+                        WalletFundTransactionFlow.TO_BENEFICIARY,
+                        WalletFundTransactionFlow.TO_AGENT,
+                    ], //from benefactor already cover this
+                },
+            },
             select: {
                 id: true,
                 amount: true,
@@ -791,11 +812,15 @@ export class TransactionService {
                 destinationBankName: true,
                 destinationBankAccountName: true,
                 destinationBankAccountNumber: true,
+                walletFundTransactionFlow: true,
                 meterType: true,
                 updatedAt: true,
                 status: true,
+                senderId: true,
+                userId: true,
                 user: {
                     select: {
+                        email: true,
                         wallet: {
                             select: {
                                 walletNumber: true,
@@ -878,31 +903,91 @@ export class TransactionService {
                 break;
             }
 
-            //TODO: complete
-            // case TransactionType.PAYOUT: {
-            //     response = {
-            //         type: transaction.type,
-            //         shortDescription: transaction.shortDescription,
-            //         date: transaction.updatedAt,
-            //         status: transaction.status,
-            //         amount: transaction.amount,
+            case TransactionType.PAYOUT: {
+                response = {
+                    type: transaction.type,
+                    shortDescription: transaction.shortDescription,
+                    date: transaction.updatedAt,
+                    status: transaction.status,
+                    amount: transaction.amount,
+                    beneficiary: transaction.user
+                        ? transaction.user.email
+                        : "N/A",
+                };
+                break;
+            }
+            case TransactionType.WALLET_FUND: {
+                const walletToWalletTransfer = [
+                    WalletFundTransactionFlow.FROM_BENEFACTOR,
+                ] as any;
+                if (
+                    walletToWalletTransfer.includes(
+                        transaction.walletFundTransactionFlow
+                    )
+                ) {
+                    const sender = await this.prisma.user.findUnique({
+                        where: { id: transaction.senderId },
+                        select: {
+                            email: true,
+                        },
+                    });
+                    const receiver = await this.prisma.user.findUnique({
+                        where: { id: transaction.senderId },
+                        select: {
+                            email: true,
+                        },
+                    });
 
-            //         bankName: transaction.destinationBankName,
-            //         accountNumber: transaction.destinationBankAccountNumber,
-            //         accountName: transaction.destinationBankAccountName,
-            //     };
-            //     break;
-            // }
-            // case TransactionType.WALLET_FUND: {
-            //     response = {
-            //         type: transaction.type,
-            //         shortDescription: transaction.shortDescription,
-            //         amount: transaction.amount,
-            //         date: transaction.updatedAt,
-            //         status: transaction.status,
-            //         walletNumber: transaction.user.wallet.walletNumber,
-            //     };
-            // }
+                    response = {
+                        amount: transaction.amount,
+                        sender: sender ? sender.email : "N/A",
+                        type: "WALLET_TRANSFER",
+                        shortDescription: transaction.shortDescription,
+                        date: transaction.updatedAt,
+                        status: transaction.status,
+                        beneficiary: receiver ? receiver.email : "N/A",
+                    };
+                }
+
+                if (
+                    transaction.walletFundTransactionFlow ==
+                    WalletFundTransactionFlow.FROM_PAID_COMMISSION
+                ) {
+                    response = {
+                        amount: transaction.amount,
+                        type: "COMMISSION",
+                        shortDescription: transaction.shortDescription,
+                        date: transaction.updatedAt,
+                        status: transaction.status,
+                        beneficiary: transaction.user
+                            ? transaction.user.email
+                            : "N/A",
+                    };
+                }
+
+                if (
+                    transaction.walletFundTransactionFlow ==
+                    WalletFundTransactionFlow.SELF_FUND
+                ) {
+                    response = {
+                        type: "DEPOSIT",
+                        shortDescription: transaction.shortDescription,
+                        amount: transaction.amount,
+                        date: transaction.updatedAt,
+                        status: transaction.status,
+                        beneficiary: transaction.user
+                            ? transaction.user.email
+                            : "N/A",
+                    };
+                }
+
+                if (
+                    transaction.walletFundTransactionFlow ==
+                    WalletFundTransactionFlow.COMMISSION_BALANCE_TO_MAIN_BALANCE
+                ) {
+                    //
+                }
+            }
         }
 
         return buildResponse({
