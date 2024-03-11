@@ -6,7 +6,7 @@ import {
 } from "@/config";
 import { EmailService } from "@/modules/core/email/services";
 import { PrismaService } from "@/modules/core/prisma/services";
-import { generateId, PaginationMeta } from "@/utils";
+import { generateId, generateRandomNum, PaginationMeta } from "@/utils";
 import { ApiResponse, buildResponse } from "@/utils/api-response-util";
 import { forwardRef, HttpStatus, Inject, Injectable } from "@nestjs/common";
 import {
@@ -274,6 +274,11 @@ export class UserService {
             lastName: options.lastName ?? user.lastName,
             phone: options.phone ?? user.phone,
         };
+
+        if (options.photo) {
+            const photo = await this.uploadProfileImage(options.photo);
+            profileUpdateOptions.photo = photo;
+        }
 
         const updatedProfile = await this.prisma.user.update({
             where: {
@@ -584,7 +589,21 @@ export class UserService {
 
         return await this.uploadService.uploadCompressedImage({
             dir: storageDirConfig.kycInfo,
-            name: `kyc-image-${date}`,
+            name: `kyc-image-${date}-${generateRandomNum(5)}`,
+            format: "webp",
+            body: body,
+            quality: 100,
+            width: 320,
+        });
+    }
+
+    private async uploadProfileImage(file: string): Promise<string> {
+        const date = Date.now();
+        const body = Buffer.from(file, "base64");
+
+        return await this.uploadService.uploadCompressedImage({
+            dir: storageDirConfig.profile,
+            name: `profile-image-${date}-${generateRandomNum(5)}`,
             format: "webp",
             body: body,
             quality: 100,

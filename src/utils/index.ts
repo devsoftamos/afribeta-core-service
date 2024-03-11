@@ -76,3 +76,12 @@ export function groupBy<TData extends Record<string, any>>(
 
     return Object.values(list);
 }
+
+export const generateRandomNum = (size: number): string => {
+    let str = "";
+    for (let i = 0; i < size; i++) {
+        const rand = Math.floor(Math.random() * 10);
+        str += rand;
+    }
+    return str;
+};

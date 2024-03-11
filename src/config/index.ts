@@ -184,6 +184,10 @@ const runtimeEnvironment: RequiredEnvironment[] = [
         type: RequiredEnvironmentTypes.String,
     },
     {
+        name: "PROFILE_DIR",
+        type: RequiredEnvironmentTypes.String,
+    },
+    {
         name: "OCEAN_SPACE_ACCESS_KEY",
         type: RequiredEnvironmentTypes.String,
     },
@@ -379,10 +383,12 @@ export const DEFAULT_CAPPING_MULTIPLIER = process.env.DEFAULT_CAPPING_MULTIPLIER
 
 interface StorageDirConfig {
     kycInfo: string;
+    profile: string;
 }
 
 export const storageDirConfig: StorageDirConfig = {
     kycInfo: process.env.KYC_UPLOAD_DIR,
+    profile: process.env.PROFILE_DIR,
 };
 
 //ikeja electric
