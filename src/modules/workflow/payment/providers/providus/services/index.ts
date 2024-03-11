@@ -38,14 +38,14 @@ export class ProvidusService {
                 case error instanceof ProvidusError: {
                     throw new providusVirtualAccountException(
                         error.message,
-                        HttpStatus.INTERNAL_SERVER_ERROR
+                        HttpStatus.BAD_REQUEST
                     );
                 }
 
                 default: {
                     throw new ProvidusWorkflowException(
                         error.message,
-                        HttpStatus.INTERNAL_SERVER_ERROR
+                        HttpStatus.BAD_REQUEST
                     );
                 }
             }

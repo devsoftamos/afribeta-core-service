@@ -587,69 +587,80 @@ export class WalletService {
         const paymentReference = generateId({ type: "reference" });
 
         //DB transaction
-        await this.prisma.$transaction(async (tx) => {
-            await tx.wallet.update({
-                where: { userId: user.id },
-                data: {
-                    mainBalance: {
-                        decrement: options.amount,
+        await this.prisma.$transaction(
+            async (tx) => {
+                const sender = await tx.wallet.update({
+                    where: { userId: user.id },
+                    data: {
+                        mainBalance: {
+                            decrement: options.amount,
+                        },
                     },
-                },
-            });
-            await tx.wallet.update({
-                where: { walletNumber: beneficiaryWallet.walletNumber },
-                data: {
-                    mainBalance: {
-                        increment: options.amount,
+                });
+                if (sender.mainBalance < 0) {
+                    throw new InsufficientWalletBalanceException(
+                        "Insufficient wallet balance",
+                        HttpStatus.BAD_REQUEST
+                    );
+                }
+                await tx.wallet.update({
+                    where: { walletNumber: beneficiaryWallet.walletNumber },
+                    data: {
+                        mainBalance: {
+                            increment: options.amount,
+                        },
                     },
-                },
-            });
+                });
 
-            //generate transaction log
-            //beneficiary
-            const transactionId = generateId({
-                type: "transaction",
-            });
-            await tx.transaction.create({
-                data: {
-                    amount: options.amount,
-                    flow: TransactionFlow.IN,
-                    status: TransactionStatus.SUCCESS,
-                    totalAmount: options.amount,
-                    transactionId: transactionId,
-                    type: TransactionType.WALLET_FUND,
-                    receiverId: beneficiaryWallet.userId,
-                    userId: beneficiaryWallet.userId,
-                    senderId: user.id,
-                    walletFundTransactionFlow:
-                        WalletFundTransactionFlow.FROM_BENEFACTOR,
-                    shortDescription: TransactionShortDescription.WALLET_FUNDED,
-                    paymentChannel: PaymentChannel.WALLET,
-                    paymentStatus: PaymentStatus.SUCCESS,
-                },
-            });
+                //generate transaction log
+                //beneficiary
+                const transactionId = generateId({
+                    type: "transaction",
+                });
+                await tx.transaction.create({
+                    data: {
+                        amount: options.amount,
+                        flow: TransactionFlow.IN,
+                        status: TransactionStatus.SUCCESS,
+                        totalAmount: options.amount,
+                        transactionId: transactionId,
+                        type: TransactionType.WALLET_FUND,
+                        receiverId: beneficiaryWallet.userId,
+                        userId: beneficiaryWallet.userId,
+                        senderId: user.id,
+                        walletFundTransactionFlow:
+                            WalletFundTransactionFlow.FROM_BENEFACTOR,
+                        shortDescription:
+                            TransactionShortDescription.WALLET_FUNDED,
+                        paymentChannel: PaymentChannel.WALLET,
+                        paymentStatus: PaymentStatus.SUCCESS,
+                    },
+                });
 
-            //benefactor
-            await tx.transaction.create({
-                data: {
-                    amount: options.amount,
-                    flow: TransactionFlow.OUT,
-                    status: TransactionStatus.SUCCESS,
-                    totalAmount: options.amount,
-                    transactionId: transactionId,
-                    type: TransactionType.WALLET_FUND,
-                    receiverId: beneficiaryWallet.userId,
-                    userId: user.id,
-                    senderId: user.id,
-                    walletFundTransactionFlow:
-                        WalletFundTransactionFlow.TO_BENEFICIARY,
-                    shortDescription: TransactionShortDescription.WALLET_FUNDED,
-                    paymentReference: paymentReference,
-                    paymentStatus: PaymentStatus.SUCCESS,
-                    paymentChannel: PaymentChannel.WALLET,
-                },
-            });
-        });
+                //benefactor
+                await tx.transaction.create({
+                    data: {
+                        amount: options.amount,
+                        flow: TransactionFlow.OUT,
+                        status: TransactionStatus.SUCCESS,
+                        totalAmount: options.amount,
+                        transactionId: transactionId,
+                        type: TransactionType.WALLET_FUND,
+                        receiverId: beneficiaryWallet.userId,
+                        userId: user.id,
+                        senderId: user.id,
+                        walletFundTransactionFlow:
+                            WalletFundTransactionFlow.TO_BENEFICIARY,
+                        shortDescription:
+                            TransactionShortDescription.WALLET_FUNDED,
+                        paymentReference: paymentReference,
+                        paymentStatus: PaymentStatus.SUCCESS,
+                        paymentChannel: PaymentChannel.WALLET,
+                    },
+                });
+            },
+            { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }
+        );
 
         return buildResponse({
             message: `You have successfully transferred ${options.amount} to wallet number ${beneficiaryWallet.walletNumber}`,
@@ -706,7 +717,6 @@ export class WalletService {
         options: CreateVendorWalletDto,
         user: User
     ): Promise<ApiResponse> {
-        console.log(user.id);
         const wallet = await this.prisma.wallet.findUnique({
             where: { userId: user.id },
         });
@@ -803,11 +813,6 @@ export class WalletService {
             virtualAccountCreateManyOptions.push(gtBankCreateOptions);
         }
 
-        //create record
-        const userUpdateData: Prisma.UserUpdateInput = {
-            isWalletCreated: true,
-        };
-
         if (virtualAccountCreateManyOptions.length) {
             const walletNumber = customAlphabet("1234567890ABCDEFGH", 10)();
             await this.prisma
@@ -823,7 +828,10 @@ export class WalletService {
                         where: {
                             id: user.id,
                         },
-                        data: userUpdateData,
+                        data: {
+                            isWalletCreated: true,
+                            walletSetupStatus: WalletSetupStatus.ACTIVE,
+                        },
                     });
                 })
                 .catch((err) => {
@@ -1239,7 +1247,7 @@ export class WalletService {
         const paymentReference = generateId({ type: "reference" });
         await this.prisma.$transaction(
             async (tx) => {
-                await tx.wallet.update({
+                const sender = await tx.wallet.update({
                     where: {
                         id: merchantWallet.id,
                     },
@@ -1249,6 +1257,14 @@ export class WalletService {
                         },
                     },
                 });
+
+                if (sender.mainBalance < 0) {
+                    throw new InsufficientWalletBalanceException(
+                        "Insufficient wallet balance",
+                        HttpStatus.BAD_REQUEST
+                    );
+                }
+
                 await tx.wallet.update({
                     where: {
                         id: agentWallet.id,
@@ -1319,6 +1335,7 @@ export class WalletService {
             },
             {
                 timeout: DB_TRANSACTION_TIMEOUT,
+                isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
             }
         );
         return {
@@ -1546,7 +1563,7 @@ export class WalletService {
         const transactionId = generateId({ type: "transaction" });
         await this.prisma.$transaction(
             async (tx) => {
-                await tx.wallet.update({
+                const sender = await tx.wallet.update({
                     where: {
                         id: wallet.id,
                     },
@@ -1559,6 +1576,13 @@ export class WalletService {
                         },
                     },
                 });
+
+                if (sender.commissionBalance < 0) {
+                    throw new InsufficientWalletBalanceException(
+                        "Insufficient commission balance",
+                        HttpStatus.BAD_REQUEST
+                    );
+                }
 
                 await tx.transaction.create({
                     data: {
@@ -1583,6 +1607,7 @@ export class WalletService {
             },
             {
                 timeout: DB_TRANSACTION_TIMEOUT,
+                isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
             }
         );
 

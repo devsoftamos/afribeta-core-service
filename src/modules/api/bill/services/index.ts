@@ -54,6 +54,7 @@ import {
     TransactionNotFoundException,
     TransactionShortDescription,
 } from "../../transaction";
+import { InsufficientWalletBalanceException } from "../../wallet";
 
 @Injectable()
 export class BillService {
@@ -131,7 +132,7 @@ export class BillService {
         try {
             await this.prisma.$transaction(
                 async (tx) => {
-                    await tx.wallet.update({
+                    const wallet = await tx.wallet.update({
                         where: {
                             id: options.walletId,
                         },
@@ -141,6 +142,13 @@ export class BillService {
                             },
                         },
                     });
+
+                    if (wallet.mainBalance < 0) {
+                        throw new InsufficientWalletBalanceException(
+                            "Insufficient wallet balance",
+                            HttpStatus.BAD_REQUEST
+                        );
+                    }
 
                     await tx.transaction.update({
                         where: {
@@ -153,13 +161,23 @@ export class BillService {
                 },
                 {
                     timeout: DB_TRANSACTION_TIMEOUT,
+                    isolationLevel:
+                        Prisma.TransactionIsolationLevel.Serializable,
                 }
             );
         } catch (error) {
-            throw new WalletChargeException(
-                "Failed to complete wallet charge",
-                HttpStatus.INTERNAL_SERVER_ERROR
-            );
+            switch (true) {
+                case error instanceof InsufficientWalletBalanceException: {
+                    throw error;
+                }
+
+                default: {
+                    throw new WalletChargeException(
+                        "Failed to complete wallet charge",
+                        HttpStatus.INTERNAL_SERVER_ERROR
+                    );
+                }
+            }
         }
     }
 

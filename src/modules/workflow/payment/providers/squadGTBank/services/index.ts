@@ -38,7 +38,7 @@ export class SquadGTBankService {
             if (!account.data) {
                 throw new SquadGTBankVirtualAccountException(
                     "Failed to create GTBank virtual account",
-                    HttpStatus.INTERNAL_SERVER_ERROR
+                    HttpStatus.BAD_REQUEST
                 );
             }
 
@@ -52,7 +52,7 @@ export class SquadGTBankService {
                 case error instanceof FSDH360BankError: {
                     throw new SquadGTBankVirtualAccountException(
                         error.message,
-                        HttpStatus.INTERNAL_SERVER_ERROR
+                        HttpStatus.BAD_REQUEST
                     );
                 }
 
@@ -63,7 +63,7 @@ export class SquadGTBankService {
                 default: {
                     throw new SquadGTBankException(
                         error.message,
-                        HttpStatus.INTERNAL_SERVER_ERROR
+                        HttpStatus.BAD_REQUEST
                     );
                 }
             }

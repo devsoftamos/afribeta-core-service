@@ -42,14 +42,14 @@ export class FSDH360BankService {
                 case error instanceof FSDH360BankError: {
                     throw new FSDH360BankVirtualAccountException(
                         error.message,
-                        HttpStatus.INTERNAL_SERVER_ERROR
+                        HttpStatus.BAD_REQUEST
                     );
                 }
 
                 default: {
                     throw new FSDH360BankException(
                         error.message,
-                        HttpStatus.INTERNAL_SERVER_ERROR
+                        HttpStatus.BAD_REQUEST
                     );
                 }
             }
@@ -71,7 +71,7 @@ export class FSDH360BankService {
             logger.error(error);
             switch (true) {
                 case error instanceof FSDH360BankError: {
-                    if (error.status > 500) {
+                    if (error.status >= 500) {
                         throw new FSDH360BankBvnVerificationException(
                             "Please try again later",
                             HttpStatus.SERVICE_UNAVAILABLE
@@ -79,14 +79,14 @@ export class FSDH360BankService {
                     }
                     throw new FSDH360BankBvnVerificationException(
                         error.message,
-                        error.status ?? HttpStatus.INTERNAL_SERVER_ERROR
+                        error.status ?? HttpStatus.BAD_REQUEST
                     );
                 }
 
                 default: {
                     throw new FSDH360BankBvnVerificationException(
                         error.message,
-                        error.status ?? HttpStatus.INTERNAL_SERVER_ERROR
+                        error.status ?? HttpStatus.BAD_REQUEST
                     );
                 }
             }
