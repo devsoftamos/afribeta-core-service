@@ -35,6 +35,9 @@ export enum TransactionReportType {
     CABLETV_BILL = "CABLETV_BILL",
     PAYOUT = "PAYOUT",
     COMMISSION = "COMMISSION",
+    WALLET_FUND = "WALLET_FUND",
+    SUBAGENT_WALLET_FUND = "SUBAGENT_WALLET_FUND",
+    TRANSFER_FUND = "TRANSFER_FUND",
 }
 
 export class VerifyTransactionDto {
@@ -45,7 +48,18 @@ export class VerifyTransactionDto {
     provider: VerifyTransactionProvider;
 }
 
+export enum TransactionStatusFilter {
+    SUCCESS = "SUCCESS",
+    FAILED = "FAILED",
+    PENDING = "PENDING",
+    REVERSED = "REVERSED",
+}
+
 export class TransactionHistoryDto {
+    @IsOptional()
+    @IsString()
+    searchName: string;
+
     @IsOptional()
     @IsBooleanString()
     pagination: string;
@@ -61,6 +75,18 @@ export class TransactionHistoryDto {
     @IsOptional()
     @IsEnum(TransactionReportType)
     type: TransactionReportType;
+
+    @IsOptional()
+    @IsDateString()
+    startDate: string;
+
+    @IsOptional()
+    @IsDateString()
+    endDate: string;
+
+    @IsOptional()
+    @IsEnum(TransactionStatusFilter)
+    status: TransactionStatusFilter;
 }
 
 export class MerchantTransactionHistoryDto {
