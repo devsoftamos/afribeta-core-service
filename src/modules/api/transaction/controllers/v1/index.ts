@@ -13,7 +13,11 @@ import {
     ValidationPipe,
 } from "@nestjs/common";
 import { User as UserModel } from "@prisma/client";
-import { TransactionHistoryDto, VerifyTransactionDto } from "../../dtos";
+import {
+    TransactionHistoryDto,
+    TransactionHistoryWithFiltersDto,
+    VerifyTransactionDto,
+} from "../../dtos";
 import { TransactionService } from "../../services";
 
 @UseGuards(AuthGuard, EnabledAccountGuard)
@@ -34,7 +38,8 @@ export class TransactionController {
 
     @Get("history")
     async transactionHistory(
-        @Query(ValidationPipe) transactionHistoryDto: TransactionHistoryDto,
+        @Query(ValidationPipe)
+        transactionHistoryDto: TransactionHistoryWithFiltersDto,
         @User() user: UserModel
     ) {
         return await this.transactionService.transactionHistory(
@@ -47,7 +52,8 @@ export class TransactionController {
     @UseGuards(AbilitiesGuard)
     @CheckAbilities(new ViewSubAgentAbility())
     async MerchantAgentTransactionHistory(
-        @Query(ValidationPipe) transactionHistoryDto: TransactionHistoryDto,
+        @Query(ValidationPipe)
+        transactionHistoryDto: TransactionHistoryWithFiltersDto,
         @User() user: UserModel,
         @Param("id", ParseIntPipe) id: number
     ) {

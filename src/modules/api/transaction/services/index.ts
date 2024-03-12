@@ -19,6 +19,7 @@ import {
     MerchantTransactionHistoryDto,
     QueryTransactionStatus,
     TransactionHistoryDto,
+    TransactionHistoryWithFiltersDto,
     TransactionReportType,
     UpdatePayoutStatus,
     UpdatePayoutStatusDto,
@@ -73,7 +74,7 @@ export class TransactionService {
     }
 
     async transactionHistory(
-        options: TransactionHistoryDto,
+        options: TransactionHistoryWithFiltersDto,
         user: User,
         userId?: number
     ) {
@@ -82,7 +83,7 @@ export class TransactionService {
         const queryOptions: Prisma.TransactionFindManyArgs = {
             orderBy: { createdAt: "desc" },
             where: {
-                userId: user.id,
+                userId: 7, // user.id,
             },
             select: {
                 id: true,
@@ -106,6 +107,118 @@ export class TransactionService {
             queryOptions.where.userId = userId;
         }
 
+        //filters
+        let type: TransactionType[] = [];
+        let status: TransactionStatus[] = [];
+        let paymentStatus: PaymentStatus[] = [];
+        if (options.airtimeFilter) {
+            type = [...type, TransactionType.AIRTIME_PURCHASE];
+            queryOptions.where.type = {
+                in: type,
+            };
+        }
+
+        if (options.dataFilter) {
+            type = [...type, TransactionType.DATA_PURCHASE];
+            queryOptions.where.type = {
+                in: type,
+            };
+        }
+
+        if (options.internetFilter) {
+            type = [...type, TransactionType.INTERNET_BILL];
+            queryOptions.where.type = {
+                in: type,
+            };
+        }
+
+        if (options.cableTvFilter) {
+            type = [...type, TransactionType.CABLETV_BILL];
+            queryOptions.where.type = {
+                in: type,
+            };
+        }
+
+        if (options.powerFilter) {
+            type = [...type, TransactionType.ELECTRICITY_BILL];
+            queryOptions.where.type = {
+                in: type,
+            };
+        }
+
+        if (options.bankTransfer) {
+            type = [...type, TransactionType.TRANSFER_FUND];
+            queryOptions.where.type = {
+                in: type,
+            };
+        }
+
+        if (options.payoutFilter) {
+            type = [...type, TransactionType.PAYOUT];
+            queryOptions.where.type = {
+                in: type,
+            };
+        }
+
+        if (options.failedStatusFilter) {
+            status = [...status, TransactionStatus.FAILED];
+            queryOptions.where.status = {
+                in: status,
+            };
+        }
+
+        if (options.pendingStatusFilter) {
+            status = [...status, TransactionStatus.PENDING];
+            queryOptions.where.status = {
+                in: status,
+            };
+        }
+
+        if (options.successStatusFilter) {
+            status = [...status, TransactionStatus.SUCCESS];
+            queryOptions.where.status = {
+                in: status,
+            };
+        }
+
+        if (options.reversedStatusFilter) {
+            paymentStatus = [...paymentStatus, PaymentStatus.REFUNDED];
+            queryOptions.where.status = {
+                in: status,
+            };
+        }
+
+        if (options.walletFundFilter || options.subAgentWalletFundFilter) {
+            type = [...type, TransactionType.WALLET_FUND];
+            queryOptions.where.type = {
+                in: type,
+            };
+        }
+
+        if (options.bankTransfer) {
+            type = [...type, TransactionType.TRANSFER_FUND];
+            queryOptions.where.type = {
+                in: type,
+            };
+        }
+
+        if (options.startDate && options.endDate) {
+            queryOptions.where.createdAt = {
+                gte: new Date(options.startDate),
+                lte: new Date(options.endDate),
+            };
+        }
+
+        if (options.searchName) {
+            queryOptions.where.senderIdentifier = {
+                search: options.searchName,
+            };
+            queryOptions.where.transactionId = { search: options.searchName };
+            queryOptions.where.paymentReference = {
+                search: options.searchName,
+            };
+        }
+
         //pagination
         if (options.pagination) {
             const page = +options.page || 1;
@@ -120,6 +233,7 @@ export class TransactionService {
             meta.page = page;
             meta.perPage = limit;
         }
+
         const transactions = await this.prisma.transaction.findMany(
             queryOptions
         );
@@ -139,7 +253,7 @@ export class TransactionService {
     }
 
     async viewOwnAgentTransactionHistory(
-        options: TransactionHistoryDto,
+        options: TransactionHistoryWithFiltersDto,
         user: User,
         subAgentId: number
     ) {

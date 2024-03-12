@@ -559,8 +559,8 @@ model Bank {
 
 model WalletOpeningBalance {
   id         Int      @id @default(autoincrement())
-  main       Int
-  commission Int
+  main       Float
+  commission Float
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 

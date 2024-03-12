@@ -12,8 +12,10 @@ export class IkejaElectricWorkflowService
     implements i.PowerBillPaymentWorkflow
 {
     readonly paidType: "POS";
+    readonly clientErrorCodes: number[];
     constructor(private ie: IkejaElectric) {
         this.paidType = "POS";
+        this.clientErrorCodes = [502, 503, 501, 808, 905, 811];
     }
 
     generateOrderNo(date?: Date) {
@@ -69,9 +71,15 @@ export class IkejaElectricWorkflowService
         } catch (error) {
             switch (true) {
                 case error instanceof IkejaElectricError: {
+                    if (this.clientErrorCodes.includes(error.status)) {
+                        throw new e.IkejaElectricPowerException(
+                            error.message,
+                            HttpStatus.BAD_REQUEST
+                        );
+                    }
                     throw new e.IkejaElectricPowerException(
                         error.message ?? "Unable to retrieve meter details",
-                        HttpStatus.BAD_REQUEST
+                        HttpStatus.INTERNAL_SERVER_ERROR
                     );
                 }
 
@@ -134,9 +142,15 @@ export class IkejaElectricWorkflowService
         } catch (error) {
             switch (true) {
                 case error instanceof IkejaElectricError: {
+                    if (this.clientErrorCodes.includes(error.status)) {
+                        throw new e.IkejaElectricPowerException(
+                            error.message,
+                            HttpStatus.BAD_REQUEST
+                        );
+                    }
                     throw new e.IkejaElectricVendPowerException(
                         error.message ?? "Unable to vend power",
-                        HttpStatus.BAD_REQUEST
+                        HttpStatus.INTERNAL_SERVER_ERROR
                     );
                 }
 

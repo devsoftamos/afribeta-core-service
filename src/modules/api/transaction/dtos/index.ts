@@ -48,14 +48,25 @@ export class VerifyTransactionDto {
     provider: VerifyTransactionProvider;
 }
 
-export enum TransactionStatusFilter {
-    SUCCESS = "SUCCESS",
-    FAILED = "FAILED",
-    PENDING = "PENDING",
-    REVERSED = "REVERSED",
+export class TransactionHistoryDto {
+    @IsOptional()
+    @IsBooleanString()
+    pagination: string;
+
+    @IsOptional()
+    @IsNumberString()
+    page: string;
+
+    @IsOptional()
+    @IsNumberString()
+    limit: string;
+
+    @IsOptional()
+    @IsEnum(TransactionReportType)
+    type: TransactionReportType;
 }
 
-export class TransactionHistoryDto {
+export class TransactionHistoryWithFiltersDto {
     @IsOptional()
     @IsString()
     searchName: string;
@@ -85,8 +96,56 @@ export class TransactionHistoryDto {
     endDate: string;
 
     @IsOptional()
-    @IsEnum(TransactionStatusFilter)
-    status: TransactionStatusFilter;
+    @IsBooleanString()
+    airtimeFilter: string;
+
+    @IsOptional()
+    @IsBooleanString()
+    dataFilter: string;
+
+    @IsOptional()
+    @IsBooleanString()
+    internetFilter: string;
+
+    @IsOptional()
+    @IsBooleanString()
+    powerFilter: string;
+
+    @IsOptional()
+    @IsBooleanString()
+    cableTvFilter: string;
+
+    @IsOptional()
+    @IsBooleanString()
+    walletFundFilter: string;
+
+    @IsOptional()
+    @IsBooleanString()
+    bankTransfer: string;
+
+    @IsOptional()
+    @IsBooleanString()
+    payoutFilter: string;
+
+    @IsOptional()
+    @IsBooleanString()
+    subAgentWalletFundFilter: string;
+
+    @IsOptional()
+    @IsBooleanString()
+    successStatusFilter: string;
+
+    @IsOptional()
+    @IsBooleanString()
+    failedStatusFilter: string;
+
+    @IsOptional()
+    @IsBooleanString()
+    pendingStatusFilter: string;
+
+    @IsOptional()
+    @IsBooleanString()
+    reversedStatusFilter: string;
 }
 
 export class MerchantTransactionHistoryDto {
