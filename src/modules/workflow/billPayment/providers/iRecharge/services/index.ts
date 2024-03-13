@@ -666,16 +666,16 @@ export class IRechargeWorkflowService implements BillPaymentWorkflow {
                     );
                 }
 
-                let bouquets = resp.bundles.map((bundle) => {
+                const bouquets = resp.bundles.map((bundle) => {
                     return {
                         code: bundle.code,
                         price: +bundle.price,
                         title: bundle.title,
                     };
                 });
-                if (cableTVProvider == TVNetworkProvider.STARTIMES) {
-                    bouquets = bouquets.slice(1); //first element not a valid plan
-                }
+                // if (cableTVProvider == TVNetworkProvider.STARTIMES) {
+                //     bouquets = bouquets.slice(1); //first element not a valid plan
+                // }
                 return bouquets;
             };
 
