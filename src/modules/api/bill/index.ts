@@ -16,6 +16,7 @@ import { BullModule } from "@nestjs/bull";
 import { billBoardQueueConfig, billQueueConfig } from "./queues";
 import { BuypowerReQueryQueueProcessor } from "./queues/processors";
 import { BullBoardModule } from "@bull-board/nestjs";
+import { AdminBillController } from "./controllers/v1/admin";
 @Module({
     imports: [
         BullModule.registerQueue(...billQueueConfig),
@@ -38,6 +39,7 @@ import { BullBoardModule } from "@bull-board/nestjs";
         AirtimeBillController,
         InternetBillController,
         CableTVBillController,
+        AdminBillController,
     ],
     exports: [BillService],
 })

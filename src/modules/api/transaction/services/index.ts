@@ -1030,6 +1030,20 @@ export class TransactionService {
                 };
                 break;
             }
+
+            case TransactionType.TRANSFER_FUND: {
+                response = {
+                    type: transaction.type,
+                    shortDescription: transaction.shortDescription,
+                    date: transaction.updatedAt,
+                    status: transaction.status,
+                    amount: transaction.amount,
+                    beneficiary: transaction.user
+                        ? transaction.user.email
+                        : "N/A",
+                };
+                break;
+            }
             case TransactionType.WALLET_FUND: {
                 const walletToWalletTransfer = [
                     WalletFundTransactionFlow.FROM_BENEFACTOR,

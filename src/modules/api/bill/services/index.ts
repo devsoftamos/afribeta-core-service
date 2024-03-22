@@ -22,6 +22,7 @@ import {
     WalletChargeHandler,
     BillServiceSlug,
     CheckServiceChargeOptions,
+    BillProviderSlugForPower,
 } from "../interfaces";
 import logger from "moment-logger";
 import { PowerBillService } from "./power";
@@ -36,14 +37,20 @@ import {
 } from "@/config";
 import {
     BillPaymentValidationException,
+    BillProviderNotFoundException,
     ComputeBillCommissionException,
+    InvalidBillProviderException,
     PayBillCommissionException,
     WalletChargeException,
 } from "../errors";
 import { AirtimeBillService } from "./airtime";
 import { InternetBillService } from "./internet";
 import { CableTVBillService } from "./cabletv";
-import { PaginationDto } from "../dtos";
+import {
+    BillProviderEnum,
+    PaginationDto,
+    UpdateDefaultBillProviderDto,
+} from "../dtos";
 import {
     ApiResponse,
     buildResponse,
@@ -1055,5 +1062,92 @@ export class BillService {
         }
 
         return true;
+    }
+
+    async adminUpdateDefaultBillProvider(
+        options: UpdateDefaultBillProviderDto
+    ) {
+        const handler = async (providerSlug: string) => {
+            const provider = await this.prisma.billProvider.findUnique({
+                where: { slug: providerSlug },
+            });
+            if (!provider) {
+                throw new BillProviderNotFoundException(
+                    "provider not found",
+                    HttpStatus.NOT_FOUND
+                );
+            }
+
+            const updated = await this.prisma.$transaction(async (tx) => {
+                const updated = await tx.billProvider.update({
+                    where: { id: provider.id },
+                    data: {
+                        isDefault: true,
+                    },
+                    select: {
+                        id: true,
+                        isDefault: true,
+                        name: true,
+                    },
+                });
+
+                await tx.billProvider.updateMany({
+                    where: {
+                        id: {
+                            not: provider.id,
+                        },
+                    },
+                    data: {
+                        isDefault: false,
+                    },
+                });
+                return updated;
+            });
+            return updated;
+        };
+
+        switch (options.provider) {
+            case BillProviderEnum.BUYPOWER: {
+                const updated = await handler(
+                    BillProviderSlugForPower.BUYPOWER
+                );
+                return buildResponse({
+                    message: "provider successfully set",
+                    data: updated,
+                });
+            }
+
+            case BillProviderEnum.IRECHARGE: {
+                const updated = await handler(
+                    BillProviderSlugForPower.IRECHARGE
+                );
+                return buildResponse({
+                    message: "provider successfully set",
+                    data: updated,
+                });
+            }
+
+            default: {
+                throw new InvalidBillProviderException(
+                    "invalid provider selected",
+                    HttpStatus.BAD_REQUEST
+                );
+            }
+        }
+    }
+
+    async getProviders() {
+        const providers = await this.prisma.billProvider.findMany({
+            select: {
+                id: true,
+                name: true,
+                isDefault: true,
+            },
+        });
+
+        return buildResponse({
+            message: "providers successfully retrieved",
+            data: providers,
+        });
     }
 }

@@ -38,3 +38,12 @@ export class PaginationDto {
     @IsNumberString()
     limit: string;
 }
+
+export enum BillProviderEnum {
+    BUYPOWER = "BUYPOWER",
+    IRECHARGE = "IRECHARGE",
+}
+export class UpdateDefaultBillProviderDto {
+    @IsEnum(BillProviderEnum)
+    provider: BillProviderEnum;
+}
