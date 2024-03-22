@@ -1038,9 +1038,10 @@ export class TransactionService {
                     date: transaction.updatedAt,
                     status: transaction.status,
                     amount: transaction.amount,
-                    beneficiary: transaction.user
-                        ? transaction.user.email
-                        : "N/A",
+                    beneficiary: transaction.destinationBankAccountName,
+                    beneficiaryBank: transaction.destinationBankName,
+                    beneficiaryBankAccountNumber:
+                        transaction.destinationBankAccountNumber,
                 };
                 break;
             }
@@ -1114,6 +1115,16 @@ export class TransactionService {
                     WalletFundTransactionFlow.COMMISSION_BALANCE_TO_MAIN_BALANCE
                 ) {
                     //
+                    response = {
+                        amount: transaction.amount,
+                        type: "COMMISSION_TRANSFER",
+                        shortDescription: transaction.shortDescription,
+                        date: transaction.updatedAt,
+                        status: transaction.status,
+                        beneficiary: transaction.user
+                            ? transaction.user.email
+                            : "N/A",
+                    };
                 }
             }
         }

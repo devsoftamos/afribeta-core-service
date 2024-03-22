@@ -24,7 +24,8 @@ export type TransactionDetailResponse = {
         | "WALLET_TRANSFER"
         | "COMMISSION"
         | "DEPOSIT"
-        | "BANK_TRANSFER";
+        | "BANK_TRANSFER"
+        | "COMMISSION_TRANSFER";
     product?: string;
     amount: number;
     sender?: string;
@@ -34,4 +35,6 @@ export type TransactionDetailResponse = {
     status: TransactionStatus;
     date: Date;
     token?: string;
+    beneficiaryBank?: string;
+    beneficiaryBankAccountNumber?: string;
 };
