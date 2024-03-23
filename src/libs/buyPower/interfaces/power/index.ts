@@ -61,9 +61,8 @@ export interface VendPowerResponseData {
     debtAmount: number;
     debtRemaining: number;
     disco: Disco;
-    freeUnits: 0;
     orderId: string;
-    receiptNo: string;
+    receiptNo: number;
     tax: number;
     vendTime?: string;
     token: string;

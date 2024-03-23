@@ -21,7 +21,7 @@ export interface VendTVOptions {
 
 export interface VendTVResponseData {
     orderId: string;
-    receiptNo: string;
+    receiptNo: number;
     totalAmountPaid: number;
     disco: CableTVNetwork;
     vendRef: number;

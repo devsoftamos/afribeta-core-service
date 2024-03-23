@@ -22,7 +22,7 @@ export interface VendDataOptions {
 
 export interface VendDataResponseData {
     orderId: string;
-    receiptNo: string;
+    receiptNo: number;
     totalAmountPaid: number;
     disco: DataNetwork;
     vendRef: number;

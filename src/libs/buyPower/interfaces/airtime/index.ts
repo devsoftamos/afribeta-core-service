@@ -21,7 +21,7 @@ export interface VendAirtimeOptions {
 
 export interface VendAirtimeResponseData {
     orderId: string;
-    receiptNo: string;
+    receiptNo: number;
     totalAmountPaid: number;
     disco: VtuNetwork;
     vendRef: number;
