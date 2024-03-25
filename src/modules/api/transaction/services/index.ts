@@ -83,7 +83,7 @@ export class TransactionService {
         const queryOptions: Prisma.TransactionFindManyArgs = {
             orderBy: { createdAt: "desc" },
             where: {
-                userId: 7, // user.id,
+                userId: user.id,
             },
             select: {
                 id: true,
