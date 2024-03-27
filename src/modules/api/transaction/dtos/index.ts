@@ -241,3 +241,8 @@ export class FetchRecommendedPayoutDto {
     @IsNumberString()
     limit: string;
 }
+
+export class AllTransactionStatDto {
+    @IsDateString()
+    date: Date;
+}

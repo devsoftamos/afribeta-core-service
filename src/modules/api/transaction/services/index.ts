@@ -625,7 +625,7 @@ export class TransactionService {
                     notIn: [
                         WalletFundTransactionFlow.TO_BENEFICIARY,
                         WalletFundTransactionFlow.TO_AGENT,
-                    ], //from benefactor already cover this
+                    ], //from benefactor and from merchant already cover this
                 },
             },
             select: {
@@ -682,7 +682,7 @@ export class TransactionService {
                     notIn: [
                         WalletFundTransactionFlow.TO_BENEFICIARY,
                         WalletFundTransactionFlow.TO_AGENT,
-                    ], //from benefactor already cover this
+                    ], //from benefactor and from merchant  already cover this
                 },
             },
             select: {

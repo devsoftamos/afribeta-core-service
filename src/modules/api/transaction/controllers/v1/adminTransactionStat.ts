@@ -7,7 +7,7 @@ import {
     ValidationPipe,
 } from "@nestjs/common";
 import { TransactionStatService } from "../../services/transactionStat";
-import { SuccessfulTransactionsDto } from "../../dtos";
+import { AllTransactionStatDto, SuccessfulTransactionsDto } from "../../dtos";
 
 @UseGuards(AuthGuard)
 @Controller({
@@ -18,16 +18,6 @@ export class AdminTransactionStatController {
         private readonly transactionStatService: TransactionStatService
     ) {}
 
-    @Get("bill/success")
-    async GetSuccessfulBillPaymentTransactions(
-        @Query(ValidationPipe)
-        successfulTransactionsDto: SuccessfulTransactionsDto
-    ) {
-        return await this.transactionStatService.successfulTransactionsOnBillPayment(
-            successfulTransactionsDto
-        );
-    }
-
     @Get()
     async GetTotalTransactions(
         @Query(ValidationPipe)
@@ -35,6 +25,16 @@ export class AdminTransactionStatController {
     ) {
         return await this.transactionStatService.fetchTotalTransactions(
             successfulTransactionsDto
+        );
+    }
+
+    @Get("period")
+    async getAllTransactionStat(
+        @Query(ValidationPipe)
+        queryDto: AllTransactionStatDto
+    ) {
+        return await this.transactionStatService.getAllTransactionStat(
+            queryDto
         );
     }
 }
