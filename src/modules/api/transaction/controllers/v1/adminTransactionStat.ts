@@ -8,6 +8,9 @@ import {
 } from "@nestjs/common";
 import { TransactionStatService } from "../../services/transactionStat";
 import { AllTransactionStatDto, SuccessfulTransactionsDto } from "../../dtos";
+import { AbilitiesGuard } from "@/modules/core/ability/guards";
+import { CheckAbilities } from "@/modules/core/ability/decorator";
+import * as Ability from "@/modules/core/ability";
 
 @UseGuards(AuthGuard)
 @Controller({
@@ -19,6 +22,8 @@ export class AdminTransactionStatController {
     ) {}
 
     @Get()
+    @UseGuards(AbilitiesGuard)
+    @CheckAbilities(new Ability.ReadTransactionAbility())
     async GetTotalTransactions(
         @Query(ValidationPipe)
         successfulTransactionsDto: SuccessfulTransactionsDto
@@ -29,6 +34,8 @@ export class AdminTransactionStatController {
     }
 
     @Get("period")
+    @UseGuards(AbilitiesGuard)
+    @CheckAbilities(new Ability.ReadTransactionAbility())
     async getAllTransactionStat(
         @Query(ValidationPipe)
         queryDto: AllTransactionStatDto
