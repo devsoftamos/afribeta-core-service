@@ -9,6 +9,9 @@ import {
 import { CommissionStatService } from "../../services/commissionStat";
 import { FetchCommissionDto } from "../../dtos";
 import { AuthGuard } from "@/modules/api/auth/guard";
+import { AbilitiesGuard } from "@/modules/core/ability/guards";
+import { CheckAbilities } from "@/modules/core/ability/decorator";
+import * as Ability from "@/modules/core/ability";
 
 @UseGuards(AuthGuard)
 @Controller({
@@ -21,6 +24,8 @@ export class AdminCommissionStatController {
     ) {}
 
     @Get()
+    @UseGuards(AbilitiesGuard)
+    @CheckAbilities(new Ability.ReadCommissionAbility())
     async GetTotalCommission(
         @Query(ValidationPipe)
         fetchCommissionDto: FetchCommissionDto

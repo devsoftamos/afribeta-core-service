@@ -137,6 +137,8 @@ export class AdminUserController {
     }
 
     @Patch("enable-disable-account/:id")
+    @UseGuards(AbilitiesGuard)
+    @CheckAbilities(new Ability.AccountActivationAndDeactivationAbility())
     async enableOrDisableUserAccount(
         @Param("id", ParseIntPipe) id: number,
         @Body(ValidationPipe) bodyDto: EnableOrDisableUserDto
