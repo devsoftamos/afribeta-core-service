@@ -216,7 +216,7 @@ const internet: Prisma.BillServiceUncheckedCreateInput[] = [
         agentDefaultCommissionPercent: 1.5,
     },
     {
-        name: "Etisalat Internet",
+        name: "9 Mobile Internet",
         slug: "etisalat-internet",
         type: "INTERNET",
         icon: "https://afribeta.nyc3.digitaloceanspaces.com/icons/etisalat.png",
