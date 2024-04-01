@@ -14,6 +14,7 @@ import {
 import { TransactionService } from "../../services";
 import {
     AdminTransactionHistoryDto,
+    CustomerTransactionHistoryDto,
     FetchRecommendedPayoutDto,
     MerchantTransactionHistoryDto,
     TransactionHistoryDto,
@@ -130,5 +131,15 @@ export class AdminTransactionController {
     @CheckAbilities(new Ability.ReadTransactionAbility())
     async getTransaction(@Param("id", ParseIntPipe) id: number) {
         return await this.transactionService.fetchTransactionDetails(id);
+    }
+
+    @Get("customer/history")
+    async CustomerTransactionHistory(
+        @Query(ValidationPipe)
+        customerTransactionHistoryDto: CustomerTransactionHistoryDto
+    ) {
+        return await this.transactionService.fetchCustomerTransactionHistory(
+            customerTransactionHistoryDto
+        );
     }
 }
