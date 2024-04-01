@@ -163,6 +163,10 @@ export class MerchantTransactionHistoryDto {
 
     @IsNumberString()
     userId: string;
+
+    @IsOptional()
+    @IsString()
+    searchName: string;
 }
 
 export class ViewPayoutStatusDto {

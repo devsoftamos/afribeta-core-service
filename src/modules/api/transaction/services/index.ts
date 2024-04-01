@@ -304,17 +304,25 @@ export class TransactionService {
                 type: true,
                 amount: true,
                 createdAt: true,
-                billService: {
-                    select: {
-                        icon: true,
-                    },
-                },
+                transactionId: true,
                 shortDescription: true,
                 paymentStatus: true,
-                provider: true,
-                providerLogo: true,
+                senderIdentifier: true,
+                paymentChannel: true,
             },
         };
+
+        if (options.searchName) {
+            (queryOptions.where.paymentReference = {
+                search: options.searchName,
+            }),
+                (queryOptions.where.senderIdentifier = {
+                    search: options.searchName,
+                }),
+                (queryOptions.where.transactionId = {
+                    search: options.searchName,
+                });
+        }
 
         if (options.pagination) {
             const page = +options.page || 1;
@@ -485,8 +493,17 @@ export class TransactionService {
             select: {
                 id: true,
                 amount: true,
-                destinationBankName: true,
-                destinationBankAccountNumber: true,
+                user: {
+                    select: {
+                        bankAccount: {
+                            select: {
+                                bankName: true,
+                                accountNumber: true,
+                                accountName: true,
+                            },
+                        },
+                    },
+                },
                 totalAmount: true,
                 paymentStatus: true,
                 isPayoutRecommended: true,
