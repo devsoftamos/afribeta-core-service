@@ -453,8 +453,17 @@ export class AuthService {
     }
 
     async adminSignIn(
-        options: SignInDto
+        options: SignInDto,
+        ip: string
     ): Promise<ApiResponse<LoginResponseData>> {
+        await this.prisma.user.update({
+            where: {
+                email: options.email,
+            },
+            data: {
+                ipAddress: ip,
+            },
+        });
         return await this.signIn(options, LoginPlatform.ADMIN);
     }
 
