@@ -495,11 +495,11 @@ export class TransactionService {
                 amount: true,
                 user: {
                     select: {
-                        virtualBankAccount: {
+                        bankAccount: {
                             select: {
                                 bankName: true,
-                                accountName: true,
                                 accountNumber: true,
+                                accountName: true,
                             },
                         },
                     },
