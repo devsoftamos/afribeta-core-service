@@ -15,7 +15,7 @@ export class IkejaElectricWorkflowService
     readonly clientErrorCodes: number[];
     constructor(private ie: IkejaElectric) {
         this.paidType = "POS";
-        this.clientErrorCodes = [502, 503, 501, 808, 905, 811];
+        this.clientErrorCodes = [502, 501, 808, 802, 905, 811, 514, 814, 706];
     }
 
     generateOrderNo(date?: Date) {
@@ -148,16 +148,17 @@ export class IkejaElectricWorkflowService
                             HttpStatus.BAD_REQUEST
                         );
                     }
+
                     throw new e.IkejaElectricVendPowerException(
                         error.message ?? "Unable to vend power",
-                        HttpStatus.INTERNAL_SERVER_ERROR
+                        HttpStatus.NOT_IMPLEMENTED
                     );
                 }
 
                 default: {
                     throw new e.IkejaElectricPowerException(
                         error.message ?? "Unable to vend power",
-                        HttpStatus.INTERNAL_SERVER_ERROR
+                        HttpStatus.NOT_IMPLEMENTED
                     );
                 }
             }

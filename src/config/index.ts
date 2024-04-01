@@ -240,6 +240,7 @@ const runtimeEnvironment: RequiredEnvironment[] = [
         name: "IKEJA_ELECTRIC_SFTP_PORT",
         type: RequiredEnvironmentTypes.Number,
     },
+    //server environment
     {
         name: "ENVIRONMENT",
         type: RequiredEnvironmentTypes.String,
