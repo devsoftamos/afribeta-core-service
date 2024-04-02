@@ -182,6 +182,7 @@ export class ViewPayoutStatusDto {
     @IsNumberString()
     limit: string;
 
+    @IsOptional()
     @IsEnum(TransactionStatus)
     payoutStatus: TransactionStatus;
 }
