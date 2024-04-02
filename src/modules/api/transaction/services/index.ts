@@ -15,6 +15,7 @@ import {
 import { UserNotFoundException } from "../../user";
 import {
     AdminTransactionHistoryDto,
+    CustomerTransactionHistoryDto,
     FetchRecommendedPayoutDto,
     MerchantTransactionHistoryDto,
     QueryTransactionStatus,
@@ -362,6 +363,7 @@ export class TransactionService {
             orderBy: { createdAt: "desc" },
             where: {
                 type: TransactionType.PAYOUT,
+                isPayoutRecommended: false,
             },
             select: {
                 user: {
@@ -375,6 +377,7 @@ export class TransactionService {
                 amount: true,
                 status: true,
                 paymentReference: true,
+                isPayoutRecommended: true,
             },
         };
 
@@ -1149,6 +1152,71 @@ export class TransactionService {
         return buildResponse({
             message: "transaction details fetched successfully",
             data: response,
+        });
+    }
+
+    async fetchCustomerTransactionHistory(
+        options: CustomerTransactionHistoryDto
+    ) {
+        const meta: Partial<PaginationMeta> = {};
+
+        const queryOptions: Prisma.TransactionFindManyArgs = {
+            orderBy: { createdAt: "desc" },
+            where: {
+                userId: +options.userId,
+            },
+            select: {
+                type: true,
+                shortDescription: true,
+                senderIdentifier: true,
+                amount: true,
+                transactionId: true,
+                paymentChannel: true,
+                token: true,
+                receiverIdentifier: true,
+                updatedAt: true,
+                status: true,
+            },
+        };
+
+        if (options.pagination) {
+            const page = +options.page || 1;
+            const limit = +options.limit || 10;
+            const offset = (page - 1) * limit;
+            queryOptions.skip = offset;
+            queryOptions.take = limit;
+            const count = await this.prisma.transaction.count({
+                where: queryOptions.where,
+            });
+            meta.totalCount = count;
+            meta.page = page;
+            meta.perPage = limit;
+        }
+
+        if (options.searchName) {
+            queryOptions.where.senderIdentifier = {
+                search: options.searchName,
+            };
+            queryOptions.where.transactionId = { search: options.searchName };
+            queryOptions.where.paymentReference = {
+                search: options.searchName,
+            };
+        }
+
+        const customerTransactionHistory =
+            await this.prisma.transaction.findMany(queryOptions);
+        if (options.pagination) {
+            meta.pageCount = customerTransactionHistory.length;
+        }
+
+        const result = {
+            meta: meta,
+            records: customerTransactionHistory,
+        };
+
+        return buildResponse({
+            message: "Customer transaction history successfully retrieved",
+            data: result,
         });
     }
 }

@@ -53,3 +53,7 @@ export enum BillServiceSlug {
     SMILE = "smile-internet",
     SPECTRANET = "spectranet-internet",
 }
+
+export interface ClientDataInterface {
+    ipAddress: string;
+}
