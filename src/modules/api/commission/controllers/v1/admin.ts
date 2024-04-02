@@ -2,6 +2,8 @@ import {
     Body,
     Controller,
     Get,
+    Param,
+    ParseIntPipe,
     Patch,
     UseGuards,
     ValidationPipe,
@@ -48,5 +50,10 @@ export class AdminCommissionController {
         return await this.commissionService.updateSingleBillServiceBaseCommission(
             updateSingleBillServiceBaseCommissionDto
         );
+    }
+
+    @Get("merchant/:id")
+    async fetchMerchantCommission(@Param("id", ParseIntPipe) id: number) {
+        return await this.commissionService.fetchMerchantCommission(id);
     }
 }

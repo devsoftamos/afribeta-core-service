@@ -422,4 +422,46 @@ export class CommissionService {
             message: "commission successfully deleted",
         });
     }
+
+    async fetchMerchantCommission(userId: number) {
+        const merchant = await this.prisma.user.findFirst({
+            where: {
+                id: userId,
+            },
+        });
+
+        if (!merchant) {
+            throw new UserNotFoundException(
+                "Merchant not found",
+                HttpStatus.NOT_FOUND
+            );
+        }
+
+        const merchantCommission = await this.prisma.userCommission.findMany({
+            where: {
+                userId: userId,
+            },
+            select: {
+                userId: true,
+                percentage: true,
+                billServiceSlug: true,
+                billService: {
+                    select: {
+                        name: true,
+                        baseCommissionPercentage: true,
+                    },
+                },
+            },
+        });
+
+        const groupedCommissions = groupBy(
+            "billServiceSlug",
+            merchantCommission
+        );
+
+        return buildResponse({
+            message: "Merchant commission successfully retrieved",
+            data: groupedCommissions,
+        });
+    }
 }
