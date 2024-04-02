@@ -9,7 +9,7 @@ import {
 import { ApiResponse } from "@/utils/api-response-util";
 import { SignInDto } from "../../dtos";
 import { AuthService } from "../../services";
-import { ClientData } from "@/modules/api/user";
+import { ClientData, ClientDataInterface } from "@/modules/api/user";
 
 @Controller({
     path: "admin/auth",
@@ -21,7 +21,7 @@ export class AdminAuthController {
     @Post("login")
     async signIn(
         @Body(ValidationPipe) signInDto: SignInDto,
-        @ClientData() clientData: { ipAddress: string }
+        @ClientData() clientData: ClientDataInterface
     ): Promise<ApiResponse> {
         return await this.authService.adminSignIn(
             signInDto,
