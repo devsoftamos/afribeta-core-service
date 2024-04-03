@@ -19,6 +19,11 @@ export enum UpdatePayoutStatus {
     DECLINED = "DECLINED",
 }
 
+export enum PayoutStatus {
+    APPROVED = "APPROVED",
+    PENDING = "PENDING",
+}
+
 export enum BillPayment {
     AIRTIME_TO_CASH = "AIRTIME_TO_CASH",
     DATA_PURCHASE = "DATA_PURCHASE",
@@ -182,8 +187,9 @@ export class ViewPayoutStatusDto {
     @IsNumberString()
     limit: string;
 
-    @IsEnum(TransactionStatus)
-    payoutStatus: TransactionStatus;
+    @IsOptional()
+    @IsEnum(PayoutStatus)
+    status: PayoutStatus;
 }
 
 export class UpdatePayoutStatusDto {

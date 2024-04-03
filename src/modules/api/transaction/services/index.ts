@@ -18,6 +18,7 @@ import {
     CustomerTransactionHistoryDto,
     FetchRecommendedPayoutDto,
     MerchantTransactionHistoryDto,
+    PayoutStatus,
     QueryTransactionStatus,
     TransactionHistoryDto,
     TransactionHistoryWithFiltersDto,
@@ -356,14 +357,13 @@ export class TransactionService {
         });
     }
 
-    async viewPayoutRequests(options: ViewPayoutStatusDto) {
+    async payoutRequests(options: ViewPayoutStatusDto) {
         const paginationMeta: Partial<PaginationMeta> = {};
 
         const queryOptions: Prisma.TransactionFindManyArgs = {
             orderBy: { createdAt: "desc" },
             where: {
                 type: TransactionType.PAYOUT,
-                isPayoutRecommended: false,
             },
             select: {
                 user: {
@@ -381,15 +381,21 @@ export class TransactionService {
             },
         };
 
-        switch (options.payoutStatus) {
-            case TransactionStatus.PENDING: {
+        switch (options.status) {
+            case PayoutStatus.PENDING: {
                 queryOptions.where.status = TransactionStatus.PENDING;
+                queryOptions.where.isPayoutRecommended = false;
                 break;
             }
-            case TransactionStatus.APPROVED: {
+            case PayoutStatus.APPROVED: {
                 queryOptions.where.status = TransactionStatus.APPROVED;
-
+                queryOptions.where.isPayoutRecommended = true;
                 break;
+            }
+
+            default: {
+                queryOptions.where.isPayoutRecommended = false;
+                queryOptions.where.status = TransactionStatus.APPROVED;
             }
         }
 

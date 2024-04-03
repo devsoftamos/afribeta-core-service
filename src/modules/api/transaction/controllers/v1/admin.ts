@@ -47,10 +47,10 @@ export class AdminTransactionController {
     @Get("payout")
     @UseGuards(AbilitiesGuard)
     @CheckAbilities(new Ability.ReadPayoutAbility())
-    async viewPayoutHistory(
+    async viewPayoutRequests(
         @Query(ValidationPipe) viewPayoutStatusDto: ViewPayoutStatusDto
     ) {
-        return await this.transactionService.viewPayoutRequests(
+        return await this.transactionService.payoutRequests(
             viewPayoutStatusDto
         );
     }
