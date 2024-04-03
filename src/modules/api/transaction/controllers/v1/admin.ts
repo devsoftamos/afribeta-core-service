@@ -142,4 +142,14 @@ export class AdminTransactionController {
             customerTransactionHistoryDto
         );
     }
+
+    @Get("user")
+    async UserTransactionHistory(
+        @Query(ValidationPipe)
+        userTransactionHistoryDto: UserTransactionHistoryDto
+    ) {
+        return await this.transactionService.getUserTransactions(
+            userTransactionHistoryDto
+        );
+    }
 }
