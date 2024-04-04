@@ -19,6 +19,7 @@ import {
 } from "../dtos";
 import { BillCommissionException } from "../errors";
 import { UserNotFoundException } from "../../user";
+import { da } from "date-fns/locale";
 
 @Injectable()
 export class CommissionService {
@@ -449,19 +450,23 @@ export class CommissionService {
                     select: {
                         name: true,
                         baseCommissionPercentage: true,
+                        type: true,
                     },
                 },
             },
         });
 
-        const groupedCommissions = groupBy(
-            "billServiceSlug",
-            merchantCommission
-        );
+        const commissionArray = merchantCommission.map((data) => ({
+            name: data.billService.name,
+            slug: data.billServiceSlug,
+            baseCommission: data.billService.baseCommissionPercentage,
+            agentCommission: data.percentage,
+            type: data.billService.type,
+        }));
 
         return buildResponse({
             message: "Merchant commission successfully retrieved",
-            data: groupedCommissions,
+            data: commissionArray,
         });
     }
 }
