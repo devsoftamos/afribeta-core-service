@@ -296,7 +296,4 @@ export class UserTransactionHistoryDto {
     @IsOptional()
     @IsEnum(QueryTransactionStatus)
     status: QueryTransactionStatus;
-
-    @IsNumberString()
-    userId: string;
 }

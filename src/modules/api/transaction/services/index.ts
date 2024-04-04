@@ -789,15 +789,12 @@ export class TransactionService {
         });
     }
 
-    async getUserTransactions(options: UserTransactionHistoryDto) {
+    async getUserTransactions(id: number, options: UserTransactionHistoryDto) {
         const paginationMeta: Partial<PaginationMeta> = {};
-
-        const startDate = startOfMonth(new Date(options.date));
-        const endDate = endOfMonth(new Date(options.date));
 
         const userExists = await this.prisma.user.findFirst({
             where: {
-                id: +options.userId,
+                id: id,
             },
             select: {
                 userType: true,
@@ -829,18 +826,15 @@ export class TransactionService {
 
         switch (userExists.userType) {
             case UserType.CUSTOMER: {
-                queryOptions.where.userId = +options.userId;
+                queryOptions.where.userId = id;
                 break;
             }
             case UserType.AGENT: {
-                queryOptions.where.userId = +options.userId;
+                queryOptions.where.userId = id;
                 break;
             }
             case UserType.MERCHANT: {
-                queryOptions.where.OR = [
-                    { userId: +options.userId },
-                    { merchantId: +options.userId },
-                ];
+                queryOptions.where.OR = [{ userId: id }, { merchantId: id }];
             }
         }
 
@@ -854,9 +848,6 @@ export class TransactionService {
                 (queryOptions.where.transactionId = {
                     search: options.searchName,
                 });
-        }
-        if (options.date) {
-            queryOptions.where.createdAt = { gte: startDate, lte: endDate };
         }
 
         if (options.status) {

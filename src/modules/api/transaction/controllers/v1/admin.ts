@@ -143,12 +143,14 @@ export class AdminTransactionController {
         );
     }
 
-    @Get("user")
+    @Get("user/:id")
     async UserTransactionHistory(
+        @Param("id", ParseIntPipe) id: number,
         @Query(ValidationPipe)
         userTransactionHistoryDto: UserTransactionHistoryDto
     ) {
         return await this.transactionService.getUserTransactions(
+            id,
             userTransactionHistoryDto
         );
     }
