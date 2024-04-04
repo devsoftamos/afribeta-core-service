@@ -531,6 +531,7 @@ export class UserService {
             select: {
                 id: true,
                 firstName: true,
+                email: true,
                 lastName: true,
                 state: {
                     select: {

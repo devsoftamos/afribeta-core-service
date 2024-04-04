@@ -354,6 +354,7 @@ export class BillService {
     ): ComputeCommissionResult<T> {
         // return parseFloat((1000 * commissionPercent).toFixed(2));
 
+        //md commission amount
         const computeForMd = () => {
             const commission = parseFloat(
                 (
@@ -997,7 +998,10 @@ export class BillService {
                                 ],
                             });
                         },
-                        { timeout: DB_TRANSACTION_TIMEOUT }
+                        {
+                            isolationLevel:
+                                Prisma.TransactionIsolationLevel.Serializable,
+                        }
                     );
                 } else {
                     //Merchant/upgradable-merchant-agent
