@@ -163,6 +163,10 @@ export class MerchantTransactionHistoryDto {
 
     @IsNumberString()
     userId: string;
+
+    @IsOptional()
+    @IsString()
+    searchName: string;
 }
 
 export class ViewPayoutStatusDto {
@@ -245,4 +249,25 @@ export class FetchRecommendedPayoutDto {
 export class AllTransactionStatDto {
     @IsDateString()
     date: Date;
+}
+
+export class CustomerTransactionHistoryDto {
+    @IsOptional()
+    @IsBooleanString()
+    pagination: string;
+
+    @IsOptional()
+    @IsNumberString()
+    page: string;
+
+    @IsOptional()
+    @IsNumberString()
+    limit: string;
+
+    @IsOptional()
+    @IsString()
+    searchName: string;
+
+    @IsNumberString()
+    userId: string;
 }

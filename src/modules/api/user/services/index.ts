@@ -733,6 +733,7 @@ export class UserService {
             orderBy: { createdAt: "desc" },
             where: {},
             select: {
+                id: true,
                 firstName: true,
                 lastName: true,
                 email: true,
