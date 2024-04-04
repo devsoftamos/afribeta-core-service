@@ -10,7 +10,10 @@ import {
 } from "@nestjs/common";
 import { CommissionService } from "../../services";
 import { AuthGuard } from "@/modules/api/auth/guard";
-import { UpdateSingleBillCommissionDto } from "../../dtos";
+import {
+    UpdateMerchantSingleBillCommissionDto,
+    UpdateSingleBillCommissionDto,
+} from "../../dtos";
 import * as Ability from "@/modules/core/ability";
 import { AbilitiesGuard } from "@/modules/core/ability/guards";
 import { CheckAbilities } from "@/modules/core/ability/decorator";
@@ -55,5 +58,18 @@ export class AdminCommissionController {
     @Get("merchant/:id")
     async fetchMerchantCommission(@Param("id", ParseIntPipe) id: number) {
         return await this.commissionService.fetchMerchantCommission(id);
+    }
+
+    @Patch("merchant/:id")
+    @CheckAbilities(new Ability.UpdateCommissionAbility())
+    async updateMerchantSingleBillCommission(
+        @Param("id", ParseIntPipe) id: number,
+        @Body()
+        bodyDto: UpdateMerchantSingleBillCommissionDto
+    ) {
+        return await this.commissionService.updateMerchantSingleCommission(
+            id,
+            bodyDto
+        );
     }
 }

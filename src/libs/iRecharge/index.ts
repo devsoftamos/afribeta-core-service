@@ -77,9 +77,6 @@ export class IRecharge {
 
     async vendPower(options: RequestOptions<VendPowerOptions>) {
         try {
-            // const error = new IRechargeError("test error irecharge");
-            // error.status = "04";
-            // throw error;
             const requestOptions: AxiosRequestConfig = {
                 method: "GET",
                 url: "vend_power.php",

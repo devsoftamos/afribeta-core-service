@@ -4,6 +4,7 @@ import {
     IsInt,
     IsNumber,
     IsOptional,
+    IsString,
     Max,
 } from "class-validator";
 import { BillServiceSlug } from "../../user";
@@ -40,4 +41,14 @@ export class UpdateSubagentCommissionDto {
 export class DeleteSubagentCommissionDto {
     @IsEnum(BillServiceSlug)
     billServiceSlug: BillServiceSlug;
+}
+
+export class UpdateMerchantSingleBillCommissionDto {
+    @IsString()
+    billServiceSlug: string;
+
+    @IsNumber({
+        maxDecimalPlaces: 2,
+    })
+    newCommission: number;
 }

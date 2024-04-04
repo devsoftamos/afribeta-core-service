@@ -1,7 +1,7 @@
 import { PrismaService } from "@/modules/core/prisma/services";
 import { ApiResponse, buildResponse, computeCap, groupBy } from "@/utils";
 import { HttpStatus, Injectable } from "@nestjs/common";
-import { BillType, User } from "@prisma/client";
+import { BillType, User, UserType } from "@prisma/client";
 import { BillServiceSlug } from "../../bill/interfaces";
 import {
     ListAgencyCommission,
@@ -14,6 +14,7 @@ import {
 } from "@/config";
 import {
     DeleteSubagentCommissionDto,
+    UpdateMerchantSingleBillCommissionDto,
     UpdateSingleBillCommissionDto,
     UpdateSubagentCommissionDto,
 } from "../dtos";
@@ -467,6 +468,107 @@ export class CommissionService {
         return buildResponse({
             message: "Merchant commission successfully retrieved",
             data: commissionArray,
+        });
+    }
+
+    async updateMerchantSingleCommission(
+        merchantId: number,
+        options: UpdateMerchantSingleBillCommissionDto
+    ) {
+        const existingCommission = await this.prisma.userCommission.findUnique({
+            where: {
+                userId_billServiceSlug: {
+                    userId: merchantId,
+                    billServiceSlug: options.billServiceSlug,
+                },
+            },
+            select: {
+                user: {
+                    select: { userType: true },
+                },
+                billService: {
+                    select: {
+                        baseCommissionPercentage: true,
+                    },
+                },
+            },
+        });
+
+        if (!existingCommission) {
+            throw new BillCommissionException(
+                "merchant commission not found",
+                HttpStatus.NOT_FOUND
+            );
+        }
+
+        if (!existingCommission.user) {
+            throw new UserNotFoundException(
+                "merchant user not found",
+                HttpStatus.NOT_FOUND
+            );
+        }
+
+        if (existingCommission.user.userType !== UserType.MERCHANT) {
+            throw new BillCommissionException(
+                "user must be a merchant",
+                HttpStatus.NOT_FOUND
+            );
+        }
+
+        if (
+            options.newCommission >
+            existingCommission.billService.baseCommissionPercentage
+        ) {
+            throw new BillCommissionException(
+                "The new commission must not be greater than the base commission",
+                HttpStatus.NOT_FOUND
+            );
+        }
+
+        //get all commissions of the merchant's sub-agent
+        const subAgents = await this.prisma.user.findMany({
+            where: { createdById: merchantId },
+            select: {
+                id: true,
+            },
+        });
+        const subAgentIds = subAgents.map((s) => s.id);
+
+        const maxSubAgentCommission =
+            await this.prisma.userCommission.aggregate({
+                where: {
+                    userId: {
+                        in: subAgentIds,
+                    },
+                    billServiceSlug: options.billServiceSlug,
+                },
+                _max: { percentage: true },
+            });
+
+        const maxPercent = maxSubAgentCommission._max.percentage || 0;
+
+        if (maxPercent > options.newCommission) {
+            throw new BillCommissionException(
+                "One of the merchant's sub-agent has a commission greater than the new commission",
+                HttpStatus.BAD_REQUEST
+            );
+        }
+
+        const updated = await this.prisma.userCommission.update({
+            where: {
+                userId_billServiceSlug: {
+                    userId: merchantId,
+                    billServiceSlug: options.billServiceSlug,
+                },
+            },
+            data: {
+                percentage: options.newCommission,
+            },
+        });
+
+        return buildResponse({
+            message: "commission successfully updated",
+            data: updated,
         });
     }
 }
