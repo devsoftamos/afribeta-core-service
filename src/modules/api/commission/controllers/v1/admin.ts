@@ -44,7 +44,6 @@ export class AdminCommissionController {
     }
 
     @Patch("base/single-billservice")
-    @Patch("agent/single-billservice")
     @CheckAbilities(new Ability.UpdateCommissionAbility())
     async updateSingleBillServiceBaseCommission(
         @Body(ValidationPipe)
