@@ -384,7 +384,7 @@ export class TransactionService {
         switch (options.status) {
             case PayoutStatus.PENDING: {
                 queryOptions.where.status = TransactionStatus.PENDING;
-                queryOptions.where.isPayoutRecommended = false;
+                queryOptions.where.isPayoutRecommended = true;
                 break;
             }
             case PayoutStatus.APPROVED: {
@@ -395,7 +395,7 @@ export class TransactionService {
 
             default: {
                 queryOptions.where.isPayoutRecommended = false;
-                queryOptions.where.status = TransactionStatus.APPROVED;
+                queryOptions.where.status = TransactionStatus.PENDING;
             }
         }
 
