@@ -277,3 +277,29 @@ export class CustomerTransactionHistoryDto {
     @IsNumberString()
     userId: string;
 }
+
+export class UserTransactionHistoryDto {
+    @IsOptional()
+    @IsBooleanString()
+    pagination: string;
+
+    @IsOptional()
+    @IsNumberString()
+    page: string;
+
+    @IsOptional()
+    @IsNumberString()
+    limit: string;
+
+    @IsOptional()
+    @IsString()
+    searchName: string;
+
+    @IsOptional()
+    @IsDateString()
+    date: string;
+
+    @IsOptional()
+    @IsEnum(QueryTransactionStatus)
+    status: QueryTransactionStatus;
+}

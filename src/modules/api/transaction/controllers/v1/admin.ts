@@ -19,6 +19,7 @@ import {
     MerchantTransactionHistoryDto,
     TransactionHistoryDto,
     UpdatePayoutStatusDto,
+    UserTransactionHistoryDto,
     ViewPayoutStatusDto,
 } from "../../dtos";
 import { AbilitiesGuard } from "@/modules/core/ability/guards";
@@ -140,6 +141,18 @@ export class AdminTransactionController {
     ) {
         return await this.transactionService.fetchCustomerTransactionHistory(
             customerTransactionHistoryDto
+        );
+    }
+
+    @Get("user/:id")
+    async UserTransactionHistory(
+        @Param("id", ParseIntPipe) id: number,
+        @Query(ValidationPipe)
+        userTransactionHistoryDto: UserTransactionHistoryDto
+    ) {
+        return await this.transactionService.getUserTransactions(
+            id,
+            userTransactionHistoryDto
         );
     }
 }

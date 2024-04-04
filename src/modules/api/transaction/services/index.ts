@@ -25,6 +25,7 @@ import {
     TransactionReportType,
     UpdatePayoutStatus,
     UpdatePayoutStatusDto,
+    UserTransactionHistoryDto,
     VerifyTransactionDto,
     VerifyTransactionProvider,
     ViewPayoutStatusDto,
@@ -790,6 +791,122 @@ export class TransactionService {
             data: {
                 meta: paginationMeta,
                 records: transactions,
+            },
+        });
+    }
+
+    async getUserTransactions(id: number, options: UserTransactionHistoryDto) {
+        const paginationMeta: Partial<PaginationMeta> = {};
+
+        const userExists = await this.prisma.user.findUnique({
+            where: {
+                id: id,
+            },
+            select: {
+                userType: true,
+            },
+        });
+
+        if (!userExists) {
+            throw new UserNotFoundException(
+                "User account does not exist",
+                HttpStatus.NOT_FOUND
+            );
+        }
+
+        const queryOptions: Prisma.TransactionFindManyArgs = {
+            orderBy: { createdAt: "desc" },
+            where: {},
+            select: {
+                id: true,
+                transactionId: true,
+                type: true,
+                amount: true,
+                paymentChannel: true,
+                status: true,
+                createdAt: true,
+                merchantId: true,
+                paymentStatus: true,
+            },
+        };
+
+        switch (userExists.userType) {
+            case UserType.CUSTOMER: {
+                queryOptions.where.userId = id;
+                break;
+            }
+            case UserType.AGENT: {
+                queryOptions.where.userId = id;
+                break;
+            }
+            case UserType.MERCHANT: {
+                queryOptions.where.userId = id;
+            }
+        }
+
+        if (options.searchName) {
+            (queryOptions.where.paymentReference = {
+                search: options.searchName,
+            }),
+                (queryOptions.where.senderIdentifier = {
+                    search: options.searchName,
+                }),
+                (queryOptions.where.transactionId = {
+                    search: options.searchName,
+                });
+        }
+
+        if (options.status) {
+            switch (options.status) {
+                case QueryTransactionStatus.SUCCESS: {
+                    queryOptions.where.status = TransactionStatus.SUCCESS;
+                    break;
+                }
+                case QueryTransactionStatus.PENDING: {
+                    queryOptions.where.status = TransactionStatus.PENDING;
+                    break;
+                }
+                case QueryTransactionStatus.FAILED: {
+                    queryOptions.where.status = TransactionStatus.FAILED;
+                    break;
+                }
+                case QueryTransactionStatus.REFUNDED: {
+                    queryOptions.where.paymentStatus = PaymentStatus.REFUNDED;
+                    break;
+                }
+
+                default:
+                    break;
+            }
+        }
+
+        if (options.pagination) {
+            const page = +options.page || 1;
+            const limit = +options.limit || 10;
+            const offset = (page - 1) * limit;
+            queryOptions.skip = offset;
+            queryOptions.take = limit;
+            const count = await this.prisma.transaction.count({
+                where: queryOptions.where,
+            });
+            paginationMeta.totalCount = count;
+            paginationMeta.perPage = limit;
+            paginationMeta.page = page;
+        }
+
+        const userTransactions = await this.prisma.transaction.findMany(
+            queryOptions
+        );
+
+        if (options.pagination) {
+            paginationMeta.pageCount = userTransactions.length;
+        }
+
+        return buildResponse({
+            message: "User Transactions retrieved successfully",
+            data: {
+                meta: paginationMeta,
+                records: userTransactions,
             },
         });
     }
