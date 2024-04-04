@@ -792,7 +792,7 @@ export class TransactionService {
     async getUserTransactions(id: number, options: UserTransactionHistoryDto) {
         const paginationMeta: Partial<PaginationMeta> = {};
 
-        const userExists = await this.prisma.user.findFirst({
+        const userExists = await this.prisma.user.findUnique({
             where: {
                 id: id,
             },
@@ -834,7 +834,7 @@ export class TransactionService {
                 break;
             }
             case UserType.MERCHANT: {
-                queryOptions.where.OR = [{ userId: id }, { merchantId: id }];
+                queryOptions.where.userId = id;
             }
         }
 

@@ -19,6 +19,7 @@ import {
     MerchantTransactionHistoryDto,
     TransactionHistoryDto,
     UpdatePayoutStatusDto,
+    UserTransactionHistoryDto,
     ViewPayoutStatusDto,
 } from "../../dtos";
 import { AbilitiesGuard } from "@/modules/core/ability/guards";
