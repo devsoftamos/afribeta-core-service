@@ -19,6 +19,7 @@ import {
     MerchantTransactionHistoryDto,
     TransactionHistoryDto,
     UpdatePayoutStatusDto,
+    UserTransactionHistoryDto,
     ViewPayoutStatusDto,
 } from "../../dtos";
 import { AbilitiesGuard } from "@/modules/core/ability/guards";
@@ -47,10 +48,10 @@ export class AdminTransactionController {
     @Get("payout")
     @UseGuards(AbilitiesGuard)
     @CheckAbilities(new Ability.ReadPayoutAbility())
-    async viewPayoutHistory(
+    async viewPayoutRequests(
         @Query(ValidationPipe) viewPayoutStatusDto: ViewPayoutStatusDto
     ) {
-        return await this.transactionService.viewPayoutRequests(
+        return await this.transactionService.payoutRequests(
             viewPayoutStatusDto
         );
     }
@@ -140,6 +141,18 @@ export class AdminTransactionController {
     ) {
         return await this.transactionService.fetchCustomerTransactionHistory(
             customerTransactionHistoryDto
+        );
+    }
+
+    @Get("user/:id")
+    async UserTransactionHistory(
+        @Param("id", ParseIntPipe) id: number,
+        @Query(ValidationPipe)
+        userTransactionHistoryDto: UserTransactionHistoryDto
+    ) {
+        return await this.transactionService.getUserTransactions(
+            id,
+            userTransactionHistoryDto
         );
     }
 }
