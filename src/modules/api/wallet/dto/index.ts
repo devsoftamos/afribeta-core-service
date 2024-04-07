@@ -6,6 +6,7 @@ import {
     IsNumber,
     IsNumberString,
     IsOptional,
+    IsPositive,
     IsString,
     Length,
 } from "class-validator";
@@ -29,6 +30,7 @@ enum PaymentChannel {
     PAYSTACK_CHANNEL = "PAYSTACK_CHANNEL",
 }
 export class InitializeWalletFundingDto {
+    @IsPositive()
     @IsInt()
     amount: number;
 
@@ -58,6 +60,7 @@ export class InitializeWithdrawalDto {
     @IsString()
     accountNumber: string;
 
+    @IsPositive()
     @IsInt()
     amount: number;
 
@@ -72,6 +75,7 @@ export class TransferToOtherWalletDto {
     @IsString()
     walletNumber: string;
 
+    @IsPositive()
     @IsInt()
     amount: number;
 }
@@ -120,11 +124,13 @@ export class FundSubAgentDto {
     @IsInt()
     agentId: number;
 
+    @IsPositive()
     @IsNumber()
     amount: number;
 }
 
 export class RequestWalletFundingDto {
+    @IsPositive()
     @IsInt()
     amount: number;
 }

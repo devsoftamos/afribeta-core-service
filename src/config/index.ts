@@ -24,6 +24,10 @@ const runtimeEnvironment: RequiredEnvironment[] = [
         type: RequiredEnvironmentTypes.Number,
     },
     {
+        name: "DATABASE_URL",
+        type: RequiredEnvironmentTypes.String,
+    },
+    {
         name: "ALLOWED_DOMAINS",
         type: RequiredEnvironmentTypes.String,
     },

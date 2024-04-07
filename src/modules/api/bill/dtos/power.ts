@@ -3,6 +3,7 @@ import {
     IsNumber,
     IsOptional,
     IsPhoneNumber,
+    IsPositive,
     IsString,
     Length,
 } from "class-validator";
@@ -20,6 +21,7 @@ export class PurchasePowerDto {
     @IsString()
     billService: string;
 
+    @IsPositive()
     @IsNumber()
     amount: number;
 
