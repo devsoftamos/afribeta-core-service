@@ -668,6 +668,7 @@ export class UserService {
                 email: true,
                 phone: true,
                 merchantUpgradeStatus: true,
+                status: true,
                 state: {
                     select: {
                         name: true,
@@ -739,6 +740,7 @@ export class UserService {
                 lastName: true,
                 email: true,
                 phone: true,
+                status: true,
             },
         };
 
@@ -1234,6 +1236,7 @@ export class UserService {
                 lastName: true,
                 email: true,
                 phone: true,
+                status: true,
             },
         });
 
