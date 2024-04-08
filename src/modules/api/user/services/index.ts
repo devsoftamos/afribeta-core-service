@@ -781,6 +781,11 @@ export class UserService {
             where: {
                 id: id,
             },
+            select: {
+                id: true,
+                status: true,
+                userType: true,
+            },
         });
 
         if (!userExists || userExists.userType !== UserType.MERCHANT) {
@@ -811,6 +816,7 @@ export class UserService {
         const result = {
             walletBalance: walletBalance,
             agentsCreated: agentsCreated._count.id,
+            status: userExists.status,
         };
 
         return buildResponse({
@@ -993,6 +999,7 @@ export class UserService {
                 lastName: true,
                 businessName: true,
                 photo: true,
+                status: true,
                 state: {
                     select: {
                         name: true,
@@ -1065,6 +1072,7 @@ export class UserService {
                 email: true,
                 phone: true,
                 ipAddress: true,
+                status: true,
                 role: {
                     select: {
                         name: true,
@@ -1193,6 +1201,7 @@ export class UserService {
                         name: true,
                     },
                 },
+                status: true,
                 kycInformation: {
                     select: {
                         address: true,
