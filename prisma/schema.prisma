@@ -339,24 +339,24 @@ enum MeterAccountType {
 }
 
 model Transaction {
-  id                           Int               @id @default(autoincrement())
+  id                           Int                        @id @default(autoincrement())
   type                         TransactionType
   flow                         TransactionFlow
   amount                       Float
-  serviceCharge                Float             @default(0)
+  serviceCharge                Float                      @default(0)
   totalAmount                  Float //serviceCharge + amount
   status                       TransactionStatus
   paymentStatus                PaymentStatus?
-  paymentReference             String?           @unique //reference for payment
+  paymentReference             String?                    @unique //reference for payment
   userId                       Int
   senderId                     Int?
   receiverId                   Int?
   destinationBankName          String?
   destinationBankAccountNumber String?
   destinationBankAccountName   String?
-  shortDescription             String?           @db.VarChar(255)
-  description                  String?           @db.Text
-  transactionId                String
+  shortDescription             String?                    @db.VarChar(255)
+  description                  String?                    @db.Text
+  transactionId                String                     @unique
   provider                     String?
   providerLogo                 String?
   accountId                    String?
@@ -367,28 +367,30 @@ model Transaction {
   paymentChannel               PaymentChannel?
   token                        String?
   units                        String?
-  commission                   Float?            @default(0)
-  merchantCommission           Float?            @default(0)
-  companyCommission            Float?            @default(0)
+  commission                   Float?                     @default(0)
+  merchantCommission           Float?                     @default(0)
+  companyCommission            Float?                     @default(0)
   serviceTransactionCode       String?
   serviceTransactionCode2      String?
-  isPayoutRecommended          Boolean           @default(false)
+  isPayoutRecommended          Boolean                    @default(false)
+  billProviderId               Int?
+  billPaymentReference         String?
+  billPaymentReceiptNO         String?
+  transId                      Int?
+  walletFundTransactionFlow    WalletFundTransactionFlow?
+  billServiceSlug              String?
+  merchantId                   Int?
+  meterAccountType             MeterAccountType?
 
-  billProviderId            Int?
-  billPaymentReference      String?
-  billPaymentReceiptNO      String?
-  walletFundTransactionFlow WalletFundTransactionFlow?
-  billServiceSlug           String?
-  merchantId                Int?
-  meterAccountType          MeterAccountType?
-
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  user         User          @relation(name: "userToTransaction", fields: [userId], references: [id])
-  sender       User?         @relation(name: "senderToTransaction", fields: [senderId], references: [id])
-  receiver     User?         @relation(name: "receiverToTransaction", fields: [receiverId], references: [id])
-  billProvider BillProvider? @relation(fields: [billProviderId], references: [id])
-  billService  BillService?  @relation(fields: [billServiceSlug], references: [slug])
+  createdAt                 DateTime      @default(now())
+  updatedAt                 DateTime      @updatedAt
+  user                      User          @relation(name: "userToTransaction", fields: [userId], references: [id])
+  sender                    User?         @relation(name: "senderToTransaction", fields: [senderId], references: [id])
+  receiver                  User?         @relation(name: "receiverToTransaction", fields: [receiverId], references: [id])
+  billProvider              BillProvider? @relation(fields: [billProviderId], references: [id])
+  billService               BillService?  @relation(fields: [billServiceSlug], references: [slug])
+  transactionDetails        Transaction?  @relation(name: "wallet_deposit", fields: [transId], references: [id])
+  walletDepositTransactions Transaction[] @relation(name: "wallet_deposit")
 
   @@index([paymentReference, paymentStatus])
   @@index([transactionId])
@@ -417,7 +419,7 @@ model BillProvider {
   slug          String                          @unique
   isActive      Boolean?                        @default(true)
   isDefault     Boolean?                        @default(false)
-  walletBalance Int?
+  walletBalance Float?
   createdAt     DateTime                        @default(now())
   updatedAt     DateTime                        @updatedAt
   transactions  Transaction[]

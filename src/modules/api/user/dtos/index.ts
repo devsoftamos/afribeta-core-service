@@ -15,6 +15,7 @@ import {
     IsNumberString,
     IsOptional,
     IsPhoneNumber,
+    IsPositive,
     IsString,
     Length,
     Max,
@@ -215,6 +216,7 @@ export class AgentUpgradeBillServiceCommissionOptions {
     @IsEnum(BillServiceSlug)
     billServiceSlug: BillServiceSlug;
 
+    @IsPositive()
     @IsNumber({ maxDecimalPlaces: 1 })
     percentage: number;
 }

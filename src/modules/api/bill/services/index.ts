@@ -267,7 +267,7 @@ export class BillService {
                         flow: TransactionFlow.IN,
                         status: TransactionStatus.SUCCESS,
                         paymentStatus: PaymentStatus.SUCCESS,
-                        transactionId: transaction.transactionId,
+                        transactionId: generateId({ type: "transaction" }),
                         paymentChannel: PaymentChannel.SYSTEM,
                         type: TransactionType.WALLET_FUND,
                         walletFundTransactionFlow:
@@ -276,6 +276,7 @@ export class BillService {
                         paymentReference: generateId({ type: "reference" }),
                         shortDescription:
                             TransactionShortDescription.BILL_PAYMENT_REFUND,
+                        transId: transaction.id,
                     },
                 });
             });
@@ -913,11 +914,12 @@ export class BillService {
 
             if (!user) {
                 throw new PayBillCommissionException(
-                    "Commission payment failed. User not found",
+                    "Commission payment failed. benefactor user account not found",
                     HttpStatus.NOT_FOUND
                 );
             }
 
+            //does the transaction has payable commission?
             if (transaction.commission || transaction.merchantCommission) {
                 const transactionCreateOptions = {
                     amount: transaction.commission,
@@ -936,7 +938,7 @@ export class BillService {
                     provider: PaymentChannel.SYSTEM,
                 };
 
-                //Agent and Merchant
+                //sub agent and Merchant both
                 if (transaction.commission && transaction.merchantCommission) {
                     await this.prisma.$transaction(
                         async (tx) => {
@@ -965,18 +967,17 @@ export class BillService {
                                 },
                             });
 
-                            const transactionId = generateId({
-                                type: "transaction",
-                            });
-
                             const agentTransactionRecord: Prisma.TransactionUncheckedCreateInput =
                                 {
                                     ...transactionCreateOptions,
                                     userId: user.id,
-                                    transactionId: transactionId,
+                                    transactionId: generateId({
+                                        type: "transaction",
+                                    }),
                                     paymentReference: generateId({
                                         type: "reference",
                                     }),
+                                    transId: transaction.id,
                                 };
 
                             const merchantTransactionRecord: Prisma.TransactionUncheckedCreateInput =
@@ -985,10 +986,13 @@ export class BillService {
                                     amount: transaction.merchantCommission,
                                     totalAmount: transaction.merchantCommission,
                                     userId: user.creator.id,
-                                    transactionId: transactionId,
+                                    transactionId: generateId({
+                                        type: "transaction",
+                                    }),
                                     paymentReference: generateId({
                                         type: "reference",
                                     }),
+                                    transId: transaction.id,
                                 };
 
                             await tx.transaction.createMany({
@@ -1004,7 +1008,7 @@ export class BillService {
                         }
                     );
                 } else {
-                    //Merchant/upgradable-merchant-agent
+                    //upgradable agent (default agents)
                     await this.prisma.$transaction(
                         async (tx) => {
                             await tx.wallet.update({
@@ -1018,17 +1022,16 @@ export class BillService {
                                 },
                             });
 
-                            const transactionId = generateId({
-                                type: "transaction",
-                            });
-
                             const transactionRecord: Prisma.TransactionUncheckedCreateInput =
                                 {
                                     ...transactionCreateOptions,
-                                    transactionId: transactionId,
+                                    transactionId: generateId({
+                                        type: "transaction",
+                                    }),
                                     paymentReference: generateId({
                                         type: "reference",
                                     }),
+                                    transId: transaction.id,
                                 };
 
                             await tx.transaction.create({

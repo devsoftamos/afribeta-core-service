@@ -899,7 +899,7 @@ export class UserService {
             );
             if (!baseCommission) {
                 throw new InvalidAgentCommissionAssignment(
-                    "The base commission for one of the assigned commissions does not exist",
+                    "One of the assigned commissions does not exist",
                     HttpStatus.BAD_REQUEST
                 );
             }
