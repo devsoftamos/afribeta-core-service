@@ -217,7 +217,7 @@ export class AgentUpgradeBillServiceCommissionOptions {
     billServiceSlug: BillServiceSlug;
 
     @IsPositive()
-    @IsNumber({ maxDecimalPlaces: 1 })
+    @IsNumber({ maxDecimalPlaces: 2 })
     percentage: number;
 }
 
