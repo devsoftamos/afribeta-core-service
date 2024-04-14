@@ -426,7 +426,7 @@ export class CommissionService {
     }
 
     async fetchMerchantCommission(userId: number) {
-        const merchant = await this.prisma.user.findFirst({
+        const merchant = await this.prisma.user.findUnique({
             where: {
                 id: userId,
             },
@@ -496,7 +496,7 @@ export class CommissionService {
 
         if (!existingCommission) {
             throw new BillCommissionException(
-                "merchant commission not found",
+                "commission rate not assigned to the merchant",
                 HttpStatus.NOT_FOUND
             );
         }
@@ -515,14 +515,16 @@ export class CommissionService {
             );
         }
 
-        if (
-            options.newCommission >
-            existingCommission.billService.baseCommissionPercentage
-        ) {
-            throw new BillCommissionException(
-                "The new commission must not be greater than the base commission",
-                HttpStatus.NOT_FOUND
-            );
+        if (existingCommission.billService.baseCommissionPercentage) {
+            if (
+                options.newCommission >
+                existingCommission.billService.baseCommissionPercentage
+            ) {
+                throw new BillCommissionException(
+                    "The new commission must not be greater than the base commission",
+                    HttpStatus.NOT_FOUND
+                );
+            }
         }
 
         //get all commissions of the merchant's sub-agent
