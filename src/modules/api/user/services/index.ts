@@ -645,7 +645,10 @@ export class UserService {
             where: {
                 id: user.id,
             },
-            data: userUpdateOptions,
+            data: {
+                ...userUpdateOptions,
+                merchantUpgradeStatus: MerchantUpgradeStatus.PENDING,
+            },
         });
 
         return buildResponse({
