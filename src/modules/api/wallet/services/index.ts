@@ -1276,8 +1276,6 @@ export class WalletService {
                     },
                 });
 
-                const transactionId = generateId({ type: "transaction" });
-
                 //agent
                 await tx.transaction.create({
                     data: {
@@ -1285,7 +1283,7 @@ export class WalletService {
                         flow: TransactionFlow.IN,
                         status: TransactionStatus.SUCCESS,
                         totalAmount: options.amount,
-                        transactionId: transactionId,
+                        transactionId: generateId({ type: "transaction" }),
                         type: TransactionType.WALLET_FUND,
                         receiverId: options.agentId,
                         userId: options.agentId,
@@ -1306,7 +1304,7 @@ export class WalletService {
                         flow: TransactionFlow.OUT,
                         status: TransactionStatus.SUCCESS,
                         totalAmount: options.amount,
-                        transactionId: transactionId,
+                        transactionId: generateId({ type: "transaction" }),
                         type: TransactionType.WALLET_FUND,
                         receiverId: options.agentId,
                         userId: user.id,
