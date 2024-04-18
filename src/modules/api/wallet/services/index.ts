@@ -1276,29 +1276,8 @@ export class WalletService {
                     },
                 });
 
-                //agent
-                await tx.transaction.create({
-                    data: {
-                        amount: options.amount,
-                        flow: TransactionFlow.IN,
-                        status: TransactionStatus.SUCCESS,
-                        totalAmount: options.amount,
-                        transactionId: generateId({ type: "transaction" }),
-                        type: TransactionType.WALLET_FUND,
-                        receiverId: options.agentId,
-                        userId: options.agentId,
-                        senderId: user.id,
-                        walletFundTransactionFlow:
-                            WalletFundTransactionFlow.FROM_MERCHANT,
-                        shortDescription:
-                            TransactionShortDescription.WALLET_FUNDED,
-                        paymentChannel: PaymentChannel.WALLET,
-                        paymentStatus: PaymentStatus.SUCCESS,
-                    },
-                });
-
                 //merchant
-                await tx.transaction.create({
+                const merchantTrans = await tx.transaction.create({
                     data: {
                         amount: options.amount,
                         flow: TransactionFlow.OUT,
@@ -1319,6 +1298,28 @@ export class WalletService {
                     },
                 });
 
+                //agent
+                await tx.transaction.create({
+                    data: {
+                        amount: options.amount,
+                        flow: TransactionFlow.IN,
+                        status: TransactionStatus.SUCCESS,
+                        totalAmount: options.amount,
+                        transactionId: generateId({ type: "transaction" }),
+                        type: TransactionType.WALLET_FUND,
+                        receiverId: options.agentId,
+                        userId: options.agentId,
+                        senderId: user.id,
+                        walletFundTransactionFlow:
+                            WalletFundTransactionFlow.FROM_MERCHANT,
+                        shortDescription:
+                            TransactionShortDescription.WALLET_FUNDED,
+                        paymentChannel: PaymentChannel.WALLET,
+                        paymentStatus: PaymentStatus.SUCCESS,
+                        transId: merchantTrans.id,
+                    },
+                });
+
                 //notification record update
                 if (options.notificationRecord) {
                     await tx.notification.update({
@@ -1332,7 +1333,6 @@ export class WalletService {
                 }
             },
             {
-                timeout: DB_TRANSACTION_TIMEOUT,
                 isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
             }
         );
@@ -1686,7 +1686,7 @@ export class WalletService {
                 });
             },
             {
-                timeout: DB_TRANSACTION_TIMEOUT,
+                isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
             }
         );
 
