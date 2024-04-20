@@ -124,35 +124,35 @@ export class AuthService {
     async sendAccountVerificationEmail(
         options: SendVerificationCodeDto
     ): Promise<ApiResponse> {
-        try {
-            const verificationCode = customAlphabet("1234567890", 4)();
-            const email = options.email.toLowerCase().trim();
+        const verificationCode = customAlphabet("1234567890", 4)();
+        const email = options.email.toLowerCase().trim();
 
-            const user = await this.prisma.user.findUnique({
-                where: { email: email },
-            });
-            if (user) {
-                throw new DuplicateUserException(
-                    "Account already verified. Kindly login",
-                    HttpStatus.BAD_REQUEST
-                );
-            }
+        const user = await this.prisma.user.findUnique({
+            where: { email: email },
+        });
+        if (user) {
+            throw new DuplicateUserException(
+                "Account already verified. Kindly login",
+                HttpStatus.BAD_REQUEST
+            );
+        }
 
-            await this.prisma.accountVerificationRequest.upsert({
-                where: {
-                    email: email,
-                },
-                create: {
-                    code: verificationCode,
-                    email: email,
-                },
-                update: {
-                    code: verificationCode,
-                },
-            });
+        await this.prisma.accountVerificationRequest.upsert({
+            where: {
+                email: email,
+            },
+            create: {
+                code: verificationCode,
+                email: email,
+            },
+            update: {
+                code: verificationCode,
+            },
+        });
 
-            const phoneNumber = `234${options.phone.trim().substring(1)}`;
-            const emailResp = await this.emailService.send({
+        const phoneNumber = `234${options.phone.trim().substring(1)}`;
+        const emailResp = await this.emailService
+            .send({
                 to: { email: email },
                 subject: "Verify Your Email",
                 provider: "sendinblue",
@@ -161,55 +161,34 @@ export class AuthService {
                     code: verificationCode,
                     firstName: formatName(options.firstName),
                 },
-            });
+            })
+            .catch(() => false);
 
-            if (emailResp) {
-                await this.smsService
-                    .send<SMS.TermiiProvider>({
-                        provider: "termii",
-                        phone: phoneNumber,
-                        type: "plain",
-                        channel: "generic",
-                        message: smsMessage({
-                            template: SmsMessage.Template.VERIFY_EMAIL,
-                            data: {
-                                email: options.email,
-                            },
-                        }),
-                    })
-                    .catch(() => false);
-            }
-
-            return buildResponse({
-                message: `An email verification code has been sent to your email, ${options.email}`,
-                data: {
-                    email: options.email,
-                    phone: options.phone,
-                    firstName: options.firstName,
-                },
-            });
-        } catch (error) {
-            logger.error(error);
-            switch (true) {
-                case error instanceof DuplicateUserException: {
-                    throw error;
-                }
-
-                case error instanceof SendinblueEmailException: {
-                    throw new SendVerificationEmailException(
-                        "Error from email provider. Please try again",
-                        HttpStatus.INTERNAL_SERVER_ERROR
-                    );
-                }
-
-                default: {
-                    throw new SendVerificationEmailException(
-                        "Unable to send email verification",
-                        HttpStatus.INTERNAL_SERVER_ERROR
-                    );
-                }
-            }
+        if (emailResp) {
+            await this.smsService
+                .send<SMS.TermiiProvider>({
+                    provider: "termii",
+                    phone: phoneNumber,
+                    type: "plain",
+                    channel: "generic",
+                    message: smsMessage({
+                        template: SmsMessage.Template.VERIFY_EMAIL,
+                        data: {
+                            email: options.email,
+                        },
+                    }),
+                })
+                .catch(() => false);
         }
+
+        return buildResponse({
+            message: `An email verification code has been sent to your email, ${options.email}`,
+            data: {
+                email: options.email,
+                phone: options.phone,
+                firstName: options.firstName,
+            },
+        });
     }
 
     async signUp(

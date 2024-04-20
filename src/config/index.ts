@@ -39,10 +39,7 @@ const runtimeEnvironment: RequiredEnvironment[] = [
         name: "JWT_SECRET",
         type: RequiredEnvironmentTypes.String,
     },
-    {
-        name: "TERMII_API_KEY",
-        type: RequiredEnvironmentTypes.String,
-    },
+
     {
         name: "VERIFY_EMAIL_TEMPLATE",
         type: RequiredEnvironmentTypes.Number,
@@ -99,6 +96,8 @@ const runtimeEnvironment: RequiredEnvironment[] = [
         name: "AGENT_VERIFY_EMAIL_TEMPLATE",
         type: RequiredEnvironmentTypes.String,
     },
+
+    //GTBank
     {
         name: "SQUAD_GTBANK_BASE_URL",
         type: RequiredEnvironmentTypes.String,
@@ -134,6 +133,10 @@ const runtimeEnvironment: RequiredEnvironment[] = [
         type: RequiredEnvironmentTypes.String,
     },
     {
+        name: "FSDH360_IDENTITY_BASE_URL",
+        type: RequiredEnvironmentTypes.String,
+    },
+    {
         name: "FSDH360_API_KEY_AUTH",
         type: RequiredEnvironmentTypes.String,
     },
@@ -141,8 +144,18 @@ const runtimeEnvironment: RequiredEnvironment[] = [
         name: "FSDH360_IPS",
         type: RequiredEnvironmentTypes.String,
     },
+
+    //providus
     {
-        name: "FSDH360_IDENTITY_BASE_URL",
+        name: "PROVIDUS_BASE_URL",
+        type: RequiredEnvironmentTypes.String,
+    },
+    {
+        name: "PROVIDUS_AUTH_SIGNATURE",
+        type: RequiredEnvironmentTypes.String,
+    },
+    {
+        name: "PROVIDUS_CLIENT_ID",
         type: RequiredEnvironmentTypes.String,
     },
 
@@ -155,6 +168,8 @@ const runtimeEnvironment: RequiredEnvironment[] = [
         name: "BUYPOWER_TOKEN",
         type: RequiredEnvironmentTypes.String,
     },
+
+    //sms
     {
         name: "TERMII_BASE_URL",
         type: RequiredEnvironmentTypes.String,
@@ -164,9 +179,17 @@ const runtimeEnvironment: RequiredEnvironment[] = [
         type: RequiredEnvironmentTypes.String,
     },
     {
+        name: "TERMII_API_KEY",
+        type: RequiredEnvironmentTypes.String,
+    },
+
+    //
+    {
         name: "ENCRYPT_SECRET",
         type: RequiredEnvironmentTypes.String,
     },
+
+    //redis
     {
         name: "REDIS_HOST",
         type: RequiredEnvironmentTypes.String,
@@ -187,6 +210,8 @@ const runtimeEnvironment: RequiredEnvironment[] = [
         name: "KYC_UPLOAD_DIR",
         type: RequiredEnvironmentTypes.String,
     },
+
+    //cloud bucket
     {
         name: "PROFILE_DIR",
         type: RequiredEnvironmentTypes.String,
@@ -301,8 +326,8 @@ export const iRechargeOptions: IRechargeOptions = {
 //providus
 export const providusConfiguration: ProvidusOptions = {
     authSignature: process.env.PROVIDUS_AUTH_SIGNATURE,
-    baseUrl: process.env.BASE_URL,
-    clientId: process.env.CLIENT_ID,
+    baseUrl: process.env.PROVIDUS_BASE_URL,
+    clientId: process.env.PROVIDUS_CLIENT_ID,
 };
 
 //GtBank

@@ -1,4 +1,3 @@
-import { FSDH360BankError } from "@/libs/fsdh360Bank";
 import { HttpStatus, Injectable } from "@nestjs/common";
 import {
     BankDetails,
@@ -11,7 +10,7 @@ import {
     SquadGTBankException,
     SquadGTBankVirtualAccountException,
 } from "../errors";
-import { SquadGTBank } from "@/libs/squadGTBank";
+import { SquadGTBank, SquadGtBankError } from "@/libs/squadGTBank";
 import { COMPANY_NAME } from "@/config";
 
 @Injectable()
@@ -49,7 +48,7 @@ export class SquadGTBankService {
         } catch (error) {
             logger.error(error);
             switch (true) {
-                case error instanceof FSDH360BankError: {
+                case error instanceof SquadGtBankError: {
                     throw new SquadGTBankVirtualAccountException(
                         error.message,
                         HttpStatus.BAD_REQUEST

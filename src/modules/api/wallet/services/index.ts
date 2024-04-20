@@ -319,7 +319,7 @@ export class WalletService {
                 });
             },
             {
-                timeout: DB_TRANSACTION_TIMEOUT,
+                isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
             }
         );
     }
