@@ -14,6 +14,7 @@ export class NotificationService {
     ): Promise<ApiResponse> {
         const meta: Partial<PaginationMeta> = {};
         const queryOptions: Prisma.NotificationFindManyArgs = {
+            orderBy: { createdAt: "desc" },
             where: {
                 userId: user.id,
             },

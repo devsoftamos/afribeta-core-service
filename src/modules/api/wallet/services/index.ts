@@ -1452,6 +1452,8 @@ export class WalletService {
                 amount: options.amount,
                 status: NotificationStatus.PENDING,
                 type: NotificationType.WALLET_FUND_REQUEST,
+                title: "Wallet Fund Request",
+                message: `Agent ${user.identifier} requests for ${options.amount} wallet funding`,
             },
         });
 
