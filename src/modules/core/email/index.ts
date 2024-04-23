@@ -1,4 +1,4 @@
-import { brevoApiKey, MAIL_SENDER_EMAIL, MAIL_SENDER_NAME } from "@/config";
+import { mailConfig } from "@/config";
 import TransactionalEmail from "@calculusky/transactional-email";
 import { Global, Module } from "@nestjs/common";
 import { EmailService } from "./services";
@@ -10,9 +10,12 @@ import { EmailService } from "./services";
             provide: EmailService,
             useFactory() {
                 const brevo = new TransactionalEmail({
-                    apiKey: brevoApiKey,
+                    apiKey: mailConfig.apiKey,
                     provider: "sendinblue",
-                    from: { email: MAIL_SENDER_EMAIL, name: MAIL_SENDER_NAME },
+                    from: {
+                        email: mailConfig.senderEmail,
+                        name: mailConfig.senderName,
+                    },
                 });
                 return new EmailService(brevo);
             },

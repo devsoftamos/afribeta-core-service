@@ -59,10 +59,10 @@ export class SignUpDto {
 }
 
 export class SignInDto {
-    @IsEmail()
+    @IsEmail({}, { message: "Invalid email address" })
     email: string;
 
-    @IsString()
+    @IsString({ message: "Invalid password format" })
     password: string;
 }
 
@@ -89,7 +89,7 @@ export class SendVerificationCodeDto {
 }
 
 export class PasswordResetRequestDto {
-    @IsEmail()
+    @IsEmail({}, { message: "Invalid email address" })
     email: string;
 }
 

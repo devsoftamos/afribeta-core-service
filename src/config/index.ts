@@ -31,10 +31,22 @@ const runtimeEnvironment: RequiredEnvironment[] = [
         name: "ALLOWED_DOMAINS",
         type: RequiredEnvironmentTypes.String,
     },
+
+    //mail
     {
         name: "BREVO_API_KEY",
         type: RequiredEnvironmentTypes.String,
     },
+    {
+        name: "MAIL_SENDER_NAME",
+        type: RequiredEnvironmentTypes.String,
+    },
+    {
+        name: "MAIL_SENDER_EMAIL",
+        type: RequiredEnvironmentTypes.String,
+    },
+
+    // secret
     {
         name: "JWT_SECRET",
         type: RequiredEnvironmentTypes.String,
@@ -206,16 +218,18 @@ const runtimeEnvironment: RequiredEnvironment[] = [
         name: "REDIS_PASSWORD",
         type: RequiredEnvironmentTypes.String,
     },
-    {
-        name: "KYC_UPLOAD_DIR",
-        type: RequiredEnvironmentTypes.String,
-    },
 
     //cloud bucket
     {
         name: "PROFILE_DIR",
         type: RequiredEnvironmentTypes.String,
     },
+    {
+        name: "KYC_UPLOAD_DIR",
+        type: RequiredEnvironmentTypes.String,
+    },
+
+    //D.O
     {
         name: "OCEAN_SPACE_ACCESS_KEY",
         type: RequiredEnvironmentTypes.String,
@@ -283,9 +297,6 @@ export const allowedDomains =
     process.env.ALLOWED_DOMAINS && process.env.ALLOWED_DOMAINS.split(",");
 export const isProduction: boolean = process.env.NODE_ENV === "production";
 export const port: number = parseInt(process.env.PORT ?? "4000");
-
-//email
-export const brevoApiKey: string = process.env.BREVO_API_KEY;
 
 //jwt
 export const jwtSecret: string = process.env.JWT_SECRET;
@@ -451,4 +462,17 @@ export const oceanSpaceConfiguration: OceanSpaceConfiguration = {
     region: process.env.OCEAN_SPACE_REGION,
     bucketName: process.env.OCEAN_SPACE_BUCKET_NAME,
     endpoint: process.env.OCEAN_SPACE_UPLOAD_ENDPOINT,
+};
+
+//mail
+interface MailConfig {
+    apiKey: string;
+    senderName: string;
+    senderEmail: string;
+}
+
+export const mailConfig: MailConfig = {
+    apiKey: process.env.BREVO_API_KEY,
+    senderName: process.env.MAIL_SENDER_NAME,
+    senderEmail: process.env.MAIL_SENDER_EMAIL,
 };
