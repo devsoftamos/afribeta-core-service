@@ -50,7 +50,7 @@ export class SquadGTBank {
                 error.response?.data?.message ??
                     "Failed to create GTBank virtual account"
             );
-            err.status = error.response.status;
+            err.status = error.response?.status ?? 500;
             throw err;
         }
     }

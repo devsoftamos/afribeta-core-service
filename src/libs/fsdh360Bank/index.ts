@@ -58,7 +58,7 @@ export class FSDH360Bank {
             const err = new FSDH360BankAuthenticationError(
                 error.message ?? "FSDH360 authentication failed"
             );
-            err.status = error.status ?? error.response.status;
+            err.status = error.status ?? error.response?.status;
             throw err;
         }
     }
