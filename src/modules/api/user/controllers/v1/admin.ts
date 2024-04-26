@@ -116,6 +116,8 @@ export class AdminUserController {
     }
 
     @Get("count/merchant")
+    @UseGuards(AbilitiesGuard)
+    @CheckAbilities(new Ability.ReadUserAbility())
     async countMerchants(
         @Query(ValidationPipe) countAgentsCreatedDto: CountAgentsCreatedDto
     ) {
