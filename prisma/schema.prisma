@@ -381,13 +381,14 @@ model Transaction {
   merchantId                   Int?
   meterAccountType             MeterAccountType?
 
-  createdAt                 DateTime      @default(now())
-  updatedAt                 DateTime      @updatedAt
-  user                      User          @relation(name: "userToTransaction", fields: [userId], references: [id])
-  sender                    User?         @relation(name: "senderToTransaction", fields: [senderId], references: [id])
-  receiver                  User?         @relation(name: "receiverToTransaction", fields: [receiverId], references: [id])
-  billProvider              BillProvider? @relation(fields: [billProviderId], references: [id])
-  billService               BillService?  @relation(fields: [billServiceSlug], references: [slug])
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  user         User          @relation(name: "userToTransaction", fields: [userId], references: [id])
+  sender       User?         @relation(name: "senderToTransaction", fields: [senderId], references: [id])
+  receiver     User?         @relation(name: "receiverToTransaction", fields: [receiverId], references: [id])
+  billProvider BillProvider? @relation(fields: [billProviderId], references: [id])
+  billService  BillService?  @relation(fields: [billServiceSlug], references: [slug])
+
   transactionDetails        Transaction?  @relation(name: "wallet_deposit", fields: [transId], references: [id])
   walletDepositTransactions Transaction[] @relation(name: "wallet_deposit")
 

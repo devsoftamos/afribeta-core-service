@@ -395,6 +395,7 @@ export class BillService {
                     } as ComputeCommissionResult<T>;
                 }
 
+                //divide the commission between the merchant and the sub-agent according to the given rate
                 const subAgentCommission = parseFloat(
                     (
                         (SUBAGENT_MD_METER_COMMISSION_PERCENT / 100) *

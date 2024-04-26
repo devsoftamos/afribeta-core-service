@@ -276,7 +276,8 @@ export class CommissionService {
                             ? computeCap(merchantCommission.percentage)
                             : null,
                     baseMdCapAmount: isIE
-                        ? AGENT_MD_METER_COMMISSION_CAP_AMOUNT
+                        ? AGENT_MD_METER_COMMISSION_CAP_AMOUNT -
+                          subagentCommission.subAgentMdMeterCapAmount
                         : null,
                     mdCapAmount: isIE
                         ? subagentCommission.subAgentMdMeterCapAmount

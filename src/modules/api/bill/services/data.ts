@@ -463,31 +463,26 @@ export class DataBillService {
         options: CompleteBillPurchaseOptions<CompleteDataPurchaseTransactionOptions>,
         vendDataResp: VendDataResponse
     ): Promise<CompleteDataPurchaseOutput> {
-        await this.prisma.$transaction(
-            async (tx) => {
-                await tx.transaction.update({
-                    where: {
-                        id: options.transaction.id,
-                    },
-                    data: {
-                        status: TransactionStatus.SUCCESS,
-                        token: vendDataResp.networkProviderReference,
-                        paymentChannel: options.isWalletPayment
-                            ? PaymentChannel.WALLET
-                            : options.transaction.paymentChannel,
-                        billPaymentReceiptNO: vendDataResp.receiptNO,
-                    },
-                });
+        await this.prisma.$transaction(async (tx) => {
+            await tx.transaction.update({
+                where: {
+                    id: options.transaction.id,
+                },
+                data: {
+                    status: TransactionStatus.SUCCESS,
+                    token: vendDataResp.networkProviderReference,
+                    paymentChannel: options.isWalletPayment
+                        ? PaymentChannel.WALLET
+                        : options.transaction.paymentChannel,
+                    billPaymentReceiptNO: vendDataResp.receiptNO,
+                },
+            });
 
-                this.billEvent.emit("pay-bill-commission", {
-                    transactionId: options.transaction.id,
-                    userType: options.user.userType,
-                });
-            },
-            {
-                timeout: DB_TRANSACTION_TIMEOUT,
-            }
-        );
+            this.billEvent.emit("pay-bill-commission", {
+                transactionId: options.transaction.id,
+                userType: options.user.userType,
+            });
+        });
         return {
             networkProviderReference: vendDataResp.networkProviderReference,
         };
