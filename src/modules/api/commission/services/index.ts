@@ -71,10 +71,9 @@ export class CommissionService {
                 slug: bc.billService.slug,
                 type: bc.billService.type,
                 commission: bc.percentage,
-                cap:
-                    bc.billService.type == BillType.ELECTRICITY
-                        ? computeCap(bc.percentage)
-                        : null,
+                cap: this.isCapped(bc.billService.type)
+                    ? computeCap(bc.percentage)
+                    : null,
             };
         });
 
