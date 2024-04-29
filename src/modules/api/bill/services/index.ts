@@ -458,7 +458,8 @@ export class BillService {
     }
 
     isCapped(billType: BillType) {
-        if (billType == BillType.ELECTRICITY) {
+        const capped: BillType[] = [BillType.ELECTRICITY, BillType.CABLE_TV];
+        if (capped.includes(billType)) {
             return true;
         }
         return false;

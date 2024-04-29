@@ -26,6 +26,14 @@ import { da } from "date-fns/locale";
 export class CommissionService {
     constructor(private prisma: PrismaService) {}
 
+    isCapped(billType: BillType) {
+        const capped: BillType[] = [BillType.ELECTRICITY, BillType.CABLE_TV];
+        if (capped.includes(billType)) {
+            return true;
+        }
+        return false;
+    }
+
     async getServiceCommissions(user: User): Promise<ApiResponse> {
         const billCommissions = await this.prisma.userCommission.findMany({
             where: {
@@ -265,16 +273,12 @@ export class CommissionService {
                     slug: subagentCommission.billServiceSlug,
                     subagentCommission: subagentCommission.percentage,
                     type: subagentCommission.billService.type,
-                    cap:
-                        subagentCommission.billService.type ==
-                        BillType.ELECTRICITY
-                            ? computeCap(subagentCommission.percentage)
-                            : null,
-                    baseCap:
-                        merchantCommission.billService.type ==
-                        BillType.ELECTRICITY
-                            ? computeCap(merchantCommission.percentage)
-                            : null,
+                    cap: this.isCapped(subagentCommission.billService.type)
+                        ? computeCap(subagentCommission.percentage)
+                        : null,
+                    baseCap: this.isCapped(merchantCommission.billService.type)
+                        ? computeCap(merchantCommission.percentage)
+                        : null,
                     baseMdCapAmount: isIE
                         ? AGENT_MD_METER_COMMISSION_CAP_AMOUNT -
                           subagentCommission.subAgentMdMeterCapAmount

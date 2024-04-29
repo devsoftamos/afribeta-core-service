@@ -54,7 +54,7 @@ export const encrypt = (data: any) => {
 };
 
 export const computeCap = (commission: number) => {
-    return commission * DEFAULT_CAPPING_MULTIPLIER;
+    return parseFloat((commission * DEFAULT_CAPPING_MULTIPLIER).toFixed(2));
 };
 
 export const generateSlug = (input: string) => {
