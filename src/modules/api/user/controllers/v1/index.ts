@@ -10,6 +10,7 @@ import { AbilitiesGuard } from "@/modules/core/ability/guards";
 import {
     Body,
     Controller,
+    Delete,
     Get,
     HttpCode,
     HttpStatus,
@@ -153,5 +154,10 @@ export class UserController {
         @Body(ValidationPipe) editAgentDto: EditAgentDto
     ) {
         return await this.userService.editAgentDetails(editAgentDto, id);
+    }
+
+    @Delete("profile")
+    async deleteAccount(@User() user: UserModel) {
+        return await this.userService.deleteAccount(user);
     }
 }

@@ -50,6 +50,7 @@ import {
     DuplicateUserException,
     IncorrectPasswordException,
     InvalidAgentCommissionAssignment,
+    InvalidUserException,
     TransactionPinException,
     UserKycException,
     UserNotFoundException,
@@ -527,6 +528,7 @@ export class UserService {
             orderBy: { createdAt: "desc" },
             where: {
                 createdById: user.id,
+                isDeleted: false,
             },
             select: {
                 id: true,
@@ -1047,6 +1049,7 @@ export class UserService {
         const agents = await this.prisma.user.count({
             where: {
                 createdById: user.id,
+                isDeleted: false,
                 createdAt: {
                     gte: startDate,
                     lte: endDate,
@@ -1327,5 +1330,72 @@ export class UserService {
                 });
             }
         }
+    }
+
+    async deleteAccount(user: User) {
+        const userTypes: UserType[] = [
+            UserType.CUSTOMER,
+            UserType.AGENT,
+            UserType.MERCHANT,
+        ];
+        if (!userTypes.includes(user.userType)) {
+            throw new InvalidUserException(
+                "invalid user type account",
+                HttpStatus.BAD_REQUEST
+            );
+        }
+
+        if (user.userType === UserType.MERCHANT) {
+            const subAgents = await this.prisma.user.findMany({
+                where: { createdById: user.id },
+                select: { id: true, email: true },
+            });
+
+            await this.prisma.$transaction(async (tx) => {
+                const deleteId = generateId({ type: "numeric", length: 5 });
+                await tx.user.update({
+                    where: {
+                        id: user.id,
+                    },
+                    data: {
+                        isDeleted: true,
+                        email: `deleted_${deleteId}_${user.email}`,
+                    },
+                });
+
+                if (subAgents.length) {
+                    for (const subAgent of subAgents) {
+                        const deleteId = generateId({
+                            type: "numeric",
+                            length: 5,
+                        });
+                        await tx.user.update({
+                            where: {
+                                id: subAgent.id,
+                            },
+                            data: {
+                                isDeleted: true,
+                                email: `deleted_${deleteId}_${subAgent.email}`,
+                            },
+                        });
+                    }
+                }
+            });
+        } else {
+            const deleteId = generateId({ type: "numeric", length: 5 });
+            await this.prisma.user.update({
+                where: {
+                    id: user.id,
+                },
+                data: {
+                    isDeleted: true,
+                    email: `deleted_${deleteId}_${user.email}`,
+                },
+            });
+        }
+
+        return buildResponse({
+            message: "Account successfully deleted",
+        });
     }
 }
