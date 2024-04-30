@@ -19,6 +19,7 @@ import {
     MerchantUpgradeStatus,
     Prisma,
     Role,
+    Status,
     User,
     UserType,
 } from "@prisma/client";
@@ -30,6 +31,7 @@ import {
     InvalidPasswordResetToken,
     PasswordResetCodeExpiredException,
     SendVerificationEmailException,
+    UserAccountDisabledException,
     VerificationCodeExpiredException,
 } from "../errors";
 import { ApiResponse, buildResponse } from "@/utils/api-response-util";
@@ -321,6 +323,7 @@ export class AuthService {
                 userType: true,
                 transactionPin: true,
                 walletSetupStatus: true,
+                status: true,
                 role: {
                     select: {
                         name: true,
@@ -352,6 +355,12 @@ export class AuthService {
                 break;
             }
             case LoginPlatform.USER: {
+                if (user.status == Status.DISABLED) {
+                    throw new UserAccountDisabledException(
+                        "Account is disabled. Kindly contact customer support",
+                        HttpStatus.BAD_REQUEST
+                    );
+                }
                 this.validateUserAccount(user.userType);
                 break;
             }
