@@ -795,6 +795,27 @@ export class TransactionService {
         });
     }
 
+    async getDefaultAgentTransactions(
+        userId: number,
+        options: UserTransactionHistoryDto
+    ) {
+        const user = await this.prisma.user.findUnique({
+            where: { id: userId },
+            select: {
+                userType: true,
+                isMerchantUpgradable: true,
+            },
+        });
+
+        if (user.userType !== UserType.AGENT || !user.isMerchantUpgradable) {
+            throw new UserNotFoundException(
+                "user must be an agent",
+                HttpStatus.NOT_FOUND
+            );
+        }
+        return await this.getUserTransactions(userId, options);
+    }
+
     async getUserTransactions(id: number, options: UserTransactionHistoryDto) {
         const paginationMeta: Partial<PaginationMeta> = {};
 

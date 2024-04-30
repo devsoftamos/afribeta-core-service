@@ -135,6 +135,8 @@ export class AdminTransactionController {
     }
 
     @Get("customer/history")
+    @UseGuards(AbilitiesGuard)
+    @CheckAbilities(new Ability.ReadTransactionAbility())
     async CustomerTransactionHistory(
         @Query(ValidationPipe)
         customerTransactionHistoryDto: CustomerTransactionHistoryDto
@@ -145,12 +147,28 @@ export class AdminTransactionController {
     }
 
     @Get("user/:id")
+    @UseGuards(AbilitiesGuard)
+    @CheckAbilities(new Ability.ReadTransactionAbility())
     async UserTransactionHistory(
         @Param("id", ParseIntPipe) id: number,
         @Query(ValidationPipe)
         userTransactionHistoryDto: UserTransactionHistoryDto
     ) {
         return await this.transactionService.getUserTransactions(
+            id,
+            userTransactionHistoryDto
+        );
+    }
+
+    @Get("agent/:id")
+    @UseGuards(AbilitiesGuard)
+    @CheckAbilities(new Ability.ReadTransactionAbility())
+    async getDefaultAgentTransactions(
+        @Param("id", ParseIntPipe) id: number,
+        @Query(ValidationPipe)
+        userTransactionHistoryDto: UserTransactionHistoryDto
+    ) {
+        return await this.transactionService.getDefaultAgentTransactions(
             id,
             userTransactionHistoryDto
         );
