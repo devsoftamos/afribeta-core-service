@@ -700,8 +700,6 @@ export class UserService {
             case MerchantStatusType.AGENT_TO_BE_UPGRADED: {
                 queryOptions.where.userType = UserType.AGENT;
                 queryOptions.where.isMerchantUpgradable = true;
-                queryOptions.where.merchantUpgradeStatus =
-                    MerchantUpgradeStatus.PENDING;
                 break;
             }
         }
@@ -1396,6 +1394,49 @@ export class UserService {
 
         return buildResponse({
             message: "Account successfully deleted",
+        });
+    }
+
+    async getUserDetails(userId: number) {
+        const user = await this.prisma.user.findUnique({
+            where: {
+                id: userId,
+            },
+            select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                email: true,
+                phone: true,
+                lga: {
+                    select: {
+                        name: true,
+                    },
+                },
+                state: {
+                    select: {
+                        name: true,
+                    },
+                },
+                wallet: {
+                    select: {
+                        mainBalance: true,
+                        commissionBalance: true,
+                    },
+                },
+            },
+        });
+
+        if (!user) {
+            throw new UserNotFoundException(
+                "user not found",
+                HttpStatus.NOT_FOUND
+            );
+        }
+
+        return buildResponse({
+            message: "user retrieved",
+            data: user,
         });
     }
 }

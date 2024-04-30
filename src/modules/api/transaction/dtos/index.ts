@@ -8,8 +8,6 @@ import {
     IsString,
 } from "class-validator";
 
-import { TransactionStatus } from "@prisma/client";
-
 export enum VerifyTransactionProvider {
     PAYSTACK = "PAYSTACK",
 }

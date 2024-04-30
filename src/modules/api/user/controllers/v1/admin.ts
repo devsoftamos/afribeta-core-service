@@ -147,4 +147,11 @@ export class AdminUserController {
     ) {
         return await this.usersService.enableOrDisableUser(id, bodyDto);
     }
+
+    @Get("agent/:id")
+    @UseGuards(AbilitiesGuard)
+    @CheckAbilities(new Ability.ReadUserAbility())
+    async getAgent(@Param("id", ParseIntPipe) id: number) {
+        return await this.usersService.getUserDetails(id);
+    }
 }

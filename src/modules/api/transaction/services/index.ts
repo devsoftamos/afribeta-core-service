@@ -798,25 +798,11 @@ export class TransactionService {
     async getUserTransactions(id: number, options: UserTransactionHistoryDto) {
         const paginationMeta: Partial<PaginationMeta> = {};
 
-        const userExists = await this.prisma.user.findUnique({
-            where: {
-                id: id,
-            },
-            select: {
-                userType: true,
-            },
-        });
-
-        if (!userExists) {
-            throw new UserNotFoundException(
-                "User account does not exist",
-                HttpStatus.NOT_FOUND
-            );
-        }
-
         const queryOptions: Prisma.TransactionFindManyArgs = {
             orderBy: { createdAt: "desc" },
-            where: {},
+            where: {
+                userId: id,
+            },
             select: {
                 id: true,
                 transactionId: true,
@@ -829,20 +815,6 @@ export class TransactionService {
                 paymentStatus: true,
             },
         };
-
-        switch (userExists.userType) {
-            case UserType.CUSTOMER: {
-                queryOptions.where.userId = id;
-                break;
-            }
-            case UserType.AGENT: {
-                queryOptions.where.userId = id;
-                break;
-            }
-            case UserType.MERCHANT: {
-                queryOptions.where.userId = id;
-            }
-        }
 
         if (options.searchName) {
             (queryOptions.where.paymentReference = {
