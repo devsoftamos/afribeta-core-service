@@ -35,3 +35,7 @@ export class InvalidUserException extends HttpException {
 export class AgentUpgradeGenericException extends HttpException {
     name = "AgentUpgradeGenericException";
 }
+
+export class AccountDeletedException extends HttpException {
+    name = "AccountDeletedException";
+}

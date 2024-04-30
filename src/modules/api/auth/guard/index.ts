@@ -14,7 +14,10 @@ import {
 } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import { Request } from "express";
-import { UserNotFoundException } from "@/modules/api/user";
+import {
+    AccountDeletedException,
+    UserNotFoundException,
+} from "@/modules/api/user";
 import { UserService } from "../../user/services";
 import {
     AuthTokenValidationException,
@@ -64,6 +67,14 @@ export class AuthGuard implements CanActivate {
                     HttpStatus.UNAUTHORIZED
                 );
             }
+
+            if (user.isDeleted) {
+                throw new AccountDeletedException(
+                    "Account not found",
+                    HttpStatus.UNAUTHORIZED
+                );
+            }
+
             request.user = user;
         } catch (error) {
             logger.error(error);
@@ -71,6 +82,11 @@ export class AuthGuard implements CanActivate {
                 case error instanceof UserNotFoundException: {
                     throw error;
                 }
+
+                case error instanceof AccountDeletedException: {
+                    throw error;
+                }
+
                 case error.name == "PrismaClientKnownRequestError": {
                     throw new PrismaNetworkException(
                         "Unable to process request. Please try again",
