@@ -466,6 +466,13 @@ export class AuthService {
             );
         }
 
+        if (user.status == Status.DISABLED) {
+            throw new UserAccountDisabledException(
+                "Account is disabled. Kindly contact customer support",
+                HttpStatus.BAD_REQUEST
+            );
+        }
+
         const resetCode = customAlphabet("1234567890", 4)();
         await this.prisma.passwordResetRequest.upsert({
             where: {
