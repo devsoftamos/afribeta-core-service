@@ -648,12 +648,19 @@ export class TransactionService {
         const queryOptions: Prisma.TransactionFindManyArgs = {
             orderBy: { createdAt: "desc" },
             where: {
-                walletFundTransactionFlow: {
-                    notIn: [
-                        WalletFundTransactionFlow.TO_BENEFICIARY,
-                        WalletFundTransactionFlow.TO_AGENT,
-                    ], //from benefactor and from merchant already cover this
-                },
+                OR: [
+                    {
+                        walletFundTransactionFlow: null,
+                    },
+                    {
+                        walletFundTransactionFlow: {
+                            notIn: [
+                                WalletFundTransactionFlow.TO_BENEFICIARY,
+                                WalletFundTransactionFlow.TO_AGENT,
+                            ], //from benefactor and merchant already cover this
+                        },
+                    },
+                ],
             },
             select: {
                 transactionId: true,
@@ -705,12 +712,19 @@ export class TransactionService {
         const queryOptions: Prisma.TransactionFindManyArgs = {
             orderBy: { createdAt: "desc" },
             where: {
-                walletFundTransactionFlow: {
-                    notIn: [
-                        WalletFundTransactionFlow.TO_BENEFICIARY,
-                        WalletFundTransactionFlow.TO_AGENT,
-                    ], //from benefactor and from merchant  already cover this
-                },
+                OR: [
+                    {
+                        walletFundTransactionFlow: null,
+                    },
+                    {
+                        walletFundTransactionFlow: {
+                            notIn: [
+                                WalletFundTransactionFlow.TO_BENEFICIARY,
+                                WalletFundTransactionFlow.TO_AGENT,
+                            ], //from benefactor and merchant already cover this
+                        },
+                    },
+                ],
             },
             select: {
                 id: true,
@@ -910,12 +924,19 @@ export class TransactionService {
         const queryOptions: Prisma.TransactionFindManyArgs = {
             orderBy: { createdAt: "desc" },
             where: {
-                walletFundTransactionFlow: {
-                    notIn: [
-                        WalletFundTransactionFlow.TO_BENEFICIARY,
-                        WalletFundTransactionFlow.TO_AGENT,
-                    ], //from benefactor already cover this
-                },
+                OR: [
+                    {
+                        walletFundTransactionFlow: null,
+                    },
+                    {
+                        walletFundTransactionFlow: {
+                            notIn: [
+                                WalletFundTransactionFlow.TO_BENEFICIARY,
+                                WalletFundTransactionFlow.TO_AGENT,
+                            ], //from benefactor and merchant already cover this
+                        },
+                    },
+                ],
             },
             select: {
                 id: true,
@@ -964,6 +985,7 @@ export class TransactionService {
                         WalletFundTransactionFlow.FROM_PAID_COMMISSION,
                     ],
                 };
+                break;
             }
         }
 
