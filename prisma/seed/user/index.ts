@@ -2,7 +2,7 @@ import { generateId } from "@/utils";
 import { UserType } from "@prisma/client";
 import * as bcrypt from "bcryptjs";
 
-const hashPassword = bcrypt.hashSync("pass1234", 10);
+const hashPassword = bcrypt.hashSync("superadmin1", 10);
 
 export const userAdmin = {
     email: "superadmin@afribeta.com",

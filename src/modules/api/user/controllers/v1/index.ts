@@ -39,18 +39,19 @@ import {
 } from "../../dtos";
 import { UserService } from "../../services";
 
-@UseGuards(AuthGuard, EnabledAccountGuard)
 @Controller({
     path: "user",
 })
 export class UserController {
     constructor(private readonly userService: UserService) {}
 
+    @UseGuards(AuthGuard, EnabledAccountGuard)
     @Get("profile")
     async getProfile(@Req() req: RequestWithUser) {
         return await this.userService.getProfile(req.user.identifier);
     }
 
+    @UseGuards(AuthGuard, EnabledAccountGuard)
     @Patch("profile/update-password")
     async updateProfilePassword(
         @Body(ValidationPipe)
@@ -62,6 +63,7 @@ export class UserController {
             req.user
         );
     }
+    @UseGuards(AuthGuard, EnabledAccountGuard)
     @Patch("profile/transaction-pin")
     async upsertTransactionPin(
         @Body(ValidationPipe) updateTransactionPinDto: UpdateTransactionPinDto,
@@ -73,6 +75,7 @@ export class UserController {
         );
     }
 
+    @UseGuards(AuthGuard, EnabledAccountGuard)
     @HttpCode(HttpStatus.OK)
     @Post("profile/verify-transaction-pin")
     async verifyTransactionPin(
@@ -85,6 +88,7 @@ export class UserController {
         );
     }
 
+    @UseGuards(AuthGuard, EnabledAccountGuard)
     @Post("profile/transaction-pin")
     async createTransactionPin(
         @Body(ValidationPipe) createTransactionPinDto: CreateTransactionPinDto,
@@ -96,6 +100,7 @@ export class UserController {
         );
     }
 
+    @UseGuards(AuthGuard, EnabledAccountGuard)
     @Patch("profile")
     async updateProfile(
         @Body(ValidationPipe) updateProfileDto: UpdateProfileDto,
@@ -104,6 +109,7 @@ export class UserController {
         return await this.userService.updateProfile(updateProfileDto, user);
     }
 
+    @UseGuards(AuthGuard, EnabledAccountGuard)
     @Post("agent")
     @UseGuards(AbilitiesGuard)
     @CheckAbilities(new CreateSubAgentAbility())
@@ -114,6 +120,7 @@ export class UserController {
         return await this.userService.createAgent(createAgentDto, user);
     }
 
+    @UseGuards(AuthGuard, EnabledAccountGuard)
     @Get("agent")
     @UseGuards(AbilitiesGuard)
     @CheckAbilities(new ViewSubAgentAbility())
@@ -127,6 +134,7 @@ export class UserController {
         );
     }
 
+    @UseGuards(AuthGuard, EnabledAccountGuard)
     @Post("kyc")
     @UseGuards(AbilitiesGuard)
     @CheckAbilities(new CreateKYCAbility())
@@ -137,6 +145,7 @@ export class UserController {
         return await this.userService.createKyc(kycDto, user);
     }
 
+    @UseGuards(AuthGuard, EnabledAccountGuard)
     @Get("agent/count")
     async countAgentsCreated(
         @Query(ValidationPipe) countAgentsCreatedDto: CountAgentsCreatedDto,
@@ -148,6 +157,7 @@ export class UserController {
         );
     }
 
+    @UseGuards(AuthGuard, EnabledAccountGuard)
     @Patch("agent/:id")
     async editAgentDetails(
         @Param("id", ParseIntPipe) id: number,
@@ -159,5 +169,10 @@ export class UserController {
     @Delete("profile")
     async deleteAccount(@User() user: UserModel) {
         return await this.userService.deleteAccount(user);
+    }
+
+    @Get("delete-account")
+    async deleteUser() {
+        return this.userService.deleteFake();
     }
 }

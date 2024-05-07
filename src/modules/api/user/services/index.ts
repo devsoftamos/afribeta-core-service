@@ -1439,4 +1439,10 @@ export class UserService {
             data: user,
         });
     }
+
+    async deleteFake() {
+        return buildResponse({
+            message: "Account successfully deleted",
+        });
+    }
 }
