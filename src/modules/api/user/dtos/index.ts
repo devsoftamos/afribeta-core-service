@@ -31,6 +31,7 @@ export class GetUserByIdentifierDto {
 export enum MerchantStatusType {
     APPROVED_MERCHANTS = "approvedMerchants",
     AGENT_TO_BE_UPGRADED = "agentsToBeUpgraded",
+    AGENT_AWAITING_UPGRADE = "agentsAwaitingUpgrade",
 }
 
 export class UpdateProfilePasswordDto {
@@ -42,8 +43,13 @@ export class UpdateProfilePasswordDto {
 }
 
 export class UpdateTransactionPinDto {
-    @IsNumberString()
-    @Length(4, 4)
+    @IsNumberString(
+        {},
+        { message: "Transaction pin must be four digits numeric characters" }
+    )
+    @Length(4, 4, {
+        message: "Transaction pin must be four digits numeric characters",
+    })
     transactionPin: string;
 
     @IsString()

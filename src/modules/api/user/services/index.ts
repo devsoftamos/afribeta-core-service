@@ -700,6 +700,17 @@ export class UserService {
             case MerchantStatusType.AGENT_TO_BE_UPGRADED: {
                 queryOptions.where.userType = UserType.AGENT;
                 queryOptions.where.isMerchantUpgradable = true;
+                queryOptions.where.merchantUpgradeStatus =
+                    MerchantUpgradeStatus.TO_BE_UPGRADED;
+                break;
+            }
+
+            case MerchantStatusType.AGENT_AWAITING_UPGRADE: {
+                queryOptions.where.userType = UserType.AGENT;
+                queryOptions.where.isMerchantUpgradable = true;
+                queryOptions.where.merchantUpgradeStatus =
+                    MerchantUpgradeStatus.PENDING;
+
                 break;
             }
         }
