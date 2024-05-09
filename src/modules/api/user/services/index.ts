@@ -713,6 +713,15 @@ export class UserService {
 
                 break;
             }
+
+            case MerchantStatusType.AGENT_DECLINED_UPGRADE: {
+                queryOptions.where.userType = UserType.AGENT;
+                queryOptions.where.isMerchantUpgradable = true;
+                queryOptions.where.merchantUpgradeStatus =
+                    MerchantUpgradeStatus.DECLINED;
+
+                break;
+            }
         }
 
         if (options.pagination) {

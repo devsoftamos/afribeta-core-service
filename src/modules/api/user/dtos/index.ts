@@ -32,6 +32,7 @@ export enum MerchantStatusType {
     APPROVED_MERCHANTS = "approvedMerchants",
     AGENT_TO_BE_UPGRADED = "agentsToBeUpgraded",
     AGENT_AWAITING_UPGRADE = "agentsAwaitingUpgrade",
+    AGENT_DECLINED_UPGRADE = "agentsDeclinedUpgrade",
 }
 
 export class UpdateProfilePasswordDto {
