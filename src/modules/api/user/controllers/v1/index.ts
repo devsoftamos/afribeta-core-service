@@ -109,9 +109,8 @@ export class UserController {
         return await this.userService.updateProfile(updateProfileDto, user);
     }
 
-    @UseGuards(AuthGuard, EnabledAccountGuard)
     @Post("agent")
-    @UseGuards(AbilitiesGuard)
+    @UseGuards(AuthGuard, EnabledAccountGuard, AbilitiesGuard)
     @CheckAbilities(new CreateSubAgentAbility())
     async createAgent(
         @Body(ValidationPipe) createAgentDto: CreateSubAgentDto,
@@ -120,9 +119,8 @@ export class UserController {
         return await this.userService.createAgent(createAgentDto, user);
     }
 
-    @UseGuards(AuthGuard, EnabledAccountGuard)
     @Get("agent")
-    @UseGuards(AbilitiesGuard)
+    @UseGuards(AuthGuard, EnabledAccountGuard, AbilitiesGuard)
     @CheckAbilities(new ViewSubAgentAbility())
     async getMerchantAgents(
         @Query(ValidationPipe) listMerchantAgentsDto: ListMerchantAgentsDto,
@@ -134,9 +132,8 @@ export class UserController {
         );
     }
 
-    @UseGuards(AuthGuard, EnabledAccountGuard)
     @Post("kyc")
-    @UseGuards(AbilitiesGuard)
+    @UseGuards(AuthGuard, EnabledAccountGuard, AbilitiesGuard)
     @CheckAbilities(new CreateKYCAbility())
     async createKyc(
         @Body(ValidationPipe) kycDto: CreateKycDto,
