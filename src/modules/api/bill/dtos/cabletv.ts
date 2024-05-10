@@ -1,5 +1,11 @@
 import { CableTVProvider } from "@/modules/workflow/billPayment";
-import { IsEnum, IsNumber, IsOptional, IsString } from "class-validator";
+import {
+    IsEnum,
+    IsNumber,
+    IsOptional,
+    IsPositive,
+    IsString,
+} from "class-validator";
 import { PurchaseBillDto } from ".";
 import { BillProviderSlug } from "../interfaces";
 
@@ -16,6 +22,7 @@ export class PurchaseTVDto extends PurchaseBillDto {
     phone: string;
 
     @IsOptional()
+    @IsPositive()
     @IsNumber()
     serviceCharge: number;
 
@@ -32,6 +39,7 @@ export class PurchaseTVDto extends PurchaseBillDto {
     @IsString()
     packageType: string;
 
+    @IsPositive()
     @IsNumber()
     price: number;
 
