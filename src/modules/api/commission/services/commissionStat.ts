@@ -19,10 +19,11 @@ export class CommissionStatService {
         };
     }
 
+    //fetch company commission
     async fetchTotalCommission(options: FetchCommissionDto) {
         const totalCommission = await this.prisma.transaction.aggregate({
             _sum: {
-                commission: true,
+                companyCommission: true,
             },
             where: {
                 status: TransactionStatus.SUCCESS,
@@ -36,7 +37,7 @@ export class CommissionStatService {
         return buildResponse({
             message: "Total commission fetched successfully",
             data: {
-                commission: totalCommission._sum.commission || 0,
+                commission: totalCommission._sum.companyCommission || 0,
             },
         });
     }

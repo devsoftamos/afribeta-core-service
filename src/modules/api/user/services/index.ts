@@ -992,6 +992,7 @@ export class UserService {
                 merchantUpgradeStatus: MerchantUpgradeStatus.UPGRADED,
                 roleId: role.id,
                 kycStatus: KYC_STATUS.APPROVED,
+                approvedMerchantDate: new Date(),
                 commissions: {
                     create: assignedCommissions,
                 },
@@ -1186,7 +1187,7 @@ export class UserService {
         const merchants = await this.prisma.user.count({
             where: {
                 userType: UserType.MERCHANT,
-                createdAt: {
+                approvedMerchantDate: {
                     gte: startDate,
                     lte: endDate,
                 },
