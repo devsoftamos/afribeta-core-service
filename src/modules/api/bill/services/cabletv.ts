@@ -391,9 +391,7 @@ export class CableTVBillService {
                 amount: purchaseOptions.price,
                 flow: TransactionFlow.OUT,
                 status: TransactionStatus.PENDING,
-                totalAmount:
-                    purchaseOptions.price +
-                    options.purchaseOptions.serviceCharge,
+                totalAmount: purchaseOptions.price,
                 transactionId: generateId({ type: "transaction" }),
                 type: TransactionType.CABLETV_BILL,
                 userId: user.id,
@@ -424,7 +422,7 @@ export class CableTVBillService {
                 options.purchaseOptions.serviceCharge;
 
             transactionCreateOptions.totalAmount =
-                options.purchaseOptions.price + purchaseOptions.serviceCharge;
+                purchaseOptions.price + purchaseOptions.serviceCharge;
         }
 
         switch (billProvider.slug) {

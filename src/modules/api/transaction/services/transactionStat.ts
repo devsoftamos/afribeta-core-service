@@ -70,15 +70,20 @@ export class TransactionStatService {
     ) {
         return await this.prisma.transaction.aggregate({
             _sum: {
-                amount: true,
+                totalAmount: true,
             },
             where: {
-                walletFundTransactionFlow: {
-                    notIn: [
-                        WalletFundTransactionFlow.FROM_BENEFACTOR,
-                        WalletFundTransactionFlow.FROM_MERCHANT,
-                    ], //exclude one of the internal transaction i.e record for the receiver
-                },
+                OR: [
+                    { walletFundTransactionFlow: null },
+                    {
+                        walletFundTransactionFlow: {
+                            notIn: [
+                                WalletFundTransactionFlow.FROM_BENEFACTOR,
+                                WalletFundTransactionFlow.FROM_MERCHANT,
+                            ], //exclude one of the internal transaction i.e record for the receiver
+                        },
+                    },
+                ],
                 status: status,
                 createdAt: {
                     gte: startDate,
@@ -104,8 +109,9 @@ export class TransactionStatService {
         return buildResponse({
             message: "Transaction statistics retrieved successfully",
             data: {
-                successfulTransactions: successfulTransactions._sum.amount || 0,
-                failedTransactions: failedTransactions._sum.amount || 0,
+                successfulTransactions:
+                    successfulTransactions._sum.totalAmount || 0,
+                failedTransactions: failedTransactions._sum.totalAmount || 0,
             },
         });
     }
@@ -169,9 +175,9 @@ export class TransactionStatService {
         return buildResponse({
             message: "Transaction overview fetched successfully",
             data: {
-                monthlyTransactions: monthlyTransactions._sum.amount || 0,
-                dailyTransactions: dailyTransactions._sum.amount || 0,
-                weeklyTransactions: weeklyTransactions._sum.amount || 0,
+                monthlyTransactions: monthlyTransactions._sum.totalAmount || 0,
+                dailyTransactions: dailyTransactions._sum.totalAmount || 0,
+                weeklyTransactions: weeklyTransactions._sum.totalAmount || 0,
             },
         });
     }
