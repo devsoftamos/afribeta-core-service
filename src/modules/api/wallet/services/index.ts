@@ -383,29 +383,18 @@ export class WalletService {
         const theUser = await this.userService.findUserById(user.id);
         const totalAmount = options.amount + options.serviceCharge;
 
-        if (theUser.userType == UserType.CUSTOMER) {
-            if (totalAmount > wallet.mainBalance) {
-                throw new InsufficientWalletBalanceException(
-                    "Insufficient balance",
-                    HttpStatus.BAD_REQUEST
-                );
-            }
-        } else {
-            //check if user is a subagent
-            if (!theUser.isMerchantUpgradable) {
-                //
-                throw new WalletGenericException(
-                    "operation not allowed for account type",
-                    HttpStatus.BAD_REQUEST
-                );
-            }
+        if (theUser.userType !== UserType.CUSTOMER) {
+            throw new WalletGenericException(
+                "operation not allowed for account type",
+                HttpStatus.BAD_REQUEST
+            );
+        }
 
-            if (totalAmount > wallet.commissionBalance) {
-                throw new InsufficientWalletBalanceException(
-                    "Insufficient commission balance",
-                    HttpStatus.BAD_REQUEST
-                );
-            }
+        if (totalAmount > wallet.mainBalance) {
+            throw new InsufficientWalletBalanceException(
+                "Insufficient balance",
+                HttpStatus.BAD_REQUEST
+            );
         }
 
         const reference = generateId({

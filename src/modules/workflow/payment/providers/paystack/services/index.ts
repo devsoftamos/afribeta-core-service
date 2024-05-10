@@ -51,15 +51,15 @@ export class PaystackService {
             switch (true) {
                 case error instanceof PaystackError: {
                     throw new PaystackDynamicVirtualAccountException(
-                        error.message,
-                        HttpStatus.INTERNAL_SERVER_ERROR
+                        "operation failed",
+                        HttpStatus.NOT_IMPLEMENTED
                     );
                 }
 
                 default: {
                     throw new PaystackWorkflowException(
                         "Failed to initiate dynamic virtual account creation",
-                        HttpStatus.INTERNAL_SERVER_ERROR
+                        HttpStatus.NOT_IMPLEMENTED
                     );
                 }
             }
@@ -77,15 +77,15 @@ export class PaystackService {
             switch (true) {
                 case error instanceof PaystackError: {
                     throw new PaystackBankException(
-                        error.message,
-                        HttpStatus.INTERNAL_SERVER_ERROR
+                        "operation failed",
+                        HttpStatus.BAD_REQUEST
                     );
                 }
 
                 default: {
                     throw new PaystackWorkflowException(
                         "Failed to retrieve banks",
-                        HttpStatus.INTERNAL_SERVER_ERROR
+                        HttpStatus.BAD_REQUEST
                     );
                 }
             }
@@ -211,6 +211,7 @@ export class PaystackService {
                 });
             });
         } catch (error) {
+            logger.error(error);
             switch (true) {
                 case error instanceof PaystackBankException: {
                     throw error;
@@ -226,15 +227,15 @@ export class PaystackService {
 
                 case error instanceof PaystackError: {
                     throw new PaystackTransferException(
-                        error.message,
-                        HttpStatus.INTERNAL_SERVER_ERROR
+                        "operation failed",
+                        HttpStatus.NOT_IMPLEMENTED
                     );
                 }
 
                 default: {
                     throw new PaystackWorkflowException(
                         "Failed to initialize transfer",
-                        HttpStatus.INTERNAL_SERVER_ERROR
+                        HttpStatus.NOT_IMPLEMENTED
                     );
                 }
             }
@@ -250,7 +251,7 @@ export class PaystackService {
             if (!resp || !resp.data) {
                 throw new PaystackWorkflowException(
                     "Unable to verify paystack transaction",
-                    HttpStatus.INTERNAL_SERVER_ERROR
+                    HttpStatus.NOT_IMPLEMENTED
                 );
             }
 
@@ -287,16 +288,16 @@ export class PaystackService {
                         );
                     } else {
                         throw new PaystackVerifyTransactionException(
-                            error.message,
-                            HttpStatus.INTERNAL_SERVER_ERROR
+                            "operation failed",
+                            HttpStatus.NOT_IMPLEMENTED
                         );
                     }
                 }
 
                 default: {
                     throw new PaystackWorkflowException(
-                        "Failed to initialize transfer",
-                        HttpStatus.INTERNAL_SERVER_ERROR
+                        "Failed to verify transfer",
+                        HttpStatus.NOT_IMPLEMENTED
                     );
                 }
             }
