@@ -1,0 +1,17 @@
+name: Docker Publish
+
+on:
+    push:
+        branches: ["main"]
+    pull_request:
+        branches: ["main"]
+
+jobs:
+    docker:
+        uses: calculusky/workflows/.github/workflows/docker_publish.yml@main
+        with:
+            image_name: africabeta_core_service_prod
+            tag: latest
+        secrets:
+            docker_username: ${{ secrets.DOCKER_USERNAME }}
+            docker_password: ${{ secrets.DOCKER_PASSWORD }}
