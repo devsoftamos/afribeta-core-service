@@ -56,3 +56,12 @@ export class UpdateMerchantSingleBillCommissionDto {
     })
     newCommission: number;
 }
+
+export enum ListType {
+    MERCHANT_UPGRADE = "MERCHANT_UPGRADE",
+}
+export class ListAgentCommissionDto {
+    @IsOptional()
+    @IsEnum(ListType)
+    type: ListType;
+}

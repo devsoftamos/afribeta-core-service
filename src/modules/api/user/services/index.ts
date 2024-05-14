@@ -735,6 +735,7 @@ export class UserService {
             });
             paginationMeta.totalCount = count;
             paginationMeta.perPage = limit;
+            paginationMeta.page = page;
         }
 
         const merchants = await this.prisma.user.findMany(queryOptions);

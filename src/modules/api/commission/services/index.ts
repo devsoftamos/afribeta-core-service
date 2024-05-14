@@ -14,6 +14,8 @@ import {
 } from "@/config";
 import {
     DeleteSubagentCommissionDto,
+    ListAgentCommissionDto,
+    ListType,
     UpdateMerchantSingleBillCommissionDto,
     UpdateSingleBillCommissionDto,
     UpdateSubagentCommissionDto,
@@ -83,7 +85,8 @@ export class CommissionService {
         });
     }
 
-    async adminGetAgencyServiceCommissions() {
+    async adminGetAgencyServiceCommissions(options: ListAgentCommissionDto) {
+        console.log(options);
         const commissions = await this.prisma.billService.findMany({
             select: {
                 baseCommissionPercentage: true,
@@ -99,7 +102,10 @@ export class CommissionService {
                 name: bc.name,
                 slug: bc.slug,
                 baseCommission: bc.baseCommissionPercentage,
-                agentCommission: bc.agentDefaultCommissionPercent,
+                agentCommission:
+                    options.type === ListType.MERCHANT_UPGRADE
+                        ? 0
+                        : bc.agentDefaultCommissionPercent,
                 type: bc.type,
             };
         });
