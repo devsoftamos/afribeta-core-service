@@ -861,6 +861,7 @@ export class UserService {
             select: {
                 id: true,
                 userType: true,
+                kycStatus: true,
                 isMerchantUpgradable: true,
                 merchantUpgradeStatus: true,
             },
@@ -889,6 +890,12 @@ export class UserService {
 
         switch (options.authorizeType) {
             case AuthorizeAgentUpgradeType.APPROVE: {
+                if (!agent.kycStatus) {
+                    throw new AgentUpgradeGenericException(
+                        "Agent must submit KYC data",
+                        HttpStatus.BAD_REQUEST
+                    );
+                }
                 await this.approveAgentUpgradeHandler(
                     agentId,
                     options.billServiceCommissions
