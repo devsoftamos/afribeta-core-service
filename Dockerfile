@@ -7,6 +7,8 @@ RUN npx prisma generate
 RUN npm run build
 
 FROM node:18.18.2 as production
+ENV TZ=Africa/Lagos
+ENV NODE_ENV=production
 WORKDIR /usr/src/app
 COPY ./package.json .
 COPY ./prisma ./prisma
