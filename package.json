@@ -14,7 +14,7 @@
     "scripts": {
         "prebuild": "rimraf dist",
         "build": "NODE_ENV=production webpack",
-        "build:digitalocean": "&& npm install --production=false && npm run build && npm ci",
+        "build:digitalocean": "npm install --production=false && npm run build && npm ci",
         "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
         "watch": "NODE_ENV=development webpack --watch",
         "start:dev": "nest start --watch",
