@@ -6,9 +6,7 @@ import { WorkflowModule } from "./workflow";
 import { ScheduleModule } from "@nestjs/schedule";
 import { SchedulerModule } from "./scheduler";
 import { BullModule } from "@nestjs/bull";
-import { redisUrl } from "@/config";
-import { BullBoardModule } from "@bull-board/nestjs";
-import { ExpressAdapter } from "@bull-board/express";
+
 @Module({
     imports: [
         APIModule,
@@ -16,12 +14,9 @@ import { ExpressAdapter } from "@bull-board/express";
         CoreModule,
         WorkflowModule,
         BullModule.forRoot({
-            url: redisUrl,
+            url: "redisUrl",
         }),
-        BullBoardModule.forRoot({
-            route: "/queues",
-            adapter: ExpressAdapter,
-        }),
+
         ScheduleModule.forRoot(),
         SchedulerModule,
     ],
