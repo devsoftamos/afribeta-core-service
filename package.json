@@ -13,7 +13,7 @@
     },
     "scripts": {
         "prebuild": "rimraf dist",
-        "build": "NODE_ENV=production TZ=Africa/Lagos webpack",
+        "build": "NODE_ENV=production webpack",
         "build:digitalocean": "npm install --production=false && npm run build && npm ci",
         "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
         "watch": "NODE_ENV=development webpack --watch",
@@ -22,14 +22,14 @@
         "start:debug": "nest start --watch",
         "lint": "eslint \"{src,test}/**/*.ts\" --fix",
         "husky:install": "husky install",
-        "prisma:init": "npx prisma init",
-        "prisma:generate": "npx prisma generate",
-        "migration:generate": "npx prisma migrate dev --create-only --name",
-        "db:migrate:dev": "npx prisma migrate dev",
-        "db:push": "npx prisma db push",
-        "db:seed": "npx prisma db seed",
-        "db:pull": "npx prisma db pull",
-        "db:migrate:prod": "npx prisma migrate deploy"
+        "prisma:init": "pnpm prisma init",
+        "prisma:generate": "pnpm prisma generate",
+        "migration:generate": "pnpm prisma migrate dev --create-only --name",
+        "db:migrate:dev": "pnpm prisma migrate dev",
+        "db:push": "pnpm prisma db push",
+        "db:seed": "pnpm prisma db seed",
+        "db:pull": "pnpm prisma db pull",
+        "db:migrate:prod": "pnpm prisma migrate deploy"
     },
     "dependencies": {
         "@boxpositron/vre": "^1.0.0",
