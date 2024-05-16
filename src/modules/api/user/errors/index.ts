@@ -39,3 +39,7 @@ export class AgentUpgradeGenericException extends HttpException {
 export class AccountDeletedException extends HttpException {
     name = "AccountDeletedException";
 }
+
+export class AccountActivateAndDeactivateException extends HttpException {
+    name = "AccountActivateAndDeactivateException";
+}

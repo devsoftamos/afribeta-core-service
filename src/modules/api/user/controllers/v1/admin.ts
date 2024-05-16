@@ -145,7 +145,7 @@ export class AdminUserController {
         @Param("id", ParseIntPipe) id: number,
         @Body(ValidationPipe) bodyDto: EnableOrDisableUserDto
     ) {
-        return await this.usersService.enableOrDisableUser(id, bodyDto);
+        return await this.usersService.enableOrDisableUser(id, bodyDto, "user");
     }
 
     @Get("agent/:id")
@@ -162,6 +162,10 @@ export class AdminUserController {
         @Param("id", ParseIntPipe) id: number,
         @Body() bodyDto: EnableOrDisableUserDto
     ) {
-        return await this.usersService.enableOrDisableUser(id, bodyDto);
+        return await this.usersService.enableOrDisableUser(
+            id,
+            bodyDto,
+            "admin"
+        );
     }
 }

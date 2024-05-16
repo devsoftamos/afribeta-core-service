@@ -45,6 +45,7 @@ import {
     EnableOrDisableUserEnum,
 } from "../dtos";
 import {
+    AccountActivateAndDeactivateException,
     AgentCreationException,
     AgentUpgradeGenericException,
     DuplicateUserException,
@@ -1321,12 +1322,16 @@ export class UserService {
         });
     }
 
-    async enableOrDisableUser(userId: number, options: EnableOrDisableUserDto) {
+    async enableOrDisableUser(
+        userId: number,
+        options: EnableOrDisableUserDto,
+        type: "user" | "admin"
+    ) {
         const user = await this.prisma.user.findUnique({
             where: {
                 id: userId,
             },
-            select: { id: true },
+            select: { id: true, userType: true },
         });
 
         if (!user) {
@@ -1334,6 +1339,21 @@ export class UserService {
                 "user not found",
                 HttpStatus.NOT_FOUND
             );
+        }
+
+        //check if proper endpoint was accessed or manipulated
+        //only super admin can activate/deactivate admin account and type must be admin
+        if (type === "user") {
+            const adminTypes: UserType[] = [
+                UserType.ADMIN,
+                UserType.SUPER_ADMIN,
+            ];
+            if (adminTypes.includes(user.userType)) {
+                throw new AccountActivateAndDeactivateException(
+                    "operation not allowed",
+                    HttpStatus.BAD_REQUEST
+                );
+            }
         }
 
         switch (options.actionType) {

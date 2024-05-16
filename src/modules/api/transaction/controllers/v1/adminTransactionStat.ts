@@ -22,8 +22,8 @@ export class AdminTransactionStatController {
     ) {}
 
     @Get()
-    // @UseGuards(AbilitiesGuard)
-    // @CheckAbilities(new Ability.ReadTransactionAbility())
+    @UseGuards(AbilitiesGuard)
+    @CheckAbilities(new Ability.ReadTransactionAbility())
     async GetTotalTransactions(
         @Query(ValidationPipe)
         successfulTransactionsDto: SuccessfulTransactionsDto
@@ -40,7 +40,7 @@ export class AdminTransactionStatController {
         @Query(ValidationPipe)
         queryDto: AllTransactionStatDto
     ) {
-        return await this.transactionStatService.getAllTransactionStat(
+        return await this.transactionStatService.getAdminDashboardTransStat(
             queryDto
         );
     }
