@@ -201,24 +201,6 @@ const runtimeEnvironment: RequiredEnvironment[] = [
         type: RequiredEnvironmentTypes.String,
     },
 
-    //redis
-    {
-        name: "REDIS_HOST",
-        type: RequiredEnvironmentTypes.String,
-    },
-    {
-        name: "REDIS_PORT",
-        type: RequiredEnvironmentTypes.String,
-    },
-    {
-        name: "REDIS_USER",
-        type: RequiredEnvironmentTypes.String,
-    },
-    {
-        name: "REDIS_PASSWORD",
-        type: RequiredEnvironmentTypes.String,
-    },
-
     //cloud bucket
     {
         name: "PROFILE_DIR",
@@ -286,6 +268,23 @@ const runtimeEnvironment: RequiredEnvironment[] = [
     //server environment
     {
         name: "ENVIRONMENT",
+        type: RequiredEnvironmentTypes.String,
+    },
+    //redis
+    {
+        name: "REDIS_HOST",
+        type: RequiredEnvironmentTypes.String,
+    },
+    {
+        name: "REDIS_PORT",
+        type: RequiredEnvironmentTypes.String,
+    },
+    {
+        name: "REDIS_USER",
+        type: RequiredEnvironmentTypes.String,
+    },
+    {
+        name: "REDIS_PASSWORD",
         type: RequiredEnvironmentTypes.String,
     },
 ];
@@ -396,6 +395,7 @@ export const redisConfiguration: RedisConfig = {
     user: process.env.REDIS_USER ?? "",
     password: process.env.REDIS_PASSWORD ?? "",
 };
+
 export const redisUrl = `redis://${redisConfiguration.user}:${redisConfiguration.password}@${redisConfiguration.host}:${redisConfiguration.port}`;
 
 export const frontendDevOrigin = [/^http:\/\/localhost:\d+$/];

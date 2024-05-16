@@ -5,12 +5,14 @@ import {
     Param,
     ParseIntPipe,
     Patch,
+    Query,
     UseGuards,
     ValidationPipe,
 } from "@nestjs/common";
 import { CommissionService } from "../../services";
 import { AuthGuard } from "@/modules/api/auth/guard";
 import {
+    ListAgentCommissionDto,
     UpdateMerchantSingleBillCommissionDto,
     UpdateSingleBillCommissionDto,
 } from "../../dtos";
@@ -28,8 +30,12 @@ export class AdminCommissionController {
     @Get()
     @UseGuards(AbilitiesGuard)
     @CheckAbilities(new Ability.ReadCommissionAbility())
-    async adminGetAgencyServiceCommissions() {
-        return await this.commissionService.adminGetAgencyServiceCommissions();
+    async adminGetAgencyServiceCommissions(
+        @Query() queryDto: ListAgentCommissionDto
+    ) {
+        return await this.commissionService.adminGetAgencyServiceCommissions(
+            queryDto
+        );
     }
 
     @Patch("agent/single-billservice")
