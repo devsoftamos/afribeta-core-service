@@ -2,9 +2,9 @@ FROM node:18.18.2 as build
 WORKDIR /usr/src/app
 RUN npm install -g pnpm
 COPY ./package.json .
-RUN pnpm install
+RUN npm install
 COPY . .
-RUN npx prisma generate 
+RUN pnpm prisma generate 
 RUN npm run build
 
 FROM node:18.18.2 as production

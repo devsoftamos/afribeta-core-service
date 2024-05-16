@@ -6,6 +6,9 @@ import { WorkflowModule } from "./workflow";
 import { ScheduleModule } from "@nestjs/schedule";
 import { SchedulerModule } from "./scheduler";
 import { BullModule } from "@nestjs/bull";
+import { redisUrl } from "@/config";
+import { BullBoardModule } from "@bull-board/nestjs";
+import { ExpressAdapter } from "@bull-board/express";
 
 @Module({
     imports: [
@@ -13,8 +16,12 @@ import { BullModule } from "@nestjs/bull";
         WebhookModule,
         CoreModule,
         WorkflowModule,
+        BullBoardModule.forRoot({
+            route: "/queues",
+            adapter: ExpressAdapter,
+        }),
         BullModule.forRoot({
-            url: "redisUrl",
+            url: redisUrl,
         }),
 
         ScheduleModule.forRoot(),
