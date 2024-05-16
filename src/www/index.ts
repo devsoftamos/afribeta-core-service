@@ -7,7 +7,7 @@ import { AllExceptionsFilter } from "@/core/exception/http";
 import { classValidatorPipeInstance } from "@/core/pipe";
 import { PrismaService } from "@/modules/core/prisma/services";
 import * as morgan from "morgan";
-import { frontendDevOrigin, isDevEnvironment, redisUrl } from "@/config";
+import { frontendDevOrigin, isDevEnvironment } from "@/config";
 import { NestExpressApplication } from "@nestjs/platform-express";
 
 export interface CreateServerOptions {
