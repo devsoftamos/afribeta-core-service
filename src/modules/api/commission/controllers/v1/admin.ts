@@ -10,7 +10,7 @@ import {
     ValidationPipe,
 } from "@nestjs/common";
 import { CommissionService } from "../../services";
-import { AuthGuard } from "@/modules/api/auth/guard";
+import { AuthGuard, EnabledAccountGuard } from "@/modules/api/auth/guard";
 import {
     ListAgentCommissionDto,
     UpdateMerchantSingleBillCommissionDto,
@@ -20,7 +20,7 @@ import * as Ability from "@/modules/core/ability";
 import { AbilitiesGuard } from "@/modules/core/ability/guards";
 import { CheckAbilities } from "@/modules/core/ability/decorator";
 
-@UseGuards(AuthGuard)
+@UseGuards(AuthGuard, EnabledAccountGuard)
 @Controller({
     path: "admin/commission",
 })

@@ -74,6 +74,7 @@ export class AbilityFactory {
         can(Action.ReadCommission, "BillService");
         can(Action.UpdateCommission, "BillService");
         can(Action.ReadKyc, "KycInformation");
+        can(Action.AdminActivationAndDeactivation, "User");
 
         //merchant only
         if (role.slug !== RoleSlug.MERCHANT) {
@@ -265,6 +266,13 @@ export class AbilityFactory {
             if (!permissions.includes(Action.ReadKyc)) {
                 cannot(Action.ReadKyc, "KycInformation").because(
                     "Insufficient permission to view KYC Information"
+                );
+            }
+
+            //Activate/Deactivate Admin Account
+            if (!permissions.includes(Action.AdminActivationAndDeactivation)) {
+                cannot(Action.AdminActivationAndDeactivation, "User").because(
+                    "Insufficient permission to activate or deactivate admin account"
                 );
             }
         }

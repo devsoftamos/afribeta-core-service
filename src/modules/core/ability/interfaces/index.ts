@@ -65,6 +65,7 @@ export enum Action {
     ReadCommission = "commission.read",
     UpdateCommission = "commission.update",
     ReadKyc = "kyc.read",
+    AdminActivationAndDeactivation = "admin.activate_deactivate", //app default. only super-admin
 }
 
 export interface RequiredRule {

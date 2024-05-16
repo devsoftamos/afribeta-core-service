@@ -157,3 +157,8 @@ export class ReadReportAbility implements RequiredRule {
     action: Action = Action.ReadReport;
     subject: Subjects = "Transaction";
 }
+
+export class AdminActivationAndDeactivationAbility implements RequiredRule {
+    action: Action = Action.AdminActivationAndDeactivation;
+    subject: Subjects = "User";
+}

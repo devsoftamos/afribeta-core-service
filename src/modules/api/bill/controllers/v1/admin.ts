@@ -1,4 +1,4 @@
-import { AuthGuard } from "@/modules/api/auth/guard";
+import { AuthGuard, EnabledAccountGuard } from "@/modules/api/auth/guard";
 import {
     Body,
     Controller,
@@ -10,7 +10,7 @@ import {
 import { UpdateDefaultBillProviderDto } from "../../dtos";
 import { BillService } from "../../services";
 
-@UseGuards(AuthGuard)
+@UseGuards(AuthGuard, EnabledAccountGuard)
 @Controller({
     path: "admin/bill",
 })

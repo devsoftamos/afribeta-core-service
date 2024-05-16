@@ -349,18 +349,19 @@ export class AuthService {
             );
         }
 
+        if (user.status == Status.DISABLED) {
+            throw new UserAccountDisabledException(
+                "Account is disabled. Kindly contact customer support",
+                HttpStatus.BAD_REQUEST
+            );
+        }
+
         switch (loginPlatform) {
             case LoginPlatform.ADMIN: {
                 this.validateAdminAccount(user.userType);
                 break;
             }
             case LoginPlatform.USER: {
-                if (user.status == Status.DISABLED) {
-                    throw new UserAccountDisabledException(
-                        "Account is disabled. Kindly contact customer support",
-                        HttpStatus.BAD_REQUEST
-                    );
-                }
                 this.validateUserAccount(user.userType);
                 break;
             }

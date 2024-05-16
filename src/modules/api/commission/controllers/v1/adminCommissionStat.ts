@@ -8,12 +8,12 @@ import {
 } from "@nestjs/common";
 import { CommissionStatService } from "../../services/commissionStat";
 import { FetchCommissionDto } from "../../dtos";
-import { AuthGuard } from "@/modules/api/auth/guard";
+import { AuthGuard, EnabledAccountGuard } from "@/modules/api/auth/guard";
 import { AbilitiesGuard } from "@/modules/core/ability/guards";
 import { CheckAbilities } from "@/modules/core/ability/decorator";
 import * as Ability from "@/modules/core/ability";
 
-@UseGuards(AuthGuard)
+@UseGuards(AuthGuard, EnabledAccountGuard)
 @Controller({
     path: "admin/commission/statistics",
 })
