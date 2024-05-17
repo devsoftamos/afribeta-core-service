@@ -22,7 +22,7 @@ jobs:
         with:
             app_name: africabeta-core-service
             component_name: africabeta-core-service
-            repository: africabeta-core-service
+            repository: africabeta_core_service_dev
             tag: latest
         secrets:
             access_token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN}}
