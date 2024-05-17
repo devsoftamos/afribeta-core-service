@@ -1,0 +1,29 @@
+name: Docker Publish Development
+
+on:
+    push:
+        branches: ["develop"]
+    pull_request:
+        branches: ["develop"]
+
+jobs:
+    build:
+        uses: calculusky/workflows/.github/workflows/docker_publish.yml@v1.0
+        with:
+            image_name: africabeta_core_service_dev
+            tag: latest
+        secrets:
+            docker_username: ${{ secrets.DOCKER_USERNAME }}
+            docker_password: ${{ secrets.DOCKER_PASSWORD }}
+
+    deploy:
+        needs: build
+        uses: calculusky/workflows/.github/workflows/deploy_digital_ocean_app_platform.yml@v1.0
+        with:
+            app_name: africabeta-core-service
+            component_name: africabeta-core-service
+            repository: africabeta-core-service
+            tag: latest
+        secrets:
+            access_token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN}}
+            registry: ${{ secrets.DOCKER_USERNAME }}
