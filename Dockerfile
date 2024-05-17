@@ -2,10 +2,10 @@ FROM node:18.18.2 as build
 WORKDIR /usr/src/app
 RUN npm install -g pnpm
 COPY ./package.json .
-RUN npm install
+RUN pnpm install
 COPY . .
 RUN pnpm prisma generate 
-RUN npm run build
+RUN pnpm build
 
 FROM node:18.18.2 as production
 ENV TZ=Africa/Lagos
