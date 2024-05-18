@@ -7,7 +7,7 @@ on:
         branches: ["main"]
 
 jobs:
-    docker:
+    build:
         uses: calculusky/workflows/.github/workflows/docker_publish.yml@v1.0
         with:
             image_name: africabeta_core_service_prod
@@ -15,3 +15,15 @@ jobs:
         secrets:
             docker_username: ${{ secrets.DOCKER_USERNAME }}
             docker_password: ${{ secrets.DOCKER_PASSWORD }}
+
+    deploy:
+        needs: build
+        uses: calculusky/workflows/.github/workflows/deploy_digital_ocean_app_platform.yml@v1.0
+        with:
+            app_name: africabeta-core-service
+            component_name: africabeta-core-service
+            repository: africabeta_core_service_prod
+            tag: latest
+        secrets:
+            access_token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN_PROD }}
+            registry: ${{ secrets.DOCKER_USERNAME }}
