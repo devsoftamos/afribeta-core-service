@@ -22,6 +22,7 @@ import {
     VendCableTVResponse,
     GetSmartCardInfoOptions,
     GetSmartCardInfoResponse,
+    GetCableTVBouquetResponse,
 } from "../../../interfaces";
 import {
     BuyPowerCableTVException,
@@ -150,7 +151,7 @@ export class BuyPowerWorkflowService implements BillPaymentWorkflow {
                     this.handlePendingTransactionError(error);
                     throw new BuyPowerRequeryException(
                         error.message,
-                        error.status
+                        HttpStatus.NOT_IMPLEMENTED
                     );
                 }
 
@@ -261,7 +262,7 @@ export class BuyPowerWorkflowService implements BillPaymentWorkflow {
                     this.handlePendingTransactionError(error);
                     throw new BuyPowerVendAirtimeException(
                         error.message,
-                        error.status
+                        HttpStatus.NOT_IMPLEMENTED
                     );
                 }
 
@@ -325,7 +326,7 @@ export class BuyPowerWorkflowService implements BillPaymentWorkflow {
                     this.handlePendingTransactionError(error);
                     throw new BuyPowerVendDataException(
                         error.message,
-                        error.status
+                        HttpStatus.NOT_IMPLEMENTED
                     );
                 }
 
@@ -394,7 +395,7 @@ export class BuyPowerWorkflowService implements BillPaymentWorkflow {
                     this.handlePendingTransactionError(error);
                     throw new BuyPowerVendInternetException(
                         error.message,
-                        error.status
+                        HttpStatus.NOT_IMPLEMENTED
                     );
                 }
 
@@ -456,7 +457,7 @@ export class BuyPowerWorkflowService implements BillPaymentWorkflow {
                     this.handlePendingTransactionError(error);
                     throw new BuyPowerVendCableTVException(
                         error.message,
-                        error.status
+                        HttpStatus.NOT_IMPLEMENTED
                     );
                 }
 
@@ -473,7 +474,7 @@ export class BuyPowerWorkflowService implements BillPaymentWorkflow {
     //fetch tv bouquets
     async getCableTVBouquets(
         cableTVProvider: CableTVProvider
-    ): Promise<GetDataBundleResponse[]> {
+    ): Promise<GetCableTVBouquetResponse[]> {
         try {
             const fetchData = async (
                 cableTVProvider: IBuyPower.CableTv.CableTVNetwork

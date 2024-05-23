@@ -76,6 +76,8 @@ export interface GetDataBundleResponse {
     validity?: string;
 }
 
+export type GetCableTVBouquetResponse = GetDataBundleResponse;
+
 export interface VendDataOptions {
     vtuNumber: string;
     vtuNetwork: NetworkDataProvider;

@@ -57,7 +57,6 @@ import {
     WalletNotFoundException,
     InsufficientWalletBalanceException,
 } from "../../wallet";
-import { DB_TRANSACTION_TIMEOUT } from "@/config";
 import { BillEvent } from "../events";
 import { PaymentProvider, PaymentReferenceDto } from "../dtos";
 import { BillService } from ".";

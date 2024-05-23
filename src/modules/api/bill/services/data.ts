@@ -56,7 +56,6 @@ import {
     VerifyDataPurchaseData,
 } from "../interfaces/data";
 import logger from "moment-logger";
-import { DB_TRANSACTION_TIMEOUT } from "@/config";
 import { BillService } from ".";
 import { BillEvent } from "../events";
 import { BuyPowerWorkflowService } from "@/modules/workflow/billPayment/providers/buyPower/services";

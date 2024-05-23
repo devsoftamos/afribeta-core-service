@@ -14,7 +14,7 @@
     "scripts": {
         "prebuild": "rimraf dist",
         "build": "NODE_ENV=production webpack",
-        "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
+        "format": "prettier --write \"src/**/*.ts\"",
         "watch": "NODE_ENV=development webpack --watch",
         "start:dev": "nest start --watch",
         "start:prod": "node dist/server",

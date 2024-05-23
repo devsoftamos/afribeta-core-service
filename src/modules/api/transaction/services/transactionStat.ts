@@ -12,11 +12,7 @@ import {
     TransactionStatus,
     WalletFundTransactionFlow,
 } from "@prisma/client";
-import {
-    AllTransactionStatDto,
-    BillPayment,
-    SuccessfulTransactionsDto,
-} from "../dtos";
+import { AllTransactionStatDto, SuccessfulTransactionsDto } from "../dtos";
 import { buildResponse } from "@/utils/api-response-util";
 import { Injectable } from "@nestjs/common";
 
