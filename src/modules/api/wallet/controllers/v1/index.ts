@@ -17,6 +17,7 @@ import {
     Param,
     Post,
     Query,
+    Res,
     UseGuards,
     ValidationPipe,
 } from "@nestjs/common";
@@ -38,6 +39,7 @@ import {
     VerifyWalletDto,
 } from "../../dto";
 import { WalletService } from "../../services";
+import { Response } from "express";
 
 @UseGuards(AuthGuard, EnabledAccountGuard)
 @Controller({
@@ -111,15 +113,16 @@ export class WalletController {
         return await this.walletService.getWallet(user.id);
     }
 
+    @HttpCode(HttpStatus.OK)
     @Post("assign-vendor-wallet")
     async createVendorWallet(
         @Body(ValidationPipe) createVendorWalletDto: CreateVendorWalletDto,
         @User() user: UserModel
     ) {
-        return await this.walletService.createVendorWallet(
-            createVendorWalletDto,
-            user
-        );
+        return await this.walletService.createAgencyWallet({
+            bvn: createVendorWalletDto.bvn,
+            user: user,
+        });
     }
 
     @Get("fund/verify/:reference")

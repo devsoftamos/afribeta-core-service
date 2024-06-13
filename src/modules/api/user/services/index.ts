@@ -116,6 +116,7 @@ export class UserService {
                 identifier: true,
                 phone: true,
                 walletSetupStatus: true,
+                isWalletCreated: true,
             },
         });
         return buildResponse({

@@ -50,6 +50,7 @@ import {
     WalletGenericException,
 } from "../errors";
 import {
+    CreateAgencyWallet,
     CreateWalletAAndVirtualAccount,
     FundSubAgentHandlerOptions,
     FundSubAgentHandlerResponse,
@@ -98,6 +99,7 @@ import { IdentityVerificationService } from "@/modules/core/identityVerification
 import { IRechargeWorkflowService } from "@/modules/workflow/billPayment/providers/iRecharge/services";
 import { BuyPowerWorkflowService } from "@/modules/workflow/billPayment/providers/buyPower/services";
 import { BillProviderSlugForPower } from "../../bill/interfaces";
+import { WalletEvent } from "../events";
 @Injectable()
 export class WalletService {
     constructor(
@@ -109,7 +111,8 @@ export class WalletService {
         private squadGTBankService: SquadGTBankService,
         private identityVerification: IdentityVerificationService,
         private iRechargeWorkflowService: IRechargeWorkflowService,
-        private buyPowerWorkflowService: BuyPowerWorkflowService
+        private buyPowerWorkflowService: BuyPowerWorkflowService,
+        private readonly walletEvent: WalletEvent
     ) {}
 
     async processWebhookWalletAndVirtualAccountCreation(
@@ -711,20 +714,8 @@ export class WalletService {
         });
     }
 
-    async createVendorWallet(
-        options: CreateVendorWalletDto,
-        user: User
-    ): Promise<ApiResponse> {
-        const wallet = await this.prisma.wallet.findUnique({
-            where: { userId: user.id },
-        });
-
-        if (wallet) {
-            throw new DuplicateWalletException(
-                "Wallet already exists",
-                HttpStatus.BAD_REQUEST
-            );
-        }
+    async createAgencyWalletHandler(options: CreateAgencyWallet) {
+        const { user } = options;
 
         const vendorTypes = [UserType.MERCHANT, UserType.AGENT];
         if (!vendorTypes.includes(user.userType as any)) {
@@ -838,9 +829,27 @@ export class WalletService {
                 HttpStatus.INTERNAL_SERVER_ERROR
             );
         }
+    }
 
+    async createAgencyWallet(
+        options: CreateAgencyWallet
+    ): Promise<ApiResponse> {
+        const wallet = await this.prisma.wallet.findUnique({
+            where: { userId: options.user.id },
+        });
+
+        if (wallet) {
+            throw new DuplicateWalletException(
+                "Wallet already exists",
+                HttpStatus.BAD_REQUEST
+            );
+        }
+        this.walletEvent.emit("create-agency-wallet", {
+            bvn: options.bvn,
+            user: options.user,
+        });
         return buildResponse({
-            message: "Wallet successfully created",
+            message: "Wallet creation in progress",
         });
     }
 

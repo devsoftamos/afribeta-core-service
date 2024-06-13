@@ -159,6 +159,6 @@ export class VerifyIdentityDto {
     @IsEnum(IdentityType)
     identityType: IdentityType;
 
-    @IsString()
+    @IsNumberString()
     identityValue: string;
 }

@@ -5,6 +5,7 @@ import {
     TransactionFlow,
     TransactionStatus,
     TransactionType,
+    User,
     VirtualAccountProvider,
 } from "@prisma/client";
 import { WalletFundTransactionFlow, PaymentStatus } from "@prisma/client";
@@ -120,4 +121,12 @@ export type PayoutRequestTransaction = VerifyWalletTransaction;
 export interface WalletBalance {
     commissionBalance: number;
     mainBalance: number;
+}
+
+export interface CreateAgencyWallet {
+    bvn: string;
+    user: User;
+}
+export interface WalletEventMap {
+    "create-agency-wallet": CreateAgencyWallet;
 }
