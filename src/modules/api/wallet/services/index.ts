@@ -35,6 +35,8 @@ import {
     RequestWalletFundingDto,
     TransferToOtherWalletDto,
     VerifyWalletDto,
+    VerifyIdentityDto,
+    IdentityType,
 } from "../dto";
 import {
     WalletCreationException,
@@ -95,7 +97,6 @@ import { BankAccountNotFoundException } from "../../bank";
 import { IdentityVerificationService } from "@/modules/core/identityVerification/services";
 import { IRechargeWorkflowService } from "@/modules/workflow/billPayment/providers/iRecharge/services";
 import { BuyPowerWorkflowService } from "@/modules/workflow/billPayment/providers/buyPower/services";
-import { IkejaElectricWorkflowService } from "@/modules/workflow/billPayment/providers/ikejaElectric/services";
 import { BillProviderSlugForPower } from "../../bill/interfaces";
 @Injectable()
 export class WalletService {
@@ -108,8 +109,7 @@ export class WalletService {
         private squadGTBankService: SquadGTBankService,
         private identityVerification: IdentityVerificationService,
         private iRechargeWorkflowService: IRechargeWorkflowService,
-        private buyPowerWorkflowService: BuyPowerWorkflowService,
-        private ieWorkflowService: IkejaElectricWorkflowService
+        private buyPowerWorkflowService: BuyPowerWorkflowService
     ) {}
 
     async processWebhookWalletAndVirtualAccountCreation(
@@ -735,12 +735,6 @@ export class WalletService {
         }
 
         const accountName = `${user.firstName} ${user.lastName}`;
-
-        await this.identityVerification.verifyUserBVN({
-            bvn: options.bvn,
-            firstName: user.firstName,
-            lastName: user.lastName,
-        });
 
         const providusAccountDetail = await this.providusService
             .createVirtualAccount({
@@ -1823,5 +1817,24 @@ export class WalletService {
                 ikeja: ieProvider.walletBalance,
             },
         });
+    }
+
+    async verifyIdentity(options: VerifyIdentityDto, user: User) {
+        switch (options.identityType) {
+            case IdentityType.BVN: {
+                await this.identityVerification.verifyUserBVN({
+                    bvn: options.identityValue,
+                    firstName: user.firstName,
+                    lastName: user.lastName,
+                });
+
+                return buildResponse({
+                    message: "BVN successfully verified",
+                });
+            }
+
+            default:
+                break;
+        }
     }
 }

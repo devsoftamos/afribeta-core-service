@@ -68,17 +68,17 @@ export class FSDH360BankService {
                 middleName: verifyUser.middleName,
             };
         } catch (error) {
-            logger.error(error);
+            console.error(error, "- fsdh bank");
             switch (true) {
                 case error instanceof FSDH360BankError: {
                     if (error.status >= 500) {
                         throw new FSDH360BankBvnVerificationException(
-                            "Please try again later",
+                            "Unable to verify BVN. Please try again later",
                             HttpStatus.SERVICE_UNAVAILABLE
                         );
                     }
                     throw new FSDH360BankBvnVerificationException(
-                        error.message,
+                        error.message ?? "BVN Verification Failed",
                         error.status ?? HttpStatus.BAD_REQUEST
                     );
                 }

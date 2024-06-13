@@ -34,6 +34,7 @@ import {
     PayoutRequestDto,
     RequestWalletFundingDto,
     TransferToOtherWalletDto,
+    VerifyIdentityDto,
     VerifyWalletDto,
 } from "../../dto";
 import { WalletService } from "../../services";
@@ -262,5 +263,14 @@ export class WalletController {
             paymentReferenceDto,
             user
         );
+    }
+
+    @HttpCode(HttpStatus.OK)
+    @Post("verify-identity")
+    async verifyIdentity(
+        @Body() bodyDto: VerifyIdentityDto,
+        @User() user: UserModel
+    ) {
+        return await this.walletService.verifyIdentity(bodyDto, user);
     }
 }

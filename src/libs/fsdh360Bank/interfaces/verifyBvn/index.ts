@@ -7,4 +7,9 @@ export interface BvnVerificationResponse {
     firstName: string;
     middleName: string;
     lastName: string;
+    dateOfBirth: string;
+    registrationDate: string;
+    enrollmentBank: string;
+    responseCode: string;
+    enrollmentBranch: string;
 }

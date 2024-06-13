@@ -135,13 +135,31 @@ export class FSDH360Bank {
                 await this.axiosBVNInstance<BvnVerificationResponse>(
                     requestOptions
                 );
+
+            if (data.responseCode != "00") {
+                const error = new FSDH360BankVerifyBvnError(
+                    "Could not verify bvn or invalid bvn"
+                );
+                error.status = 400;
+                throw error;
+            }
+
+            if (!data.firstName || !data.lastName) {
+                const error = new FSDH360BankVerifyBvnError(
+                    "BVN Validation Failed. Please enter a valid BVN"
+                );
+                error.status = 400;
+                throw error;
+            }
+
             return data;
         } catch (error) {
             if (!Axios.isAxiosError(error)) {
                 throw error;
             }
+
             const err = new FSDH360BankVerifyBvnError(
-                error.response?.data?.detail ?? "Failed to verify BVN"
+                "Failed to verify BVN. Please enter a valid BVN"
             );
             err.status = error.response?.status ?? 500;
             throw err;

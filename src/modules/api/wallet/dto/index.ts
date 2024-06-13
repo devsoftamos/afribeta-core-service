@@ -150,3 +150,15 @@ export class AuthorizeFundRequestDto {
 export class FundWalletFromCommissionBalanceDto extends RequestWalletFundingDto {}
 
 export class PayoutRequestDto extends RequestWalletFundingDto {}
+
+export enum IdentityType {
+    // NIN = "NIN",
+    BVN = "BVN",
+}
+export class VerifyIdentityDto {
+    @IsEnum(IdentityType)
+    identityType: IdentityType;
+
+    @IsString()
+    identityValue: string;
+}
