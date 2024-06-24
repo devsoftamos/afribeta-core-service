@@ -7,7 +7,9 @@ import { SendOptions } from "../interfaces";
 export class EmailService {
     constructor(private brevo: TransactionalEmail<"sendinblue">) {}
 
-    async send<TParams = Record<string, any>>(options: SendOptions<TParams>) {
+    async send<TParams = Record<string, any>>(
+        options: SendOptions<TParams>
+    ): Promise<any> {
         switch (options.provider) {
             case "sendinblue": {
                 return await this.handleSendinblue(options);

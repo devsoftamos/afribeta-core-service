@@ -725,6 +725,15 @@ export class WalletService {
             );
         }
 
+        await this.prisma.user.update({
+            where: {
+                id: user.id,
+            },
+            data: {
+                walletSetupStatus: WalletSetupStatus.PENDING,
+            },
+        });
+
         const accountName = `${user.firstName} ${user.lastName}`;
 
         const providusAccountDetail = await this.providusService
