@@ -170,6 +170,10 @@ const runtimeEnvironment: RequiredEnvironment[] = [
         name: "PROVIDUS_CLIENT_ID",
         type: RequiredEnvironmentTypes.String,
     },
+    {
+        name: "PROVIDUS_CLIENT_SECRET", //needed for generating signature
+        type: RequiredEnvironmentTypes.String,
+    },
 
     //buypower
     {
