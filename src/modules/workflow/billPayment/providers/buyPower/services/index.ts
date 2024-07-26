@@ -754,8 +754,8 @@ export class BuyPowerWorkflowService implements BillPaymentWorkflow {
             return data.balance;
         } catch (error) {
             throw new BuyPowerWalletException(
-                error.message ?? "Failed to retrieve wallet balance",
-                HttpStatus.SERVICE_UNAVAILABLE
+                error.message ?? "Failed to retrieve buypower wallet balance",
+                HttpStatus.BAD_REQUEST
             );
         }
     }

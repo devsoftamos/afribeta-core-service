@@ -856,8 +856,8 @@ export class IRechargeWorkflowService implements BillPaymentWorkflow {
             return +wallet_balance;
         } catch (error) {
             throw new IRechargeWalletException(
-                error.message ?? "Failed to retrieve wallet balance",
-                HttpStatus.SERVICE_UNAVAILABLE
+                error.message ?? "Failed to retrieve iRecharge wallet balance",
+                HttpStatus.BAD_REQUEST
             );
         }
     }

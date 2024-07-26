@@ -1,16 +1,17 @@
-import { generateId } from "../../../src/utils";
 import { UserType } from "@prisma/client";
 import * as bcrypt from "bcryptjs";
+import { customAlphabet, urlAlphabet } from "nanoid";
 
-const hashPassword = bcrypt.hashSync("superadmin1", 10);
+const hashPassword = bcrypt.hashSync("xxx@gmail.com", 10);
+const identifier = customAlphabet(urlAlphabet, 16)();
 
 export const userAdmin = {
-    email: "superadmin@afribeta.com",
-    phone: "09000987654",
-    firstName: "admin",
-    lastName: "admin",
+    email: "xxx@gmail.com",
+    phone: "08081144473",
+    firstName: "Maryam",
+    lastName: "Hassan-Mohammed",
     password: hashPassword,
-    identifier: generateId({ type: "identifier" }),
+    identifier: identifier,
     userType: UserType.SUPER_ADMIN,
     roleId: 5,
 };
