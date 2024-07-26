@@ -20,8 +20,8 @@ jobs:
         needs: build
         uses: calculusky/workflows/.github/workflows/deploy_digital_ocean_app_platform.yml@v1.0
         with:
-            app_name: prod-africabeta-core-service
-            component_name: prod-africabeta-core-service
+            app_name: africabeta-core-service
+            component_name: africabeta-core-service
             repository: africabeta_core_service_prod
             tag: latest
         secrets:
