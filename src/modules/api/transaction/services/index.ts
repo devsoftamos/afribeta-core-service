@@ -186,8 +186,8 @@ export class TransactionService {
 
         if (options.reversedStatusFilter) {
             paymentStatus = [...paymentStatus, PaymentStatus.REFUNDED];
-            queryOptions.where.status = {
-                in: status,
+            queryOptions.where.paymentStatus = {
+                in: paymentStatus,
             };
         }
 

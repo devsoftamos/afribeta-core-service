@@ -17,7 +17,6 @@ import {
     Param,
     Post,
     Query,
-    Res,
     UseGuards,
     ValidationPipe,
 } from "@nestjs/common";
@@ -39,7 +38,6 @@ import {
     VerifyWalletDto,
 } from "../../dto";
 import { WalletService } from "../../services";
-import { Response } from "express";
 
 @UseGuards(AuthGuard, EnabledAccountGuard)
 @Controller({

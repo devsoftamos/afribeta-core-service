@@ -1,4 +1,4 @@
-import { generateId } from "@/utils";
+import { generateId } from "../../../src/utils";
 import { UserType } from "@prisma/client";
 import * as bcrypt from "bcryptjs";
 

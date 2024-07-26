@@ -22,7 +22,6 @@ import { UserService } from "@/modules/api/user/services";
 import {
     AuthorizeFundRequestDto,
     AUTHORIZE_WALLET_FUND_REQUEST_TYPE,
-    CreateVendorWalletDto,
     FundSubAgentDto,
     FundWalletFromCommissionBalanceDto,
     InitializeWalletFundingDto,

@@ -33,7 +33,7 @@ export class ProvidusService {
                 accountNumber: account.account_number,
             };
         } catch (error) {
-            console.error(error, "- providus bank");
+            logger.error(error, "- providus bank");
             switch (true) {
                 case error instanceof ProvidusError: {
                     throw new providusVirtualAccountException(
