@@ -23,9 +23,6 @@ export class AdminAuthController {
         @Body(ValidationPipe) signInDto: SignInDto,
         @ClientData() clientData: ClientDataInterface
     ): Promise<ApiResponse> {
-        return await this.authService.adminSignIn(
-            signInDto,
-            clientData.ipAddress
-        );
+        return await this.authService.adminSignIn(signInDto, clientData);
     }
 }

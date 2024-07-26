@@ -11,6 +11,7 @@ import {
     SubAgentAccountCreateVerificationDto,
 } from "../dtos";
 import {
+    ClientDataInterface,
     DuplicateUserException,
     UserNotFoundException,
 } from "@/modules/api/user";
@@ -309,13 +310,15 @@ export class AuthService {
 
     async signIn(
         options: SignInOptions,
-        loginPlatform: LoginPlatform
+        loginPlatform: LoginPlatform,
+        clientData: ClientDataInterface
     ): Promise<ApiResponse<LoginResponseData>> {
         const user = await this.prisma.user.findUnique({
             where: {
                 email: options.email,
             },
             select: {
+                id: true,
                 identifier: true,
                 password: true,
                 kycStatus: true,
@@ -413,6 +416,15 @@ export class AuthService {
             sub: user.identifier,
         });
 
+        await this.prisma.user.update({
+            where: {
+                id: user.id,
+            },
+            data: {
+                ipAddress: clientData.ipAddress,
+            },
+        });
+
         const loginMeta: LoginMeta = {
             kycStatus: user.kycStatus,
             isWalletCreated: user.isWalletCreated,
@@ -436,24 +448,17 @@ export class AuthService {
     }
 
     async userSignIn(
-        options: UserSigInDto
+        options: UserSigInDto,
+        clientData: ClientDataInterface
     ): Promise<ApiResponse<LoginResponseData>> {
-        return await this.signIn(options, LoginPlatform.USER);
+        return await this.signIn(options, LoginPlatform.USER, clientData);
     }
 
     async adminSignIn(
         options: SignInDto,
-        ip: string
+        clientData: ClientDataInterface
     ): Promise<ApiResponse<LoginResponseData>> {
-        await this.prisma.user.update({
-            where: {
-                email: options.email,
-            },
-            data: {
-                ipAddress: ip,
-            },
-        });
-        return await this.signIn(options, LoginPlatform.ADMIN);
+        return await this.signIn(options, LoginPlatform.ADMIN, clientData);
     }
 
     async passwordResetRequest(options: PasswordResetRequestDto) {

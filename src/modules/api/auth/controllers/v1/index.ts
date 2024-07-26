@@ -1,4 +1,4 @@
-import { User } from "@/modules/api/user";
+import { ClientData, ClientDataInterface, User } from "@/modules/api/user";
 import { CreateSubAgentAbility } from "@/modules/core/ability";
 import { CheckAbilities } from "@/modules/core/ability/decorator";
 import { AbilitiesGuard } from "@/modules/core/ability/guards";
@@ -44,9 +44,10 @@ export class AuthController {
     @HttpCode(HttpStatus.OK)
     @Post("login")
     async signIn(
-        @Body(ValidationPipe) signInDto: UserSigInDto
+        @Body(ValidationPipe) signInDto: UserSigInDto,
+        @ClientData() clientData: ClientDataInterface
     ): Promise<ApiResponse> {
-        return await this.authService.userSignIn(signInDto);
+        return await this.authService.userSignIn(signInDto, clientData);
     }
 
     @HttpCode(HttpStatus.OK)
