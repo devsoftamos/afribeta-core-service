@@ -29,15 +29,15 @@ export class FSDH360BankService {
     ): Promise<CreateVirtualAccountResponse> {
         try {
             const account = await this.fsdh360Bank.createStaticVirtualAccount({
-                accountName: options.accountName,
+                accountName: `${COMPANY_NAME}-${options.accountName}`,
                 bvn: options.bvn,
             });
             return {
-                accountName: `${COMPANY_NAME}-${account.accountName}`,
+                accountName: account.accountName,
                 accountNumber: account.accountNumber,
             };
         } catch (error) {
-            logger.error(error);
+            logger.error(error, "****VIRTUAL ACCOUNT****** FSDH");
             switch (true) {
                 case error instanceof FSDH360BankError: {
                     throw new FSDH360BankVirtualAccountException(

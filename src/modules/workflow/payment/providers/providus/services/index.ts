@@ -10,6 +10,7 @@ import {
     providusVirtualAccountException,
     ProvidusWorkflowException,
 } from "../errors";
+import { COMPANY_NAME } from "@/config";
 
 @Injectable()
 export class ProvidusService {
@@ -25,7 +26,7 @@ export class ProvidusService {
     ): Promise<CreateVirtualAccountResponse> {
         try {
             const account = await this.providus.createReservedVirtualAccount({
-                account_name: options.accountName,
+                account_name: `${COMPANY_NAME}-${options.accountName}`,
                 bvn: options.bvn ?? "",
             });
             return {
@@ -33,7 +34,7 @@ export class ProvidusService {
                 accountNumber: account.account_number,
             };
         } catch (error) {
-            logger.error(error, "- providus bank");
+            logger.error(error, "****VIRTUAL ACCOUNT****** PROVIDUS");
             switch (true) {
                 case error instanceof ProvidusError: {
                     throw new providusVirtualAccountException(

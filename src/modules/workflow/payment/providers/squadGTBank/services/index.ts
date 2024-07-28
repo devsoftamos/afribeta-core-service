@@ -46,7 +46,7 @@ export class SquadGTBankService {
                 accountNumber: account.data.virtual_account_number,
             };
         } catch (error) {
-            logger.error(error, "- squad gtbank");
+            logger.error(error, "****VIRTUAL ACCOUNT****** SQUAD");
             switch (true) {
                 case error instanceof SquadGtBankError: {
                     throw new SquadGTBankVirtualAccountException(
