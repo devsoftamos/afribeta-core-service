@@ -7,7 +7,8 @@ export interface CreateBusinessVirtualAccountOptions {
 }
 
 export interface CreateBusinessVirtualAccountResponseData {
-    business_name: string;
+    first_name: string;
+    last_name: string;
     bank_code: string;
     virtual_account_number: string;
     beneficiary_account: string;

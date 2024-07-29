@@ -28,7 +28,7 @@ export class SquadGTBankService {
         try {
             const account =
                 await this.squadGTBankBank.createBusinessVirtualAccount({
-                    business_name: `${COMPANY_NAME}-${options.accountName}`,
+                    business_name: options.accountName,
                     bvn: options.bvn,
                     customer_identifier: options.userIdentifier,
                     mobile_num: options.phone,
@@ -42,7 +42,7 @@ export class SquadGTBankService {
             }
 
             return {
-                accountName: `${COMPANY_NAME}-${options.accountName}`,
+                accountName: `${account.data.first_name} ${account.data.last_name}`,
                 accountNumber: account.data.virtual_account_number,
             };
         } catch (error) {
