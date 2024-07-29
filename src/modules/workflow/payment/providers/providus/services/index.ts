@@ -26,7 +26,7 @@ export class ProvidusService {
     ): Promise<CreateVirtualAccountResponse> {
         try {
             const account = await this.providus.createReservedVirtualAccount({
-                account_name: `${COMPANY_NAME}-${options.accountName}`,
+                account_name: options.accountName,
                 bvn: options.bvn ?? "",
             });
             return {
