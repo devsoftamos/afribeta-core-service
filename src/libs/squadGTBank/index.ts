@@ -20,7 +20,7 @@ export class SquadGTBank {
     async createBusinessVirtualAccount(
         options: Omit<
             CreateBusinessVirtualAccountOptions,
-            "beneficiary_account"
+            "beneficiary_account" | "bvn"
         >
     ) {
         try {
@@ -32,7 +32,7 @@ export class SquadGTBank {
                         beneficiary_account:
                             this.instanceOptions.beneficiaryAccountNumber,
                         business_name: options.business_name,
-                        bvn: options.bvn,
+                        bvn: this.instanceOptions.merchantBVN,
                         customer_identifier: options.customer_identifier,
                         mobile_num: options.mobile_num,
                     },

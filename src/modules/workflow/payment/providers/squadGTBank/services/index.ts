@@ -11,7 +11,6 @@ import {
     SquadGTBankVirtualAccountException,
 } from "../errors";
 import { SquadGTBank, SquadGtBankError } from "@/libs/squadGTBank";
-import { COMPANY_NAME } from "@/config";
 
 @Injectable()
 export class SquadGTBankService {
@@ -22,14 +21,16 @@ export class SquadGTBankService {
         slug: "guaranty-trust-bank",
     };
 
-    async createVirtualAccount(
-        options: CreateVirtualAccountOptions<GTBankExtraVirtualAccountOptions>
+    async createBusinessVirtualAccount(
+        options: Omit<
+            CreateVirtualAccountOptions<GTBankExtraVirtualAccountOptions>,
+            "bvn"
+        >
     ): Promise<CreateVirtualAccountResponse> {
         try {
             const account =
                 await this.squadGTBankBank.createBusinessVirtualAccount({
                     business_name: options.accountName,
-                    bvn: options.bvn,
                     customer_identifier: options.userIdentifier,
                     mobile_num: options.phone,
                 });

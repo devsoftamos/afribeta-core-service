@@ -122,6 +122,10 @@ const runtimeEnvironment: RequiredEnvironment[] = [
         name: "SQUAD_GTBANK_BENEFICIARY_ACCOUNT_NUMBER",
         type: RequiredEnvironmentTypes.String,
     },
+    {
+        name: "SQUAD_GTBANK_MERCHANT_BVN",
+        type: RequiredEnvironmentTypes.String,
+    },
 
     //fsdh
     {
@@ -350,6 +354,7 @@ export const squadGtBankOptions: SquadGTBankOptions = {
     baseUrl: process.env.SQUAD_GTBANK_BASE_URL,
     beneficiaryAccountNumber:
         process.env.SQUAD_GTBANK_BENEFICIARY_ACCOUNT_NUMBER,
+    merchantBVN: process.env.SQUAD_GTBANK_MERCHANT_BVN,
 };
 
 //FSDH360

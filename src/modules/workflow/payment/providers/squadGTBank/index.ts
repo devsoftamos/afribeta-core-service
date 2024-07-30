@@ -14,6 +14,7 @@ import { SquadGTBankService } from "./services";
                     secretKey: squadGtBankOptions.secretKey,
                     beneficiaryAccountNumber:
                         squadGtBankOptions.beneficiaryAccountNumber,
+                    merchantBVN: squadGtBankOptions.merchantBVN,
                 });
 
                 return new SquadGTBankService(squadGTBank);

@@ -750,9 +750,8 @@ export class WalletService {
             .catch(() => false);
 
         const squadGTBankAccountDetail = await this.squadGTBankService
-            .createVirtualAccount({
+            .createBusinessVirtualAccount({
                 accountName: accountName,
-                bvn: options.bvn,
                 phone: user.phone,
                 userIdentifier: user.identifier,
             })
