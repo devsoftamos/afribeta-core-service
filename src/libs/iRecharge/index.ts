@@ -345,8 +345,16 @@ export class IRecharge {
                 error.status = data.status;
                 throw error;
             }
+            console.log(
+                data,
+                "*****************IRECHARGE WALLET ***********************"
+            );
             return data;
         } catch (error) {
+            console.log(
+                error,
+                "**********************ERR***********IRECHARGE**********"
+            );
             throw error;
         }
     }
