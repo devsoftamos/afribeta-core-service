@@ -41,6 +41,20 @@ export class SquadGTBank {
                 SquadGTBankResponse<CreateBusinessVirtualAccountResponseData>
             >(requestOptions);
 
+            if (!data) {
+                const err = new SquadGtBankVirtualAccountError(
+                    "Failed to create GTBank virtual account"
+                );
+                err.status = 400;
+                throw err;
+            }
+            data.data = {
+                account_name: `${
+                    this.instanceOptions.merchantPrefix
+                }${data.data.first_name.toUpperCase()} ${data.data.last_name.toUpperCase()}`,
+                ...data.data,
+            };
+
             return data;
         } catch (error) {
             if (!Axios.isAxiosError(error)) {

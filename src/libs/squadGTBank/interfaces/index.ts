@@ -5,6 +5,7 @@ export interface SquadGTBankOptions {
     secretKey: string;
     beneficiaryAccountNumber?: string;
     merchantBVN: string;
+    merchantPrefix: string;
 }
 
 export type SquadGTBankResponse<TData = Record<string, any>> = {

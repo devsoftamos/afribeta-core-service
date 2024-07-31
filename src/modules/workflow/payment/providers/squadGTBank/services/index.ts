@@ -43,7 +43,7 @@ export class SquadGTBankService {
             }
 
             return {
-                accountName: `${account.data.first_name} ${account.data.last_name}`,
+                accountName: account.data.account_name,
                 accountNumber: account.data.virtual_account_number,
             };
         } catch (error) {
