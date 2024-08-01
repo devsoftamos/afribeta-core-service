@@ -27,6 +27,11 @@ module.exports = {
             },
         ],
     },
+    stats: {
+        warnings: true,
+        errors: true,
+        errorDetails: true,
+    },
     plugins: [
         new NodemonPlugin({
             stdin: false,
@@ -37,8 +42,12 @@ module.exports = {
         minimize: true,
         minimizer: [
             new TerserPlugin({
-                minify: TerserPlugin.uglifyJsMinify,
                 parallel: 4,
+                terserOptions: {
+                    keep_classnames: true,
+                    keep_fnames: true,
+                    mangle: false,
+                },
             }),
         ],
     },
