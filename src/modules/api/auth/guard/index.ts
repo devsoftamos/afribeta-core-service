@@ -35,7 +35,7 @@ import {
 import { Observable } from "rxjs";
 import { createHmac } from "crypto";
 import logger from "moment-logger";
-import { Status } from "@prisma/client";
+import { Status, User, UserType } from "@prisma/client";
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -115,7 +115,7 @@ export class AuthGuard implements CanActivate {
 export class EnabledAccountGuard implements CanActivate {
     async canActivate(context: ExecutionContext): Promise<boolean> {
         const request = context.switchToHttp().getRequest();
-        const user = request.user;
+        const user = request.user as User;
         if (user && user.status === Status.ENABLED) {
             return true;
         }

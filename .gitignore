@@ -38,8 +38,8 @@ lerna-debug.log*
 #pnpm
 pnpm-lock.yaml
 
-#npm
-#package-lock.json
+#script
+/script
 
 #env
 .env
