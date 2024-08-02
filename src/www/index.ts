@@ -40,6 +40,7 @@ export default async (
     app.enableCors(corsOptions);
     app.use(morgan(options.production ? "combined" : "dev"));
     app.useBodyParser("json", { limit: "100mb" });
+    app.set("trust proxy", true);
 
     app.enableVersioning({
         type: VersioningType.URI,
