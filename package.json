@@ -28,7 +28,8 @@
         "db:push": "pnpm prisma db push",
         "db:seed": "pnpm prisma db seed",
         "db:pull": "pnpm prisma db pull",
-        "db:migrate:prod": "pnpm prisma migrate deploy"
+        "db:migrate:prod": "pnpm prisma migrate deploy",
+        "run:script": "rimraf build && tsc -p tsconfig.script.json && node build/index"
     },
     "dependencies": {
         "@boxpositron/vre": "^1.0.0",

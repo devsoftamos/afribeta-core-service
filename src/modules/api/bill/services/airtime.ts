@@ -217,7 +217,7 @@ export class AirtimeBillService {
                         HttpStatus.NOT_FOUND
                     );
                 }
-                if (wallet.mainBalance < options.vtuAmount) {
+                if (wallet.mainBalance.toNumber() < options.vtuAmount) {
                     throw new InsufficientWalletBalanceException(
                         "Insufficient wallet balance",
                         HttpStatus.BAD_REQUEST
@@ -516,7 +516,7 @@ export class AirtimeBillService {
             );
         }
 
-        if (wallet.mainBalance < transaction.totalAmount) {
+        if (wallet.mainBalance.toNumber() < transaction.totalAmount) {
             this.billEvent.emit("payment-failure", {
                 transactionId: transaction.id,
             });

@@ -150,7 +150,7 @@ export class BillService {
                         },
                     });
 
-                    if (wallet.mainBalance < 0) {
+                    if (wallet.mainBalance.toNumber() < 0) {
                         throw new InsufficientWalletBalanceException(
                             "Insufficient wallet balance",
                             HttpStatus.BAD_REQUEST

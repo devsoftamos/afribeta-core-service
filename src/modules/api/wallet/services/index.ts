@@ -392,7 +392,7 @@ export class WalletService {
             );
         }
 
-        if (totalAmount > wallet.mainBalance) {
+        if (totalAmount > wallet.mainBalance.toNumber()) {
             throw new InsufficientWalletBalanceException(
                 "Insufficient balance",
                 HttpStatus.BAD_REQUEST
@@ -578,7 +578,7 @@ export class WalletService {
             );
         }
 
-        if (benefactorWallet.mainBalance < options.amount) {
+        if (benefactorWallet.mainBalance.toNumber() < options.amount) {
             throw new InsufficientWalletBalanceException(
                 "Insufficient wallet balance",
                 HttpStatus.BAD_REQUEST
@@ -597,7 +597,7 @@ export class WalletService {
                         },
                     },
                 });
-                if (sender.mainBalance < 0) {
+                if (sender.mainBalance.toNumber() < 0) {
                     throw new InsufficientWalletBalanceException(
                         "Insufficient wallet balance",
                         HttpStatus.BAD_REQUEST
@@ -1245,7 +1245,7 @@ export class WalletService {
             );
         }
 
-        if (merchantWallet.mainBalance < options.amount) {
+        if (merchantWallet.mainBalance.toNumber() < options.amount) {
             throw new InsufficientWalletBalanceException(
                 "Insufficient wallet balance",
                 HttpStatus.BAD_REQUEST
@@ -1266,7 +1266,7 @@ export class WalletService {
                     },
                 });
 
-                if (sender.mainBalance < 0) {
+                if (sender.mainBalance.toNumber() < 0) {
                     throw new InsufficientWalletBalanceException(
                         "Insufficient wallet balance",
                         HttpStatus.BAD_REQUEST
@@ -1562,7 +1562,7 @@ export class WalletService {
             );
         }
 
-        if (wallet.commissionBalance < options.amount) {
+        if (wallet.commissionBalance.toNumber() < options.amount) {
             throw new InsufficientWalletBalanceException(
                 "Insufficient commission balance",
                 HttpStatus.BAD_REQUEST
@@ -1587,7 +1587,7 @@ export class WalletService {
                     },
                 });
 
-                if (sender.commissionBalance < 0) {
+                if (sender.commissionBalance.toNumber() < 0) {
                     throw new InsufficientWalletBalanceException(
                         "Insufficient commission balance",
                         HttpStatus.BAD_REQUEST
@@ -1647,7 +1647,7 @@ export class WalletService {
             );
         }
 
-        if (wallet.commissionBalance < options.amount) {
+        if (wallet.commissionBalance.toNumber() < options.amount) {
             throw new InsufficientWalletBalanceException(
                 "Insufficient commission balance",
                 HttpStatus.BAD_REQUEST
@@ -1787,8 +1787,8 @@ export class WalletService {
         });
 
         return {
-            commissionBalance: result._sum.commissionBalance || 0,
-            mainBalance: result._sum.mainBalance || 0,
+            commissionBalance: result?._sum?.commissionBalance?.toNumber() || 0,
+            mainBalance: result?._sum?.mainBalance?.toNumber() || 0,
         };
     }
 
