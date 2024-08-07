@@ -264,7 +264,7 @@ export class BuyPower {
                     email: options.email,
                     name: options.name,
                     vertical: "VTU",
-                    vendorType: options.vendorType ?? "PREPAID",
+                    vendType: options.vendType ?? "PREPAID",
                 },
             };
             const response = await this.axios(requestOptions);
@@ -313,7 +313,7 @@ export class BuyPower {
                     name: options.name,
                     vertical: "DATA",
                     tariffClass: options.tariffClass,
-                    vendorType: options.vendorType ?? "PREPAID",
+                    vendType: options.vendType ?? "PREPAID",
                 },
             };
 
@@ -364,7 +364,7 @@ export class BuyPower {
                     name: options.name,
                     vertical: "TV",
                     tariffClass: options.tariffClass,
-                    vendorType: options.vendorType ?? "PREPAID",
+                    vendType: options.vendType ?? "PREPAID",
                 },
             };
             const response = await this.axios(requestOptions);

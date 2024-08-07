@@ -17,7 +17,7 @@ export interface VendAirtimeOptions {
     amount: number;
     email?: string;
     name?: string;
-    vendorType: VendType;
+    vendType: VendType;
 }
 
 export interface VendAirtimeResponseData {
@@ -38,5 +38,5 @@ export interface VendAirtimeInputOptions {
     amount: number;
     email?: string;
     name?: string;
-    vendorType?: VendType;
+    vendType?: VendType;
 }

@@ -17,7 +17,7 @@ export interface VendTVOptions {
     email?: string;
     name?: string;
     tariffClass: string;
-    vendorType: VendType;
+    vendType: VendType;
 }
 
 export interface VendTVResponseData {
@@ -39,7 +39,7 @@ export interface VendTVInputOptions {
     email?: string;
     name?: string;
     tariffClass: string;
-    vendorType?: VendType;
+    vendType?: VendType;
 }
 
 export interface GetSmartCardInputOptions {

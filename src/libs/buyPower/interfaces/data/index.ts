@@ -18,7 +18,7 @@ export interface VendDataOptions {
     email?: string;
     name?: string;
     tariffClass: string;
-    vendorType: VendType;
+    vendType: VendType;
 }
 
 export interface VendDataResponseData {
@@ -40,5 +40,5 @@ export interface VendDataInputOptions {
     email?: string;
     name?: string;
     tariffClass: string;
-    vendorType?: VendType;
+    vendType?: VendType;
 }
