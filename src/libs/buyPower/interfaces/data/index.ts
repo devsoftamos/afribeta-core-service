@@ -1,4 +1,4 @@
-import { PaymentType } from "..";
+import { PaymentType, VendType } from "..";
 
 export enum DataNetwork {
     MTN = "MTN",
@@ -18,6 +18,7 @@ export interface VendDataOptions {
     email?: string;
     name?: string;
     tariffClass: string;
+    vendorType: VendType;
 }
 
 export interface VendDataResponseData {
@@ -39,4 +40,5 @@ export interface VendDataInputOptions {
     email?: string;
     name?: string;
     tariffClass: string;
+    vendorType?: VendType;
 }

@@ -1,4 +1,4 @@
-import { PaymentType } from "..";
+import { PaymentType, VendType } from "..";
 
 export enum CableTVNetwork {
     DSTV = "DSTV",
@@ -17,6 +17,7 @@ export interface VendTVOptions {
     email?: string;
     name?: string;
     tariffClass: string;
+    vendorType: VendType;
 }
 
 export interface VendTVResponseData {
@@ -38,6 +39,7 @@ export interface VendTVInputOptions {
     email?: string;
     name?: string;
     tariffClass: string;
+    vendorType?: VendType;
 }
 
 export interface GetSmartCardInputOptions {

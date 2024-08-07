@@ -22,7 +22,8 @@ export interface BuyPowerResponse<
 }
 
 export type Optional<T, Key extends keyof T> = Omit<T, Key> & Partial<T>;
-export type PaymentType = "ONLINE" | "USSD";
+export type PaymentType = "ONLINE" | "USSD" | "B2B";
+export type VendType = "PREPAID" | "POSTPAID" | "RECOVERY";
 
 export interface ReQueryOptions {
     orderId: string;

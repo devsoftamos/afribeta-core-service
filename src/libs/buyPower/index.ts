@@ -204,7 +204,7 @@ export class BuyPower {
                     disco: options.disco,
                     meter: options.meter,
                     orderId: options.orderId,
-                    paymentType: options.paymentType ?? "ONLINE",
+                    paymentType: options.paymentType ?? "B2B",
                     phone: options.phone,
                     vendType: options.vendType,
                     email: options.email,
@@ -259,11 +259,12 @@ export class BuyPower {
                     disco: options.vtuNetwork,
                     meter: options.vtuNumber,
                     orderId: options.orderId,
-                    paymentType: options.paymentType ?? "ONLINE",
+                    paymentType: options.paymentType ?? "B2B",
                     phone: options.phone,
                     email: options.email,
                     name: options.name,
                     vertical: "VTU",
+                    vendorType: options.vendorType ?? "PREPAID",
                 },
             };
             const response = await this.axios(requestOptions);
@@ -306,12 +307,13 @@ export class BuyPower {
                     disco: options.network,
                     meter: options.vtuNumber,
                     orderId: options.orderId,
-                    paymentType: options.paymentType ?? "ONLINE",
+                    paymentType: options.paymentType ?? "B2B",
                     phone: options.phone,
                     email: options.email,
                     name: options.name,
                     vertical: "DATA",
                     tariffClass: options.tariffClass,
+                    vendorType: options.vendorType ?? "PREPAID",
                 },
             };
 
@@ -356,12 +358,13 @@ export class BuyPower {
                     disco: options.network,
                     meter: options.smartCardNumber,
                     orderId: options.orderId,
-                    paymentType: options.paymentType ?? "ONLINE",
+                    paymentType: options.paymentType ?? "B2B",
                     phone: options.phone,
                     email: options.email,
                     name: options.name,
                     vertical: "TV",
                     tariffClass: options.tariffClass,
+                    vendorType: options.vendorType ?? "PREPAID",
                 },
             };
             const response = await this.axios(requestOptions);
