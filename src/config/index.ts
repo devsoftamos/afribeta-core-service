@@ -299,6 +299,12 @@ const runtimeEnvironment: RequiredEnvironment[] = [
         name: "REDIS_PASSWORD",
         type: RequiredEnvironmentTypes.String,
     },
+
+    //environment
+    {
+        name: "ENVIRONMENT",
+        type: RequiredEnvironmentTypes.String,
+    },
 ];
 
 validate(runtimeEnvironment);
@@ -336,6 +342,7 @@ export const paystackConfiguration: PaystackOptions = {
 
 //env
 export const isDevEnvironment = process.env.ENVIRONMENT == "development";
+export const isProdEnvironment = process.env.ENVIRONMENT == "production";
 
 //IRecharge
 export const iRechargeOptions: IRechargeOptions = {
@@ -409,8 +416,6 @@ export const redisConfiguration: RedisConfig = {
     user: process.env.REDIS_USER ?? "",
     password: process.env.REDIS_PASSWORD ?? "",
 };
-
-export const redisUrl = `redis://${redisConfiguration.user}:${redisConfiguration.password}@${redisConfiguration.host}:${redisConfiguration.port}`;
 
 export const frontendDevOrigin = [/^http:\/\/localhost:\d+$/];
 

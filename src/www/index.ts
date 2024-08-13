@@ -7,7 +7,11 @@ import { AllExceptionsFilter } from "@/core/exception/http";
 import { classValidatorPipeInstance } from "@/core/pipe";
 import { PrismaService } from "@/modules/core/prisma/services";
 import * as morgan from "morgan";
-import { frontendDevOrigin, isDevEnvironment, redisUrl } from "@/config";
+import {
+    frontendDevOrigin,
+    isDevEnvironment,
+    redisConfiguration,
+} from "@/config";
 import waitForRedis from "../utils/wait-for-redis";
 import { NestExpressApplication } from "@nestjs/platform-express";
 
@@ -58,6 +62,6 @@ export default async (
     await prismaService.enableShutdownHooks(app);
 
     //wait for redis connection
-    await waitForRedis(redisUrl);
+    await waitForRedis(redisConfiguration);
     return app;
 };

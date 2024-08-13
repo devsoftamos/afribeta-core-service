@@ -6,7 +6,7 @@ import { WorkflowModule } from "./workflow";
 import { ScheduleModule } from "@nestjs/schedule";
 import { SchedulerModule } from "./scheduler";
 import { BullModule } from "@nestjs/bull";
-import { redisUrl } from "@/config";
+import { isProdEnvironment, redisConfiguration } from "@/config";
 import { BullBoardModule } from "@bull-board/nestjs";
 import { ExpressAdapter } from "@bull-board/express";
 
@@ -21,7 +21,13 @@ import { ExpressAdapter } from "@bull-board/express";
             adapter: ExpressAdapter,
         }),
         BullModule.forRoot({
-            url: redisUrl,
+            redis: {
+                host: redisConfiguration.host,
+                port: redisConfiguration.port,
+                username: redisConfiguration.user,
+                password: redisConfiguration.password,
+                tls: isProdEnvironment ? {} : undefined, //current prod uses tls
+            },
         }),
 
         ScheduleModule.forRoot(),
