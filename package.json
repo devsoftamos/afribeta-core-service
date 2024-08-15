@@ -29,7 +29,8 @@
         "db:seed": "pnpm prisma db seed",
         "db:pull": "pnpm prisma db pull",
         "db:migrate:prod": "pnpm prisma migrate deploy",
-        "run:script": "rimraf build && tsc -p tsconfig.script.json && node build/index"
+        "run:script": "rimraf build && tsc -p tsconfig.script.json && node build/index",
+        "watch2": "PORT=5300 NODE_ENV=development webpack --watch"
     },
     "dependencies": {
         "@boxpositron/vre": "^1.0.0",

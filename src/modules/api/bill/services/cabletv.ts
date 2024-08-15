@@ -713,7 +713,7 @@ export class CableTVBillService {
             );
         }
 
-        if (transaction.paymentStatus == PaymentStatus.SUCCESS) {
+        if (transaction.paymentStatus !== PaymentStatus.PENDING) {
             throw new DuplicateCableTVPurchaseException(
                 "Duplicate cable tv purchase payment",
                 HttpStatus.BAD_REQUEST

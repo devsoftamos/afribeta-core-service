@@ -142,6 +142,7 @@ export class BuyPowerWorkflowService implements BillPaymentWorkflow {
 
             return resp.data;
         } catch (error) {
+            logger.error(error);
             switch (true) {
                 case error instanceof BuyPowerRequeryException: {
                     throw error;
@@ -184,6 +185,7 @@ export class BuyPowerWorkflowService implements BillPaymentWorkflow {
                 receiptNO: resp.data.receiptNo.toString(),
             };
         } catch (error) {
+            logger.error(error);
             switch (true) {
                 case error instanceof BuyPowerVendPowerException: {
                     throw error;
@@ -753,6 +755,7 @@ export class BuyPowerWorkflowService implements BillPaymentWorkflow {
             const { data } = await this.buyPower.walletBalance();
             return data.balance;
         } catch (error) {
+            logger.error(error);
             throw new BuyPowerWalletException(
                 error.message ?? "Failed to retrieve buypower wallet balance",
                 HttpStatus.BAD_REQUEST

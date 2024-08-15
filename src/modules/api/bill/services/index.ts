@@ -214,6 +214,8 @@ export class BillService {
                     userId: true,
                     totalAmount: true,
                     transactionId: true,
+                    status: true,
+                    paymentStatus: true,
                 },
             });
             if (!transaction) {
@@ -238,48 +240,53 @@ export class BillService {
                 });
             }
 
-            //refund
-            await this.prisma.$transaction(async (tx) => {
-                await tx.wallet.update({
-                    where: {
-                        userId: transaction.userId,
-                    },
-                    data: {
-                        mainBalance: {
-                            increment: transaction.totalAmount,
+            await this.prisma.$transaction(
+                async (tx) => {
+                    await tx.wallet.update({
+                        where: {
+                            userId: transaction.userId,
                         },
-                    },
-                });
-                await tx.transaction.update({
-                    where: {
-                        id: transaction.id,
-                    },
-                    data: {
-                        status: TransactionStatus.FAILED,
-                        paymentStatus: PaymentStatus.REFUNDED,
-                    },
-                });
+                        data: {
+                            mainBalance: {
+                                increment: transaction.totalAmount,
+                            },
+                        },
+                    });
+                    await tx.transaction.update({
+                        where: {
+                            id: transaction.id,
+                        },
+                        data: {
+                            status: TransactionStatus.FAILED,
+                            paymentStatus: PaymentStatus.REFUNDED,
+                        },
+                    });
 
-                await tx.transaction.create({
-                    data: {
-                        amount: transaction.totalAmount,
-                        totalAmount: transaction.totalAmount,
-                        flow: TransactionFlow.IN,
-                        status: TransactionStatus.SUCCESS,
-                        paymentStatus: PaymentStatus.SUCCESS,
-                        transactionId: generateId({ type: "transaction" }),
-                        paymentChannel: PaymentChannel.SYSTEM,
-                        type: TransactionType.WALLET_FUND,
-                        walletFundTransactionFlow:
-                            WalletFundTransactionFlow.FROM_FAILED_TRANSACTION,
-                        userId: transaction.userId,
-                        paymentReference: generateId({ type: "reference" }),
-                        shortDescription:
-                            TransactionShortDescription.BILL_PAYMENT_REFUND,
-                        transId: transaction.id,
-                    },
-                });
-            });
+                    await tx.transaction.create({
+                        data: {
+                            amount: transaction.totalAmount,
+                            totalAmount: transaction.totalAmount,
+                            flow: TransactionFlow.IN,
+                            status: TransactionStatus.SUCCESS,
+                            paymentStatus: PaymentStatus.SUCCESS,
+                            transactionId: generateId({ type: "transaction" }),
+                            paymentChannel: PaymentChannel.SYSTEM,
+                            type: TransactionType.WALLET_FUND,
+                            walletFundTransactionFlow:
+                                WalletFundTransactionFlow.FROM_FAILED_TRANSACTION,
+                            userId: transaction.userId,
+                            paymentReference: generateId({ type: "reference" }),
+                            shortDescription:
+                                TransactionShortDescription.BILL_PAYMENT_REFUND,
+                            transId: transaction.id,
+                        },
+                    });
+                },
+                {
+                    isolationLevel:
+                        Prisma.TransactionIsolationLevel.Serializable,
+                }
+            );
         } catch (error) {
             logger.error(error);
         }

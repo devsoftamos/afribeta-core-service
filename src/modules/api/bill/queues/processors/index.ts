@@ -17,6 +17,7 @@ import { AirtimeBillService } from "../../services/airtime";
 import { DataBillService } from "../../services/data";
 import { InternetBillService } from "../../services/internet";
 import { CableTVBillService } from "../../services/cabletv";
+import { PaymentStatus, TransactionStatus } from "@prisma/client";
 
 @Processor(BillQueue.BUYPOWER_REQUERY)
 export class BuypowerReQueryQueueProcessor {
@@ -34,7 +35,6 @@ export class BuypowerReQueryQueueProcessor {
     @Process(BuyPowerReQueryQueue.POWER)
     async processPower(options: Job<BuypowerReQueryJobOptions>) {
         const { orderId, transactionId, isWalletPayment } = options.data;
-
         try {
             const powerVendInfo = await this.buyPowerWorkflowService.reQuery(
                 orderId
@@ -67,6 +67,10 @@ export class BuypowerReQueryQueueProcessor {
                     "Transaction not found",
                     HttpStatus.NOT_FOUND
                 );
+            }
+
+            if (transaction.status !== TransactionStatus.PENDING) {
+                return true;
             }
 
             const billProvider = await this.prisma.billProvider.findUnique({
@@ -163,6 +167,10 @@ export class BuypowerReQueryQueueProcessor {
                 );
             }
 
+            if (transaction.status !== TransactionStatus.PENDING) {
+                return true;
+            }
+
             const billProvider = await this.prisma.billProvider.findUnique({
                 where: {
                     slug: BillProviderSlug.BUYPOWER,
@@ -255,6 +263,10 @@ export class BuypowerReQueryQueueProcessor {
                 );
             }
 
+            if (transaction.status !== TransactionStatus.PENDING) {
+                return true;
+            }
+
             const billProvider = await this.prisma.billProvider.findUnique({
                 where: {
                     slug: BillProviderSlug.BUYPOWER,
@@ -345,6 +357,10 @@ export class BuypowerReQueryQueueProcessor {
                     "Transaction not found",
                     HttpStatus.NOT_FOUND
                 );
+            }
+
+            if (transaction.status !== TransactionStatus.PENDING) {
+                return true;
             }
 
             const billProvider = await this.prisma.billProvider.findUnique({
@@ -441,6 +457,10 @@ export class BuypowerReQueryQueueProcessor {
                     "Transaction not found",
                     HttpStatus.NOT_FOUND
                 );
+            }
+
+            if (transaction.status !== TransactionStatus.PENDING) {
+                return true;
             }
 
             const billProvider = await this.prisma.billProvider.findUnique({

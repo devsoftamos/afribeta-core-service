@@ -1284,6 +1284,24 @@ export class TransactionService {
                             : "N/A",
                     };
                 }
+
+                if (
+                    transaction.walletFundTransactionFlow ==
+                    WalletFundTransactionFlow.FROM_FAILED_TRANSACTION
+                ) {
+                    response = {
+                        type: "REFUND_DEPOSIT",
+                        shortDescription: transaction.shortDescription,
+                        amount: transaction.amount,
+                        date: transaction.updatedAt,
+                        status: transaction.status,
+                        beneficiary: transaction.user
+                            ? transaction.user.email
+                            : "N/A",
+                    };
+                }
+
+                //handle for refund
             }
         }
 

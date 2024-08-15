@@ -625,7 +625,7 @@ export class InternetBillService {
             );
         }
 
-        if (transaction.paymentStatus == PaymentStatus.SUCCESS) {
+        if (transaction.paymentStatus !== PaymentStatus.PENDING) {
             throw new DuplicateInternetPurchaseException(
                 "Duplicate internet bill payment",
                 HttpStatus.BAD_REQUEST

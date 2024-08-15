@@ -25,7 +25,8 @@ export type TransactionDetailResponse = {
         | "COMMISSION"
         | "DEPOSIT"
         | "BANK_TRANSFER"
-        | "COMMISSION_TRANSFER";
+        | "COMMISSION_TRANSFER"
+        | "REFUND_DEPOSIT";
     product?: string;
     amount: number;
     sender?: string;

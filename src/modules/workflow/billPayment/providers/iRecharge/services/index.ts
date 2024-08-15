@@ -241,7 +241,6 @@ export class IRechargeWorkflowService implements BillPaymentWorkflow {
             logger.error(error);
             switch (true) {
                 case error instanceof IRechargeError: {
-                    this.handleUnprocessedTransactionError(error);
                     throw new IRechargeVendPowerException(
                         error.message,
                         HttpStatus.BAD_REQUEST

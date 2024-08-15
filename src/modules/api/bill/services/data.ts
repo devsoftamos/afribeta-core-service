@@ -528,7 +528,7 @@ export class DataBillService {
             );
         }
 
-        if (transaction.paymentStatus == PaymentStatus.SUCCESS) {
+        if (transaction.paymentStatus !== PaymentStatus.PENDING) {
             throw new DuplicateDataPurchaseException(
                 "Duplicate data purchase payment",
                 HttpStatus.BAD_REQUEST

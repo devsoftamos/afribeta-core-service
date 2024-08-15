@@ -509,7 +509,7 @@ export class AirtimeBillService {
             );
         }
 
-        if (transaction.paymentStatus == PaymentStatus.SUCCESS) {
+        if (transaction.paymentStatus !== PaymentStatus.PENDING) {
             throw new DuplicateAirtimePurchaseException(
                 "Duplicate airtime purchase payment",
                 HttpStatus.BAD_REQUEST
@@ -693,7 +693,7 @@ export class AirtimeBillService {
     ): Promise<CompleteAirtimePurchaseOutput> {
         const handleUnprocessedTransaction = async () => {
             //handle all providers
-            const handleProviderSwitch = async (billProvider: BillProvider) => {
+            const handleBuyPowerSwitch = async (billProvider: BillProvider) => {
                 const vendAirtimeResp =
                     await this.buyPowerWorkflowService.vendAirtime({
                         referenceId: options.transaction.billPaymentReference,
@@ -703,6 +703,35 @@ export class AirtimeBillService {
                         vtuNumber: options.transaction.senderIdentifier,
                         vtuEmail: options.user.email,
                     });
+                await this.prisma.transaction.update({
+                    where: {
+                        id: options.transaction.id,
+                    },
+                    data: {
+                        provider: billProvider.slug,
+                        billProviderId: billProvider.id,
+                    },
+                });
+
+                return await this.successPurchaseHandler(
+                    options,
+                    vendAirtimeResp
+                );
+            };
+
+            const handleIRechargeSwitch = async (
+                billProvider: BillProvider
+            ) => {
+                const vendAirtimeResp =
+                    await this.iRechargeWorkflowService.vendAirtime({
+                        referenceId: options.transaction.billPaymentReference,
+                        vtuNetwork: options.transaction
+                            .billServiceSlug as NetworkAirtimeProvider,
+                        vtuNumber: options.transaction.senderIdentifier,
+                        vtuEmail: options.user.email,
+                        vtuAmount: options.transaction.amount,
+                    });
+
                 await this.prisma.transaction.update({
                     where: {
                         id: options.transaction.id,
@@ -730,6 +759,10 @@ export class AirtimeBillService {
                 },
             });
             if (!billProviders.length) {
+                this.billEvent.emit("bill-purchase-failure", {
+                    transactionId: options.transaction.id,
+                });
+
                 throw new VendAirtimeFailureException(
                     "Failed to vend airtime",
                     HttpStatus.NOT_IMPLEMENTED
@@ -764,12 +797,12 @@ export class AirtimeBillService {
                     if (billProviderAirtimeNetwork) {
                         switch (billProviders[i].slug) {
                             case BillProviderSlug.BUYPOWER: {
-                                return await handleProviderSwitch(
+                                return await handleBuyPowerSwitch(
                                     billProviders[i]
                                 );
                             }
                             case BillProviderSlug.IRECHARGE: {
-                                return await handleProviderSwitch(
+                                return await handleIRechargeSwitch(
                                     billProviders[i]
                                 );
                             }

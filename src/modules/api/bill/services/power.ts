@@ -662,9 +662,9 @@ export class PowerBillService {
             );
         }
 
-        if (transaction.paymentStatus == PaymentStatus.SUCCESS) {
+        if (transaction.paymentStatus !== PaymentStatus.PENDING) {
             throw new DuplicatePowerPurchaseException(
-                "Duplicate power payment",
+                "Duplicate power purchase payment",
                 HttpStatus.BAD_REQUEST
             );
         }
@@ -977,14 +977,18 @@ export class PowerBillService {
                     },
                 },
             });
+
             if (!billProviders.length) {
+                this.billEvent.emit("bill-purchase-failure", {
+                    transactionId: options.transaction.id,
+                });
                 throw new VendPowerFailureException(
                     error.message ?? "Failed to vend power",
                     HttpStatus.NOT_IMPLEMENTED
                 );
             }
 
-            //switch automation
+            // start switch automation
             for (let i = 0; i < billProviders.length; i++) {
                 try {
                     const billProviderDiscoInfo =
@@ -998,6 +1002,10 @@ export class PowerBillService {
                             },
                         });
 
+                    /**
+                     * Note: throw this error if after checking all the bill providers and non has the particular disc service.
+                     * Handle this on the last bill provider in the array of billProviders above
+                     */
                     if (i == billProviders.length - 1) {
                         if (!billProviderDiscoInfo) {
                             throw new UnavailableBillProviderDisco(
@@ -1084,8 +1092,11 @@ export class PowerBillService {
                     }
                 }
             }
+
+            //end switch automation
         };
 
+        //check the exception thrown for the automation
         switch (true) {
             case error instanceof UnprocessedTransactionException: {
                 return await handleUnprocessedTransaction();
