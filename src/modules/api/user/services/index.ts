@@ -16,6 +16,7 @@ import {
     UserType,
     MerchantUpgradeStatus,
     Status,
+    WalletSetupStatus,
 } from "@prisma/client";
 import {
     InvalidEmailVerificationCodeException,
@@ -369,6 +370,7 @@ export class UserService {
             createdById: user.id,
             isMerchantUpgradable: false,
             isWalletCreated: true,
+            walletSetupStatus: WalletSetupStatus.ACTIVE,
             localGovernmentAreaId: options.localGovernmentAreaId,
             stateId: options.stateId,
             wallet: {
