@@ -115,6 +115,23 @@ export class IkejaElectricWorkflowService
                         units: resp.units.toString(),
                         demandCategory: resp.accountType,
                         walletBalance: resp.walletBalance,
+                        //
+                        sgc: resp.sgc,
+                        outstandingDebt: resp?.creditBreakdown.outstandingDebt,
+                        vat: resp.creditBreakdown?.vat,
+                        orgName: resp.orgName,
+                        orgNumber: resp.orgNO?.toString(),
+                        costOfUnit: resp?.creditBreakdown.costOfUnit,
+                        fixedCharge: resp?.creditBreakdown?.fixedCharge,
+                        rate: resp?.rate,
+                        penalty: resp?.creditBreakdown?.penalty,
+                        lor: resp?.creditBreakdown?.lor,
+                        reconnectionFee: resp?.creditBreakdown?.reconnectionFee,
+                        installationFee: resp?.creditBreakdown?.installationFee,
+                        administrativeCharge:
+                            resp?.creditBreakdown?.administrativeCharge,
+                        meterCost: resp?.creditBreakdown?.meterCost,
+                        tariffName: resp.tariffName,
                     };
                 }
 
@@ -136,6 +153,11 @@ export class IkejaElectricWorkflowService
                         receiptNO: resp.receiptNO,
                         demandCategory: resp.accountType,
                         walletBalance: resp.walletBalance,
+                        //
+                        outstandingDebt: resp.outstandingDebt,
+                        remainingDebt: resp.remainingDebt,
+                        rate: resp.rate,
+                        tariffName: resp.tariffName,
                     };
                 }
             }

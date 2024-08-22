@@ -381,6 +381,25 @@ model Transaction {
   billServiceSlug              String?
   merchantId                   Int?
   meterAccountType             MeterAccountType?
+  //
+  sgc                          String?
+  outstandingDebt              Float?
+  vat                          Float?
+  remainingDebt                Float?
+  orgName                      String?
+  orgNumber                    String?
+  costOfUnit                   Float?
+  fixedCharge                  Float?
+  rate                         Float?
+  penalty                      Float?
+  lor                          Float?
+  reconnectionFee              Float?
+  installationFee              Float?
+  administrativeCharge         Float?
+  currentCharge                Float?
+  meterCost                    Float?
+  tariffName                   String?
+  //
 
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt

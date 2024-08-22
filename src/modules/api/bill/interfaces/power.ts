@@ -1,15 +1,33 @@
 import { MeterAccountType } from "@prisma/client";
 import { CompleteBillPurchaseTransactionOptions } from ".";
 
-export interface CompletePowerPurchaseTransactionOptions
-    extends CompleteBillPurchaseTransactionOptions {
+export type IkejaElectricExtraPayload = {
+    sgc?: string;
+    outstandingDebt?: number;
+    vat?: number;
+    remainingDebt?: number;
+    orgName?: string;
+    orgNumber?: string;
+    costOfUnit?: number;
+    fixedCharge?: number;
+    rate?: number;
+    penalty?: number;
+    lor?: number;
+    reconnectionFee?: number;
+    installationFee?: number;
+    administrativeCharge?: number;
+    currentCharge?: number;
+    meterCost?: number;
+    tariffName?: string;
+};
+export type CompletePowerPurchaseTransactionOptions = {
     serviceTransactionCode: string;
     serviceTransactionCode2: string;
     accountId: string;
     meterType: string;
     billServiceSlug: string;
     meterAccountType: MeterAccountType;
-}
+} & CompleteBillPurchaseTransactionOptions;
 
 export interface CompletePowerPurchaseOutput {
     meterToken: string;
@@ -52,4 +70,5 @@ export interface VerifyPowerPurchaseData {
         token: string;
         units: string;
     };
+    ikejaElectric?: IkejaElectricExtraPayload;
 }

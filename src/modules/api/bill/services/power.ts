@@ -578,6 +578,24 @@ export class PowerBillService {
                     ? PaymentChannel.WALLET
                     : options.transaction.paymentChannel,
                 billPaymentReceiptNO: vendPowerResp.receiptNO,
+                //
+                sgc: vendPowerResp.sgc,
+                outstandingDebt: vendPowerResp.outstandingDebt,
+                vat: vendPowerResp.vat,
+                remainingDebt: vendPowerResp.remainingDebt,
+                orgName: vendPowerResp.orgName,
+                orgNumber: vendPowerResp.orgNumber,
+                costOfUnit: vendPowerResp.costOfUnit,
+                fixedCharge: vendPowerResp.fixedCharge,
+                rate: vendPowerResp.rate,
+                penalty: vendPowerResp.penalty,
+                lor: vendPowerResp.lor,
+                reconnectionFee: vendPowerResp.reconnectionFee,
+                installationFee: vendPowerResp.installationFee,
+                administrativeCharge: vendPowerResp.administrativeCharge,
+                currentCharge: vendPowerResp.currentCharge,
+                meterCost: vendPowerResp.meterCost,
+                tariffName: vendPowerResp.tariffName,
             },
         });
 
@@ -753,6 +771,7 @@ export class PowerBillService {
     }
 
     async verifyPowerPurchase(options: PaymentReferenceDto, user: User) {
+        console.log(user);
         const transaction = await this.prisma.transaction.findUnique({
             where: {
                 paymentReference: options.reference,
@@ -775,6 +794,29 @@ export class PowerBillService {
                 serviceCharge: true,
                 createdAt: true,
                 updatedAt: true,
+                //
+                sgc: true,
+                outstandingDebt: true,
+                vat: true,
+                remainingDebt: true,
+                orgName: true,
+                orgNumber: true,
+                costOfUnit: true,
+                fixedCharge: true,
+                rate: true,
+                penalty: true,
+                lor: true,
+                reconnectionFee: true,
+                installationFee: true,
+                administrativeCharge: true,
+                currentCharge: true,
+                meterCost: true,
+                tariffName: true,
+                billProvider: {
+                    select: {
+                        slug: true,
+                    },
+                },
             },
         });
 
@@ -821,6 +863,27 @@ export class PowerBillService {
             },
             createdAt: transaction.createdAt,
             updatedAt: transaction.updatedAt,
+            //
+            ikejaElectric: transaction.billProvider.slug ===
+                BillProviderSlugForPower.IKEJA_ELECTRIC && {
+                sgc: transaction.sgc,
+                outstandingDebt: transaction.outstandingDebt,
+                vat: transaction.vat,
+                remainingDebt: transaction.remainingDebt,
+                orgName: transaction.orgName,
+                orgNumber: transaction.orgNumber,
+                costOfUnit: transaction.costOfUnit,
+                fixedCharge: transaction.fixedCharge,
+                rate: transaction.rate,
+                penalty: transaction.penalty,
+                lor: transaction.lor,
+                reconnectionFee: transaction.reconnectionFee,
+                installationFee: transaction.installationFee,
+                administrativeCharge: transaction.administrativeCharge,
+                currentCharge: transaction.currentCharge,
+                meterCost: transaction.meterCost,
+                tariffName: transaction.tariffName,
+            },
         };
 
         return buildResponse({

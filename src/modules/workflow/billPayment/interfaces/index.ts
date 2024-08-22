@@ -53,6 +53,24 @@ export interface VendPowerResponse {
     receiptNO: string;
     purchaseDate?: Date;
     walletBalance?: number;
+    //
+    sgc?: string;
+    outstandingDebt?: number;
+    vat?: number;
+    remainingDebt?: number;
+    orgName?: string;
+    orgNumber?: string;
+    costOfUnit?: number;
+    fixedCharge?: number;
+    rate?: number;
+    penalty?: number;
+    lor?: number;
+    reconnectionFee?: number;
+    installationFee?: number;
+    administrativeCharge?: number;
+    currentCharge?: number;
+    meterCost?: number;
+    tariffName?: string;
 }
 
 export enum NetworkDataProvider {
