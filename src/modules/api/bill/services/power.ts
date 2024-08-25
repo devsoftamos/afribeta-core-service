@@ -771,7 +771,6 @@ export class PowerBillService {
     }
 
     async verifyPowerPurchase(options: PaymentReferenceDto, user: User) {
-        console.log(user);
         const transaction = await this.prisma.transaction.findUnique({
             where: {
                 paymentReference: options.reference,

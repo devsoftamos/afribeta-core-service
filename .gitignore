@@ -40,7 +40,7 @@ lerna-debug.log*
 pnpm-lock.yaml
 
 #script
-/script
+/_script
 
 #env
 .env
