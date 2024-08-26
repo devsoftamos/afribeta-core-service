@@ -277,6 +277,14 @@ const runtimeEnvironment: RequiredEnvironment[] = [
         name: "IKEJA_ELECTRIC_SFTP_PORT",
         type: RequiredEnvironmentTypes.Number,
     },
+    {
+        name: "IKEJA_ELECTRIC_EMAIL",
+        type: RequiredEnvironmentTypes.String,
+    },
+    {
+        name: "IKEJA_ELECTRIC_PHONE",
+        type: RequiredEnvironmentTypes.String,
+    },
     //server environment
     {
         name: "ENVIRONMENT",
@@ -464,6 +472,16 @@ export const ieConfig: IkejaElectricOptions = {
     config: {
         mode: isDevEnvironment ? "development" : "production",
     },
+};
+
+export interface IkejaElectricContact {
+    email: string;
+    phone: string;
+}
+
+export const ikejaElectricContact: IkejaElectricContact = {
+    email: process.env.IKEJA_ELECTRIC_EMAIL,
+    phone: process.env.IKEJA_ELECTRIC_PHONE,
 };
 
 //Digital Ocean

@@ -79,6 +79,7 @@ import {
     BuypowerReQueryJobOptions,
 } from "../queues";
 import { IkejaElectricWorkflowService } from "@/modules/workflow/billPayment/providers/ikejaElectric/services";
+import { ikejaElectricContact } from "@/config";
 
 @Injectable()
 export class PowerBillService {
@@ -816,6 +817,11 @@ export class PowerBillService {
                         slug: true,
                     },
                 },
+                billService: {
+                    select: {
+                        icon: true,
+                    },
+                },
             },
         });
 
@@ -849,9 +855,11 @@ export class PowerBillService {
             serviceCharge: transaction.serviceCharge,
             paymentChannel: transaction.paymentChannel,
             disco: transaction.packageType,
+            icon: transaction.billService?.icon,
             user: {
                 firstName: user.firstName,
                 lastName: user.lastName,
+                email: user.email,
             },
             meter: {
                 type: transaction.meterType,
@@ -882,6 +890,10 @@ export class PowerBillService {
                 currentCharge: transaction.currentCharge,
                 meterCost: transaction.meterCost,
                 tariffName: transaction.tariffName,
+                ikejaContact: {
+                    email: ikejaElectricContact.email,
+                    phone: ikejaElectricContact.phone,
+                },
             },
         };
 

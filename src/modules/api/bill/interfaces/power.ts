@@ -1,5 +1,6 @@
 import { MeterAccountType } from "@prisma/client";
 import { CompleteBillPurchaseTransactionOptions } from ".";
+import { IkejaElectricContact } from "@/config";
 
 export type IkejaElectricExtraPayload = {
     sgc?: string;
@@ -19,6 +20,7 @@ export type IkejaElectricExtraPayload = {
     currentCharge?: number;
     meterCost?: number;
     tariffName?: string;
+    ikejaContact: IkejaElectricContact;
 };
 export type CompletePowerPurchaseTransactionOptions = {
     serviceTransactionCode: string;
@@ -62,6 +64,7 @@ export interface FormattedElectricDiscoData {
 }
 
 export interface VerifyPowerPurchaseData {
+    icon: string;
     disco: string;
     meter: {
         type: string;

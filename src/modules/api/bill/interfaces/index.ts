@@ -105,6 +105,7 @@ export type VerifyPurchase<TBillData> = {
     user: {
         firstName: string;
         lastName: string;
+        email?: string;
     };
     createdAt: Date;
     updatedAt: Date;

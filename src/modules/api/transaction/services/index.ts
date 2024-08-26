@@ -457,7 +457,7 @@ export class TransactionService {
                 await tx.wallet.update({
                     data: {
                         commissionBalance: {
-                            increment: transaction.amount,
+                            increment: transaction.totalAmount,
                         },
                     },
                     where: {
