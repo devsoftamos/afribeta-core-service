@@ -36,6 +36,8 @@ import {
 } from "../errors";
 import { endOfMonth, startOfMonth } from "date-fns";
 import { TransactionDetailResponse } from "../interfaces";
+import { BillProviderSlugForPower } from "../../bill/interfaces";
+import { ikejaElectricContact } from "@/config";
 
 @Injectable()
 export class TransactionService {
@@ -1100,6 +1102,33 @@ export class TransactionService {
                         },
                     },
                 },
+                billService: {
+                    select: {
+                        icon: true,
+                    },
+                },
+                sgc: true,
+                outstandingDebt: true,
+                vat: true,
+                remainingDebt: true,
+                orgName: true,
+                orgNumber: true,
+                costOfUnit: true,
+                fixedCharge: true,
+                rate: true,
+                penalty: true,
+                lor: true,
+                reconnectionFee: true,
+                installationFee: true,
+                administrativeCharge: true,
+                currentCharge: true,
+                meterCost: true,
+                tariffName: true,
+                billProvider: {
+                    select: {
+                        slug: true,
+                    },
+                },
             },
         });
 
@@ -1159,6 +1188,33 @@ export class TransactionService {
                     date: transaction.updatedAt,
                     status: transaction.status,
                     product: transaction.packageType,
+                    //
+                    email: transaction.user.email,
+                    icon: transaction.billService.icon,
+                    ikejaElectric: transaction.billProvider.slug ===
+                        BillProviderSlugForPower.IKEJA_ELECTRIC && {
+                        sgc: transaction.sgc,
+                        outstandingDebt: transaction.outstandingDebt,
+                        vat: transaction.vat,
+                        remainingDebt: transaction.remainingDebt,
+                        orgName: transaction.orgName,
+                        orgNumber: transaction.orgNumber,
+                        costOfUnit: transaction.costOfUnit,
+                        fixedCharge: transaction.fixedCharge,
+                        rate: transaction.rate,
+                        penalty: transaction.penalty,
+                        lor: transaction.lor,
+                        reconnectionFee: transaction.reconnectionFee,
+                        installationFee: transaction.installationFee,
+                        administrativeCharge: transaction.administrativeCharge,
+                        currentCharge: transaction.currentCharge,
+                        meterCost: transaction.meterCost,
+                        tariffName: transaction.tariffName,
+                        ikejaContact: {
+                            email: ikejaElectricContact.email,
+                            phone: ikejaElectricContact.phone,
+                        },
+                    },
                 };
                 break;
             }

@@ -1,4 +1,5 @@
 import { TransactionStatus, TransactionType } from "@prisma/client";
+import { IkejaElectricExtraPayload } from "../../bill/interfaces";
 
 export enum TransactionShortDescription {
     WALLET_FUNDED = "Wallet Funded",
@@ -38,4 +39,7 @@ export type TransactionDetailResponse = {
     token?: string;
     beneficiaryBank?: string;
     beneficiaryBankAccountNumber?: string;
+    icon?: string;
+    email?: string;
+    ikejaElectric?: IkejaElectricExtraPayload;
 };
