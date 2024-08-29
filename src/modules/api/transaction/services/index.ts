@@ -1078,6 +1078,7 @@ export class TransactionService {
                 type: true,
                 shortDescription: true,
                 senderIdentifier: true,
+                transactionId: true,
                 amount: true,
                 billServiceSlug: true,
                 packageType: true,
@@ -1144,6 +1145,7 @@ export class TransactionService {
         switch (transaction.type) {
             case TransactionType.AIRTIME_PURCHASE: {
                 response = {
+                    transactionId: transaction.transactionId,
                     type: transaction.type,
                     amount: transaction.amount,
                     shortDescription: transaction.shortDescription,
@@ -1155,6 +1157,7 @@ export class TransactionService {
             }
             case TransactionType.DATA_PURCHASE: {
                 response = {
+                    transactionId: transaction.transactionId,
                     type: transaction.type,
                     shortDescription: transaction.shortDescription,
                     product: transaction.packageType,
@@ -1167,6 +1170,7 @@ export class TransactionService {
             }
             case TransactionType.INTERNET_BILL: {
                 response = {
+                    transactionId: transaction.transactionId,
                     type: transaction.type,
                     shortDescription: transaction.shortDescription,
                     product: transaction.packageType,
@@ -1179,6 +1183,7 @@ export class TransactionService {
             }
             case TransactionType.ELECTRICITY_BILL: {
                 response = {
+                    transactionId: transaction.transactionId,
                     type: transaction.type,
                     shortDescription: transaction.shortDescription,
                     beneficiary: transaction.senderIdentifier,
@@ -1220,6 +1225,7 @@ export class TransactionService {
             }
             case TransactionType.CABLETV_BILL: {
                 response = {
+                    transactionId: transaction.transactionId,
                     type: transaction.type,
                     shortDescription: transaction.shortDescription,
                     amount: transaction.amount,
@@ -1233,6 +1239,7 @@ export class TransactionService {
 
             case TransactionType.PAYOUT: {
                 response = {
+                    transactionId: transaction.transactionId,
                     type: transaction.type,
                     shortDescription: transaction.shortDescription,
                     date: transaction.updatedAt,
@@ -1247,6 +1254,7 @@ export class TransactionService {
 
             case TransactionType.TRANSFER_FUND: {
                 response = {
+                    transactionId: transaction.transactionId,
                     type: transaction.type,
                     shortDescription: transaction.shortDescription,
                     date: transaction.updatedAt,
@@ -1282,6 +1290,7 @@ export class TransactionService {
                     });
 
                     response = {
+                        transactionId: transaction.transactionId,
                         amount: transaction.amount,
                         sender: sender ? sender.email : "N/A",
                         type: "WALLET_TRANSFER",
@@ -1297,6 +1306,7 @@ export class TransactionService {
                     WalletFundTransactionFlow.FROM_PAID_COMMISSION
                 ) {
                     response = {
+                        transactionId: transaction.transactionId,
                         amount: transaction.amount,
                         type: "COMMISSION",
                         shortDescription: transaction.shortDescription,
@@ -1313,6 +1323,7 @@ export class TransactionService {
                     WalletFundTransactionFlow.SELF_FUND
                 ) {
                     response = {
+                        transactionId: transaction.transactionId,
                         type: "DEPOSIT",
                         shortDescription: transaction.shortDescription,
                         amount: transaction.amount,
@@ -1330,6 +1341,7 @@ export class TransactionService {
                 ) {
                     //
                     response = {
+                        transactionId: transaction.transactionId,
                         amount: transaction.amount,
                         type: "COMMISSION_TRANSFER",
                         shortDescription: transaction.shortDescription,
@@ -1346,6 +1358,7 @@ export class TransactionService {
                     WalletFundTransactionFlow.FROM_FAILED_TRANSACTION
                 ) {
                     response = {
+                        transactionId: transaction.transactionId,
                         type: "REFUND_DEPOSIT",
                         shortDescription: transaction.shortDescription,
                         amount: transaction.amount,
@@ -1356,8 +1369,6 @@ export class TransactionService {
                             : "N/A",
                     };
                 }
-
-                //handle for refund
             }
         }
 

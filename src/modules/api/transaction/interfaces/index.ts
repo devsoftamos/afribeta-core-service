@@ -36,6 +36,7 @@ export type TransactionDetailResponse = {
     shortDescription: string;
     status: TransactionStatus;
     date: Date;
+    transactionId: string;
     token?: string;
     beneficiaryBank?: string;
     beneficiaryBankAccountNumber?: string;
