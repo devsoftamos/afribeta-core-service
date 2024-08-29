@@ -1093,6 +1093,7 @@ export class TransactionService {
                 status: true,
                 senderId: true,
                 userId: true,
+                address: true,
                 user: {
                     select: {
                         email: true,
@@ -1196,6 +1197,7 @@ export class TransactionService {
                     //
                     email: transaction.user.email,
                     icon: transaction.billService.icon,
+                    address: transaction.address,
                     ikejaElectric: transaction.billProvider.slug ===
                         BillProviderSlugForPower.IKEJA_ELECTRIC && {
                         sgc: transaction.sgc,

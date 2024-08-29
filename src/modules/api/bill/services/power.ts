@@ -597,6 +597,7 @@ export class PowerBillService {
                 currentCharge: vendPowerResp.currentCharge,
                 meterCost: vendPowerResp.meterCost,
                 tariffName: vendPowerResp.tariffName,
+                address: vendPowerResp.address,
             },
         });
 
@@ -812,6 +813,7 @@ export class PowerBillService {
                 currentCharge: true,
                 meterCost: true,
                 tariffName: true,
+                address: true,
                 billProvider: {
                     select: {
                         slug: true,
@@ -867,6 +869,7 @@ export class PowerBillService {
                 meterNumber: transaction.senderIdentifier,
                 token: transaction.token,
                 units: transaction.units,
+                address: transaction.address,
             },
             createdAt: transaction.createdAt,
             updatedAt: transaction.updatedAt,

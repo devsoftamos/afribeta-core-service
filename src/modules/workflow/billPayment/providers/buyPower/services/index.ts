@@ -88,6 +88,13 @@ export class BuyPowerWorkflowService implements BillPaymentWorkflow {
                 vendType: options.meterType,
             });
 
+            if (!resp) {
+                throw new BuyPowerPowerException(
+                    "Failed to retrieve meter information. Error ocurred",
+                    HttpStatus.INTERNAL_SERVER_ERROR
+                );
+            }
+
             return {
                 accessToken: null,
                 meter: {
@@ -115,6 +122,10 @@ export class BuyPowerWorkflowService implements BillPaymentWorkflow {
                         error.message,
                         HttpStatus.BAD_REQUEST
                     );
+                }
+
+                case error instanceof BuyPowerPowerException: {
+                    throw error;
                 }
 
                 default: {
@@ -168,6 +179,12 @@ export class BuyPowerWorkflowService implements BillPaymentWorkflow {
 
     async vendPower(options: VendPowerOptions): Promise<VendPowerResponse> {
         try {
+            const meter = await this.getMeterInfo({
+                meterNumber: options.meterNumber,
+                meterType: options.meterType,
+                discoCode: options.discoCode,
+            });
+
             const resp = await this.buyPower.vendPower({
                 amount: options.amount,
                 disco: options.discoCode as IBuyPower.Power.Disco,
@@ -183,6 +200,7 @@ export class BuyPowerWorkflowService implements BillPaymentWorkflow {
                 units: resp.data.units,
                 demandCategory: resp.data.demandCategory,
                 receiptNO: resp.data.receiptNo.toString(),
+                address: meter.customer.address,
             };
         } catch (error) {
             logger.error(error);
@@ -202,8 +220,8 @@ export class BuyPowerWorkflowService implements BillPaymentWorkflow {
 
                 default: {
                     throw new BuyPowerVendPowerException(
-                        "Failed to vend power. Error ocurred",
-                        HttpStatus.INTERNAL_SERVER_ERROR
+                        error.message ?? "Failed to vend power. Error ocurred",
+                        HttpStatus.BAD_REQUEST
                     );
                 }
             }

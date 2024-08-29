@@ -18,6 +18,8 @@ import { DataBillService } from "../../services/data";
 import { InternetBillService } from "../../services/internet";
 import { CableTVBillService } from "../../services/cabletv";
 import { PaymentStatus, TransactionStatus } from "@prisma/client";
+import { IBuyPower } from "@/libs/buyPower";
+import { MeterType } from "@/modules/workflow/billPayment";
 
 @Processor(BillQueue.BUYPOWER_REQUERY)
 export class BuypowerReQueryQueueProcessor {
@@ -84,6 +86,12 @@ export class BuypowerReQueryQueueProcessor {
                     id: transaction.userId,
                 },
             });
+            const meter = await this.buyPowerWorkflowService.getMeterInfo({
+                meterNumber: transaction.senderIdentifier,
+                discoCode:
+                    transaction.serviceTransactionCode as IBuyPower.Power.Disco,
+                meterType: transaction.meterType as MeterType,
+            });
 
             await this.prisma.transaction.update({
                 where: {
@@ -108,6 +116,7 @@ export class BuypowerReQueryQueueProcessor {
                     meterToken: powerVendInfo.token,
                     units: powerVendInfo.units,
                     receiptNO: powerVendInfo.receiptNo,
+                    address: meter.customer.address,
                 }
             );
             return true;

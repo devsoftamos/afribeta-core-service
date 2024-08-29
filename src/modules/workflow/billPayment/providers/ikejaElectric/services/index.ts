@@ -132,6 +132,7 @@ export class IkejaElectricWorkflowService
                             resp?.creditBreakdown?.administrativeCharge,
                         meterCost: resp?.creditBreakdown?.meterCost,
                         tariffName: resp.tariffName,
+                        address: resp.serviceAddress,
                     };
                 }
 
@@ -158,6 +159,7 @@ export class IkejaElectricWorkflowService
                         remainingDebt: resp.remainingDebt,
                         rate: resp.rate,
                         tariffName: resp.tariffName,
+                        address: resp.serviceAddress,
                     };
                 }
             }

@@ -399,6 +399,7 @@ model Transaction {
   currentCharge                Float?
   meterCost                    Float?
   tariffName                   String?
+  address                      String?                    @db.Text
   //
 
   createdAt    DateTime      @default(now())

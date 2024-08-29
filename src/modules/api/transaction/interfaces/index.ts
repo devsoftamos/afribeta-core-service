@@ -38,6 +38,7 @@ export type TransactionDetailResponse = {
     date: Date;
     transactionId: string;
     token?: string;
+    address?: string;
     beneficiaryBank?: string;
     beneficiaryBankAccountNumber?: string;
     icon?: string;

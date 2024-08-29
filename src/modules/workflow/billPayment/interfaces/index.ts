@@ -71,6 +71,7 @@ export interface VendPowerResponse {
     currentCharge?: number;
     meterCost?: number;
     tariffName?: string;
+    address: string;
 }
 
 export enum NetworkDataProvider {

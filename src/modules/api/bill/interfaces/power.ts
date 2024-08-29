@@ -72,6 +72,7 @@ export interface VerifyPowerPurchaseData {
         meterNumber: string;
         token: string;
         units: string;
+        address: string;
     };
     ikejaElectric?: IkejaElectricExtraPayload;
 }
