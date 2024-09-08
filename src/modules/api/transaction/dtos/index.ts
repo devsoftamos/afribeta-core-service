@@ -301,3 +301,29 @@ export class UserTransactionHistoryDto {
     @IsEnum(QueryTransactionStatus)
     status: QueryTransactionStatus;
 }
+
+export class IkejaElectricReportDto {
+    @IsOptional()
+    @IsBooleanString()
+    pagination: string;
+
+    @IsOptional()
+    @IsNumberString()
+    page: string;
+
+    @IsOptional()
+    @IsNumberString()
+    limit: string;
+
+    @IsOptional()
+    @IsString()
+    searchName: string;
+}
+
+export class IkejaElectricReportDownloadDto {
+    @IsDateString()
+    startDate: string;
+
+    @IsDateString()
+    endDate: string;
+}

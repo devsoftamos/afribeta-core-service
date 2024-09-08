@@ -17,6 +17,8 @@ import {
     AdminTransactionHistoryDto,
     CustomerTransactionHistoryDto,
     FetchRecommendedPayoutDto,
+    IkejaElectricReportDownloadDto,
+    IkejaElectricReportDto,
     MerchantTransactionHistoryDto,
     PayoutStatus,
     QueryTransactionStatus,
@@ -34,10 +36,26 @@ import {
     InvalidTransactionVerificationProvider,
     TransactionNotFoundException,
 } from "../errors";
-import { endOfMonth, startOfMonth } from "date-fns";
-import { TransactionDetailResponse } from "../interfaces";
-import { BillProviderSlugForPower } from "../../bill/interfaces";
+import {
+    endOfDay,
+    endOfMonth,
+    format,
+    startOfDay,
+    startOfMonth,
+} from "date-fns";
+import {
+    IkejaElectricCSVField,
+    IkejaElectricReport,
+    IkejaElectricReportDownload,
+    TransactionDetailResponse,
+} from "../interfaces";
+import {
+    BillProviderSlugForPower,
+    BillServiceSlug,
+    MeterType,
+} from "../../bill/interfaces";
 import { ikejaElectricContact } from "@/config";
+import { createObjectCsvStringifier } from "csv-writer";
 
 @Injectable()
 export class TransactionService {
@@ -1443,5 +1461,215 @@ export class TransactionService {
             message: "Customer transaction history successfully retrieved",
             data: result,
         });
+    }
+
+    async getIkejaElectricReportDto(
+        options: IkejaElectricReportDto
+    ): Promise<ApiResponse<IkejaElectricReport[]>> {
+        const meta: Partial<PaginationMeta> = {};
+        const queryOptions: Prisma.TransactionFindManyArgs = {
+            orderBy: { createdAt: "desc" },
+            where: {
+                billServiceSlug: BillServiceSlug.IKEJA_ELECTRIC,
+            },
+            select: {
+                id: true,
+                transactionId: true,
+                paymentStatus: true,
+                status: true,
+                amount: true,
+                commission: true,
+                merchantCommission: true,
+                meterType: true,
+                billService: {
+                    select: {
+                        name: true,
+                    },
+                },
+                user: {
+                    select: {
+                        firstName: true,
+                        lastName: true,
+                        creator: {
+                            select: {
+                                firstName: true,
+                                lastName: true,
+                            },
+                        },
+                    },
+                },
+                meterAccountName: true,
+                senderIdentifier: true,
+                meterAccountType: true,
+                updatedAt: true,
+            },
+        };
+
+        if (options.searchName) {
+            queryOptions.where = {
+                ...queryOptions.where,
+                OR: [
+                    {
+                        senderIdentifier: options.searchName,
+                    },
+                    { transactionId: options.searchName },
+                ],
+            };
+        }
+
+        if (options.pagination) {
+            const page = +options.page || 1;
+            const limit = +options.limit || 10;
+            const offset = (page - 1) * limit;
+            queryOptions.skip = offset;
+            queryOptions.take = limit;
+            const count = await this.prisma.transaction.count({
+                where: queryOptions.where,
+            });
+            meta.totalCount = count;
+            meta.perPage = limit;
+            meta.page = page;
+        }
+
+        const transactions = await this.prisma.transaction.findMany(
+            queryOptions
+        );
+
+        const data: IkejaElectricReport[] = transactions.map((t: any) => {
+            let agentName = `${t.user?.firstName} ${t.user?.lastName}`;
+            if (t.user.creator) {
+                agentName = `${t.user?.creator?.firstName} ${t.user?.creator?.lastName}`;
+            }
+
+            return {
+                id: t.id,
+                transactionId: t.transactionId,
+                amount: t.amount,
+                commission: t.commission + t.merchantCommission,
+                transactionStatus: t.status,
+                paymentStatus: t.paymentStatus,
+                agentName: agentName,
+                customerName: t.meterAccountName,
+                demandType: t.meterAccountType,
+                meterNumber: t.senderIdentifier,
+                meterType: t.meterType,
+                productName: t.billService?.name,
+                date: t.updatedAt,
+            };
+        });
+
+        return buildResponse({
+            message: "transactions successfully retrieved",
+            data: data,
+        });
+    }
+
+    async downloadIkejaElectricReport(options: IkejaElectricReportDownloadDto) {
+        const startDate = startOfDay(new Date(options.startDate));
+        const endDate = endOfDay(new Date(options.endDate));
+
+        const transactions = await this.prisma.transaction.findMany({
+            orderBy: { createdAt: "desc" },
+            where: {
+                status: TransactionStatus.SUCCESS,
+                billServiceSlug: BillServiceSlug.IKEJA_ELECTRIC,
+                updatedAt: {
+                    gte: startDate,
+                    lte: endDate,
+                },
+            },
+            select: {
+                id: true,
+                transactionId: true,
+                paymentStatus: true,
+                status: true,
+                amount: true,
+                commission: true,
+                meterType: true,
+                billService: {
+                    select: {
+                        name: true,
+                    },
+                },
+                user: {
+                    select: {
+                        firstName: true,
+                        lastName: true,
+                        email: true,
+                        creator: {
+                            select: {
+                                firstName: true,
+                                lastName: true,
+                                email: true,
+                            },
+                        },
+                    },
+                },
+                meterAccountName: true,
+                senderIdentifier: true,
+                meterAccountType: true,
+                updatedAt: true,
+                address: true,
+                billPaymentReceiptNO: true,
+            },
+        });
+
+        const data: IkejaElectricReportDownload[] = transactions.map((t) => {
+            let agentName = `${t.user?.firstName} ${t.user?.lastName}`;
+            let agentEmail = t.user?.email;
+
+            if (t.user.creator) {
+                agentName = `${t.user?.creator?.firstName} ${t.user?.creator?.lastName}`;
+                agentEmail = t.user?.creator?.email;
+            }
+            return {
+                transactionId: t.transactionId,
+                productName: t.billService.name,
+                amount: t.amount,
+                commission: t.commission,
+                transactionStatus: t.status,
+                paymentStatus: t.paymentStatus,
+                meterNumber: t.senderIdentifier,
+                meterType: t.meterType as MeterType,
+                demandType: t.meterAccountType,
+                agentName: agentName,
+                agentEmail: agentEmail,
+                receiptNo: t.billPaymentReceiptNO,
+                customerName: t.meterAccountName || "N/A",
+                customerAddress: t.address || "N/A",
+                date: format(t.updatedAt, "yyyy-MM-dd HH:mm:ss"),
+            };
+        });
+
+        return this.generateIkejaElectricCsv(data);
+    }
+
+    private generateIkejaElectricCsv(dbData: IkejaElectricReportDownload[]) {
+        const csvHeader: IkejaElectricCSVField[] = [
+            { id: "transactionId", title: "Transaction ID" },
+            { id: "productName", title: "Product" },
+            { id: "amount", title: "Amount" },
+            { id: "commission", title: "Commission" },
+            { id: "transactionStatus", title: "Transaction Status" },
+            { id: "paymentStatus", title: "Payment Status" },
+            { id: "meterNumber", title: "Account/Meter Number" },
+            { id: "meterType", title: "Meter Type" },
+            { id: "demandType", title: "Demand Type" },
+            { id: "agentName", title: "Agent Name" },
+            { id: "agentEmail", title: "Agent Email" },
+            { id: "receiptNo", title: "Receipt No" },
+            { id: "customerName", title: "Customer Name" },
+            { id: "customerAddress", title: "Customer Address" },
+            { id: "date", title: "Date" },
+        ];
+
+        const csvStringifier = createObjectCsvStringifier({
+            header: csvHeader,
+        });
+
+        return (
+            csvStringifier.getHeaderString() +
+            csvStringifier.stringifyRecords(dbData)
+        );
     }
 }

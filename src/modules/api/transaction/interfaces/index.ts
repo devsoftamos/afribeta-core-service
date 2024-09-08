@@ -1,5 +1,10 @@
-import { TransactionStatus, TransactionType } from "@prisma/client";
-import { IkejaElectricExtraPayload } from "../../bill/interfaces";
+import {
+    MeterAccountType,
+    PaymentStatus,
+    TransactionStatus,
+    TransactionType,
+} from "@prisma/client";
+import { IkejaElectricExtraPayload, MeterType } from "../../bill/interfaces";
 
 export enum TransactionShortDescription {
     WALLET_FUNDED = "Wallet Funded",
@@ -44,4 +49,43 @@ export type TransactionDetailResponse = {
     icon?: string;
     email?: string;
     ikejaElectric?: IkejaElectricExtraPayload;
+};
+
+export interface IkejaElectricReport {
+    id: number;
+    transactionId: string;
+    paymentStatus: PaymentStatus;
+    transactionStatus: TransactionStatus;
+    amount: number;
+    commission: number;
+    productName: string;
+    agentName: string;
+    meterNumber: string;
+    customerName: string;
+    demandType: MeterAccountType;
+    date: Date;
+    meterType: MeterType;
+}
+
+export interface IkejaElectricReportDownload {
+    transactionId: string;
+    paymentStatus: PaymentStatus;
+    transactionStatus: TransactionStatus;
+    amount: number;
+    productName: string;
+    agentName: string;
+    meterNumber: string;
+    customerName: string;
+    demandType: MeterAccountType;
+    date: string;
+    meterType: MeterType;
+    customerAddress: string;
+    agentEmail: string;
+    receiptNo: string;
+    commission: number | string;
+}
+
+export type IkejaElectricCSVField = {
+    id: keyof IkejaElectricReportDownload;
+    title: string;
 };
