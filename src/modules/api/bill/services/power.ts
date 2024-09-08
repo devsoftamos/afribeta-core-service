@@ -815,6 +815,7 @@ export class PowerBillService {
                 meterCost: true,
                 tariffName: true,
                 address: true,
+                meterAccountName: true,
                 billProvider: {
                     select: {
                         slug: true,
@@ -871,6 +872,7 @@ export class PowerBillService {
                 token: transaction.token,
                 units: transaction.units,
                 address: transaction.address,
+                name: transaction.meterAccountName,
             },
             createdAt: transaction.createdAt,
             updatedAt: transaction.updatedAt,

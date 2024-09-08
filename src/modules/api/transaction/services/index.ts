@@ -1144,6 +1144,7 @@ export class TransactionService {
                 currentCharge: true,
                 meterCost: true,
                 tariffName: true,
+                meterAccountName: true,
                 billProvider: {
                     select: {
                         slug: true,
@@ -1212,10 +1213,12 @@ export class TransactionService {
                     date: transaction.updatedAt,
                     status: transaction.status,
                     product: transaction.packageType,
+
                     //
                     email: transaction.user.email,
                     icon: transaction.billService.icon,
                     address: transaction.address,
+                    customerName: transaction.meterAccountName,
                     ikejaElectric: transaction.billProvider.slug ===
                         BillProviderSlugForPower.IKEJA_ELECTRIC && {
                         sgc: transaction.sgc,

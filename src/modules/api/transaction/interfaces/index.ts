@@ -49,6 +49,7 @@ export type TransactionDetailResponse = {
     icon?: string;
     email?: string;
     ikejaElectric?: IkejaElectricExtraPayload;
+    customerName?: string;
 };
 
 export interface IkejaElectricReport {
