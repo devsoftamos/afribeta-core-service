@@ -333,6 +333,8 @@ export class PowerBillService {
                 provider: purchaseOptions.billProvider,
                 serviceTransactionCode: purchaseOptions.meterCode,
                 merchantId: user.createdById,
+                meterAccountName: purchaseOptions.meterAccountName,
+                address: purchaseOptions.meterAccountAddress,
             };
 
         //handle service charge
@@ -597,7 +599,6 @@ export class PowerBillService {
                 currentCharge: vendPowerResp.currentCharge,
                 meterCost: vendPowerResp.meterCost,
                 tariffName: vendPowerResp.tariffName,
-                address: vendPowerResp.address,
             },
         });
 
