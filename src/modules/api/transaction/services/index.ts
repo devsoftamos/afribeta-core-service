@@ -1831,7 +1831,7 @@ export class TransactionService {
                 name: name,
                 email: email,
                 afribCommission: t.companyCommission,
-                paymentChannel: t.paymentChannel,
+                paymentChannel: t.paymentChannel || ("N/A" as any),
                 date: format(t.updatedAt, "yyyy-MM-dd HH:mm:ss"),
             };
             return data;
