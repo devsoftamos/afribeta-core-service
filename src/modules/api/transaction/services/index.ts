@@ -1114,6 +1114,8 @@ export class TransactionService {
                 address: true,
                 user: {
                     select: {
+                        firstName: true,
+                        lastName: true,
                         email: true,
                         wallet: {
                             select: {
@@ -1213,12 +1215,11 @@ export class TransactionService {
                     date: transaction.updatedAt,
                     status: transaction.status,
                     product: transaction.packageType,
-
-                    //
+                    name: `${transaction.user?.firstName} ${transaction.user?.lastName}`,
                     email: transaction.user.email,
                     icon: transaction.billService.icon,
                     address: transaction.address,
-                    customerName: transaction.meterAccountName,
+                    beneficiaryName: transaction.meterAccountName,
                     ikejaElectric: transaction.billProvider.slug ===
                         BillProviderSlugForPower.IKEJA_ELECTRIC && {
                         sgc: transaction.sgc,

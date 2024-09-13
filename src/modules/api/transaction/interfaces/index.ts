@@ -43,6 +43,7 @@ export type TransactionDetailResponse = {
     date: Date;
     transactionId: string;
     token?: string;
+    name?: string;
     address?: string;
     beneficiaryBank?: string;
     beneficiaryBankAccountNumber?: string;
@@ -50,6 +51,7 @@ export type TransactionDetailResponse = {
     email?: string;
     ikejaElectric?: IkejaElectricExtraPayload;
     customerName?: string;
+    beneficiaryName?: string;
 };
 
 export interface IkejaElectricReport {
