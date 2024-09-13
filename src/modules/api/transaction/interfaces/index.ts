@@ -1,8 +1,10 @@
 import {
     MeterAccountType,
+    PaymentChannel,
     PaymentStatus,
     TransactionStatus,
     TransactionType,
+    UserType,
 } from "@prisma/client";
 import { IkejaElectricExtraPayload, MeterType } from "../../bill/interfaces";
 
@@ -90,5 +92,36 @@ export interface IkejaElectricReportDownload {
 
 export type IkejaElectricCSVField = {
     id: keyof IkejaElectricReportDownload;
+    title: string;
+};
+
+export type ReportDownloadTransactionType =
+    | Omit<TransactionType, "WALLET_FUND">
+    | "INTRA_WALLET_TRANSFER"
+    | "COMMISSION_DEPOSIT"
+    | "WALLET_FUND_BANK_DEPOSIT"
+    | "WALLET_WITHDRAWAL"
+    | "WALLET_COMMISSION_TRANSFER"
+    | "REFUND_DEPOSIT";
+
+export interface GeneralReportDownload {
+    transactionId: string;
+    transactionType: ReportDownloadTransactionType;
+    amount: number;
+    commission: number;
+    transactionStatus: TransactionStatus;
+    paymentStatus: PaymentStatus;
+    serviceCharge: number | string;
+    name: string;
+    email: string;
+    userType: UserType;
+    afribCommission: number | string;
+    date: string;
+    productName: string;
+    paymentChannel: PaymentChannel;
+}
+
+export type GeneralReportCSVField = {
+    id: keyof GeneralReportDownload;
     title: string;
 };

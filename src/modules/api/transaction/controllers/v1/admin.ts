@@ -18,6 +18,7 @@ import {
     AdminTransactionHistoryDto,
     CustomerTransactionHistoryDto,
     FetchRecommendedPayoutDto,
+    GeneralReportDownloadDto,
     IkejaElectricReportDownloadDto,
     IkejaElectricReportDto,
     MerchantTransactionHistoryDto,
@@ -197,5 +198,14 @@ export class AdminTransactionController {
         @Body() dto: IkejaElectricReportDownloadDto
     ) {
         return await this.transactionService.downloadIkejaElectricReport(dto);
+    }
+
+    @UseGuards(AbilitiesGuard)
+    @CheckAbilities(new Ability.ReadTransactionAbility())
+    @HttpCode(HttpStatus.OK)
+    @CsvHeaders("non_api_general_report.csv")
+    @Post("/report/download/general")
+    async downloadGeneralReport(@Body() dto: GeneralReportDownloadDto) {
+        return await this.transactionService.downloadGeneralReport(dto);
     }
 }

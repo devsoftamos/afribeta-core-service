@@ -17,6 +17,7 @@ import {
     AdminTransactionHistoryDto,
     CustomerTransactionHistoryDto,
     FetchRecommendedPayoutDto,
+    GeneralReportDownloadDto,
     IkejaElectricReportDownloadDto,
     IkejaElectricReportDto,
     MerchantTransactionHistoryDto,
@@ -44,9 +45,12 @@ import {
     startOfMonth,
 } from "date-fns";
 import {
+    GeneralReportCSVField,
+    GeneralReportDownload,
     IkejaElectricCSVField,
     IkejaElectricReport,
     IkejaElectricReportDownload,
+    ReportDownloadTransactionType,
     TransactionDetailResponse,
 } from "../interfaces";
 import {
@@ -1675,5 +1679,164 @@ export class TransactionService {
             csvStringifier.getHeaderString() +
             csvStringifier.stringifyRecords(dbData)
         );
+    }
+
+    private buildGeneralReportCsv(dbData: GeneralReportDownload[]) {
+        const csvHeader: GeneralReportCSVField[] = [
+            { id: "transactionId", title: "Transaction ID" },
+            { id: "transactionType", title: "Transaction Type" },
+            { id: "productName", title: "Product" },
+            { id: "amount", title: "Amount" },
+            { id: "commission", title: "Commission" },
+            { id: "afribCommission", title: "Afrib Commission" },
+            { id: "transactionStatus", title: "Transaction Status" },
+            { id: "paymentStatus", title: "Payment Status" },
+            { id: "serviceCharge", title: "Service Charge" },
+            { id: "name", title: "User Name" },
+            { id: "email", title: "User Email" },
+            { id: "userType", title: "User Type" },
+            { id: "paymentChannel", title: "Payment Channel" },
+            { id: "date", title: "Date" },
+        ];
+
+        const csvStringifier = createObjectCsvStringifier({
+            header: csvHeader,
+        });
+
+        return (
+            csvStringifier.getHeaderString() +
+            csvStringifier.stringifyRecords(dbData)
+        );
+    }
+
+    async downloadGeneralReport(options: GeneralReportDownloadDto) {
+        const startDate = startOfDay(new Date(options.startDate));
+        const endDate = endOfDay(new Date(options.endDate));
+
+        const transactions = await this.prisma.transaction.findMany({
+            orderBy: { createdAt: "desc" },
+            where: {
+                updatedAt: {
+                    gte: startDate,
+                    lte: endDate,
+                },
+                OR: [
+                    {
+                        walletFundTransactionFlow: null,
+                    },
+                    {
+                        walletFundTransactionFlow: {
+                            notIn: [
+                                WalletFundTransactionFlow.TO_BENEFICIARY,
+                                WalletFundTransactionFlow.TO_AGENT,
+                            ], //from benefactor and from merchant already cover this
+                        },
+                    },
+                ],
+            },
+            select: {
+                id: true,
+                transactionId: true,
+                paymentStatus: true,
+                status: true,
+                amount: true,
+                commission: true,
+                serviceCharge: true,
+                companyCommission: true,
+                paymentChannel: true,
+                walletFundTransactionFlow: true,
+                merchantCommission: true,
+                billService: {
+                    select: {
+                        name: true,
+                    },
+                },
+                user: {
+                    select: {
+                        firstName: true,
+                        lastName: true,
+                        email: true,
+                        userType: true,
+                        creator: {
+                            select: {
+                                firstName: true,
+                                lastName: true,
+                                email: true,
+                                userType: true,
+                            },
+                        },
+                    },
+                },
+                type: true,
+                updatedAt: true,
+                address: true,
+            },
+        });
+
+        const data: GeneralReportDownload[] = transactions.map((t) => {
+            let name = `${t.user?.firstName} ${t.user?.lastName}`;
+            let email = t.user?.email;
+            let userType = t.user.userType;
+            let type: ReportDownloadTransactionType = t.type;
+
+            if (t.user.creator) {
+                name = `${t.user?.creator?.firstName} ${t.user?.creator?.lastName}`;
+                email = t.user?.creator?.email;
+                userType = t.user?.creator?.userType;
+            }
+
+            if (t.type == TransactionType.WALLET_FUND) {
+                switch (t.walletFundTransactionFlow) {
+                    case WalletFundTransactionFlow.COMMISSION_BALANCE_TO_MAIN_BALANCE: {
+                        type = "WALLET_COMMISSION_TRANSFER";
+                        break;
+                    }
+                    case WalletFundTransactionFlow.FROM_BENEFACTOR: {
+                        type = "INTRA_WALLET_TRANSFER";
+                        break;
+                    }
+
+                    case WalletFundTransactionFlow.FROM_FAILED_TRANSACTION: {
+                        type = "REFUND_DEPOSIT";
+                        break;
+                    }
+                    case WalletFundTransactionFlow.FROM_MERCHANT: {
+                        type = "INTRA_WALLET_TRANSFER";
+                        break;
+                    }
+                    case WalletFundTransactionFlow.FROM_PAID_COMMISSION: {
+                        type = "COMMISSION_DEPOSIT";
+                        break;
+                    }
+                    case WalletFundTransactionFlow.SELF_FUND: {
+                        type = "WALLET_FUND_BANK_DEPOSIT";
+                        break;
+                    }
+                }
+            }
+
+            if (t.type == TransactionType.TRANSFER_FUND) {
+                type = "WALLET_WITHDRAWAL";
+            }
+            const data: GeneralReportDownload = {
+                transactionId: t.transactionId,
+                productName: t.billService?.name || "N/A",
+                amount: t.amount,
+                commission: t.commission + t.merchantCommission,
+                transactionStatus: t.status,
+                paymentStatus: t.paymentStatus,
+                userType: userType,
+                transactionType: type,
+                serviceCharge: t.serviceCharge,
+                name: name,
+                email: email,
+                afribCommission: t.companyCommission,
+                paymentChannel: t.paymentChannel,
+                date: format(t.updatedAt, "yyyy-MM-dd HH:mm:ss"),
+            };
+            return data;
+        });
+
+        return this.buildGeneralReportCsv(data);
     }
 }

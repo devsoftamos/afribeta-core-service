@@ -11,6 +11,7 @@ import { PrismaService } from "@/modules/core/prisma/services";
 import { generateId } from "@/utils";
 import { HttpStatus, Injectable } from "@nestjs/common";
 import {
+    PaymentChannel,
     PaymentStatus,
     TransactionFlow,
     TransactionStatus,
@@ -181,6 +182,7 @@ export class PaystackService {
                         paymentReference: options.reference,
                         shortDescription:
                             TransactionShortDescription.TRANSFER_FUND,
+                        paymentChannel: PaymentChannel.PAYSTACK_CHANNEL,
                     },
                 });
                 if (options.userType == UserType.CUSTOMER) {

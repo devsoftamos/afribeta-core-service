@@ -327,3 +327,5 @@ export class IkejaElectricReportDownloadDto {
     @IsDateString()
     endDate: string;
 }
+
+export class GeneralReportDownloadDto extends IkejaElectricReportDownloadDto {}
