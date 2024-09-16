@@ -44,6 +44,7 @@ import {
     EditAgentDto,
     EnableOrDisableUserDto,
     EnableOrDisableUserEnum,
+    UpdateKycDto,
 } from "../dtos";
 import {
     AccountActivateAndDeactivateException,
@@ -53,6 +54,7 @@ import {
     IncorrectPasswordException,
     InvalidAgentCommissionAssignment,
     InvalidUserException,
+    KycNotFoundException,
     TransactionPinException,
     UserKycException,
     UserNotFoundException,
@@ -1495,6 +1497,99 @@ export class UserService {
     async deleteFake() {
         return buildResponse({
             message: "Account successfully deleted",
+        });
+    }
+
+    async getKyc(user: User) {
+        const kyc = await this.prisma.kycInformation.findUnique({
+            where: { userId: user.id },
+            select: {
+                id: true,
+                address: true,
+                cacDocumentUrl: true,
+                cacNumber: true,
+                identificationMeans: true,
+                identificationMeansDocumentUrl: true,
+                nextOfKinAddress: true,
+                nextOfKinName: true,
+                nextOfKinPhone: true,
+                createdAt: true,
+                updatedAt: true,
+            },
+        });
+
+        if (!kyc) {
+            throw new KycNotFoundException(
+                "KYC not found",
+                HttpStatus.NOT_FOUND
+            );
+        }
+
+        return buildResponse({
+            message: "kYC successfully retrieved",
+            data: kyc,
+        });
+    }
+
+    async updateKyc(options: UpdateKycDto, user: User): Promise<ApiResponse> {
+        const kyc = await this.prisma.kycInformation.findUnique({
+            where: { userId: user.id },
+        });
+
+        if (!kyc) {
+            throw new KycNotFoundException(
+                "KYC not found",
+                HttpStatus.NOT_FOUND
+            );
+        }
+
+        if (user.kycStatus === KYC_STATUS.APPROVED) {
+            throw new UserKycException(
+                "KYC already approved",
+                HttpStatus.BAD_REQUEST
+            );
+        }
+
+        const kycUpdateData: Prisma.KycInformationUncheckedUpdateInput = {
+            address: options.address || kyc.address,
+            cacNumber: options.cacNumber || kyc.cacNumber,
+            identificationMeans:
+                options.identificationMeans || kyc.identificationMeans,
+            nextOfKinAddress: options.nextOfKinAddress || kyc.nextOfKinAddress,
+            nextOfKinName: options.nextOfKinName || kyc.nextOfKinName,
+            nextOfKinPhone: options.nextOfKinPhone || kyc.nextOfKinPhone,
+        };
+
+        if (options.cacImageFile) {
+            kycUpdateData.cacDocumentUrl = await this.uploadKycImage(
+                options.cacImageFile
+            );
+        }
+
+        if (options.identificationMeansImageFile) {
+            kycUpdateData.identificationMeansDocumentUrl =
+                await this.uploadKycImage(options.identificationMeansImageFile);
+        }
+
+        await this.prisma.$transaction(async (tx) => {
+            await tx.kycInformation.update({
+                where: { id: kyc.id },
+                data: kycUpdateData,
+            });
+
+            await tx.user.update({
+                where: {
+                    id: user.id,
+                },
+                data: {
+                    kycStatus: KYC_STATUS.PENDING,
+                    merchantUpgradeStatus: MerchantUpgradeStatus.PENDING,
+                },
+            });
+        });
+
+        return buildResponse({
+            message: "KYC successfully updated and submitted for approval",
         });
     }
 }

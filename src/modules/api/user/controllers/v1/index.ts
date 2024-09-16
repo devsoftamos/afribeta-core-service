@@ -3,6 +3,9 @@ import { AuthGuard, EnabledAccountGuard } from "@/modules/api/auth/guard";
 import {
     CreateKYCAbility,
     CreateSubAgentAbility,
+    ReadKycAbility,
+    UpdateKycAbility,
+    ViewOwnKycAbility,
     ViewSubAgentAbility,
 } from "@/modules/core/ability";
 import { CheckAbilities } from "@/modules/core/ability/decorator";
@@ -36,6 +39,7 @@ import {
     VerifyTransactionPinDto,
     CountAgentsCreatedDto,
     EditAgentDto,
+    UpdateKycDto,
 } from "../../dtos";
 import { UserService } from "../../services";
 
@@ -171,5 +175,22 @@ export class UserController {
     @Get("delete-account")
     async deleteUser() {
         return this.userService.deleteFake();
+    }
+
+    @Patch("kyc")
+    @UseGuards(AuthGuard, EnabledAccountGuard, AbilitiesGuard)
+    @CheckAbilities(new UpdateKycAbility())
+    async updateKyc(
+        @Body(ValidationPipe) kycDto: UpdateKycDto,
+        @User() user: UserModel
+    ) {
+        return await this.userService.updateKyc(kycDto, user);
+    }
+
+    @Get("kyc")
+    @UseGuards(AuthGuard, EnabledAccountGuard, AbilitiesGuard)
+    @CheckAbilities(new ViewOwnKycAbility())
+    async getKyc(@User() user: UserModel) {
+        return await this.userService.getKyc(user);
     }
 }
