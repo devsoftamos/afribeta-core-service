@@ -43,7 +43,7 @@ export const generateId = (options: TransactionIdOption): string => {
             break;
     }
 };
-
+//
 export const formatName = (name: string) => {
     const formatted = name.trim().toLowerCase();
     return `${formatted.charAt(0).toUpperCase()}${formatted.slice(1)}`;
