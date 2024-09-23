@@ -52,6 +52,7 @@ const runtimeEnvironment: RequiredEnvironment[] = [
         type: RequiredEnvironmentTypes.String,
     },
 
+    //email template
     {
         name: "VERIFY_EMAIL_TEMPLATE",
         type: RequiredEnvironmentTypes.Number,
@@ -60,6 +61,20 @@ const runtimeEnvironment: RequiredEnvironment[] = [
         name: "PASSWORD_RESET_TEMPLATE",
         type: RequiredEnvironmentTypes.Number,
     },
+    {
+        name: "DECLINE_MERCHANT_UPGRADE",
+        type: RequiredEnvironmentTypes.Number,
+    },
+    {
+        name: "AGENT_POST_ACCOUNT_CREATE_TEMPLATE",
+        type: RequiredEnvironmentTypes.Number,
+    },
+    {
+        name: "AGENT_VERIFY_EMAIL_TEMPLATE",
+        type: RequiredEnvironmentTypes.Number,
+    },
+
+    //paystack
     {
         name: "PAYSTACK_SECRET_KEY",
         type: RequiredEnvironmentTypes.String,
@@ -98,14 +113,6 @@ const runtimeEnvironment: RequiredEnvironment[] = [
     },
     {
         name: "PAYSTACK_VIRTUAL_ACCOUNT_BANK",
-        type: RequiredEnvironmentTypes.String,
-    },
-    {
-        name: "AGENT_POST_ACCOUNT_CREATE_TEMPLATE",
-        type: RequiredEnvironmentTypes.String,
-    },
-    {
-        name: "AGENT_VERIFY_EMAIL_TEMPLATE",
         type: RequiredEnvironmentTypes.String,
     },
 
@@ -336,6 +343,8 @@ export const agentVerifyEmailTemplate: number =
     +process.env.AGENT_VERIFY_EMAIL_TEMPLATE;
 export const agentPostAccountCreateTemplate: number =
     +process.env.AGENT_POST_ACCOUNT_CREATE_TEMPLATE;
+export const declineMerchantUpgradeTemplate: number =
+    +process.env.DECLINE_MERCHANT_UPGRADE;
 
 //payment
 export const paystackSecretKey: string = process.env.PAYSTACK_SECRET_KEY;

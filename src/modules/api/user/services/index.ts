@@ -2,6 +2,7 @@ import {
     AGENT_MD_METER_COMMISSION_CAP_AMOUNT,
     agentPostAccountCreateTemplate,
     DB_TRANSACTION_TIMEOUT,
+    declineMerchantUpgradeTemplate,
     storageDirConfig,
 } from "@/config";
 import { EmailService } from "@/modules/core/email/services";
@@ -1015,7 +1016,7 @@ export class UserService {
     }
 
     async declineAgentUpgradeHandler(agentId: number) {
-        await this.prisma.user.update({
+        const updatedUser = await this.prisma.user.update({
             where: {
                 id: agentId,
             },
@@ -1023,7 +1024,23 @@ export class UserService {
                 merchantUpgradeStatus: MerchantUpgradeStatus.DECLINED,
                 kycStatus: KYC_STATUS.DECLINED,
             },
+            select: {
+                email: true,
+                firstName: true,
+            },
         });
+
+        await this.emailService
+            .send({
+                to: { email: updatedUser.email },
+                subject: "Merchant Upgrade Request Declined",
+                provider: "sendinblue",
+                templateId: declineMerchantUpgradeTemplate,
+                params: {
+                    firstName: updatedUser.firstName,
+                },
+            })
+            .catch(() => false);
     }
 
     async getAllMerchants(options: FetchAllMerchantsDto) {
