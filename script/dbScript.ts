@@ -10,7 +10,7 @@ const readCSVFile = async () => {
     return new Promise((resolve, reject) => {
         const results: any = [];
         createReadStream(
-            path.resolve(__dirname, "../script/files/merchant3333333333.csv")
+            path.resolve(__dirname, "../script/files/merchant.csv")
         )
             .pipe(csv.parse({ headers: true }))
             .on("error", (error) => reject(error))
@@ -105,7 +105,7 @@ const updateWalletBalances = async (prisma: PrismaService) => {
                                 amount: mainBal,
                                 userId: wallet.userId,
                                 description:
-                                    "Wallet credited from old platform balance of July 27, 2024 Batch B",
+                                    "Wallet credited from old platform balance of July 27, 2024 Batch C",
                                 flow: "IN",
                                 paymentChannel: "MANUAL",
                                 paymentStatus: "SUCCESS",
@@ -124,7 +124,7 @@ const updateWalletBalances = async (prisma: PrismaService) => {
                                 amount: commBal,
                                 userId: wallet.userId,
                                 description:
-                                    "Commission credited from old platform balance of July 27, 2024 Batch B",
+                                    "Commission credited from old platform balance of July 27, 2024 Batch C",
                                 flow: "IN",
                                 paymentChannel: "MANUAL",
                                 paymentStatus: "SUCCESS",

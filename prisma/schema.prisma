@@ -400,6 +400,7 @@ model Transaction {
   meterCost                    Float?
   tariffName                   String?
   address                      String?                    @db.Text
+  meterAccountName             String?
   //
 
   createdAt    DateTime      @default(now())

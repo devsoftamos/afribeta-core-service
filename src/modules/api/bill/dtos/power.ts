@@ -59,6 +59,12 @@ export class PurchasePowerDto {
     @IsOptional()
     @IsEnum(MeterAccountType)
     meterAccountType: MeterAccountType;
+
+    @IsString()
+    meterAccountName: string;
+
+    @IsString()
+    meterAccountAddress;
 }
 
 export class GetMeterInfoDto {

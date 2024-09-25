@@ -43,3 +43,7 @@ export class AccountDeletedException extends HttpException {
 export class AccountActivateAndDeactivateException extends HttpException {
     name = "AccountActivateAndDeactivateException";
 }
+
+export class KycNotFoundException extends HttpException {
+    name = "KycNotFoundException";
+}

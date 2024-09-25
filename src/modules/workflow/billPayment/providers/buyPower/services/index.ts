@@ -179,12 +179,6 @@ export class BuyPowerWorkflowService implements BillPaymentWorkflow {
 
     async vendPower(options: VendPowerOptions): Promise<VendPowerResponse> {
         try {
-            const meter = await this.getMeterInfo({
-                meterNumber: options.meterNumber,
-                meterType: options.meterType,
-                discoCode: options.discoCode,
-            });
-
             const resp = await this.buyPower.vendPower({
                 amount: options.amount,
                 disco: options.discoCode as IBuyPower.Power.Disco,
@@ -200,7 +194,6 @@ export class BuyPowerWorkflowService implements BillPaymentWorkflow {
                 units: resp.data.units,
                 demandCategory: resp.data.demandCategory,
                 receiptNO: resp.data.receiptNo.toString(),
-                address: meter.customer.address,
             };
         } catch (error) {
             logger.error(error);

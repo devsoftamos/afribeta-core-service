@@ -53,7 +53,6 @@ export interface VendPowerResponse {
     receiptNO: string;
     purchaseDate?: Date;
     walletBalance?: number;
-    //
     sgc?: string;
     outstandingDebt?: number;
     vat?: number;
@@ -71,7 +70,6 @@ export interface VendPowerResponse {
     currentCharge?: number;
     meterCost?: number;
     tariffName?: string;
-    address: string;
 }
 
 export enum NetworkDataProvider {

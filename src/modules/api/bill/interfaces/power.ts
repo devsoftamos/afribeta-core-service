@@ -73,6 +73,7 @@ export interface VerifyPowerPurchaseData {
         token: string;
         units: string;
         address: string;
+        name: string;
     };
     ikejaElectric?: IkejaElectricExtraPayload;
 }

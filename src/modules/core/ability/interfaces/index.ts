@@ -43,6 +43,8 @@ export enum Action {
     CreateBankAccount = "bank_account.create", //Add bank account details
     ReadBankAccount = "bank_account.read", //View own bank account details
     CreateKYC = "kyc.create",
+    UpdateKyc = "kyc.update",
+    ViewOwnKyc = "kyc.own.view",
 
     //admin
     ReadReport = "report.read",

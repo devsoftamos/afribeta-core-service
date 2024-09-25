@@ -17,6 +17,9 @@ import {
     AdminTransactionHistoryDto,
     CustomerTransactionHistoryDto,
     FetchRecommendedPayoutDto,
+    GeneralReportDownloadDto,
+    IkejaElectricReportDownloadDto,
+    IkejaElectricReportDto,
     MerchantTransactionHistoryDto,
     PayoutStatus,
     QueryTransactionStatus,
@@ -34,10 +37,29 @@ import {
     InvalidTransactionVerificationProvider,
     TransactionNotFoundException,
 } from "../errors";
-import { endOfMonth, startOfMonth } from "date-fns";
-import { TransactionDetailResponse } from "../interfaces";
-import { BillProviderSlugForPower } from "../../bill/interfaces";
+import {
+    endOfDay,
+    endOfMonth,
+    format,
+    startOfDay,
+    startOfMonth,
+} from "date-fns";
+import {
+    GeneralReportCSVField,
+    GeneralReportDownload,
+    IkejaElectricCSVField,
+    IkejaElectricReport,
+    IkejaElectricReportDownload,
+    ReportDownloadTransactionType,
+    TransactionDetailResponse,
+} from "../interfaces";
+import {
+    BillProviderSlugForPower,
+    BillServiceSlug,
+    MeterType,
+} from "../../bill/interfaces";
 import { ikejaElectricContact } from "@/config";
+import { createObjectCsvStringifier } from "csv-writer";
 
 @Injectable()
 export class TransactionService {
@@ -1096,6 +1118,8 @@ export class TransactionService {
                 address: true,
                 user: {
                     select: {
+                        firstName: true,
+                        lastName: true,
                         email: true,
                         wallet: {
                             select: {
@@ -1126,6 +1150,7 @@ export class TransactionService {
                 currentCharge: true,
                 meterCost: true,
                 tariffName: true,
+                meterAccountName: true,
                 billProvider: {
                     select: {
                         slug: true,
@@ -1194,10 +1219,11 @@ export class TransactionService {
                     date: transaction.updatedAt,
                     status: transaction.status,
                     product: transaction.packageType,
-                    //
+                    name: `${transaction.user?.firstName} ${transaction.user?.lastName}`,
                     email: transaction.user.email,
                     icon: transaction.billService.icon,
                     address: transaction.address,
+                    beneficiaryName: transaction.meterAccountName,
                     ikejaElectric: transaction.billProvider.slug ===
                         BillProviderSlugForPower.IKEJA_ELECTRIC && {
                         sgc: transaction.sgc,
@@ -1443,5 +1469,374 @@ export class TransactionService {
             message: "Customer transaction history successfully retrieved",
             data: result,
         });
+    }
+
+    async getIkejaElectricReportDto(
+        options: IkejaElectricReportDto
+    ): Promise<ApiResponse<IkejaElectricReport[]>> {
+        const meta: Partial<PaginationMeta> = {};
+        const queryOptions: Prisma.TransactionFindManyArgs = {
+            orderBy: { createdAt: "desc" },
+            where: {
+                billServiceSlug: BillServiceSlug.IKEJA_ELECTRIC,
+            },
+            select: {
+                id: true,
+                transactionId: true,
+                paymentStatus: true,
+                status: true,
+                amount: true,
+                commission: true,
+                merchantCommission: true,
+                meterType: true,
+                billService: {
+                    select: {
+                        name: true,
+                    },
+                },
+                user: {
+                    select: {
+                        firstName: true,
+                        lastName: true,
+                        creator: {
+                            select: {
+                                firstName: true,
+                                lastName: true,
+                            },
+                        },
+                    },
+                },
+                meterAccountName: true,
+                senderIdentifier: true,
+                meterAccountType: true,
+                updatedAt: true,
+            },
+        };
+
+        if (options.searchName) {
+            queryOptions.where = {
+                ...queryOptions.where,
+                OR: [
+                    {
+                        senderIdentifier: options.searchName,
+                    },
+                    { transactionId: options.searchName },
+                ],
+            };
+        }
+
+        if (options.pagination) {
+            const page = +options.page || 1;
+            const limit = +options.limit || 10;
+            const offset = (page - 1) * limit;
+            queryOptions.skip = offset;
+            queryOptions.take = limit;
+            const count = await this.prisma.transaction.count({
+                where: queryOptions.where,
+            });
+            meta.totalCount = count;
+            meta.perPage = limit;
+            meta.page = page;
+        }
+
+        const transactions = await this.prisma.transaction.findMany(
+            queryOptions
+        );
+
+        const data: IkejaElectricReport[] = transactions.map((t: any) => {
+            let agentName = `${t.user?.firstName} ${t.user?.lastName}`;
+            if (t.user.creator) {
+                agentName = `${t.user?.creator?.firstName} ${t.user?.creator?.lastName}`;
+            }
+
+            return {
+                id: t.id,
+                transactionId: t.transactionId,
+                amount: t.amount,
+                commission: t.commission + t.merchantCommission,
+                transactionStatus: t.status,
+                paymentStatus: t.paymentStatus,
+                agentName: agentName,
+                customerName: t.meterAccountName,
+                demandType: t.meterAccountType,
+                meterNumber: t.senderIdentifier,
+                meterType: t.meterType,
+                productName: t.billService?.name,
+                date: t.updatedAt,
+            };
+        });
+
+        return buildResponse({
+            message: "transactions successfully retrieved",
+            data: data,
+        });
+    }
+
+    async downloadIkejaElectricReport(options: IkejaElectricReportDownloadDto) {
+        const startDate = startOfDay(new Date(options.startDate));
+        const endDate = endOfDay(new Date(options.endDate));
+
+        const transactions = await this.prisma.transaction.findMany({
+            orderBy: { createdAt: "desc" },
+            where: {
+                status: TransactionStatus.SUCCESS,
+                billServiceSlug: BillServiceSlug.IKEJA_ELECTRIC,
+                updatedAt: {
+                    gte: startDate,
+                    lte: endDate,
+                },
+            },
+            select: {
+                id: true,
+                transactionId: true,
+                paymentStatus: true,
+                status: true,
+                amount: true,
+                commission: true,
+                meterType: true,
+                billService: {
+                    select: {
+                        name: true,
+                    },
+                },
+                user: {
+                    select: {
+                        firstName: true,
+                        lastName: true,
+                        email: true,
+                        creator: {
+                            select: {
+                                firstName: true,
+                                lastName: true,
+                                email: true,
+                            },
+                        },
+                    },
+                },
+                meterAccountName: true,
+                senderIdentifier: true,
+                meterAccountType: true,
+                updatedAt: true,
+                address: true,
+                billPaymentReceiptNO: true,
+            },
+        });
+
+        const data: IkejaElectricReportDownload[] = transactions.map((t) => {
+            let agentName = `${t.user?.firstName} ${t.user?.lastName}`;
+            let agentEmail = t.user?.email;
+
+            if (t.user.creator) {
+                agentName = `${t.user?.creator?.firstName} ${t.user?.creator?.lastName}`;
+                agentEmail = t.user?.creator?.email;
+            }
+            return {
+                transactionId: t.transactionId,
+                productName: t.billService.name,
+                amount: t.amount,
+                commission: t.commission,
+                transactionStatus: t.status,
+                paymentStatus: t.paymentStatus,
+                meterNumber: t.senderIdentifier,
+                meterType: t.meterType as MeterType,
+                demandType: t.meterAccountType,
+                agentName: agentName,
+                agentEmail: agentEmail,
+                receiptNo: t.billPaymentReceiptNO,
+                customerName: t.meterAccountName || "N/A",
+                customerAddress: t.address || "N/A",
+                date: format(t.updatedAt, "yyyy-MM-dd HH:mm:ss"),
+            };
+        });
+
+        return this.generateIkejaElectricCsv(data);
+    }
+
+    private generateIkejaElectricCsv(dbData: IkejaElectricReportDownload[]) {
+        const csvHeader: IkejaElectricCSVField[] = [
+            { id: "transactionId", title: "Transaction ID" },
+            { id: "productName", title: "Product" },
+            { id: "amount", title: "Amount" },
+            { id: "commission", title: "Commission" },
+            { id: "transactionStatus", title: "Transaction Status" },
+            { id: "paymentStatus", title: "Payment Status" },
+            { id: "meterNumber", title: "Account/Meter Number" },
+            { id: "meterType", title: "Meter Type" },
+            { id: "demandType", title: "Demand Type" },
+            { id: "agentName", title: "Agent Name" },
+            { id: "agentEmail", title: "Agent Email" },
+            { id: "receiptNo", title: "Receipt No" },
+            { id: "customerName", title: "Customer Name" },
+            { id: "customerAddress", title: "Customer Address" },
+            { id: "date", title: "Date" },
+        ];
+
+        const csvStringifier = createObjectCsvStringifier({
+            header: csvHeader,
+        });
+
+        return (
+            csvStringifier.getHeaderString() +
+            csvStringifier.stringifyRecords(dbData)
+        );
+    }
+
+    private buildGeneralReportCsv(dbData: GeneralReportDownload[]) {
+        const csvHeader: GeneralReportCSVField[] = [
+            { id: "transactionId", title: "Transaction ID" },
+            { id: "transactionType", title: "Transaction Type" },
+            { id: "productName", title: "Product" },
+            { id: "amount", title: "Amount" },
+            { id: "commission", title: "Commission" },
+            { id: "afribCommission", title: "Afrib Commission" },
+            { id: "transactionStatus", title: "Transaction Status" },
+            { id: "paymentStatus", title: "Payment Status" },
+            { id: "serviceCharge", title: "Service Charge" },
+            { id: "name", title: "User Name" },
+            { id: "email", title: "User Email" },
+            { id: "userType", title: "User Type" },
+            { id: "paymentChannel", title: "Payment Channel" },
+            { id: "date", title: "Date" },
+        ];
+
+        const csvStringifier = createObjectCsvStringifier({
+            header: csvHeader,
+        });
+
+        return (
+            csvStringifier.getHeaderString() +
+            csvStringifier.stringifyRecords(dbData)
+        );
+    }
+
+    async downloadGeneralReport(options: GeneralReportDownloadDto) {
+        const startDate = startOfDay(new Date(options.startDate));
+        const endDate = endOfDay(new Date(options.endDate));
+
+        const transactions = await this.prisma.transaction.findMany({
+            orderBy: { createdAt: "desc" },
+            where: {
+                updatedAt: {
+                    gte: startDate,
+                    lte: endDate,
+                },
+                OR: [
+                    {
+                        walletFundTransactionFlow: null,
+                    },
+                    {
+                        walletFundTransactionFlow: {
+                            notIn: [
+                                WalletFundTransactionFlow.TO_BENEFICIARY,
+                                WalletFundTransactionFlow.TO_AGENT,
+                            ], //from benefactor and from merchant already cover this
+                        },
+                    },
+                ],
+            },
+            select: {
+                id: true,
+                transactionId: true,
+                paymentStatus: true,
+                status: true,
+                amount: true,
+                commission: true,
+                serviceCharge: true,
+                companyCommission: true,
+                paymentChannel: true,
+                walletFundTransactionFlow: true,
+                merchantCommission: true,
+                billService: {
+                    select: {
+                        name: true,
+                    },
+                },
+                user: {
+                    select: {
+                        firstName: true,
+                        lastName: true,
+                        email: true,
+                        userType: true,
+                        creator: {
+                            select: {
+                                firstName: true,
+                                lastName: true,
+                                email: true,
+                                userType: true,
+                            },
+                        },
+                    },
+                },
+                type: true,
+                updatedAt: true,
+                address: true,
+            },
+        });
+
+        const data: GeneralReportDownload[] = transactions.map((t) => {
+            let name = `${t.user?.firstName} ${t.user?.lastName}`;
+            let email = t.user?.email;
+            let userType = t.user.userType;
+            let type: ReportDownloadTransactionType = t.type;
+
+            if (t.user.creator) {
+                name = `${t.user?.creator?.firstName} ${t.user?.creator?.lastName}`;
+                email = t.user?.creator?.email;
+                userType = t.user?.creator?.userType;
+            }
+
+            if (t.type == TransactionType.WALLET_FUND) {
+                switch (t.walletFundTransactionFlow) {
+                    case WalletFundTransactionFlow.COMMISSION_BALANCE_TO_MAIN_BALANCE: {
+                        type = "WALLET_COMMISSION_TRANSFER";
+                        break;
+                    }
+                    case WalletFundTransactionFlow.FROM_BENEFACTOR: {
+                        type = "INTRA_WALLET_TRANSFER";
+                        break;
+                    }
+
+                    case WalletFundTransactionFlow.FROM_FAILED_TRANSACTION: {
+                        type = "REFUND_DEPOSIT";
+                        break;
+                    }
+                    case WalletFundTransactionFlow.FROM_MERCHANT: {
+                        type = "INTRA_WALLET_TRANSFER";
+                        break;
+                    }
+                    case WalletFundTransactionFlow.FROM_PAID_COMMISSION: {
+                        type = "COMMISSION_DEPOSIT";
+                        break;
+                    }
+                    case WalletFundTransactionFlow.SELF_FUND: {
+                        type = "WALLET_FUND_BANK_DEPOSIT";
+                        break;
+                    }
+                }
+            }
+
+            if (t.type == TransactionType.TRANSFER_FUND) {
+                type = "WALLET_WITHDRAWAL";
+            }
+            const data: GeneralReportDownload = {
+                transactionId: t.transactionId,
+                productName: t.billService?.name || "N/A",
+                amount: t.amount,
+                commission: t.commission + t.merchantCommission,
+                transactionStatus: t.status,
+                paymentStatus: t.paymentStatus,
+                userType: userType,
+                transactionType: type,
+                serviceCharge: t.serviceCharge,
+                name: name,
+                email: email,
+                afribCommission: t.companyCommission,
+                paymentChannel: t.paymentChannel || ("N/A" as any),
+                date: format(t.updatedAt, "yyyy-MM-dd HH:mm:ss"),
+            };
+            return data;
+        });
+
+        return this.buildGeneralReportCsv(data);
     }
 }

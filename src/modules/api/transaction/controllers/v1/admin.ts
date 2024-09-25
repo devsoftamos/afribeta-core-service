@@ -10,12 +10,17 @@ import {
     UseGuards,
     ValidationPipe,
     ParseIntPipe,
+    HttpCode,
+    HttpStatus,
 } from "@nestjs/common";
 import { TransactionService } from "../../services";
 import {
     AdminTransactionHistoryDto,
     CustomerTransactionHistoryDto,
     FetchRecommendedPayoutDto,
+    GeneralReportDownloadDto,
+    IkejaElectricReportDownloadDto,
+    IkejaElectricReportDto,
     MerchantTransactionHistoryDto,
     TransactionHistoryDto,
     UpdatePayoutStatusDto,
@@ -25,6 +30,7 @@ import {
 import { AbilitiesGuard } from "@/modules/core/ability/guards";
 import { CheckAbilities } from "@/modules/core/ability/decorator";
 import * as Ability from "@/modules/core/ability";
+import { CsvHeaders } from "@/utils/decorators";
 
 @UseGuards(AuthGuard)
 @Controller({
@@ -172,5 +178,34 @@ export class AdminTransactionController {
             id,
             userTransactionHistoryDto
         );
+    }
+
+    @Get("/report/ikeja-electric")
+    @UseGuards(AbilitiesGuard)
+    @CheckAbilities(new Ability.ReadTransactionAbility())
+    async getIkejaElectricReportDto(@Query() queryDto: IkejaElectricReportDto) {
+        return await this.transactionService.getIkejaElectricReportDto(
+            queryDto
+        );
+    }
+
+    @UseGuards(AbilitiesGuard)
+    @CheckAbilities(new Ability.ReadTransactionAbility())
+    @HttpCode(HttpStatus.OK)
+    @CsvHeaders("non_api_agent_ikeja_electric_report.csv")
+    @Post("/report/download/ikeja-electric")
+    async downloadIkejaElectricReport(
+        @Body() dto: IkejaElectricReportDownloadDto
+    ) {
+        return await this.transactionService.downloadIkejaElectricReport(dto);
+    }
+
+    @UseGuards(AbilitiesGuard)
+    @CheckAbilities(new Ability.ReadTransactionAbility())
+    @HttpCode(HttpStatus.OK)
+    @CsvHeaders("non_api_general_report.csv")
+    @Post("/report/download/general")
+    async downloadGeneralReport(@Body() dto: GeneralReportDownloadDto) {
+        return await this.transactionService.downloadGeneralReport(dto);
     }
 }

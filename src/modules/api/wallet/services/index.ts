@@ -226,7 +226,7 @@ export class WalletService {
 
         return buildResponse({
             message:
-                "Your wallet would be created shortly after verifying your BVN",
+                "Your wallet would be created shortly after verifying your KYC",
         });
     }
 

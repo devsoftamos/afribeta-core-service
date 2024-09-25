@@ -49,9 +49,11 @@ export class AbilityFactory {
         can(Action.PayoutRequest, "User");
         can(Action.ReadBankAccount, "BankAccount");
         can(Action.CreateBankAccount, "BankAccount");
-        can(Action.CreateKYC, "User");
+        can(Action.CreateKYC, "KycInformation");
         can(Action.UpdateSubAgent, "User");
         can(Action.DeleteSubAgent, "User");
+        can(Action.UpdateKyc, "KycInformation");
+        can(Action.ViewOwnKyc, "KycInformation");
 
         //admin
         can(Action.AccountActivationAndDeactivation, "User");
@@ -73,8 +75,8 @@ export class AbilityFactory {
         can(Action.CreateAdmin, "User");
         can(Action.ReadCommission, "BillService");
         can(Action.UpdateCommission, "BillService");
-        can(Action.ReadKyc, "KycInformation");
         can(Action.AdminActivationAndDeactivation, "User");
+        can(Action.ReadKyc, "KycInformation");
 
         //merchant only
         if (role.slug !== RoleSlug.MERCHANT) {
@@ -116,6 +118,9 @@ export class AbilityFactory {
             cannot(Action.CreateBankAccount, "BankAccount").because(
                 "Your account type does not have sufficient permission to create bank account"
             );
+            cannot(Action.ViewOwnKyc, "KycInformation").because(
+                "Insufficient permission to view KYC Information"
+            );
         }
 
         //sub agent
@@ -127,8 +132,11 @@ export class AbilityFactory {
 
         //agent
         if (role.slug !== RoleSlug.AGENT) {
-            cannot(Action.CreateKYC, "User").because(
+            cannot(Action.CreateKYC, "KycInformation").because(
                 "Your account type does not have sufficient permission to add KYC"
+            );
+            cannot(Action.UpdateKyc, "KycInformation").because(
+                "Your account type does not have sufficient permission to update KYC"
             );
         }
 

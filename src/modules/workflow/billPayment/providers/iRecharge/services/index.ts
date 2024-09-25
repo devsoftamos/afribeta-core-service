@@ -236,7 +236,6 @@ export class IRechargeWorkflowService implements BillPaymentWorkflow {
                 meterToken: vendPowerResp.meter_token,
                 units: vendPowerResp.units,
                 receiptNO: vendPowerResp.ref,
-                address: vendPowerResp.address,
             };
         } catch (error) {
             logger.error(error);

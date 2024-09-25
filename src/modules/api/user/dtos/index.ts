@@ -307,3 +307,45 @@ export class EnableOrDisableUserDto {
     @IsEnum(EnableOrDisableUserEnum)
     actionType: EnableOrDisableUserEnum;
 }
+
+export class UpdateKycDto {
+    @IsOptional()
+    @IsString()
+    address: string;
+
+    @IsString()
+    nextOfKinName: string;
+
+    @IsOptional()
+    @IsPhoneNumber("NG")
+    @Length(11, 11, {
+        message: "Next of Kin Phone number must be valid containing 11 digits",
+    })
+    nextOfKinPhone: string;
+
+    @IsOptional()
+    @IsString()
+    nextOfKinAddress: string;
+
+    @IsOptional()
+    @IsString()
+    cacNumber: string;
+
+    @IsOptional()
+    @IsNotEmpty()
+    @IsBase64({
+        message: "CAC image file must be a valid base64 plain text",
+    })
+    cacImageFile: string;
+
+    @IsOptional()
+    @IsEnum(IdentificationMeans)
+    identificationMeans: IdentificationMeans;
+
+    @IsOptional()
+    @IsNotEmpty()
+    @IsBase64({
+        message: "Identification image file must be a valid base64 plain text",
+    })
+    identificationMeansImageFile: string;
+}

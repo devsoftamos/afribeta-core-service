@@ -53,7 +53,7 @@ export class ReadBankAccountAbility implements RequiredRule {
 
 export class CreateKYCAbility implements RequiredRule {
     action: Action = Action.CreateKYC;
-    subject: Subjects = "User";
+    subject: Subjects = "KycInformation";
 }
 
 //***************** admin ***************************
@@ -161,4 +161,14 @@ export class ReadReportAbility implements RequiredRule {
 export class AdminActivationAndDeactivationAbility implements RequiredRule {
     action: Action = Action.AdminActivationAndDeactivation;
     subject: Subjects = "User";
+}
+
+export class ViewOwnKycAbility implements RequiredRule {
+    action: Action = Action.ViewOwnKyc;
+    subject: Subjects = "KycInformation";
+}
+
+export class UpdateKycAbility implements RequiredRule {
+    action: Action = Action.UpdateKyc;
+    subject: Subjects = "KycInformation";
 }
