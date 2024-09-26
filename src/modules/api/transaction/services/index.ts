@@ -23,6 +23,7 @@ import {
     MerchantTransactionHistoryDto,
     PayoutStatus,
     QueryTransactionStatus,
+    QueryTransactionType,
     TransactionHistoryDto,
     TransactionHistoryWithFiltersDto,
     TransactionReportType,
@@ -730,9 +731,6 @@ export class TransactionService {
     async getAllTransactions(options: AdminTransactionHistoryDto) {
         const paginationMeta: Partial<PaginationMeta> = {};
 
-        const startDate = startOfMonth(new Date(options.date));
-        const endDate = endOfMonth(new Date(options.date));
-
         const queryOptions: Prisma.TransactionFindManyArgs = {
             orderBy: { createdAt: "desc" },
             where: {
@@ -773,7 +771,9 @@ export class TransactionService {
                     search: options.searchName,
                 });
         }
-        if (options.date) {
+        if (options.startDate && options.endDate) {
+            const startDate = new Date(options.startDate);
+            const endDate = new Date(options.endDate);
             queryOptions.where.createdAt = { gte: startDate, lte: endDate };
         }
 
@@ -794,6 +794,66 @@ export class TransactionService {
                 }
                 case QueryTransactionStatus.REFUNDED: {
                     queryOptions.where.paymentStatus = PaymentStatus.REFUNDED;
+                    break;
+                }
+
+                default:
+                    break;
+            }
+        }
+
+        if (options.type) {
+            switch (options.type) {
+                case QueryTransactionType.AIRTIME_PURCHASE: {
+                    queryOptions.where.type = TransactionType.AIRTIME_PURCHASE;
+                    break;
+                }
+
+                case QueryTransactionType.DATA_PURCHASE: {
+                    queryOptions.where.type = TransactionType.DATA_PURCHASE;
+
+                    break;
+                }
+
+                case QueryTransactionType.INTERNET_BILL: {
+                    queryOptions.where.type = TransactionType.INTERNET_BILL;
+                    break;
+                }
+
+                case QueryTransactionType.ELECTRICITY_BILL: {
+                    queryOptions.where.type = TransactionType.ELECTRICITY_BILL;
+                    break;
+                }
+
+                case QueryTransactionType.CABLETV_BILL: {
+                    queryOptions.where.type = TransactionType.CABLETV_BILL;
+
+                    break;
+                }
+                case QueryTransactionType.TRANSFER_FUND: {
+                    queryOptions.where.type = TransactionType.TRANSFER_FUND;
+                    break;
+                }
+                case QueryTransactionType.PAYOUT: {
+                    queryOptions.where.type = TransactionType.PAYOUT;
+
+                    break;
+                }
+                case QueryTransactionType.WALLET_FUND: {
+                    queryOptions.where.type = TransactionType.WALLET_FUND;
+
+                    break;
+                }
+
+                case QueryTransactionType.COMMISSION: {
+                    queryOptions.where.type = TransactionType.WALLET_FUND;
+                    const { OR, ...rest } = queryOptions.where;
+                    queryOptions.where = {
+                        ...rest,
+                        walletFundTransactionFlow:
+                            WalletFundTransactionFlow.FROM_PAID_COMMISSION,
+                    };
+
                     break;
                 }
 
