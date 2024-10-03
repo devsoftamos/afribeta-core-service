@@ -61,6 +61,7 @@ import {
 } from "../../bill/interfaces";
 import { ikejaElectricContact } from "@/config";
 import { createObjectCsvStringifier } from "csv-writer";
+import { MetadataScanner } from "@nestjs/core";
 
 @Injectable()
 export class TransactionService {
@@ -383,7 +384,7 @@ export class TransactionService {
         });
     }
 
-    async payoutRequests(options: ViewPayoutStatusDto) {
+    async getPayouts(options: ViewPayoutStatusDto) {
         const paginationMeta: Partial<PaginationMeta> = {};
 
         const queryOptions: Prisma.TransactionFindManyArgs = {
@@ -401,8 +402,7 @@ export class TransactionService {
                 },
                 id: true,
                 amount: true,
-                status: true,
-                paymentReference: true,
+                transactionId: true,
                 isPayoutRecommended: true,
             },
         };
@@ -419,9 +419,11 @@ export class TransactionService {
                 break;
             }
 
-            default: {
+            case PayoutStatus.REQUEST: {
+                //fresh request
                 queryOptions.where.isPayoutRecommended = false;
                 queryOptions.where.status = TransactionStatus.PENDING;
+                break;
             }
         }
 
@@ -436,6 +438,7 @@ export class TransactionService {
             });
             paginationMeta.totalCount = count;
             paginationMeta.perPage = limit;
+            paginationMeta.page = page;
         }
 
         const transactions = await this.prisma.transaction.findMany(
@@ -500,6 +503,7 @@ export class TransactionService {
                     },
                     data: {
                         status: UpdatePayoutStatus.APPROVED,
+                        paymentStatus: PaymentStatus.SUCCESS,
                     },
                 });
                 break;
@@ -540,7 +544,7 @@ export class TransactionService {
                     },
                 },
                 totalAmount: true,
-                paymentStatus: true,
+                status: true,
                 isPayoutRecommended: true,
             },
         });

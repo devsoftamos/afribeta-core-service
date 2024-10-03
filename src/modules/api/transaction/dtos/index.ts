@@ -21,6 +21,7 @@ export enum UpdatePayoutStatus {
 export enum PayoutStatus {
     APPROVED = "APPROVED",
     PENDING = "PENDING",
+    REQUEST = "REQUEST",
 }
 
 export enum BillPayment {
@@ -186,7 +187,6 @@ export class ViewPayoutStatusDto {
     @IsNumberString()
     limit: string;
 
-    @IsOptional()
     @IsEnum(PayoutStatus)
     status: PayoutStatus;
 }

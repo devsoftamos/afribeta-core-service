@@ -57,9 +57,7 @@ export class AdminTransactionController {
     async viewPayoutRequests(
         @Query(ValidationPipe) viewPayoutStatusDto: ViewPayoutStatusDto
     ) {
-        return await this.transactionService.payoutRequests(
-            viewPayoutStatusDto
-        );
+        return await this.transactionService.getPayouts(viewPayoutStatusDto);
     }
 
     @Patch("payout/authorize")
