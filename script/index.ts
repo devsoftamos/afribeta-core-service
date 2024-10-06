@@ -1,7 +1,7 @@
 import logger from "moment-logger";
 import { PrismaService } from "./db";
 import dbScript from "./dbScript";
-import { exportCommission, exportMerchantBalance } from "./createCsv";
+//import { exportCommission, exportMerchantBalance } from "./createCsv";
 
 async function run() {
     try {

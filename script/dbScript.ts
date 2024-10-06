@@ -3,7 +3,7 @@ import { PrismaService } from "./db";
 import * as csv from "fast-csv";
 import * as path from "path";
 import { customAlphabet } from "nanoid";
-import { PaymentStatus, Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 
 const readCSVFile = async () => {
     console.log(__dirname);
@@ -57,6 +57,10 @@ const readAgentCSVFile = async () => {
     >;
 };
 
+export default async function dbScript(prisma: PrismaService) {
+    await updateWalletBalances(prisma);
+}
+
 //update wallet balances script
 const updateWalletBalances = async (prisma: PrismaService) => {
     const wu: string[] = [];
@@ -65,7 +69,6 @@ const updateWalletBalances = async (prisma: PrismaService) => {
         const userBalances = readData.filter(
             (d) => +d.mainBalance || +d.commissionBalance
         );
-        //console.log(userBalances);
         for (const b of userBalances) {
             const wallet = await prisma.wallet.findFirst({
                 where: {
@@ -105,7 +108,7 @@ const updateWalletBalances = async (prisma: PrismaService) => {
                                 amount: mainBal,
                                 userId: wallet.userId,
                                 description:
-                                    "Wallet credited from old platform balance of July 27, 2024 Batch C",
+                                    "Wallet credited from old platform balance of July 27, 2024 Batch D",
                                 flow: "IN",
                                 paymentChannel: "MANUAL",
                                 paymentStatus: "SUCCESS",
@@ -124,7 +127,7 @@ const updateWalletBalances = async (prisma: PrismaService) => {
                                 amount: commBal,
                                 userId: wallet.userId,
                                 description:
-                                    "Commission credited from old platform balance of July 27, 2024 Batch C",
+                                    "Commission credited from old platform balance of July 27, 2024 Batch D",
                                 flow: "IN",
                                 paymentChannel: "MANUAL",
                                 paymentStatus: "SUCCESS",
@@ -154,46 +157,43 @@ const updateWalletBalances = async (prisma: PrismaService) => {
         console.log(wu, wu.length);
     } catch (error) {
         console.log(error, "***ERR****");
+        console.log(wu, wu.length);
     }
 };
 
-//revert merchant to default agent
-const revertmerchantToAgent = async (prisma: PrismaService) => {
-    const processed: string[] = [];
-    try {
-        const agents = await readAgentCSVFile();
-        for (const agent of agents) {
-            const user = await prisma.user.findUnique({
-                where: { email: agent.email },
-            });
-            if (user) {
-                await prisma.$transaction(async (tx) => {
-                    await tx.user.update({
-                        where: { id: user.id },
-                        data: {
-                            roleId: 3,
-                            userType: "AGENT",
-                            merchantUpgradeStatus: "PENDING",
-                            kycStatus: "PENDING",
-                        },
-                    });
+// //revert merchant to default agent
+// const revertmerchantToAgent = async (prisma: PrismaService) => {
+//     const processed: string[] = [];
+//     try {
+//         const agents = await readAgentCSVFile();
+//         for (const agent of agents) {
+//             const user = await prisma.user.findUnique({
+//                 where: { email: agent.email },
+//             });
+//             if (user) {
+//                 await prisma.$transaction(async (tx) => {
+//                     await tx.user.update({
+//                         where: { id: user.id },
+//                         data: {
+//                             roleId: 3,
+//                             userType: "AGENT",
+//                             merchantUpgradeStatus: "PENDING",
+//                             kycStatus: "PENDING",
+//                         },
+//                     });
 
-                    await tx.userCommission.deleteMany({
-                        where: { userId: user.id },
-                    });
-                });
+//                     await tx.userCommission.deleteMany({
+//                         where: { userId: user.id },
+//                     });
+//                 });
 
-                console.log(agent.email);
-                processed.push(agent.email);
-            }
-        }
-    } catch (error) {
-        console.log(error, "***ERR****");
-    } finally {
-        console.log(processed);
-    }
-};
-
-export default async function dbScript(prisma: PrismaService) {
-    await updateWalletBalances(prisma);
-}
+//                 console.log(agent.email);
+//                 processed.push(agent.email);
+//             }
+//         }
+//     } catch (error) {
+//         console.log(error, "***ERR****");
+//     } finally {
+//         console.log(processed);
+//     }
+// };
