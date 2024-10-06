@@ -476,6 +476,7 @@ export class TransactionService {
                 await tx.transaction.update({
                     data: {
                         status: UpdatePayoutStatus.DECLINED,
+                        paymentStatus: PaymentStatus.REFUNDED,
                     },
                     where: {
                         id: transaction.id,
