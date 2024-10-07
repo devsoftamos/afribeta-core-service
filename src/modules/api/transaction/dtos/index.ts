@@ -204,6 +204,8 @@ export enum QueryTransactionStatus {
     SUCCESS = "SUCCESS",
     FAILED = "FAILED",
     REFUNDED = "REFUNDED",
+    DECLINED = "DECLINED",
+    APPROVED = "APPROVED",
 }
 export enum QueryTransactionType {
     COMMISSION = "COMMISSION",

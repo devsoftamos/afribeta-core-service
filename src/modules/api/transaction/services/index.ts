@@ -802,6 +802,16 @@ export class TransactionService {
                     break;
                 }
 
+                case QueryTransactionStatus.APPROVED: {
+                    queryOptions.where.status = TransactionStatus.APPROVED;
+                    break;
+                }
+
+                case QueryTransactionStatus.DECLINED: {
+                    queryOptions.where.status = TransactionStatus.DECLINED;
+                    break;
+                }
+
                 default:
                     break;
             }
