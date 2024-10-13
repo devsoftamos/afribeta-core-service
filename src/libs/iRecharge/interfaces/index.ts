@@ -81,5 +81,5 @@ export interface GetWalletBalanceResponse {
 }
 
 export interface VendStatusHashOptions {
-    accessToken: string;
+    access_token: string;
 }

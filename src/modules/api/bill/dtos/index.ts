@@ -47,3 +47,8 @@ export class UpdateDefaultBillProviderDto {
     @IsEnum(BillProviderEnum)
     provider: BillProviderEnum;
 }
+
+export class VendStatusDto {
+    @IsString()
+    transactionId: string;
+}

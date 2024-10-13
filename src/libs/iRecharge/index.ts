@@ -12,6 +12,7 @@ import {
     VendPowerHashOptions,
     VendPowerOptions,
     VendPowerResponse,
+    VendStatusHashOptions,
     VendStatusOptions,
     VendStatusResponse,
 } from "./interfaces";
@@ -400,7 +401,7 @@ export class IRecharge {
             .digest("hex");
     }
 
-    checkVendStatusHash(options: VendStatusOptions) {
+    checkVendStatusHash(options: VendStatusHashOptions) {
         const combinedString = `${this.instanceOptions.vendorCode}|${options.access_token}|${this.instanceOptions.publicKey}`;
         return createHmac("sha1", this.instanceOptions.privateKey)
             .update(combinedString)

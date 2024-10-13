@@ -4,10 +4,11 @@ import {
     Controller,
     Get,
     Patch,
+    Query,
     UseGuards,
     ValidationPipe,
 } from "@nestjs/common";
-import { UpdateDefaultBillProviderDto } from "../../dtos";
+import { UpdateDefaultBillProviderDto, VendStatusDto } from "../../dtos";
 import { BillService } from "../../services";
 
 @UseGuards(AuthGuard, EnabledAccountGuard)
@@ -27,5 +28,11 @@ export class AdminBillController {
     @Get("provider")
     async getProviders() {
         return await this.billService.getProviders();
+    }
+
+    //reserved for backend only for verifying
+    @Get("vend-status")
+    async getVendStatus(@Query() dto: VendStatusDto) {
+        return await this.billService.getVendStatus(dto);
     }
 }

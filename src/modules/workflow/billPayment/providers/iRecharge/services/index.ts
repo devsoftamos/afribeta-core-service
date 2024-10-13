@@ -1,7 +1,11 @@
 import {
     DiscoBundleData,
     IRecharge,
+    IRechargeVendType,
+    RequestOptions,
     TVNetworkProvider,
+    VendStatusOptions,
+    VendStatusResponse,
 } from "@/libs/iRecharge";
 import { IRechargeError } from "@/libs/iRecharge/errors";
 import { AirtimeProvider } from "@/libs/iRecharge/interfaces/airtime";
@@ -46,8 +50,14 @@ import {
     IRechargeVendDataException,
     IRechargeVendInternetException,
     IRechargeVendPowerException,
+    IRechargeVendStatusException,
     IRechargeWalletException,
 } from "../errors";
+import {
+    NonPowerService,
+    TNonPowerService,
+    VendStatusParam,
+} from "../interfaces";
 
 @Injectable()
 export class IRechargeWorkflowService implements BillPaymentWorkflow {
@@ -859,5 +869,75 @@ export class IRechargeWorkflowService implements BillPaymentWorkflow {
                 HttpStatus.BAD_REQUEST
             );
         }
+    }
+
+    async vendStatus(options: VendStatusParam): Promise<VendStatusResponse> {
+        try {
+            const hash = this.iRecharge.checkVendStatusHash({
+                access_token: options.access_token,
+            });
+
+            const resp = await this.iRecharge.vendStatus({
+                access_token: options.access_token,
+                type: this.resolveVendType(options.productSlug),
+                hash: hash,
+            });
+
+            return resp;
+        } catch (error) {
+            logger.error(error);
+            switch (true) {
+                case error instanceof IRechargeError: {
+                    this.handleUnprocessedTransactionError(error);
+                    throw new IRechargeVendStatusException(
+                        error.message,
+                        HttpStatus.BAD_REQUEST
+                    );
+                }
+
+                default: {
+                    throw new IRechargeVendStatusException(
+                        error.message,
+                        HttpStatus.INTERNAL_SERVER_ERROR
+                    );
+                }
+            }
+        }
+    }
+
+    private resolveVendType(productSlug: any) {
+        const dataGroup: TNonPowerService["internet" | "data"][] = [
+            "airtel-data",
+            "airtel-internet",
+            "etisalat-data",
+            "etisalat-internet",
+            "glo-data",
+            "glo-internet",
+            "mtn-data",
+            "mtn-internet",
+            "smile-internet",
+            "spectranet-internet",
+        ];
+        const airtimeGroup: TNonPowerService["airtime"][] = [
+            "airtel-airtime",
+            "etisalat-airtime",
+            "glo-airtime",
+            "mtn-airtime",
+        ];
+
+        const tVGroup: TNonPowerService["tv"][] = ["dstv", "gotv", "startimes"];
+
+        if (dataGroup.includes(productSlug)) {
+            return IRechargeVendType.DATA;
+        }
+
+        if (airtimeGroup.includes(productSlug)) {
+            return IRechargeVendType.AIRTIME;
+        }
+
+        if (tVGroup.includes(productSlug)) {
+            return IRechargeVendType.TV;
+        }
+        return IRechargeVendType.POWER;
     }
 }

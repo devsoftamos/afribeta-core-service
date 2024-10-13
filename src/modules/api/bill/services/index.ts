@@ -23,6 +23,7 @@ import {
     BillServiceSlug,
     CheckServiceChargeOptions,
     BillProviderSlugForPower,
+    GetVendStatus,
 } from "../interfaces";
 import logger from "moment-logger";
 import { PowerBillService } from "./power";
@@ -62,6 +63,7 @@ import {
     TransactionShortDescription,
 } from "../../transaction";
 import { InsufficientWalletBalanceException } from "../../wallet";
+import { IRechargeWorkflowService } from "@/modules/workflow/billPayment/providers/iRecharge/services";
 
 @Injectable()
 export class BillService {
@@ -81,7 +83,8 @@ export class BillService {
         @Inject(forwardRef(() => CableTVBillService))
         private cableTVBillService: CableTVBillService,
 
-        private prisma: PrismaService
+        private prisma: PrismaService,
+        private iRechargeWorkflowService: IRechargeWorkflowService
     ) {}
 
     async handleWebhookSuccessfulBillPayment(
@@ -1165,5 +1168,90 @@ export class BillService {
             message: "providers successfully retrieved",
             data: providers,
         });
+    }
+
+    async getVendStatus(options: GetVendStatus) {
+        const trans = await this.prisma.transaction.findUnique({
+            where: { transactionId: options.transactionId },
+            select: {
+                id: true,
+                type: true,
+                paymentStatus: true,
+                transactionId: true,
+                status: true,
+                token: true,
+                serviceTransactionCode2: true,
+                billServiceSlug: true,
+                billProvider: {
+                    select: {
+                        slug: true,
+                    },
+                },
+            },
+        });
+        if (!trans) {
+            throw new TransactionNotFoundException(
+                "Transaction not found",
+                HttpStatus.NOT_FOUND
+            );
+        }
+
+        switch (trans.billProvider.slug) {
+            case BillProviderSlugForPower.IRECHARGE: {
+                const refTypes: TransactionType[] = [
+                    "AIRTIME_PURCHASE",
+                    "DATA_PURCHASE",
+                    "INTERNET_BILL",
+                ];
+                const accessTokenTypes: TransactionType[] = [
+                    "ELECTRICITY_BILL",
+                    "CABLETV_BILL",
+                ];
+                let accessToken = trans.serviceTransactionCode2;
+
+                if (refTypes.includes(trans.type)) {
+                    accessToken = trans.token;
+                }
+
+                if (accessTokenTypes.includes(trans.type)) {
+                    accessToken = trans.serviceTransactionCode2;
+                }
+
+                if (!accessToken) {
+                    throw new TransactionNotFoundException(
+                        "Invalid bill payment transaction type",
+                        HttpStatus.NOT_FOUND
+                    );
+                }
+
+                const resp = await this.iRechargeWorkflowService.vendStatus({
+                    access_token: accessToken,
+                    productSlug: trans.billServiceSlug,
+                });
+
+                return buildResponse({
+                    message: "status retrieved",
+                    data: {
+                        vendStatusObject: resp,
+                        trans: {
+                            id: trans.id,
+                            transactionId: trans.transactionId,
+                            type: trans.type,
+                            paymentStatus: trans.paymentStatus,
+                            status: trans.status,
+                            billServiceSlug: trans.billServiceSlug,
+                            billProvider: trans.billProvider,
+                        },
+                    },
+                });
+            }
+
+            //TODO: buypower
+
+            default:
+                break;
+        }
+
+        // const status = await this.iRechargeWorkflowService.
     }
 }

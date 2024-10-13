@@ -187,3 +187,7 @@ export interface PurchaseInitializationHandlerOutput {
     paymentReference: string;
     totalAmount: number;
 }
+
+export interface GetVendStatus {
+    transactionId: string;
+}
