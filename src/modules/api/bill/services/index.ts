@@ -64,6 +64,7 @@ import {
 } from "../../transaction";
 import { InsufficientWalletBalanceException } from "../../wallet";
 import { IRechargeWorkflowService } from "@/modules/workflow/billPayment/providers/iRecharge/services";
+import { BuyPowerWorkflowService } from "@/modules/workflow/billPayment/providers/buyPower/services";
 
 @Injectable()
 export class BillService {
@@ -84,7 +85,8 @@ export class BillService {
         private cableTVBillService: CableTVBillService,
 
         private prisma: PrismaService,
-        private iRechargeWorkflowService: IRechargeWorkflowService
+        private iRechargeWorkflowService: IRechargeWorkflowService,
+        private buypowerWorkflowService: BuyPowerWorkflowService
     ) {}
 
     async handleWebhookSuccessfulBillPayment(
@@ -1178,8 +1180,17 @@ export class BillService {
                 type: true,
                 paymentStatus: true,
                 transactionId: true,
+                billPaymentReference: true,
                 status: true,
                 token: true,
+                amount: true,
+                user: {
+                    select: {
+                        email: true,
+                        firstName: true,
+                        lastName: true,
+                    },
+                },
                 serviceTransactionCode2: true,
                 billServiceSlug: true,
                 billProvider: {
@@ -1237,19 +1248,47 @@ export class BillService {
                             id: trans.id,
                             transactionId: trans.transactionId,
                             type: trans.type,
+                            amount: trans.amount,
+                            billPaymentReference: trans.billPaymentReference,
                             paymentStatus: trans.paymentStatus,
                             status: trans.status,
                             billServiceSlug: trans.billServiceSlug,
                             billProvider: trans.billProvider,
+                            user: trans.user,
                         },
                     },
                 });
             }
 
-            //TODO: buypower
-
-            default:
-                break;
+            case BillProviderSlugForPower.BUYPOWER: {
+                const resp = await this.buypowerWorkflowService.reQuery(
+                    trans.billPaymentReference
+                );
+                return buildResponse({
+                    message: "status retrieved",
+                    data: {
+                        vendStatusObject: resp,
+                        trans: {
+                            id: trans.id,
+                            transactionId: trans.transactionId,
+                            type: trans.type,
+                            amount: trans.amount,
+                            billPaymentReference: trans.billPaymentReference,
+                            paymentStatus: trans.paymentStatus,
+                            status: trans.status,
+                            billServiceSlug: trans.billServiceSlug,
+                            billProvider: trans.billProvider,
+                            user: trans.user,
+                        },
+                    },
+                });
+            }
+            default: {
+                throw new InvalidBillProviderException(
+                    "Provider must be buypower or iRecharge",
+                    HttpStatus.NOT_FOUND
+                );
+            }
         }
 
         // const status = await this.iRechargeWorkflowService.
