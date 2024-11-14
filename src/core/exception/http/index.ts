@@ -52,7 +52,15 @@ export class AllExceptionsFilter implements ExceptionFilter {
                             : exception.message,
                     stack: isDevEnvironment ? exception.stack : undefined, //only show stack in development
                 };
+
                 httpAdapter.reply(ctx.getResponse(), responseBody, httpStatus);
+
+                if (httpStatus >= 500) {
+                    console.log(
+                        exception,
+                        "******************SERVER ERROR********************"
+                    );
+                }
             }
         }
     }

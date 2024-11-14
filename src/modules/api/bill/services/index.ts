@@ -230,6 +230,10 @@ export class BillService {
                 );
             }
 
+            if (transaction.status === TransactionStatus.FAILED) {
+                return;
+            }
+
             const userWallet = await this.prisma.wallet.findUnique({
                 where: { userId: transaction.userId },
             });
