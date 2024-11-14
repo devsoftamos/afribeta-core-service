@@ -1142,8 +1142,8 @@ export class WalletService {
         }
 
         if (options.pagination) {
-            const page = +options.page ?? 1;
-            const limit = +options.limit ?? 10;
+            const page = +options.page || 1;
+            const limit = +options.limit || 10;
             const offset = (page - 1) * limit;
             queryOptions.skip = offset;
             queryOptions.take = limit;
