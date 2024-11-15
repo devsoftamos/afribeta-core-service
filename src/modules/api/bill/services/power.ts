@@ -1063,7 +1063,8 @@ export class PowerBillService {
                     transactionId: options.transaction.id,
                 });
                 throw new VendPowerFailureException(
-                    error.message ?? "Failed to vend power",
+                    error.message ??
+                        "Failed to vend power. No available bill provider for auto switch",
                     HttpStatus.NOT_IMPLEMENTED
                 );
             }
@@ -1083,7 +1084,7 @@ export class PowerBillService {
                         });
 
                     /**
-                     * Note: throw this error if after checking all the bill providers and non has the particular disc service.
+                     * Note: throw this error if after checking all the bill providers and non has the particular disco service.
                      * Handle this on the last bill provider in the array of billProviders above
                      */
                     if (i == billProviders.length - 1) {

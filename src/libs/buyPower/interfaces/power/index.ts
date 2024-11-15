@@ -67,7 +67,7 @@ export interface VendPowerResponseData {
     vendTime?: string;
     token: string;
     totalAmountPaid: number;
-    units: string;
+    units: number;
     vendAmount: number;
     vendRef: string;
     responseCode: number;
