@@ -189,14 +189,9 @@ export class BuyPowerWorkflowService implements BillPaymentWorkflow {
                 vendType: options.meterType,
             });
 
-            console.log(
-                resp,
-                "*********************VEND POWER******************"
-            );
-
             return {
                 meterToken: resp.data.token,
-                units: resp.data.units.toString(),
+                units: resp.data.units?.toString(),
                 demandCategory: resp.data.demandCategory,
                 receiptNO: resp.data.receiptNo.toString(),
             };
