@@ -11,6 +11,7 @@ import {
     User,
     TransactionStatus,
     WalletFundTransactionFlow,
+    TransactionType,
 } from "@prisma/client";
 import { AllTransactionStatDto, SuccessfulTransactionsDto } from "../dtos";
 import { buildResponse } from "@/utils/api-response-util";
@@ -59,35 +60,35 @@ export class TransactionStatService {
         });
     }
 
-    private async aggregateTotalTransaction(
-        startDate: Date,
-        endDate: Date,
-        status: TransactionStatus
-    ) {
-        return await this.prisma.transaction.aggregate({
-            _sum: {
-                totalAmount: true,
-            },
-            where: {
-                OR: [
-                    { walletFundTransactionFlow: null },
-                    {
-                        walletFundTransactionFlow: {
-                            notIn: [
-                                WalletFundTransactionFlow.FROM_BENEFACTOR,
-                                WalletFundTransactionFlow.FROM_MERCHANT,
-                            ], //exclude one of the internal transaction i.e record for the receiver
-                        },
-                    },
-                ],
-                status: status,
-                createdAt: {
-                    gte: startDate,
-                    lte: endDate,
-                },
-            },
-        });
-    }
+    // private async aggregateTotalTransaction(
+    //     startDate: Date,
+    //     endDate: Date,
+    //     status: TransactionStatus
+    // ) {
+    //     return await this.prisma.transaction.aggregate({
+    //         _sum: {
+    //             totalAmount: true,
+    //         },
+    //         where: {
+    //             OR: [
+    //                 { walletFundTransactionFlow: null },
+    //                 {
+    //                     walletFundTransactionFlow: {
+    //                         notIn: [
+    //                             WalletFundTransactionFlow.FROM_BENEFACTOR,
+    //                             WalletFundTransactionFlow.FROM_MERCHANT,
+    //                         ], //exclude one of the internal transaction i.e record for the receiver
+    //                     },
+    //                 },
+    //             ],
+    //             status: status,
+    //             createdAt: {
+    //                 gte: startDate,
+    //                 lte: endDate,
+    //             },
+    //         },
+    //     });
+    // }
 
     async fetchTotalTransactions(options: SuccessfulTransactionsDto) {
         const successfulTransactions = await this.sumPeriodicTrans(
@@ -151,29 +152,32 @@ export class TransactionStatService {
     }
 
     async getAdminDashboardTransStat(options: AllTransactionStatDto) {
+        const date = options.date ?? new Date();
+
+        console.log(date);
         const monthlyTransactions = await this.sumPeriodicTrans(
-            this.getDateRange(options.date).monthStarts,
-            this.getDateRange(options.date).monthEnds,
+            this.getDateRange(date).monthStarts,
+            this.getDateRange(date).monthEnds,
             TransactionStatus.SUCCESS
         );
 
         const dailyTransactions = await this.sumPeriodicTrans(
-            this.getDateRange(options.date).dayStarts,
-            this.getDateRange(options.date).dayEnds,
+            this.getDateRange(date).dayStarts,
+            this.getDateRange(date).dayEnds,
             TransactionStatus.SUCCESS
         );
 
         const weeklyTransactions = await this.sumPeriodicTrans(
-            this.getDateRange(options.date).weekStarts,
-            this.getDateRange(options.date).weekEnds,
+            this.getDateRange(date).weekStarts,
+            this.getDateRange(date).weekEnds,
             TransactionStatus.SUCCESS
         );
         return buildResponse({
             message: "successfully retrieved stat",
             data: {
-                monthlyTransactions: monthlyTransactions._sum.totalAmount || 0,
-                dailyTransactions: dailyTransactions._sum.totalAmount || 0,
-                weeklyTransactions: weeklyTransactions._sum.totalAmount || 0,
+                monthlyTransactions: monthlyTransactions._sum?.totalAmount || 0,
+                dailyTransactions: dailyTransactions._sum?.totalAmount || 0,
+                weeklyTransactions: weeklyTransactions._sum?.totalAmount || 0,
             },
         });
     }
@@ -188,19 +192,20 @@ export class TransactionStatService {
                 totalAmount: true,
             },
             where: {
-                OR: [
-                    { walletFundTransactionFlow: null },
-                    {
-                        walletFundTransactionFlow: {
-                            notIn: [
-                                WalletFundTransactionFlow.FROM_BENEFACTOR,
-                                WalletFundTransactionFlow.FROM_MERCHANT,
-                                WalletFundTransactionFlow.COMMISSION_BALANCE_TO_MAIN_BALANCE,
-                                WalletFundTransactionFlow.FROM_FAILED_TRANSACTION,
-                            ],
-                        },
-                    },
-                ],
+                // OR: [
+                //     { walletFundTransactionFlow: null },
+                //     {
+                //         walletFundTransactionFlow: {
+                //             notIn: [
+                //                 WalletFundTransactionFlow.FROM_BENEFACTOR,
+                //                 WalletFundTransactionFlow.FROM_MERCHANT,
+                //                 WalletFundTransactionFlow.COMMISSION_BALANCE_TO_MAIN_BALANCE,
+                //                 WalletFundTransactionFlow.FROM_FAILED_TRANSACTION,
+                //             ],
+                //         },
+                //     },
+                // ],
+                type: { not: TransactionType.WALLET_FUND },
 
                 status: status,
                 createdAt: {

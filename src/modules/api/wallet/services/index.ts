@@ -197,6 +197,13 @@ export class WalletService {
             );
         }
 
+        // //verify bvn
+        // await this.identityVerification.verifyUserBVN({
+        //     bvn: options.bvn,
+        //     firstName: user.firstName,
+        //     lastName: user.lastName,
+        // });
+
         const paystackDynamicVirtualAccountCreationOptions: AssignDedicatedVirtualAccountWithValidationOptions =
             {
                 bvn: options.bvn,

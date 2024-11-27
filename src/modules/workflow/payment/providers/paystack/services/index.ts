@@ -42,10 +42,9 @@ export class PaystackService {
         options: AssignDedicatedVirtualAccountWithValidationOptions
     ) {
         try {
-            const resp =
-                await this.paystack.assignDynamicValidatedVirtualAccount(
-                    options
-                );
+            const resp = await this.paystack.assignDedicatedVirtualAccount(
+                options
+            );
             return resp;
         } catch (error) {
             logger.error(error);

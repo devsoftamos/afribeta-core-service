@@ -232,9 +232,11 @@ export class TransactionService {
         }
 
         if (options.startDate && options.endDate) {
+            const startDate = startOfDay(new Date());
+            const endDate = endOfDay(new Date());
             queryOptions.where.createdAt = {
-                gte: new Date(options.startDate),
-                lte: new Date(options.endDate),
+                gte: startDate,
+                lte: endDate,
             };
         }
 
@@ -777,8 +779,8 @@ export class TransactionService {
                 });
         }
         if (options.startDate && options.endDate) {
-            const startDate = new Date(options.startDate);
-            const endDate = new Date(options.endDate);
+            const startDate = startOfDay(new Date());
+            const endDate = endOfDay(new Date());
             queryOptions.where.createdAt = { gte: startDate, lte: endDate };
         }
 

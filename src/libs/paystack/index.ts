@@ -77,7 +77,7 @@ export class Paystack {
      *
      * @description This method creates, validates and assigns dynamic virtual account to a customer
      */
-    async assignDynamicValidatedVirtualAccount(
+    async assignDedicatedVirtualAccount(
         options: AssignDedicatedVirtualAccountWithValidationOptions
     ) {
         try {
