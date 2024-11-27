@@ -205,7 +205,16 @@ export class TransactionStatService {
                 //         },
                 //     },
                 // ],
-                type: { not: TransactionType.WALLET_FUND },
+                type: {
+                    in: [
+                        TransactionType.AIRTIME_PURCHASE,
+                        TransactionType.CABLETV_BILL,
+                        TransactionType.DATA_PURCHASE,
+                        TransactionType.ELECTRICITY_BILL,
+                        TransactionType.INTERNET_BILL,
+                        TransactionType.AIRTIME_TO_CASH,
+                    ],
+                },
 
                 status: status,
                 createdAt: {
