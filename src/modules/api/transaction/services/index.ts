@@ -1504,6 +1504,7 @@ export class TransactionService {
                 receiverIdentifier: true,
                 updatedAt: true,
                 status: true,
+                paymentStatus: true,
             },
         };
 
@@ -1526,6 +1527,9 @@ export class TransactionService {
                 search: options.searchName,
             };
             queryOptions.where.transactionId = { search: options.searchName };
+            queryOptions.where.senderIdentifier = {
+                search: options.searchName,
+            };
             queryOptions.where.paymentReference = {
                 search: options.searchName,
             };
