@@ -153,8 +153,6 @@ export class TransactionStatService {
 
     async getAdminDashboardTransStat(options: AllTransactionStatDto) {
         const date = options.date ?? new Date();
-
-        console.log(date);
         const monthlyTransactions = await this.sumPeriodicTrans(
             this.getDateRange(date).monthStarts,
             this.getDateRange(date).monthEnds,
